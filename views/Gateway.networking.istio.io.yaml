@@ -3,8 +3,8 @@ kind: "Gateway"
 api_family: "networking.istio.io"
 default_command: "gateways.networking.istio.io"
 command:
-- "istiogws"
-- "istiogw"
+  - "istiogws"
+  - "istiogw"
 listview:
   name: "Gateways"
   group: "Istio"
@@ -22,15 +22,15 @@ infoview:
       selector:
         header: [["Selector:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#selector"
-          pathtype: "key_value"
+          - path: "spec#selector"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -49,15 +49,15 @@ infoview:
       port:
         header: "Port:"
         paths:
-        - path: [["port#name"], ["port#number"], ["port#protocol"]]
-          pathtype: "tuple"
+          - path: [["port#name"], ["port#number"], ["port#protocol"]]
+            pathtype: "tuple"
         type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "service"
-          - type: "port"
-          - type: "protocol"
+            - type: "service"
+            - type: "port"
+            - type: "protocol"
           field_separators:
-          - type: "port"
-          - type: "service"
+            - type: "port"
+            - type: "service"

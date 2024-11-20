@@ -3,10 +3,10 @@ kind: "KnativeEventing"
 api_family: "operator.knative.dev"
 default_command: "knativeeventings"
 command:
-- "eventings.knative"
-- "eventing.knative"
-- "kneventings"
-- "kneventing"
+  - "eventings.knative"
+  - "eventing.knative"
+  - "kneventings"
+  - "kneventing"
 listview:
   name: "Knative Eventings"
   group: "Knative"
@@ -18,12 +18,12 @@ listview:
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -31,19 +31,19 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     version:
       header: "Version:"
       path: "status#version"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Knative Eventing Info"
   infopad:
@@ -54,12 +54,12 @@ infoview:
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -67,19 +67,19 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "List manifests":
       key: "m"

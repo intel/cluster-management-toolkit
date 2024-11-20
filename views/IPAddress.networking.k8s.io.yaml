@@ -3,8 +3,8 @@ kind: "IPAddress"
 api_family: "networking.k8s.io"
 default_command: "ipaddresses"
 command:
-- "ipaddrs"
-- "ipaddr"
+  - "ipaddrs"
+  - "ipaddr"
 listview:
   name: "IP Addresses"
   group: "Network"
@@ -20,20 +20,20 @@ listview:
     parent_ref:
       header: "Parent Reference:"
       paths:
-      - path: [["spec#parentRef#resource"], ["spec#parentRef#group"], ["spec#parentRef#namespace"], ["spec#parentRef#name"]]
-        pathtype: "tuple"
-        type: ["kind", "api_group", "name", "name"]
+        - path: [["spec#parentRef#resource"], ["spec#parentRef#group"], ["spec#parentRef#namespace"], ["spec#parentRef#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name", "name"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "namespace"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "namespace"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
-        - type: "namespace"
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
 infoview:
   name: "IP Address Info"
   infopad:
@@ -50,20 +50,20 @@ infoview:
       parent_ref:
         header: [["Parent ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#parentRef#resource"], ["spec#parentRef#group"], ["spec#parentRef#namespace"], ["spec#parentRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name", "name"]
+          - path: [["spec#parentRef#resource"], ["spec#parentRef#group"], ["spec#parentRef#namespace"], ["spec#parentRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "namespace"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
   shortcuts:
     "Open parent reference":
       key: "r"

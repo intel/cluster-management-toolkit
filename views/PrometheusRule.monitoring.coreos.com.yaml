@@ -3,8 +3,8 @@ kind: "PrometheusRule"
 api_family: "monitoring.coreos.com"
 default_command: "prometheusrules"
 command:
-- "promrules"
-- "promrule"
+  - "promrules"
+  - "promrule"
 listview:
   name: "Prometheus Rules"
   group: "Monitoring"
@@ -23,15 +23,17 @@ infoview:
         fields: ["cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
   listpad:
     listgetter: "listgetter_path"
@@ -58,7 +60,7 @@ infoview:
         formatter: "age"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       group:
         header: "Group:"

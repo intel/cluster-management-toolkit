@@ -3,16 +3,17 @@ kind: "Policy"
 api_family: "kyverno.io"
 default_command: "policy"
 command:
-- "kypolicies"
-- "kypolicy"
-- "kypols"
-- "kypol"
+  - "kypolicies"
+  - "kypolicy"
+  - "kypols"
+  - "kypol"
 listview:
   name: "Policies"
   group: "Kyverno"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "background", "validation_failure_action", "age"]
+      fields: ["namespace", "name", "background",
+               "validation_failure_action", "age"]
       sortcolumn: "namespace"
   fields:
     background:
@@ -30,7 +31,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["background", "apply_rules", "failure_policy", "validate_schema", "validation_failure_action", "generate_existing", "mutate_existing_on_policy_update", "webhook_timeout"]
+        fields: ["background", "apply_rules", "failure_policy",
+                 "validate_schema", "validation_failure_action",
+                 "generate_existing", "mutate_existing_on_policy_update",
+                 "webhook_timeout"]
     rows:
       apply_rules:
         header: [["Apply Rules:", ["main", "infoheader"]]]
@@ -70,13 +74,13 @@ infoview:
       webhook_timeout:
         header: [["Webhook Timeout:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#webhookTimeoutSeconds"], "s"]
-          pathtype: "tuple"
-          default: "10"
+          - path: [["spec#webhookTimeoutSeconds"], "s"]
+            pathtype: "tuple"
+            default: "10"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "unit"
+            - type: "numerical"
+            - type: "unit"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"

@@ -3,13 +3,14 @@ kind: "HorizontalPodAutoscaler"
 api_family: "autoscaling"
 default_command: "horizontalpodautoscalers"
 command:
-- "hpa"
+  - "hpa"
 listview:
   name: "Horizontal Pod Autoscalers"
   group: "Scheduling & Scaling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "reference", "minpods", "maxpods", "replicas", "age"]
+      fields: ["namespace", "name", "reference", "minpods",
+               "maxpods", "replicas", "age"]
       sortcolumn: "namespace"
   fields:
     maxpods:
@@ -19,7 +20,7 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     minpods:
       header: "Min Pods:"
       path: "spec#minReplicas"
@@ -27,22 +28,24 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     reference:
       header: "Reference:"
       paths:
-      - path: [["spec#scaleTargetRef#kind"], ["spec#scaleTargetRef#apiVersion"], ["spec#scaleTargetRef#name"]]
-        pathtype: "tuple"
-        type: ["kind", "api_group", "name"]
+        - path: [["spec#scaleTargetRef#kind"],
+                 ["spec#scaleTargetRef#apiVersion"],
+                 ["spec#scaleTargetRef#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     replicas:
       header: "Replicas:"
       path: "status#currentReplicas"
@@ -50,13 +53,14 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Horizontal Pod Autoscaler Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["min_replicas", "max_replicas", "scale_target_reference", "status"]
+        fields: ["min_replicas", "max_replicas",
+                 "scale_target_reference", "status"]
     rows:
       max_replicas:
         header: [["Max Replicas:", ["main", "infoheader"]]]
@@ -64,42 +68,45 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       min_replicas:
         header: [["Min Replicas:", ["main", "infoheader"]]]
         path: "spec#minReplicas"
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       scale_target_reference:
-        header: [["S", ["main", "infoheader_shortcut"]], ["cale Target Reference:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["cale Target Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#scaleTargetRef#kind"], ["spec#scaleTargetRef#apiVersion"], ["spec#scaleTargetRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#scaleTargetRef#kind"],
+                   ["spec#scaleTargetRef#apiVersion"],
+                   ["spec#scaleTargetRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       status:
         header: [["Status:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#currentReplicas"], ["status#desiredReplicas"]]
-          pathtype: "tuple"
-          default: [0, 0]
+          - path: [["status#currentReplicas"], ["status#desiredReplicas"]]
+            pathtype: "tuple"
+            default: [0, 0]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           separators:
-          - type: "fraction"
+            - type: "fraction"
   listpad:
     listgetter: "get_hpa_metrics"
     infogetter: "generic_infogetter"
@@ -111,24 +118,27 @@ infoview:
       namespace_path: "described_object_namespace"
     field_indexes:
       Normal:
-        fields: ["metrics_type", "name", "described_object", "target_type", "target_value", "selector"]
+        fields: ["metrics_type", "name", "described_object",
+                 "target_type", "target_value", "selector"]
         sortcolumn: "name"
     fields:
       described_object:
         header: "Described Object:"
         paths:
-        - path: [["described_object_kind"], ["described_object_api_group"], ["described_object_name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["described_object_kind"],
+                   ["described_object_api_group"],
+                   ["described_object_name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       metrics_type:
         header: "Type:"
         path: "metric_type"
@@ -140,15 +150,15 @@ infoview:
       selector:
         header: "Selector:"
         paths:
-        - path: "selector"
-          pathtype: "key_value"
+          - path: "selector"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       target_type:
         header: "Target Type:"
         path: "target_type"
@@ -160,7 +170,7 @@ infoview:
         align: "right"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Scale Target Reference":
       key: "s"

@@ -3,8 +3,8 @@ kind: "NodeResourceTopology"
 api_family: "topology.node.k8s.io"
 default_command: "noderesourcetopologies"
 command:
-- "noderestopos"
-- "noderestopo"
+  - "noderestopos"
+  - "noderestopo"
 listview:
   name: "Node Resource Topologies"
   group: "Scheduling & Scaling"
@@ -18,7 +18,7 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Node Resource Topology Info"
@@ -30,8 +30,8 @@ infoview:
       topology_policies:
         header: [["Topology Policies:", ["main", "infoheader"]]]
         paths:
-        - path: "topologyPolicies"
-          pathtype: "list"
+          - path: "topologyPolicies"
+            pathtype: "list"
         formatter: "list"
   listpad:
     listgetter: "listgetter_path"
@@ -46,39 +46,39 @@ infoview:
       costs:
         header: "Costs:"
         paths:
-        - path: "costs"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - "value"
+          - path: "costs"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - "value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "resource"
-          - type: "numerical"
+            - type: "resource"
+            - type: "numerical"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       resources:
         header: "Resources (Allocatable/Available/Capacity):"
         paths:
-        - path: "resources"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - "allocatable"
-          - "available"
-          - "capacity"
+          - path: "resources"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - "allocatable"
+              - "available"
+              - "capacity"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "resource"
-          - type: "numerical"
-          - type: "numerical"
-          - type: "numerical"
+            - type: "resource"
+            - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "resource"
-          - type: "fraction"
-          - type: "fraction"
+            - type: "resource"
+            - type: "fraction"
+            - type: "fraction"
       type:
         header: "Type:"
         path: "type"

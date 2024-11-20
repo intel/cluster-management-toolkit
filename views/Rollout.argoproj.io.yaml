@@ -3,55 +3,57 @@ kind: "Rollout"
 api_family: "argoproj.io"
 default_command: "rollouts"
 command:
-- "argorollouts"
-- "argorollout"
+  - "argorollouts"
+  - "argorollout"
 listview:
   name: "Rollouts"
   group: "CI / CD"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "desired_replicas", "current_replicas", "uptodate_replicas", "available_replicas", "phase", "age"]
+      fields: ["namespace", "name", "desired_replicas",
+               "current_replicas", "uptodate_replicas",
+               "available_replicas", "phase", "age"]
       sortcolumn: "namespace"
   fields:
     available_replicas:
       header: "Available:"
       paths:
-      - path: ["status#availableReplicas", "status#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#availableReplicas", "status#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_pending"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
       align: "right"
     current_replicas:
       header: "Current:"
       paths:
-      - path: ["status#replicas", "spec#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#replicas", "spec#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
       align: "right"
     desired_replicas:
       header: "Desired:"
@@ -60,7 +62,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     phase:
       header: "Phase:"
@@ -72,35 +74,35 @@ listview:
           mappings:
             "Degraded":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "Healthy":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Paused":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
     uptodate_replicas:
       header: "Up to Date:"
       paths:
-      - path: ["status#updatedReplicas", "status#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#updatedReplicas", "status#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_pending"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
       align: "right"
   actions:
     actionlist:
@@ -127,37 +129,37 @@ infoview:
       available:
         header: [["Available:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Available"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Available"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       paused:
         header: [["Paused:", ["main", "infoheader"]]]
         path: "spec#paused"
@@ -169,45 +171,54 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#replicas"], " Desired", ["status#replicas"], " Current", ["status#readyReplicas"], " Ready", ["status#updatedReplicas"], " Up to Date", ["status#unavailableReplicas"], " Unavailable"]
-          pathtype: "tuple"
-          default: [0, "", 0, "", 0, "", 0, "", 0, ""]
+          - path: [["spec#replicas"],
+                   " Desired",
+                   ["status#replicas"],
+                   " Current",
+                   ["status#readyReplicas"],
+                   " Ready",
+                   ["status#updatedReplicas"],
+                   " Up to Date",
+                   ["status#unavailableReplicas"],
+                   " Unavailable"]
+            pathtype: "tuple"
+            default: [0, "", 0, "", 0, "", 0, "", 0, ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -219,45 +230,49 @@ infoview:
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "age", "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -268,7 +283,7 @@ infoview:
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
@@ -278,14 +293,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:

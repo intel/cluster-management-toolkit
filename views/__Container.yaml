@@ -2,16 +2,17 @@
 kind: "__Container"
 default_command: "containers"
 command:
-- "container"
+  - "container"
 listview:
-  listgetter:
+  listgetter: null
   infogetter: "get_container_info"
   name: "Containers"
   group: "Core"
   check_availability: "is_cluster_reachable"
   field_indexes:
     Wide:
-      fields: ["name", "container_type", "image_version", "instances", "image_id", "pods"]
+      fields: ["name", "container_type", "image_version", "instances",
+               "image_id", "pods"]
     Normal:
       fields: ["name", "container_type", "image_version", "instances", "pods"]
   is_taggable: false
@@ -30,14 +31,14 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
     instances:
       header: "Instances:"
       path: "instances"
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     pods:
       header: "Pods:"
@@ -45,10 +46,10 @@ listview:
       path: "pods"
       formatting:
         field_colors:
-        - type: "namespace"
-        - type: "generic"
+          - type: "namespace"
+          - type: "generic"
         field_separators:
-        - type: "namespace"
+          - type: "namespace"
         ellipsise: 5
 infoview:
   name: "Container Info"
@@ -69,7 +70,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       image_id:
         header: [["Image ID:", ["main", "infoheader"]]]
         path: "image_id"
@@ -84,45 +85,49 @@ infoview:
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -133,7 +138,7 @@ infoview:
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
@@ -143,14 +148,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:

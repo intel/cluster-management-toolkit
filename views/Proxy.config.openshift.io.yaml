@@ -3,8 +3,8 @@ kind: "Proxy"
 api_family: "config.openshift.io"
 default_command: "proxies.config.openshift.io"
 command:
-- "proxies.config"
-- "proxy.config"
+  - "proxies.config"
+  - "proxy.config"
 listview:
   name: "Proxies"
   group: "OpenShift"
@@ -21,8 +21,8 @@ infoview:
       trusted_ca:
         header: [["Trusted CA:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#trustedCA#name"
-          pathtype: "value"
-          type: "str"
-          fallback_on_empty: true
-          default: "<empty>"
+          - path: "spec#trustedCA#name"
+            pathtype: "value"
+            type: "str"
+            fallback_on_empty: true
+            default: "<empty>"

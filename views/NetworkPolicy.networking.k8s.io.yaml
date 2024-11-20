@@ -3,8 +3,8 @@ kind: "NetworkPolicy"
 api_family: "networking.k8s.io"
 default_command: "networkpolicies"
 command:
-- "netpols"
-- "netpol"
+  - "netpols"
+  - "netpol"
 listview:
   name: "Network Policies"
   group: "Network"
@@ -16,38 +16,38 @@ listview:
     controller:
       header: "Controller:"
       paths:
-      - path: "metadata#ownerReferences"
-        pathtype: "items"
-        subpaths:
-        - "kind"
-        - "apiVersion"
-        - "name"
-        when:
-        - key: "controller"
-          eq: true
-        type: ["kind", "api_group", "name"]
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+            - "kind"
+            - "apiVersion"
+            - "name"
+          when:
+            - key: "controller"
+              eq: true
+          type: ["kind", "api_group", "name"]
       default: "<none>"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     pod_label_selector:
       header: "Pod Label Selector:"
       paths:
-      - path: ["spec#podSelector#matchLabels"]
-        pathtype: "key_value"
+        - path: ["spec#podSelector#matchLabels"]
+          pathtype: "key_value"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "key"
-        - type: "value"
+          - type: "key"
+          - type: "value"
         field_separators:
-        - type: "selector"
+          - type: "selector"
 infoview:
   name: "Network Policy Info"
   infopad:
@@ -58,39 +58,39 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       pod_label_selector:
         header: [["Pod Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#podSelector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#podSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       policy_types:
         header: [["Policy Types:", ["main", "infoheader"]]]
         path: "spec#policyTypes"
@@ -117,29 +117,29 @@ infoview:
       namespace_label_selector:
         header: "Namespace Label Selector:"
         paths:
-        - path: ["namespace_label_selector"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["namespace_label_selector"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       pod_label_selector:
         header: "Pod Label Selector:"
         paths:
-        - path: ["pod_label_selector"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["pod_label_selector"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       policy_type:
         header: "Policy Type:"
         path: "policy_type"
@@ -151,10 +151,10 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "port"
-          - type: "protocol"
+            - type: "port"
+            - type: "protocol"
           field_separators:
-          - type: "service"
+            - type: "service"
   shortcuts:
     "Open controller":
       key: "c"

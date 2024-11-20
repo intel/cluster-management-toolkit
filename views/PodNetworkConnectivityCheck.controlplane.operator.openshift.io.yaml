@@ -3,8 +3,8 @@ kind: "PodNetworkConnectivityCheck"
 api_family: "controlplane.operator.openshift.io"
 default_command: "podnetworkconnectivitychecks"
 command:
-- "podnetconnchecks"
-- "podnetconncheck"
+  - "podnetconnchecks"
+  - "podnetconncheck"
 listview:
   name: "Pod Network Connectivity Checks"
   group: "OpenShift"
@@ -17,21 +17,26 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["node", "source_pod", "target_endpoint", "tls_client_cert_name"]
+        fields: ["node", "source_pod", "target_endpoint",
+                 "tls_client_cert_name"]
     rows:
       node:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Node"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Node"
         default: "<none>"
       source_pod:
-        header: [["Source ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        header: [["Source ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["od:", ["main", "infoheader"]]]
         path: "spec#sourcePod"
         type: "str"
       target_endpoint:

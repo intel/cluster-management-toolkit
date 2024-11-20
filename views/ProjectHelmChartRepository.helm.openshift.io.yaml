@@ -3,8 +3,8 @@ kind: "ProjectHelmChartRepository"
 api_family: "helm.openshift.io"
 default_command: "projecthelmchartrepositories"
 command:
-- "projhelmrepo"
-- "projhelmrepos"
+  - "projhelmrepo"
+  - "projhelmrepos"
 listview:
   name: "Project Helm Chart Repositories"
   group: "OpenShift"
@@ -16,32 +16,43 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["description", "disabled", "connection_config_header", "connection_config_url", "connection_config_tls_client_config", "connection_config_ca", "cluster_version"]
+        fields: ["description", "disabled",
+                 "connection_config_header", "connection_config_url",
+                 "connection_config_tls_client_config",
+                 "connection_config_ca", "cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       connection_config_header:
         header: [["Connection Config:", ["main", "infoheader"]]]
       connection_config_url:
-        header: [["  ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["RL:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["RL:", ["main", "infoheader"]]]
         path: "spec#connectionConfig#url"
         type: "str"
       connection_config_tls_client_config:
-        header: [["  ", ["main", "infoheader"]], ["T", ["main", "infoheader_shortcut"]], ["LS Client Config:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["T", ["main", "infoheader_shortcut"]],
+                 ["LS Client Config:", ["main", "infoheader"]]]
         path: "spec#connectionConfig#tlsClientConfig#name"
         default: "<none>"
         type: "str"
       connection_config_ca:
-        header: [["  ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["A:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["A:", ["main", "infoheader"]]]
         path: "spec#connectionConfig#ca#name"
         default: "<none>"
         type: "str"

@@ -3,24 +3,27 @@ kind: "ScaledJob"
 api_family: "keda.sh"
 default_command: "scaledjobs"
 command:
-- "sj"
+  - "sj"
 listview:
   name: "Scaled Jobs"
   group: "Scheduling & Scaling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "max_replica_count", "triggers", "authentication", "condition_ready", "condition_ready_reason", "active", "age", "condition_ready_message"]
+      fields: ["namespace", "name", "max_replica_count", "triggers",
+               "authentication", "condition_ready",
+               "condition_ready_reason", "active", "age",
+               "condition_ready_message"]
       sortcolumn: "namespace"
   fields:
     active:
       header: "Active:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Active"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Active"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -28,28 +31,28 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
     authentication:
       header: "Authentication:"
       paths:
-      - path: "spec#triggers"
-        pathtype: "items"
-        subpath: "authenticationRef#name"
+        - path: "spec#triggers"
+          pathtype: "items"
+          subpath: "authenticationRef#name"
       formatter: "list"
     condition_ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -57,64 +60,64 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     condition_ready_message:
       header: "Message:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Ready"
-        default: "<unknown>"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Ready"
+          default: "<unknown>"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "<unknown>":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     condition_ready_reason:
       header: "Reason:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "reason"
-        when:
-        - key: "type"
-          eq: "Ready"
-        default: "<unknown>"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "reason"
+          when:
+            - key: "type"
+              eq: "Ready"
+          default: "<unknown>"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "<unknown>":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     max_replica_count:
       header: "Max Replica Count:"
       path: "spec#maxReplicaCount"
@@ -122,31 +125,36 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     triggers:
       header: "Triggers:"
       paths:
-      - path: "spec#triggers"
-        pathtype: "items"
-        subpath: "type"
+        - path: "spec#triggers"
+          pathtype: "items"
+          subpath: "type"
       formatter: "list"
 infoview:
   name: "Scaled Job Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["failed_jobs_history_limit", "max_replica_count", "polling_interval", "scaling_strategy_header", "scaling_strategy_queue_length_deduction", "scaling_strategy_running_job_percentage", "scaling_strategy_strategy", "condition_ready", "condition_ready_reason", "condition_ready_message"]
+        fields: ["failed_jobs_history_limit", "max_replica_count",
+                 "polling_interval", "scaling_strategy_header",
+                 "scaling_strategy_queue_length_deduction",
+                 "scaling_strategy_running_job_percentage",
+                 "scaling_strategy_strategy", "condition_ready",
+                 "condition_ready_reason", "condition_ready_message"]
     rows:
       condition_ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -154,71 +162,71 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       condition_ready_message:
         header: [["Message:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "message"
-          when:
-          - key: "type"
-            eq: "Ready"
-          default: "<unknown>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "message"
+            when:
+              - key: "type"
+                eq: "Ready"
+            default: "<unknown>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       condition_ready_reason:
         header: [["Reason:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "reason"
-          when:
-          - key: "type"
-            eq: "Ready"
-          default: "<unknown>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "reason"
+            when:
+              - key: "type"
+                eq: "Ready"
+            default: "<unknown>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       failed_jobs_history_limit:
         header: [["Failed Jobs History Limit:", ["main", "infoheader"]]]
         path: "spec#failedJobsHistoryLimit"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       max_replica_count:
         header: [["Max Replica Count:", ["main", "infoheader"]]]
         path: "spec#maxReplicaCount"
@@ -226,7 +234,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       polling_interval:
         header: [["Polling Interval:", ["main", "infoheader"]]]
         path: "spec#pollingInterval"
@@ -234,7 +242,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       scaling_strategy_header:
         header: [["Scheduling Strategy:", ["main", "infoheader"]]]
       scaling_strategy_queue_length_deduction:

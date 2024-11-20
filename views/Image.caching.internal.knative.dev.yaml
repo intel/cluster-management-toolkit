@@ -3,12 +3,12 @@ kind: "Image"
 api_family: "caching.internal.knative.dev"
 default_command: "images.caching.internal.knative.dev"
 command:
-- "image.caching.internal.knative.dev"
-- "images.knative"
-- "image.knative"
-- "knimages"
-- "knimage"
-- "knimg"
+  - "image.caching.internal.knative.dev"
+  - "images.knative"
+  - "image.knative"
+  - "knimages"
+  - "knimage"
+  - "knimg"
 listview:
   name: "Images"
   group: "Knative"
@@ -26,26 +26,26 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         path: "spec#image"

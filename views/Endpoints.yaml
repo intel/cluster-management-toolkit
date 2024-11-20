@@ -2,7 +2,7 @@
 kind: "Endpoints"
 default_command: "endpoints"
 command:
-- "ep"
+  - "ep"
 listview:
   name: "Endpoints"
   group: "Core"
@@ -11,7 +11,8 @@ listview:
       fields: ["namespace", "name", "ports", "endpoints", "age"]
       sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "ports_compact", "endpoints_ellipsise", "age"]
+      fields: ["namespace", "name", "ports_compact",
+               "endpoints_ellipsise", "age"]
       sortcolumn: "namespace"
   fields:
     # Map ready & non-ready endpoints to ok, not ok;
@@ -31,38 +32,38 @@ listview:
     ports:
       header: "Ports:"
       paths:
-      - path: "subsets#ports"
-        pathtype: "items"
-        subpaths:
-        - "name"
-        - "port"
-        - "protocol"
-        type: "raw"
+        - path: "subsets#ports"
+          pathtype: "items"
+          subpaths:
+            - "name"
+            - "port"
+            - "protocol"
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "service"
-        - type: "port"
-        - type: "protocol"
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
         field_separators:
-        - type: "port"
-        - type: "service"
+          - type: "port"
+          - type: "service"
     ports_compact:
       header: "Ports:"
       paths:
-      - path: "subsets#ports"
-        pathtype: "items"
-        subpaths:
-        - "port"
-        - "protocol"
-        type: "raw"
+        - path: "subsets#ports"
+          pathtype: "items"
+          subpaths:
+            - "port"
+            - "protocol"
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "port"
-        - type: "protocol"
+          - type: "port"
+          - type: "protocol"
         field_separators:
-        - type: "service"
+          - type: "service"
         ellipsise: 3
   actions:
     actionlist:
@@ -91,22 +92,22 @@ infoview:
       ports:
         header: "Ports:"
         paths:
-        - path: "ports"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - "port"
-          - "protocol"
-          type: "raw"
+          - path: "ports"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - "port"
+              - "protocol"
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "service"
-          - type: "port"
-          - type: "protocol"
+            - type: "service"
+            - type: "port"
+            - type: "protocol"
           field_separators:
-          - type: "port"
-          - type: "service"
+            - type: "port"
+            - type: "service"
       status:
         header: "Status:"
         path: "status"
@@ -117,9 +118,9 @@ infoview:
             mappings:
               "Ready":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Not Ready":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"

@@ -2,34 +2,36 @@
 kind: "Service"
 default_command: "services"
 command:
-- "svcs"
-- "svc"
+  - "svcs"
+  - "svc"
 listview:
   name: "Services"
   group: "Core"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "svc_type", "cluster_ips", "external_ips", "ports_svc", "age"]
+      fields: ["namespace", "name", "svc_type", "cluster_ips",
+               "external_ips", "ports_svc", "age"]
       sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "svc_type", "cluster_ips", "external_ips", "ports_svc_compact", "age"]
+      fields: ["namespace", "name", "svc_type", "cluster_ips",
+               "external_ips", "ports_svc_compact", "age"]
       sortcolumn: "namespace"
   fields:
     cluster_ips:
       header: "Cluster-IPs:"
       paths:
-      - path: ["spec#clusterIPs", "spec#clusterIP"]
-        pathtype: "list"
-        default: "<none>"
-        none_str_as_none: true
+        - path: ["spec#clusterIPs", "spec#clusterIP"]
+          pathtype: "list"
+          default: "<none>"
+          none_str_as_none: true
       formatter: "address"
     external_ips:
       header: "External-IPs:"
       paths:
-      - path: "spec#externalIPs"
-        pathtype: "list"
-        default: "<none>"
-        none_str_as_none: true
+        - path: "spec#externalIPs"
+          pathtype: "list"
+          default: "<none>"
+          none_str_as_none: true
       formatter: "address"
     svc_type:
       header: "Type:"
@@ -38,38 +40,38 @@ listview:
     ports_svc:
       header: "Ports:"
       paths:
-      - path: "spec#ports"
-        pathtype: "items"
-        subpaths:
-        - "name"
-        - "port"
-        - "protocol"
-        type: "raw"
+        - path: "spec#ports"
+          pathtype: "items"
+          subpaths:
+            - "name"
+            - "port"
+            - "protocol"
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "service"
-        - type: "port"
-        - type: "protocol"
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
         field_separators:
-        - type: "port"
-        - type: "service"
+          - type: "port"
+          - type: "service"
     ports_svc_compact:
       header: "Ports:"
       paths:
-      - path: "spec#ports"
-        pathtype: "items"
-        subpaths:
-        - "port"
-        - "protocol"
-        type: "raw"
+        - path: "spec#ports"
+          pathtype: "items"
+          subpaths:
+            - "port"
+            - "protocol"
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "port"
-        - type: "protocol"
+          - type: "port"
+          - type: "protocol"
         field_separators:
-        - type: "service"
+          - type: "service"
         ellipsise: 3
   actions:
     actionlist:
@@ -83,66 +85,77 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "external_name", "selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity_header", "session_affinity", "session_affinity_timeout"]
+        fields: ["controller", "external_name", "selector", "endpoints",
+                 "endpoint_slices", "type", "cluster_ips",
+                 "internal_traffic_policy", "ip_families",
+                 "ip_family_policy", "external_ips", "ports",
+                 "topology_keys", "session_affinity_header",
+                 "session_affinity", "session_affinity_timeout"]
     rows:
       cluster_ips:
         header: [["Cluster IPs:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#clusterIPs", "spec#clusterIP"]
-          pathtype: "list"
-          default: "<none>"
-          none_str_as_none: true
+          - path: ["spec#clusterIPs", "spec#clusterIP"]
+            pathtype: "list"
+            default: "<none>"
+            none_str_as_none: true
         formatter: "address"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       endpoints:
-        header: [["E", ["main", "infoheader_shortcut"]], ["ndpoints:", ["main", "infoheader"]]]
+        header: [["E", ["main", "infoheader_shortcut"]],
+                 ["ndpoints:", ["main", "infoheader"]]]
         paths:
-        - path: [["metadata#namespace"], ["metadata#name"]]
-          pathtype: "tuple"
+          - path: [["metadata#namespace"], ["metadata#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       endpoint_slices:
-        header: [["Endpoint ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["lices:", ["main", "infoheader"]]]
+        header: [["Endpoint ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["lices:", ["main", "infoheader"]]]
         paths:
-        - path: ["EndpointSlice", "discovery.k8s.io", ["metadata#namespace"], "", [["kubernetes.io/service-name=", ["metadata#name"]]]]
-          pathtype: "lookup"
-          subpaths:
-          - "metadata#namespace"
-          - "metadata#name"
+          - path: ["EndpointSlice", "discovery.k8s.io",
+                   ["metadata#namespace"], "",
+                   [["kubernetes.io/service-name=", ["metadata#name"]]]]
+            pathtype: "lookup"
+            subpaths:
+              - "metadata#namespace"
+              - "metadata#name"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       external_ips:
         header: [["External IPs:", ["main", "infoheader"]]]
         path: "spec#externalIPs"
@@ -168,37 +181,38 @@ infoview:
         path: "spec#ipFamilyPolicy"
         type: "str"
       ports:
-        header: [["P", ["main", "infoheader_shortcut"]], ["orts:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["orts:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#ports"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - "port"
-          - "protocol"
-          type: "raw"
+          - path: "spec#ports"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - "port"
+              - "protocol"
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "service"
-          - type: "port"
-          - type: "protocol"
+            - type: "service"
+            - type: "port"
+            - type: "protocol"
           field_separators:
-          - type: "port"
-          - type: "service"
+            - type: "port"
+            - type: "service"
       selector:
         header: [["Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       session_affinity:
         header: [["  Affinity:", ["main", "infoheader"]]]
         path: "spec#sessionAffinity"
@@ -208,26 +222,26 @@ infoview:
       session_affinity_timeout:
         header: [["  Timeout (Seconds):", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#sessionAffinityConfig#clientIP#timeoutSeconds"], "s"]
-          pathtype: "tuple"
-          when:
-          - key: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
-            notnone: true
-        - path: ["<none>", ""]
-          pathtype: "tuple"
-          when:
-          - key: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
-            none: true
-          type: "raw"
+          - path: [["spec#sessionAffinityConfig#clientIP#timeoutSeconds"], "s"]
+            pathtype: "tuple"
+            when:
+              - key: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
+                notnone: true
+          - path: ["<none>", ""]
+            pathtype: "tuple"
+            when:
+              - key: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
+                none: true
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "unit"
+            - type: "numerical"
+            - type: "unit"
           list_separators:
-          - type: "no_pad"
+            - type: "no_pad"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
       topology_keys:
         header: [["Topology Keys:", ["main", "infoheader"]]]
         path: "spec#topologyKeys"
@@ -239,12 +253,12 @@ infoview:
             mappings:
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               __default:
                 field_colors:
-                - context: "types"
-                  type: "generic"
+                  - context: "types"
+                    type: "generic"
       type:
         header: [["Type:", ["main", "infoheader"]]]
         path: "spec#type"
@@ -261,45 +275,49 @@ infoview:
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -310,7 +328,7 @@ infoview:
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
@@ -320,14 +338,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:

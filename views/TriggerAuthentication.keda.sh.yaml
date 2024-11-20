@@ -3,23 +3,24 @@ kind: "TriggerAuthentication"
 api_family: "keda.sh"
 default_command: "triggerauthentications"
 command:
-- "ta"
-- "triggerauth"
+  - "ta"
+  - "triggerauth"
 listview:
   name: "Trigger Authentications"
   group: "Scheduling & Scaling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "pod_identity_provider", "secret", "environment", "vault_address", "age"]
+      fields: ["namespace", "name", "pod_identity_provider",
+               "secret", "environment", "vault_address", "age"]
       sortcolumn: "namespace"
   fields:
     environment:
       header: "Environment:"
       paths:
-      - path: "spec#env"
-        pathtype: "items"
-        subpaths:
-        - "name"
+        - path: "spec#env"
+          pathtype: "items"
+          subpaths:
+            - "name"
       formatter: "list"
     pod_identity_provider:
       header: "Pod Identity:"
@@ -28,10 +29,10 @@ listview:
     secret:
       header: "Secret:"
       paths:
-      - path: "spec#secretTargetRef"
-        pathtype: "items"
-        subpaths:
-        - "name"
+        - path: "spec#secretTargetRef"
+          pathtype: "items"
+          subpaths:
+            - "name"
       formatter: "list"
     vault_address:
       header: "Vault Address:"
@@ -39,7 +40,7 @@ listview:
       type: "str"
 infoview:
   name: "Trigger Authentications Info"
-  infopad:
+  infopad: null
   listpad:
     on_activation:
       call: "resourceinfodispatch_with_lookup"
@@ -68,7 +69,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       name:
         header: "Name:"
         path: "name"

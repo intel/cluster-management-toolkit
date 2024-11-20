@@ -3,10 +3,10 @@ kind: "ServiceCA"
 api_family: "operator.openshift.io"
 default_command: "servicecas.operator.openshift.io"
 command:
-- "servicecas.operator"
-- "serviceca.operator"
-- "servicecas"
-- "serviceca"
+  - "servicecas.operator"
+  - "serviceca.operator"
+  - "servicecas"
+  - "serviceca"
 listview:
   name: "Service CAs"
   group: "OpenShift"
@@ -21,24 +21,28 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Service CA Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "ready_replicas", "version"]
+        fields: ["cluster_version", "loglevel",
+                 "operator_loglevel", "management_state",
+                 "ready_replicas", "version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       loglevel:
         header: [["Loglevel:", ["main", "infoheader"]]]
@@ -58,7 +62,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
@@ -66,7 +70,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Cluster Version":
       key: "v"
@@ -92,10 +96,10 @@ infoview:
       itemgetter_args:
         path: "status#generations"
         fields:
-        - "resource"
-        - "group"
-        - "namespace"
-        - "name"
+          - "resource"
+          - "group"
+          - "namespace"
+          - "name"
       # Not supported for now
       sortcolumn: "resource"
       action: "call"

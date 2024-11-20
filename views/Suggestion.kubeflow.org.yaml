@@ -14,7 +14,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "algorithm", "resume_policy", "requests", "suggestions"]
+        fields: ["controller", "algorithm", "resume_policy",
+                 "requests", "suggestions"]
     rows:
       algorithm:
         header: [["Algorithm:", ["main", "infoheader"]]]
@@ -22,28 +23,29 @@ infoview:
         default: "<unset>"
         type: "str"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       requests:
         header: [["Requests:", ["main", "infoheader"]]]
         path: "spec#requests"
@@ -51,7 +53,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       resume_policy:
         header: [["Resume Policy:", ["main", "infoheader"]]]
         path: "spec#resumePolicy"
@@ -64,7 +66,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -82,16 +84,16 @@ infoview:
       parameters:
         header: "Parameters:"
         paths:
-        - path: "parameterAssignments"
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: "parameterAssignments"
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   shortcuts:
     "Open controller":
       key: "c"

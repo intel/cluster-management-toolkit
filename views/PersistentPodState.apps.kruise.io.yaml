@@ -10,7 +10,7 @@ listview:
       fields: ["namespace", "name", "age"]
 infoview:
   name: "Persistent Pod State Info"
-  infopad:
+  infopad: null
   listpad:
     listgetter: "listgetter_dict_list"
     listgetter_args:
@@ -31,16 +31,16 @@ infoview:
       topology_labels:
         header: "Topology Labels:"
         paths:
-        - path: ["value#nodeTopologyLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["value#nodeTopologyLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   shortcuts:
     "Open target reference":
       key: "r"

@@ -12,14 +12,14 @@ listview:
     collected:
       header: "Collected:"
       paths:
-      - path: [["status#collectedNodes"], ["status#desiredNodes"]]
-        pathtype: "tuple"
-        default: ["0", "0"]
+        - path: [["status#collectedNodes"], ["status#desiredNodes"]]
+          pathtype: "tuple"
+          default: ["0", "0"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
       align: "right"
   actions:
     actionlist:
@@ -33,22 +33,30 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["nodes_header", "nodes_names", "nodes_match_label_selector", "external_nodes_header", "external_nodes_names", "external_nodes_namespace", "external_nodes_match_label_selector", "file_server", "authentication_header", "authentication_secret", "authentication_type", "expiration", "since"]
+        fields: ["nodes_header", "nodes_names",
+                 "nodes_match_label_selector", "external_nodes_header",
+                 "external_nodes_names", "external_nodes_namespace",
+                 "external_nodes_match_label_selector", "file_server",
+                 "authentication_header", "authentication_secret",
+                 "authentication_type", "expiration", "since"]
     rows:
       authentication_header:
         header: [["Authentication:", ["main", "infoheader"]]]
       authentication_secret:
-        header: [["  ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ecret:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#authentication#authSecret#namespace"], ["spec#authentication#authSecret#name"]]
-          pathtype: "tuple"
+          - path: [["spec#authentication#authSecret#namespace"],
+                   ["spec#authentication#authSecret#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       authentication_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#authentication#authType"
@@ -56,22 +64,22 @@ infoview:
       collected:
         header: [["Collected:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#collectedNodes"], ["status#desiredNodes"]]
-          pathtype: "tuple"
-          default: ["0", "0"]
+          - path: [["status#collectedNodes"], ["status#desiredNodes"]]
+            pathtype: "tuple"
+            default: ["0", "0"]
         formatter: "list"
       expiration:
         header: [["Expiration Time:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#expirationMinutes"], "m"]
-          pathtype: "tuple"
+          - path: [["spec#expirationMinutes"], "m"]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "unit"
+            - type: "numerical"
+            - type: "unit"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
       file_server:
         header: [["File Server:", ["main", "infoheader"]]]
         path: "spec#fileServer#url"
@@ -81,18 +89,20 @@ infoview:
       external_nodes_match_label_selector:
         header: [["  Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#externalNodes#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#externalNodes#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       external_nodes_names:
-        header: [["  N", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["de Names:", ["main", "infoheader"]]]
+        header: [["  N", ["main", "infoheader"]],
+                 ["o", ["main", "infoheader_shortcut"]],
+                 ["de Names:", ["main", "infoheader"]]]
         path: "spec#externalNodes#nodeNames"
         default: ["<unset>"]
         type: "raw"
@@ -104,24 +114,26 @@ infoview:
         default: "<unset>"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       nodes_header:
         header: [["Nodes:", ["main", "infoheader"]]]
       nodes_match_label_selector:
         header: [["  Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#externalNodes#nodeSelector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#externalNodes#nodeSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       nodes_names:
-        header: [["  No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Names:", ["main", "infoheader"]]]
+        header: [["  No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Names:", ["main", "infoheader"]]]
         path: "spec#nodes#nodeNames"
         default: ["<unset>"]
         type: "raw"

@@ -3,8 +3,8 @@ kind: "Node"
 api_family: "longhorn.io"
 default_command: "nodes.longhorn.io"
 command:
-- "lhnodes"
-- "lhnode"
+  - "lhnodes"
+  - "lhnode"
 listview:
   name: "Nodes"
   group: "Storage & Backups"
@@ -19,22 +19,22 @@ listview:
     message:
       header: "Message:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -42,21 +42,21 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     schedulable:
       header: "Schedulable:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Schedulable"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Schedulable"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -64,12 +64,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -101,22 +101,22 @@ infoview:
       message:
         header: [["Message:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "message"
-          when:
-          - key: "type"
-            eq: "Ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "message"
+            when:
+              - key: "type"
+                eq: "Ready"
         type: "str"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -124,12 +124,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       region:
         header: [["Region:", ["main", "infoheader"]]]
         path: "status#region"
@@ -139,12 +139,12 @@ infoview:
       schedulable:
         header: [["Schedulable:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Schedulable"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Schedulable"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -152,12 +152,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       zone:
         header: [["Zone:", ["main", "infoheader"]]]
         path: "status#zone"

@@ -3,8 +3,8 @@ kind: "Machine"
 api_family: "machine.openshift.io"
 default_command: "machines.machine.openshift.io"
 command:
-- "os-machines"
-- "os-machine"
+  - "os-machines"
+  - "os-machine"
 listview:
   name: "Machines"
   group: "OpenShift"
@@ -23,24 +23,24 @@ listview:
           mappings:
             Deleting:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Provisioned:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Provisioning:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     provider_id:
       header: "Provider ID:"
       path: "spec#providerID"
@@ -48,21 +48,21 @@ listview:
     taints:
       header: "Taints:"
       paths:
-      - path: "spec#taints"
-        pathtype: "items"
-        subpaths:
-        - "key"
-        - "value"
-        - "effect"
+        - path: "spec#taints"
+          pathtype: "items"
+          subpaths:
+            - "key"
+            - "value"
+            - "effect"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "key"
-        - type: "value"
-        - type: "generic"
+          - type: "key"
+          - type: "value"
+          - type: "generic"
         field_separators:
-        - type: "keyvalue"
-        - type: "field"
+          - type: "keyvalue"
+          - type: "field"
 infoview:
   name: "Machine Info"
   infopad:
@@ -76,7 +76,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "hostname"
+            - type: "hostname"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -87,24 +87,24 @@ infoview:
             mappings:
               Deleting:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Failed:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Provisioned:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Provisioning:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       provider_id:
         header: [["Provider ID:", ["main", "infoheader"]]]
         path: "spec#providerID"
@@ -112,21 +112,21 @@ infoview:
       taints:
         header: [["Taints:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#taints"
-          pathtype: "items"
-          subpaths:
-          - "key"
-          - "value"
-          - "effect"
+          - path: "spec#taints"
+            pathtype: "items"
+            subpaths:
+              - "key"
+              - "value"
+              - "effect"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
-          - type: "generic"
+            - type: "key"
+            - type: "value"
+            - type: "generic"
           field_separators:
-          - type: "keyvalue"
-          - type: "field"
+            - type: "keyvalue"
+            - type: "field"
   shortcuts:
     "Addresses":
       key: "a"
@@ -140,8 +140,8 @@ infoview:
       itemgetter_args:
         path: "status#addresses"
         fields:
-        - "address"
-        - "type"
+          - "address"
+          - "type"
       # Not supported for now
       sortcolumn: "type"
     "Node":

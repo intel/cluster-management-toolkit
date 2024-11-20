@@ -3,8 +3,8 @@ kind: "ResourceClass"
 api_family: "resource.k8s.io"
 default_command: "resourceclasses"
 command:
-- "resclasses"
-- "resclass"
+  - "resclasses"
+  - "resclass"
 listview:
   name: "Resource Classes"
   group: "Dynamic Resource Allocation"
@@ -28,20 +28,23 @@ infoview:
         path: "driverName"
         type: "str"
       param_ref:
-        header: [["P", ["main", "infoheader_shortcut"]], ["arameter Reference:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arameter Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["parametersRef#kind"], ["parametersRef#apiGroup"], ["parametersRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["parametersRef#kind"],
+                   ["parametersRef#apiGroup"],
+                   ["parametersRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   shortcuts:
     "Show Resource Parameters":
       key: "p"

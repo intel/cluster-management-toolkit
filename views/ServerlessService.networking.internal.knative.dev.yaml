@@ -3,14 +3,14 @@ kind: "ServerlessService"
 api_family: "networking.internal.knative.dev"
 default_command: "serverlessservices.networking.internal.knative.dev"
 command:
-- "serverlessservices.knative"
-- "serverlessservice.knative"
-- "serverlesssvcs.knative"
-- "serverlesssvc.knative"
-- "srvlsvcs.knative"
-- "srvlsvc.knative"
-- "knserverlesssvcs"
-- "knserverlesssvc"
+  - "serverlessservices.knative"
+  - "serverlessservice.knative"
+  - "serverlesssvcs.knative"
+  - "serverlesssvc.knative"
+  - "srvlsvcs.knative"
+  - "srvlsvc.knative"
+  - "knserverlesssvcs"
+  - "knserverlesssvc"
 listview:
   name: "Serverless Services"
   group: "Knative"
@@ -22,12 +22,12 @@ listview:
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -35,21 +35,21 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     reason:
       header: "Reason:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -57,42 +57,45 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Serverless Service Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "object_ref", "service", "private_service", "protocol_type", "mode", "number_of_activators"]
+        fields: ["controller", "object_ref", "service",
+                 "private_service", "protocol_type", "mode",
+                 "number_of_activators"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       mode:
         header: [["Mode:", ["main", "infoheader"]]]
         path: "spec#mode"
@@ -103,24 +106,28 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       object_ref:
-        header: [["O", ["main", "infoheader_shortcut"]], ["bject Reference:", ["main", "infoheader"]]]
+        header: [["O", ["main", "infoheader_shortcut"]],
+                 ["bject Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#objectRef#kind"], ["spec#objectRef#apiVersion"], ["spec#objectRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#objectRef#kind"],
+                   ["spec#objectRef#apiVersion"],
+                   ["spec#objectRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       private_service:
-        header: [["P", ["main", "infoheader_shortcut"]], ["rivate Service:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["rivate Service:", ["main", "infoheader"]]]
         path: "status#privateServiceName"
         type: "str"
       protocol_type:
@@ -128,7 +135,8 @@ infoview:
         path: "spec#protocolType"
         type: "str"
       service:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ervice:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice:", ["main", "infoheader"]]]
         path: "status#serviceName"
         type: "str"
   shortcuts:

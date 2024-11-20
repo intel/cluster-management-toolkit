@@ -3,11 +3,11 @@ kind: "OAuthClient"
 api_family: "oauth.openshift.io"
 default_command: "oauthclients.oauth.openshift.io"
 command:
-- "oauthclient.oauth.openshift.io"
-- "oauthclients.openshift"
-- "oauthclient.openshift"
-- "osoauthclients"
-- "osoauthclient"
+  - "oauthclient.oauth.openshift.io"
+  - "oauthclients.openshift"
+  - "oauthclient.openshift"
+  - "osoauthclients"
+  - "osoauthclient"
 listview:
   name: "OAuth Clients"
   group: "OpenShift"
@@ -33,7 +33,7 @@ listview:
       default: "<default>"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     www_challenge:
       header: "WWW Challenge:"
@@ -50,13 +50,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       secret:
         header: [["Secret:", ["main", "infoheader"]]]
@@ -69,7 +69,7 @@ infoview:
         default: "<default>"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       www_challenge:
         header: [["Respond with Challenge:", ["main", "infoheader"]]]

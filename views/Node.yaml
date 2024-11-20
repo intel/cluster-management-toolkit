@@ -2,7 +2,7 @@
 kind: "Node"
 default_command: "nodes"
 command:
-- "no"
+  - "no"
 listview:
   name: "Nodes"
   group: "Core"
@@ -19,27 +19,27 @@ listview:
     cpu:
       header: "CPUs:"
       paths:
-      - path: "status#allocatable#cpu"
-        type: "cpu_usage_round"
-      - path: "status#capacity#cpu"
-        type: "cpu_usage_round"
+        - path: "status#allocatable#cpu"
+          type: "cpu_usage_round"
+        - path: "status#capacity#cpu"
+          type: "cpu_usage_round"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
         item_separator:
           type: "fraction"
       align: "right"
     internal_ips:
       header: "Internal-IPs:"
       paths:
-      - path: "status#addresses"
-        pathtype: "items"
-        subpath: "address"
-        when:
-        - key: "type"
-          eq: "InternalIP"
-        default: ["<unset>"]
+        - path: "status#addresses"
+          pathtype: "items"
+          subpath: "address"
+          when:
+            - key: "type"
+              eq: "InternalIP"
+          default: ["<unset>"]
       formatter: "list"
       formatting:
         ellipsise: 3
@@ -49,14 +49,14 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
     kubelet_version:
       header: "Version:"
       path: "status#nodeInfo#kubeletVersion"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
     os:
       header: "OS-Image:"
       path: "status#nodeInfo#osImage"
@@ -64,30 +64,30 @@ listview:
     roles:
       header: "Roles:"
       paths:
-      - path: ["metadata#labels"]
-        pathtype: "key_value"
-        when:
-        - key_startswith: "node-role.kubernetes.io"
-        key:
-          transform:
-            "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
-          regex: ["^[^/]*/(.*)"]
-        value:
-          transform:
-            "true": ""
+        - path: ["metadata#labels"]
+          pathtype: "key_value"
+          when:
+            - key_startswith: "node-role.kubernetes.io"
+          key:
+            transform:
+              "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
+            regex: ["^[^/]*/(.*)"]
+          value:
+            transform:
+              "true": ""
       formatter: "list"
     status:
       header: "Status:"
       paths:
-      - path: "status#conditions"
-        pathtype: "substitution"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
-        - key: "status"
-          eq: "True"
-        substitute: "Ready"
+        - path: "status#conditions"
+          pathtype: "substitution"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
+            - key: "status"
+              eq: "True"
+          substitute: "Ready"
       default: "Not Ready"
       formatter: "value_mapper"
       formatting:
@@ -95,44 +95,44 @@ listview:
           mappings:
             Ready:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Not Ready:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     taints:
       header: "Taints:"
       paths:
-      - path: ["spec#taints"]
-        pathtype: "items"
-        subpaths:
-        - subpath: "key"
-          transform:
-            "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
-          regex: ["^[^/]*/(.*)", "(.*)"]
-        - "effect"
+        - path: ["spec#taints"]
+          pathtype: "items"
+          subpaths:
+            - subpath: "key"
+              transform:
+                "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
+              regex: ["^[^/]*/(.*)", "(.*)"]
+            - "effect"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "key"
-        - type: "value"
+          - type: "key"
+          - type: "value"
         field_separators:
-        - type: "keyvalue_taint"
+          - type: "keyvalue_taint"
         mapping:
           mappings:
             NoSchedule:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             PreferNoSchedule:
               field_colors:
-              - context: "main"
-                type: "status_warning"
+                - context: "main"
+                  type: "status_warning"
             NoExecute:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
   actions:
     actionlist:
       "Cordon node":
@@ -181,7 +181,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       architecture:
         header: [["Architecture:", ["main", "infoheader"]]]
         path: "status#nodeInfo#architecture"
@@ -189,38 +189,38 @@ infoview:
       csi_node:
         header: [["C", ["main", "infoheader_shortcut"]], ["SI Node:", ["main", "infoheader"]]]
         paths:
-        - path: ["CSINode", "storage.k8s.io", "", ["metadata#name"], ""]
-          pathtype: "lookup"
-          subpaths:
-          - "metadata#name"
-          default: "<unset>"
+          - path: ["CSINode", "storage.k8s.io", "", ["metadata#name"], ""]
+            pathtype: "lookup"
+            subpaths:
+              - "metadata#name"
+            default: "<unset>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
+            - type: "generic"
       external_ips:
         header: [["External-IPs:", ["main", "infoheader"]]]
         paths:
-        - path: "status#addresses"
-          pathtype: "items"
-          subpaths:
-          - "address"
-          when:
-          - key: "type"
-            eq: "ExternalIP"
-          default: ["<none>"]
+          - path: "status#addresses"
+            pathtype: "items"
+            subpaths:
+              - "address"
+            when:
+              - key: "type"
+                eq: "ExternalIP"
+            default: ["<none>"]
         formatter: "address"
       internal_ips:
         header: [["Internal-IPs:", ["main", "infoheader"]]]
         paths:
-        - path: "status#addresses"
-          pathtype: "items"
-          subpaths:
-          - "address"
-          when:
-          - key: "type"
-            eq: "InternalIP"
-          default: ["<unset>"]
+          - path: "status#addresses"
+            pathtype: "items"
+            subpaths:
+              - "address"
+            when:
+              - key: "type"
+                eq: "InternalIP"
+            default: ["<unset>"]
         formatter: "address"
       kernel_version:
         header: [["Kernel Version:", ["main", "infoheader"]]]
@@ -228,104 +228,104 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       kubelet_endpoint:
         header: [["kubelet Endpoint:", ["main", "infoheader"]]]
         path: "status#daemonEndpoints#kubeletEndpoint#Port"
         type: "raw"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       kubelet_version:
         header: [["kubelet Version:", ["main", "infoheader"]]]
         path: "status#nodeInfo#kubeletVersion"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       kube_proxy_version:
         header: [["kube-proxy Version:", ["main", "infoheader"]]]
         path: "status#nodeInfo#kubeProxyVersion"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       pod_cidrs:
         header: [["Pod CIDRs:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#podCIDRs", "spec#podCIDR"]
-          default: "<none>"
+          - path: ["spec#podCIDRs", "spec#podCIDR"]
+            default: "<none>"
         formatter: "address"
       status:
         header: [["Status:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "substitution"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
-          - key: "status"
-            eq: "True"
-          substitute: "Ready"
-          else: ""
-          default: null
-        - path: "status#conditions"
-          pathtype: "substitution"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
-          - key: "status"
-            eq: "False"
-          substitute: "NotReady"
-          else: ""
-          default: null
-        - path: "status#conditions"
-          pathtype: "substitution"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
-          - key: "status"
-            eq: "Unknown"
-          substitute: "Unreachable"
-          else: ""
-          default: null
+          - path: "status#conditions"
+            pathtype: "substitution"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
+              - key: "status"
+                eq: "True"
+            substitute: "Ready"
+            else: ""
+            default: null
+          - path: "status#conditions"
+            pathtype: "substitution"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
+              - key: "status"
+                eq: "False"
+            substitute: "NotReady"
+            else: ""
+            default: null
+          - path: "status#conditions"
+            pathtype: "substitution"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
+              - key: "status"
+                eq: "Unknown"
+            substitute: "Unreachable"
+            else: ""
+            default: null
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "NotReady":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Ready":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Unreachable":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       taints:
         header: [["Taints:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#taints"
-          pathtype: "items"
-          subpaths:
-          - "key"
-          - "value"
-          - "effect"
+          - path: "spec#taints"
+            pathtype: "items"
+            subpaths:
+              - "key"
+              - "value"
+              - "effect"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
-          - type: "generic"
+            - type: "key"
+            - type: "value"
+            - type: "generic"
           field_separators:
-          - type: "keyvalue"
-          - type: "keyvalue_taint"
+            - type: "keyvalue"
+            - type: "keyvalue_taint"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -347,33 +347,33 @@ infoview:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -386,14 +386,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:

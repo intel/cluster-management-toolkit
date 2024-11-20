@@ -3,8 +3,8 @@ kind: "Prometheus"
 api_family: "monitoring.coreos.com"
 default_command: "prometheuses"
 command:
-- "proms"
-- "prom"
+  - "proms"
+  - "prom"
 listview:
   name: "Prometheuses"
   group: "Monitoring"
@@ -24,42 +24,42 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Prometheus Info"
   infopad:
     row_indexes:
       Normal:
         fields:
-        - "image"
-        - "admin_api"
-        - "external_url"
-        - "listen_local"
-        - "log_format"
-        - "loglevel"
-        - "retention"
-        - "port_name"
-        - "route_prefix"
-        - "node_selector"
-        - "probe_selector_label"
-        - "probe_selector_set_based"
-        - "probe_namespace_selector_label"
-        - "probe_namespace_selector_set_based"
-        - "pod_monitor_selector_label"
-        - "pod_monitor_selector_set_based"
-        - "pod_monitor_namespace_selector_label"
-        - "pod_monitor_namespace_selector_set_based"
-        - "rule_selector_label"
-        - "rule_selector_set_based"
-        - "rule_namespace_selector_label"
-        - "rule_namespace_selector_set_based"
-        - "service_monitor_selector_label"
-        - "service_monitor_selector_set_based"
-        - "service_monitor_namespace_selector_label"
-        - "service_monitor_namespace_selector_set_based"
-        - "paused"
-        - "replicas"
-        - "service_account"
+          - "image"
+          - "admin_api"
+          - "external_url"
+          - "listen_local"
+          - "log_format"
+          - "loglevel"
+          - "retention"
+          - "port_name"
+          - "route_prefix"
+          - "node_selector"
+          - "probe_selector_label"
+          - "probe_selector_set_based"
+          - "probe_namespace_selector_label"
+          - "probe_namespace_selector_set_based"
+          - "pod_monitor_selector_label"
+          - "pod_monitor_selector_set_based"
+          - "pod_monitor_namespace_selector_label"
+          - "pod_monitor_namespace_selector_set_based"
+          - "rule_selector_label"
+          - "rule_selector_set_based"
+          - "rule_namespace_selector_label"
+          - "rule_namespace_selector_set_based"
+          - "service_monitor_selector_label"
+          - "service_monitor_selector_set_based"
+          - "service_monitor_namespace_selector_label"
+          - "service_monitor_namespace_selector_set_based"
+          - "paused"
+          - "replicas"
+          - "service_account"
     rows:
       admin_api:
         header: [["Admin API:", ["main", "infoheader"]]]
@@ -85,16 +85,16 @@ infoview:
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       listen_local:
         header: [["Listen Local:", ["main", "infoheader"]]]
         path: "spec#listenLocal"
@@ -110,127 +110,130 @@ infoview:
       node_selector:
         header: [["Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#nodeSelector"]
-          pathtype: "key_value"
+          - path: ["spec#nodeSelector"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       paused:
         header: [["Paused:", ["main", "infoheader"]]]
         path: "spec#paused"
         type: "bool"
       pod_monitor_namespace_selector_set_based:
-        header: [["Pod Monitor Namespace Set-based Selector:", ["main", "infoheader"]]]
+        header: [["Pod Monitor Namespace Set-based Selector:",
+                  ["main", "infoheader"]]]
         paths:
-        - path: ["spec#podMonitorNamespaceSelector#matchExpressions"]
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: ["spec#podMonitorNamespaceSelector#matchExpressions"]
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       pod_monitor_namespace_selector_label:
-        header: [["Pod Monitor Namespace Label Selector:", ["main", "infoheader"]]]
+        header: [["Pod Monitor Namespace Label Selector:",
+                  ["main", "infoheader"]]]
         paths:
-        - path: ["spec#podMonitorNamespaceSelector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#podMonitorNamespaceSelector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       pod_monitor_selector_set_based:
         header: [["Pod Monitor Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#podMonitorSelector#matchExpressions"]
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: ["spec#podMonitorSelector#matchExpressions"]
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       pod_monitor_selector_label:
         header: [["Pod Monitor Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#podMonitorSelector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#podMonitorSelector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       probe_namespace_selector_set_based:
-        header: [["Probe Namespace Set-based Selector:", ["main", "infoheader"]]]
+        header: [["Probe Namespace Set-based Selector:",
+                  ["main", "infoheader"]]]
         paths:
-        - path: ["spec#probeNamespaceSelector#matchExpressions"]
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: ["spec#probeNamespaceSelector#matchExpressions"]
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       probe_namespace_selector_label:
         header: [["Probe Namespace Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#probeNamespaceSelector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#probeNamespaceSelector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       probe_selector_set_based:
         header: [["Probe Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#probeSelector#matchExpressions"]
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: ["spec#probeSelector#matchExpressions"]
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       probe_selector_label:
         header: [["Probe Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#probeSelector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#probeSelector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       port_name:
         header: [["Port Name:", ["main", "infoheader"]]]
         path: "spec#portName"
@@ -241,7 +244,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       retention:
         header: [["Retention:", ["main", "infoheader"]]]
         path: "spec#retention"
@@ -254,115 +257,119 @@ infoview:
       rule_namespace_selector_set_based:
         header: [["Rule Namespace Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#ruleNamespaceSelector#matchExpressions"]
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: ["spec#ruleNamespaceSelector#matchExpressions"]
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       rule_namespace_selector_label:
         header: [["rule Namespace Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#ruleNamespaceSelector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#ruleNamespaceSelector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       rule_selector_set_based:
         header: [["Rule Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#ruleSelector#matchExpressions"]
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: ["spec#ruleSelector#matchExpressions"]
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       rule_selector_label:
         header: [["Rule Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#ruleSelector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#ruleSelector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       service_account:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccountName"
         type: "str"
       service_monitor_namespace_selector_set_based:
-        header: [["Service Monitor Namespace Set-based Selector:", ["main", "infoheader"]]]
+        header: [["Service Monitor Namespace Set-based Selector:",
+                  ["main", "infoheader"]]]
         paths:
-        - path: ["spec#serviceMonitorNamespaceSelector#matchExpressions"]
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: ["spec#serviceMonitorNamespaceSelector#matchExpressions"]
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       service_monitor_namespace_selector_label:
-        header: [["Service Monitor Namespace Label Selector:", ["main", "infoheader"]]]
+        header: [["Service Monitor Namespace Label Selector:",
+                  ["main", "infoheader"]]]
         paths:
-        - path: ["spec#serviceMonitorNamespaceSelector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#serviceMonitorNamespaceSelector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       service_monitor_selector_set_based:
-        header: [["Service Monitor Set-based Selector:", ["main", "infoheader"]]]
+        header: [["Service Monitor Set-based Selector:",
+                  ["main", "infoheader"]]]
         paths:
-        - path: ["spec#serviceMonitorSelector#matchExpressions"]
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: ["spec#serviceMonitorSelector#matchExpressions"]
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       service_monitor_selector_label:
         header: [["Service Monitor Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#serviceMonitorSelector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#serviceMonitorSelector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   shortcuts:
     "Service Account":
       key: "s"
@@ -388,10 +395,10 @@ infoview:
       itemgetter_args:
         path: "spec#alerting#alertmanagers"
         fields:
-        - "namespace"
-        - "name"
-        - "port"
-        - "pathPrefix"
+          - "namespace"
+          - "name"
+          - "port"
+          - "pathPrefix"
       headers: ["Namespace:", "Name:", "Port:", "Path prefix:"]
       # Not supported for now
       sortcolumn: "namespace"
@@ -421,7 +428,7 @@ infoview:
       itemgetter_args:
         path: "spec#containers"
         fields:
-        - "name"
+          - "name"
         pass_ref: true
       action: "call"
       action_call: "view_yaml"

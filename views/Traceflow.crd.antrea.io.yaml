@@ -3,7 +3,7 @@ kind: "Traceflow"
 api_family: "crd.antrea.io"
 default_command: "traceflows"
 command:
-- "tf"
+  - "tf"
 listview:
   name: "Traceflows"
   group: "Antrea"
@@ -14,17 +14,20 @@ listview:
     destination:
       header: "Destination:"
       paths:
-      - path: [["spec#destination#namespace"], ["spec#destination#pod"], ["spec#destination#service"], ["spec#destination#ip"]]
-        pathtype: "tuple"
+        - path: [["spec#destination#namespace"],
+                 ["spec#destination#pod"],
+                 ["spec#destination#service"],
+                 ["spec#destination#ip"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "namespace"
-        - type: "default"
-        - type: "default"
-        - type: "address"
+          - type: "namespace"
+          - type: "default"
+          - type: "default"
+          - type: "address"
         field_separators:
-        - type: "namespace"
+          - type: "namespace"
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -35,36 +38,36 @@ listview:
           mappings:
             "Failed":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "Pending":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "Running":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Succeeded":
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             "Unknown":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     source_pod:
       header: "Source:"
       paths:
-      - path: [["spec#source#namespace"], ["spec#source#pod"]]
-        pathtype: "tuple"
+        - path: [["spec#source#namespace"], ["spec#source#pod"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "namespace"
-        - type: "default"
+          - type: "namespace"
+          - type: "default"
         field_separators:
-        - type: "namespace"
+          - type: "namespace"
     timeout:
       header: "Timeout:"
       path: "spec#timeout"
@@ -72,7 +75,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Traceflow Info"
@@ -80,38 +83,39 @@ infoview:
     row_indexes:
       Normal:
         fields:
-        - "source_header"
-        - "source_namespace"
-        - "source_pod"
-        - "destination_header"
-        - "destination_namespace"
-        - "destination_pod"
-        - "destination_ip"
-        - "destination_service"
-        - "ipv4_header"
-        - "ipv4_protocol"
-        - "ipv4_tcp_header"
-        - "ipv4_tcp_source_port"
-        - "ipv4_tcp_destination_port"
-        - "ipv4_udp_header"
-        - "ipv4_udp_source_port"
-        - "ipv4_udp_destination_port"
-        - "ipv6_header"
-        - "ipv6_protocol"
-        - "ipv6_tcp_header"
-        - "ipv6_tcp_source_port"
-        - "ipv6_tcp_destination_port"
-        - "ipv6_udp_header"
-        - "ipv6_udp_source_port"
-        - "ipv6_udp_destination_port"
-        - "default_node"
-        - "timeout"
-        - "dropped_only"
-        - "live_traffic"
-        - "phase"
-        - "status_message"
+          - "source_header"
+          - "source_namespace"
+          - "source_pod"
+          - "destination_header"
+          - "destination_namespace"
+          - "destination_pod"
+          - "destination_ip"
+          - "destination_service"
+          - "ipv4_header"
+          - "ipv4_protocol"
+          - "ipv4_tcp_header"
+          - "ipv4_tcp_source_port"
+          - "ipv4_tcp_destination_port"
+          - "ipv4_udp_header"
+          - "ipv4_udp_source_port"
+          - "ipv4_udp_destination_port"
+          - "ipv6_header"
+          - "ipv6_protocol"
+          - "ipv6_tcp_header"
+          - "ipv6_tcp_source_port"
+          - "ipv6_tcp_destination_port"
+          - "ipv6_udp_header"
+          - "ipv6_udp_source_port"
+          - "ipv6_udp_destination_port"
+          - "default_node"
+          - "timeout"
+          - "dropped_only"
+          - "live_traffic"
+          - "phase"
+          - "status_message"
     rows:
       default_node:
+        # yamllint disable-line rule:line-length
         header: [["Note", ["logview", "severity_notice"]], [": If neither IPv4 or IPv6 are explicitly configured, IPv4 + ICMP will be used by default", ["main", "default"]]]
       destination_header:
         header: [["Destination:", ["main", "infoheader"]]]
@@ -126,14 +130,18 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       destination_pod:
-        header: [["  ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["od:", ["main", "infoheader"]]]
         path: "spec#destination#pod"
         default: "<unset>"
         type: "str"
       destination_service:
-        header: [["  Ser", ["main", "infoheader"]], ["v", ["main", "infoheader_shortcut"]], ["ice:", ["main", "infoheader"]]]
+        header: [["  Ser", ["main", "infoheader"]],
+                 ["v", ["main", "infoheader_shortcut"]],
+                 ["ice:", ["main", "infoheader"]]]
         path: "spec#destination#service"
         default: "<unset>"
         type: "str"
@@ -147,16 +155,17 @@ infoview:
       ipv4_protocol:
         header: [["  Protocol:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#packet#ipHeader#protocol"], " (1 = ICMP, 6 = TCP, 17 = UDP)"]
-          default: [1, ""]
-          pathtype: "tuple"
+          - path: [["spec#packet#ipHeader#protocol"],
+                   " (1 = ICMP, 6 = TCP, 17 = UDP)"]
+            default: [1, ""]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "default"
+            - type: "numerical"
+            - type: "default"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
       ipv4_tcp_header:
         header: [["  TCP:", ["main", "infoheader"]]]
       ipv4_tcp_destination_port:
@@ -166,7 +175,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       ipv4_tcp_source_port:
         header: [["    Source Port:", ["main", "infoheader"]]]
         path: "spec#packet#ipHeader#tcp#srcPort"
@@ -174,7 +183,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       ipv4_udp_header:
         header: [["  UDP:", ["main", "infoheader"]]]
       ipv4_udp_destination_port:
@@ -184,7 +193,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       ipv4_udp_source_port:
         header: [["    Source Port:", ["main", "infoheader"]]]
         path: "spec#packet#ipHeader#udp#srcPort"
@@ -192,22 +201,23 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       ipv6_header:
         header: [["IPv6:", ["main", "infoheader"]]]
       ipv6_protocol:
         header: [["  Protocol:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#packet#ipv6Header#nextHeader"], " (6 = TCP, 17 = UDP, 58 = ICMPv6)"]
-          pathtype: "tuple"
-          default: ["<unset>", ""]
+          - path: [["spec#packet#ipv6Header#nextHeader"],
+                   " (6 = TCP, 17 = UDP, 58 = ICMPv6)"]
+            pathtype: "tuple"
+            default: ["<unset>", ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "default"
+            - type: "numerical"
+            - type: "default"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
       ipv6_tcp_header:
         header: [["  TCP:", ["main", "infoheader"]]]
       ipv6_tcp_destination_port:
@@ -217,7 +227,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       ipv6_tcp_source_port:
         header: [["    Source Port:", ["main", "infoheader"]]]
         path: "spec#packet#ipv6Header#tcp#srcPort"
@@ -225,7 +235,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       ipv6_udp_header:
         header: [["  UDP:", ["main", "infoheader"]]]
       ipv6_udp_destination_port:
@@ -235,7 +245,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       ipv6_udp_source_port:
         header: [["    Source Port:", ["main", "infoheader"]]]
         path: "spec#packet#ipv6Header#udp#srcPort"
@@ -243,7 +253,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       live_traffic:
         header: [["Live Traffic:", ["main", "infoheader"]]]
         path: "spec#liveTraffic"
@@ -259,33 +269,34 @@ infoview:
             mappings:
               "Failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Pending":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Succeeded":
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       source_header:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ource:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ource:", ["main", "infoheader"]]]
       source_namespace:
         header: [["  Namespace:", ["main", "infoheader"]]]
         path: "spec#source#namespace"
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       source_pod:
         header: [["  Pod:", ["main", "infoheader"]]]
         path: "spec#source#pod"
@@ -302,7 +313,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   logpad:
     timestamps: true
     infogetter: "get_traceflow"

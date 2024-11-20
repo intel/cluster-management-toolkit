@@ -3,8 +3,8 @@ kind: "IPAMBlock"
 api_family: "crd.projectcalico.org"
 default_command: "ipamblocks"
 command:
-- "ipamblks"
-- "ipamblk"
+  - "ipamblks"
+  - "ipamblk"
 listview:
   name: "IPAM Blocks"
   group: "Calico"
@@ -15,17 +15,17 @@ listview:
     allocations:
       header: "Allocations:"
       paths:
-      - path: ["spec#allocations"]
-        pathtype: "ranges"
+        - path: ["spec#allocations"]
+          pathtype: "ranges"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
-        - type: "generic"
+          - type: "numerical"
+          - type: "numerical"
+          - type: "generic"
         field_separators:
-        - type: "range"
-        - type: "no_pad"
+          - type: "range"
+          - type: "no_pad"
         ellipsise: 5
     cidr:
       header: "CIDR:"
@@ -42,12 +42,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     strict_affinity:
       header: "Strict Affinity:"
       path: "spec#strictAffinity"
@@ -66,17 +66,17 @@ infoview:
       allocations:
         header: [["Allocations:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#allocations"]
-          pathtype: "ranges"
+          - path: ["spec#allocations"]
+            pathtype: "ranges"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "range"
-          - type: "no_pad"
+            - type: "range"
+            - type: "no_pad"
       cidr:
         header: [["CIDR:", ["main", "infoheader"]]]
         path: "spec#cidr"
@@ -92,12 +92,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       sequence_number:
         header: [["Sequence Number:", ["main", "infoheader"]]]
         path: "spec#sequenceNumber"
@@ -131,14 +131,14 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       node_name:
         header: "Node:"
         path: "secondary#node"
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod:
         header: "Pod:"
         path: "secondary#pod"

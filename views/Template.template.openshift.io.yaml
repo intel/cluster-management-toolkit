@@ -7,7 +7,8 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "parameter_count", "object_count", "age", "description"]
+      fields: ["namespace", "name", "parameter_count", "object_count",
+               "age", "description"]
   fields:
     description:
       header: "Description:"
@@ -19,7 +20,7 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     parameter_count:
       header: "Parameters:"
@@ -27,7 +28,7 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Template Info"
@@ -45,9 +46,9 @@ infoview:
       itemgetter_args:
         path: "objects"
         fields:
-        - "kind"
-        - "apiVersion"
-        - "metadata#name"
+          - "kind"
+          - "apiVersion"
+          - "metadata#name"
         pass_ref: true
       # Not supported for now
       sortcolumn: "kind"
@@ -69,9 +70,9 @@ infoview:
       itemgetter_args:
         path: "parameters"
         fields:
-        - "name"
-        - "required"
-        - "value"
-        - "description"
+          - "name"
+          - "required"
+          - "value"
+          - "description"
       # Not supported for now
       sortcolumn: "name"

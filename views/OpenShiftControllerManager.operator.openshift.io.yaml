@@ -3,8 +3,8 @@ kind: "OpenShiftControllerManager"
 api_family: "operator.openshift.io"
 default_command: "openshiftcontrollermanagers"
 command:
-- "openshiftcontrollermanagers.operator"
-- "openshiftcontrollermanager.operator"
+  - "openshiftcontrollermanagers.operator"
+  - "openshiftcontrollermanager.operator"
 listview:
   name: "OpenShift Controller Managers"
   group: "OpenShift"
@@ -19,7 +19,7 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "OpenShift Controller Manager Info"
   infopad:
@@ -30,13 +30,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       loglevel:
         header: [["Loglevel:", ["main", "infoheader"]]]
@@ -56,7 +56,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
@@ -64,7 +64,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Cluster Version":
       key: "v"
@@ -90,10 +90,10 @@ infoview:
       itemgetter_args:
         path: "status#generations"
         fields:
-        - "resource"
-        - "group"
-        - "namespace"
-        - "name"
+          - "resource"
+          - "group"
+          - "namespace"
+          - "name"
       # Not supported for now
       sortcolumn: "resource"
       action: "call"

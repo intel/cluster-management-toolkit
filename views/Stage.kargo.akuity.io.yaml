@@ -3,8 +3,8 @@ kind: "Stage"
 api_family: "kargo.akuity.io"
 default_command: "stages"
 command:
-- "kargostages"
-- "kargostage"
+  - "kargostages"
+  - "kargostage"
 listview:
   name: "Stages"
   group: "CI / CD"
@@ -28,24 +28,24 @@ listview:
           mappings:
             Healthy:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Unhealthy:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Unknown:
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -56,48 +56,48 @@ listview:
           mappings:
             Aborted:
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             Error:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Inconclusive:
               field_colors:
-              - context: "main"
-                type: "status_warning"
+                - context: "main"
+                  type: "status_warning"
             NotApplicable:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Promoting:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Steady:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Successful:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Verifying:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
 infoview:
   name: "Stage Info"
   infopad:
@@ -120,24 +120,24 @@ infoview:
             mappings:
               Healthy:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Unhealthy:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Unknown:
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       phase:
         header: [["Status:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -148,48 +148,48 @@ infoview:
             mappings:
               Aborted:
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               Error:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Failed:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Inconclusive:
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
               NotApplicable:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Promoting:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Steady:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Successful:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Verifying:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -208,15 +208,15 @@ infoview:
       requested_freight:
         header: "Requested Freight:"
         paths:
-        - path: [["origin#kind"], ["origin#name"]]
-          pathtype: "tuple"
+          - path: [["origin#kind"], ["origin#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           field_separators:
-          - type: "kind"
+            - type: "kind"
       stages:
         header: "Stages:"
         path: "sources#stages"

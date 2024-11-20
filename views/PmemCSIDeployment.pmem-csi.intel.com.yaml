@@ -3,9 +3,9 @@ kind: "PmemCSIDeployment"
 api_family: "pmem-csi.intel.com"
 default_command: "pmemcsideployments"
 command:
-- "pmemcsideps"
-- "pmemcsidep"
-- "pcd"
+  - "pmemcsideps"
+  - "pmemcsidep"
+  - "pcd"
 listview:
   name: "PMEM CSI Deployment"
   group: "Storage & Backups"
@@ -24,15 +24,15 @@ listview:
     node_selector:
       header: "Node Selector:"
       paths:
-      - path: ["spec#nodeSelector"]
-        pathtype: "key_value"
+        - path: ["spec#nodeSelector"]
+          pathtype: "key_value"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "key"
-        - type: "value"
+          - type: "key"
+          - type: "value"
         field_separators:
-        - type: "selector"
+          - type: "selector"
     phase:
       header: "Phase:"
       path: "status#phase"

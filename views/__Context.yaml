@@ -2,8 +2,8 @@
 kind: "__Context"
 default_command: "contexts"
 command:
-- "context"
-- "ctx"
+  - "context"
+  - "ctx"
 listview:
   listgetter_async: "get_context_list"
   listgetter_args:
@@ -16,7 +16,8 @@ listview:
   is_taggable: false
   field_indexes:
     Normal:
-      fields: ["current", "name", "cluster", "authinfo", "namespace", "server", "status"]
+      fields: ["current", "name", "cluster", "authinfo", "namespace",
+               "server", "status"]
       sortcolumn: "cluster"
   fields:
     authinfo:
@@ -33,7 +34,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "tag"
+          - type: "tag"
     name:
       header: "Name:"
       path: "name"
@@ -44,14 +45,14 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "namespace"
+          - type: "namespace"
     server:
       header: "Server:"
       path: "server"
       type: "str"
       formatting:
         field_colors:
-        - type: "url"
+          - type: "url"
     status:
       header: "Status:"
       path: "status"
@@ -62,43 +63,43 @@ listview:
           mappings:
             "CONNECTION TIMED OUT":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "COULD NOT RESOLVE":
               field_colors:
-              - context: "main"
-                type: "status_critical"
+                - context: "main"
+                  type: "status_critical"
             "MISSING INTERPRETER?":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "NO ROUTE TO HOST":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "PERMISSION DENIED":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "SKIPPED":
               field_colors:
-              - context: "types"
-                type: "none"
+                - context: "types"
+                  type: "none"
             "SUCCESS":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "UNKNOWN ERROR":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "UNKNOWN":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
   statusmsg:
-  # This should be fixed as soon as we handle defaults better
-  - ["Ping Hosts: ", ["config", "Context#ping_hosts"], "Always"]
+    # This should be fixed as soon as we handle defaults better
+    - ["Ping Hosts: ", ["config", "Context#ping_hosts"], "Always"]
   shortcuts:
     "Switch Context":
       key: "enter"

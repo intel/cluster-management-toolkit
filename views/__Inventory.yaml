@@ -2,7 +2,7 @@
 kind: "__Inventory"
 default_command: "inventory"
 command:
-- "inv"
+  - "inv"
 listview:
   name: "Inventory"
   group: "Administration"
@@ -53,44 +53,44 @@ listview:
           mappings:
             "CONNECTION TIMED OUT":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "COULD NOT RESOLVE":
               field_colors:
-              - context: "main"
-                type: "status_critical"
+                - context: "main"
+                  type: "status_critical"
             "DELETED":
               field_colors:
-              - context: "types"
-                type: "deleted"
+                - context: "types"
+                  type: "deleted"
             "MISSING INTERPRETER?":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "NO ROUTE TO HOST":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "PERMISSION DENIED":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "SKIPPED":
               field_colors:
-              - context: "types"
-                type: "none"
+                - context: "types"
+                  type: "none"
             "SUCCESS":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "UNKNOWN ERROR":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "UNKNOWN":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
   shortcuts:
     "SSH to Host":
       key: "s"
@@ -106,8 +106,8 @@ listview:
     "Edit resource": null
     "View YAML dump": null
   statusmsg:
-  # This should be fixed as soon as we handle defaults better
-  - ["Ping Hosts: ", ["config", "__Inventory#ping_hosts"], "Always"]
+    # This should be fixed as soon as we handle defaults better
+    - ["Ping Hosts: ", ["config", "__Inventory#ping_hosts"], "Always"]
 infoview:
   name: "Inventory Info"
   infopad:
@@ -116,7 +116,9 @@ infoview:
     creation_timestamp_path: ""
     row_indexes:
       Normal:
-        fields: ["kernel_version", "product_name", "bios_version", "bios_date", "cores", "threads_per_core", "processors", "ram", "default_ipv4_address", "default_ipv6_address"]
+        fields: ["kernel_version", "product_name", "bios_version",
+                 "bios_date", "cores", "threads_per_core", "processors",
+                 "ram", "default_ipv4_address", "default_ipv6_address"]
     rows:
       bios_date:
         header: [["BIOS date:", ["main", "infoheader"]]]
@@ -129,14 +131,14 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       cores:
         header: [["Cores:", ["main", "infoheader"]]]
         path: "ansible_processor_cores"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       default_ipv4_address:
         header: [["Default IPv4 Address:", ["main", "infoheader"]]]
         path: "ansible_default_ipv4#address"
@@ -152,40 +154,40 @@ infoview:
       kernel_version:
         header: [["Kernel version:", ["main", "infoheader"]]]
         paths:
-        - path: [["ansible_kernel"], ["ansible_kernel_version"]]
-          pathtype: "tuple"
+          - path: [["ansible_kernel"], ["ansible_kernel_version"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "version"
-          - type: "version"
+            - type: "version"
+            - type: "version"
           field_separators:
-          - type: "space"
+            - type: "space"
       processors:
         header: [["Processors:", ["main", "infoheader"]]]
         path: "ansible_processor_count"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       product_name:
         header: [["Product Name:", ["main", "infoheader"]]]
         paths:
-        - path: ["ansible_product_name", "ansible_board_name"]
-          pathtype: "value"
+          - path: ["ansible_product_name", "ansible_board_name"]
+            pathtype: "value"
         type: "str"
       ram:
         header: [["RAM:", ["main", "infoheader"]]]
         paths:
-        - path: [["ansible_memtotal_mb"], "MB"]
-          pathtype: "tuple"
+          - path: [["ansible_memtotal_mb"], "MB"]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "unit"
+            - type: "numerical"
+            - type: "unit"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
       threads_per_core:
         header: [["Threads per Core:", ["main", "infoheader"]]]
         path: "ansible_processor_threads_per_core"
@@ -195,7 +197,8 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["mountpoint", "device", "fstype", "model", "disk_usage_partition", "options"]
+        fields: ["mountpoint", "device", "fstype", "model",
+                 "disk_usage_partition", "options"]
         sortcolumn: "mountpoint"
     fields:
       device:
@@ -205,18 +208,18 @@ infoview:
       disk_usage_partition:
         header: "Disk Usage:"
         paths:
-        - path: [["partition_size_used"], ["partition_size_total"]]
-          pathtype: "tuple"
+          - path: [["partition_size_used"], ["partition_size_total"]]
+            pathtype: "tuple"
         type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          # FIXME: we want numerical_with_units
-          - type: "numerical"
-          # FIXME: we want numerical_with_units
-          - type: "numerical"
+            # FIXME: we want numerical_with_units
+            - type: "numerical"
+            # FIXME: we want numerical_with_units
+            - type: "numerical"
           field_separator:
-          - type: "fraction"
+            - type: "fraction"
         align: "right"
       fstype:
         header: "Filesystem:"

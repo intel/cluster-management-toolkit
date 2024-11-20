@@ -3,9 +3,9 @@ kind: "TemplateInstance"
 api_family: "config.kiosk.sh"
 default_command: "templateinstances.kiosk"
 command:
-- "templateinstance.kiosk"
-- "ktemplateinstances"
-- "ktemplateinstance"
+  - "templateinstance.kiosk"
+  - "ktemplateinstances"
+  - "ktemplateinstance"
 listview:
   name: "Template Instances"
   group: "Kiosk"
@@ -23,12 +23,12 @@ listview:
           mappings:
             "Deployed":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Failed":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     sync:
       header: "Sync:"
       path: "spec#sync"
@@ -51,12 +51,12 @@ infoview:
             mappings:
               "Deployed":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       status_message:
         header: [["Message:", ["main", "infoheader"]]]
         path: "status#message"
@@ -68,7 +68,8 @@ infoview:
         type: "bool"
         default: false
       template:
-        header: [["T", ["main", "infoheader_shortcut"]], ["emplate:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["emplate:", ["main", "infoheader"]]]
         path: "spec#template"
         type: "str"
   shortcuts:

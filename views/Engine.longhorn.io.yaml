@@ -3,8 +3,8 @@ kind: "Engine"
 api_family: "longhorn.io"
 default_command: "engines.longhorn.io"
 command:
-- "lhengines"
-- "lhengine"
+  - "lhengines"
+  - "lhengine"
 listview:
   name: "Engines"
   group: "Storage & Backups"
@@ -26,8 +26,8 @@ listview:
           mappings:
             "running":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -48,20 +48,20 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       ip_address:
         header: [["IP-address:", ["main", "infoheader"]]]
         path: "status#ip"
@@ -77,10 +77,11 @@ infoview:
             mappings:
               "running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       volume:
-        header: [["V", ["main", "infoheader_shortcut"]], ["olume:", ["main", "infoheader"]]]
+        header: [["V", ["main", "infoheader_shortcut"]],
+                 ["olume:", ["main", "infoheader"]]]
         path: "spec#volumeName"
         default: "<none>"
         type: "str"

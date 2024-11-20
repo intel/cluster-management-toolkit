@@ -3,8 +3,8 @@ kind: "KubeadmConfig"
 api_family: "bootstrap.cluster.x-k8s.io"
 default_command: "kubeadmconfigs"
 command:
-- "kubeadmcfgs"
-- "kubeadmcfg"
+  - "kubeadmcfgs"
+  - "kubeadmcfg"
 listview:
   name: "Kubeadm Configs"
   group: "Cluster Configuration"
@@ -27,12 +27,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Kubeadm Config Info"
   infopad:
@@ -47,49 +47,49 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       control_plane:
         header: [["Control ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["lane:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "kind"
-            eq: "KubeadmControlPlane"
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "kind"
+                eq: "KubeadmControlPlane"
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         path: "status#ready"
@@ -100,12 +100,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       data_secret_name:
         header: [["Data ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret Name:", ["main", "infoheader"]]]
         path: "status#dataSecretName"
@@ -183,9 +183,9 @@ infoview:
       itemgetter_args:
         path: "spec#files"
         fields:
-        - "path"
-        - "owner"
-        - "permissions"
+          - "path"
+          - "owner"
+          - "permissions"
       action: "call"
       action_call: "decode_and_view_file_templates"
       action_args:

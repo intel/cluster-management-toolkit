@@ -3,8 +3,8 @@ kind: "KubeadmConfigTemplate"
 api_family: "bootstrap.cluster.x-k8s.io"
 default_command: "kubeadmconfigtemplates"
 command:
-- "kubeadmconftempls"
-- "kubeadmconftempl"
+  - "kubeadmconftempls"
+  - "kubeadmconftempl"
 listview:
   name: "Kubeadm Config Templates"
   group: "Cluster Configuration"
@@ -22,13 +22,13 @@ infoview:
       cluster:
         header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Cluster"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Cluster"
         default: "<none>"
   shortcuts:
     "Open Cluster":
@@ -56,9 +56,9 @@ infoview:
       itemgetter_args:
         path: "spec#template#spec#files"
         fields:
-        - "path"
-        - "owner"
-        - "permissions"
+          - "path"
+          - "owner"
+          - "permissions"
       action: "call"
       action_call: "decode_and_view_file_templates"
       action_args:

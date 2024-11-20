@@ -20,27 +20,27 @@ listview:
           mappings:
             "Deploying":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "Deployed":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Deleting":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "Deleted":
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
     replicas:
       header: "Replicas:"
       path: "spec#infra#replicas"
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "KubeVirt Info"
@@ -52,26 +52,26 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       image_pull_policy:
         header: [["Image Pull Policy:", ["main", "infoheader"]]]
         path: "spec#imagePullPolicy"
@@ -86,7 +86,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -97,27 +97,27 @@ infoview:
             mappings:
               "Deploying":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Deployed":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Deleting":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Deleted":
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         path: "spec#infra#replicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       target_kubevirt_registry:
         header: [["Target KubVirt Policy:", ["main", "infoheader"]]]
         path: "status#targetKubeVirtRegistry"
@@ -128,7 +128,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Open controller":
       key: "c"
@@ -153,10 +153,10 @@ infoview:
       itemgetter_args:
         path: "status#generations"
         fields:
-        - "name"
-        - "namespace"
-        - "resource"
-        - "group"
-        - "lastGeneration"
+          - "name"
+          - "namespace"
+          - "resource"
+          - "group"
+          - "lastGeneration"
       # Not supported for now
       sortcolumn: "name"

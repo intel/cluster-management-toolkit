@@ -3,8 +3,8 @@ kind: "IstioOperator"
 api_family: "install.istio.io"
 default_command: "istiooperators"
 command:
-- "iop"
-- "io"
+  - "iop"
+  - "io"
 listview:
   name: "Istio Operators"
   group: "Istio"
@@ -19,7 +19,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
     status:
       header: "Status:"
       path: "status#status"
@@ -30,42 +30,42 @@ infoview:
     row_indexes:
       Normal:
         fields:
-        - "components_header"
-        - "base_header"
-        - "base_enabled"
-        - "base_enable_crd_templates"
-        - "base_validation_url"
-        - "cni_header"
-        - "cni_enabled"
-        - "istiod_remote_header"
-        - "istiod_remote_enabled"
-        - "istiod_remote_injection_url"
-        - "pilot_header"
-        - "pilot_enabled"
-        - "pilot_autoscale_enabled"
-        - "pilot_autoscale_min"
-        - "pilot_autoscale_max"
-        - "pilot_configmap"
-        - "pilot_cpu_utilization_header"
-        - "pilot_cpu_target_average_utilization"
-        - "pilot_deployment_labels"
-        - "pilot_protocol_sniffing_header"
-        - "pilot_protocol_sniffing_inbound"
-        - "pilot_protocol_sniffing_outbound"
-        - "pilot_image"
-        - "pilot_keepalive"
-        - "pilot_node_selector"
-        - "pilot_env"
-        - "pilot_replica_count"
-        - "pilot_trace_sampling"
-        - "hub"
-        - "mesh_config_header"
-        - "mesh_config_access_log_file"
-        - "mesh_config_default_config_header"
-        - "mesh_config_default_config_proxy_metadata"
-        - "mesh_config_enable_prometheus_merge"
-        - "profile"
-        - "tag"
+          - "components_header"
+          - "base_header"
+          - "base_enabled"
+          - "base_enable_crd_templates"
+          - "base_validation_url"
+          - "cni_header"
+          - "cni_enabled"
+          - "istiod_remote_header"
+          - "istiod_remote_enabled"
+          - "istiod_remote_injection_url"
+          - "pilot_header"
+          - "pilot_enabled"
+          - "pilot_autoscale_enabled"
+          - "pilot_autoscale_min"
+          - "pilot_autoscale_max"
+          - "pilot_configmap"
+          - "pilot_cpu_utilization_header"
+          - "pilot_cpu_target_average_utilization"
+          - "pilot_deployment_labels"
+          - "pilot_protocol_sniffing_header"
+          - "pilot_protocol_sniffing_inbound"
+          - "pilot_protocol_sniffing_outbound"
+          - "pilot_image"
+          - "pilot_keepalive"
+          - "pilot_node_selector"
+          - "pilot_env"
+          - "pilot_replica_count"
+          - "pilot_trace_sampling"
+          - "hub"
+          - "mesh_config_header"
+          - "mesh_config_access_log_file"
+          - "mesh_config_default_config_header"
+          - "mesh_config_default_config_proxy_metadata"
+          - "mesh_config_enable_prometheus_merge"
+          - "profile"
+          - "tag"
     rows:
       base_header:
         header: [["  Base:", ["main", "infoheader"]]]
@@ -113,7 +113,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "path"
+            - type: "path"
       mesh_config_default_config_proxy_metadata:
         header: [["    Proxy Metadata:", ["main", "infoheader"]]]
         path: "spec#meshConfig#defaultConfig#proxyMetadata"
@@ -138,14 +138,14 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       pilot_autoscale_min:
         header: [["    Autoscale Min:", ["main", "infoheader"]]]
         path: "spec#values#pilot#autoscaleMin"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       pilot_configmap:
         header: [["    ConfigMap:", ["main", "infoheader"]]]
         path: "spec#values#pilot#configMap"
@@ -156,7 +156,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       pilot_cpu_utilization_header:
         header: [["    CPU Utilization:", ["main", "infoheader"]]]
         type: "str"
@@ -172,15 +172,15 @@ infoview:
       pilot_env:
         header: [["    Env:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#values#pilot#env"
-          pathtype: "key_value"
+          - path: "spec#values#pilot#env"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue_log"
+            - type: "keyvalue_log"
       pilot_header:
         header: [["  Pilot:", ["main", "infoheader"]]]
         type: "str"
@@ -196,16 +196,16 @@ infoview:
       pilot_node_selector:
         header: [["    Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#values#pilot#nodeSelector"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#values#pilot#nodeSelector"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       pilot_protocol_sniffing_header:
         header: [["    Protocol Sniffing:", ["main", "infoheader"]]]
         type: "str"
@@ -223,14 +223,14 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       pilot_trace_sampling:
         header: [["    Trace Sampling:", ["main", "infoheader"]]]
         path: "spec#values#pilot#traceSampling"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       profile:
         header: [["Profile:", ["main", "infoheader"]]]
         path: "spec#profile"
@@ -241,7 +241,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Show egress gateways":
       key: "e"

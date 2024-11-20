@@ -3,8 +3,8 @@ kind: "K0sWorkerConfigTemplate"
 api_family: "bootstrap.cluster.x-k8s.io"
 default_command: "k0sworkerconfigtemplates"
 command:
-- "k0sworkerconftempls"
-- "k0sworkerconftempl"
+  - "k0sworkerconftempls"
+  - "k0sworkerconftempl"
 listview:
   name: "K0s Worker Config Templates"
   group: "Cluster Configuration"
@@ -22,13 +22,13 @@ infoview:
       cluster:
         header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Cluster"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Cluster"
         default: "<none>"
   shortcuts:
     "Open Cluster":

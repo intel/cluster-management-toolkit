@@ -9,7 +9,12 @@ infoview:
     creation_timestamp_path: null
     row_indexes:
       Normal:
-        fields: ["container_name", "pod_condition_type", "probe_header", "probe_initial_delay", "probe_timeout", "probe_period", "probe_threshold_success", "probe_threshold_failure", "probe_exec_header", "probe_exec_command_header", "probe_exec_command"]
+        fields: ["container_name", "pod_condition_type",
+                 "probe_header", "probe_initial_delay",
+                 "probe_timeout", "probe_period",
+                 "probe_threshold_success", "probe_threshold_failure",
+                 "probe_exec_header", "probe_exec_command_header",
+                 "probe_exec_command"]
     rows:
       container_name:
         header: [["Container Name:", ["main", "infoheader"]]]
@@ -22,7 +27,9 @@ infoview:
       probe_exec_header:
         header: [["  Exec:", ["main", "infoheader"]]]
       probe_exec_command_header:
-        header: [["    ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["ommand:", ["main", "infoheader"]]]
+        header: [["    ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["ommand:", ["main", "infoheader"]]]
       probe_exec_command:
         header: [["     ", ["main", "infoheader"]]]
         path: "probe#exec#command"
@@ -37,7 +44,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       probe_period:
         header: [["  Period (seconds):", ["main", "infoheader"]]]
         path: "probe#periodSeconds"
@@ -45,7 +52,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       probe_threshold_failure:
         header: [["  Failure Threshold:", ["main", "infoheader"]]]
         path: "probe#failureThreshold"
@@ -53,7 +60,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       probe_threshold_success:
         header: [["  Success Threshold:", ["main", "infoheader"]]]
         path: "probe#successThreshold"
@@ -61,7 +68,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       probe_timeout:
         header: [["  Timeout (seconds):", ["main", "infoheader"]]]
         path: "probe#timeoutSeconds"
@@ -69,7 +76,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Command":
       key: "c"

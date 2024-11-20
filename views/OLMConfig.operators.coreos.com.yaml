@@ -3,8 +3,8 @@ kind: "OLMConfig"
 api_family: "operators.coreos.com"
 default_command: "olmconfigs"
 command:
-- "olmconfs"
-- "olmconf"
+  - "olmconfs"
+  - "olmconf"
 listview:
   name: "OLM Configs"
   group: "API & Extendability"
@@ -21,13 +21,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
   shortcuts:
     "Cluster Version":

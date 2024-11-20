@@ -3,8 +3,8 @@ kind: "PeerAuthentication"
 api_family: "security.istio.io"
 default_command: "peerauthentications"
 command:
-- "peerauths"
-- "peerauth"
+  - "peerauths"
+  - "peerauth"
 listview:
   name: "Peer Authentications"
   group: "Istio"
@@ -28,16 +28,16 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       mtls_mode:
         header: [["mTLS Mode:", ["main", "infoheader"]]]
         path: "spec#mtls#mode"
@@ -46,12 +46,12 @@ infoview:
       port_level_mtls:
         header: [["Port Level mTLS:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#portLevelMtls"]
-          pathtype: "key_value"
-          subpaths: ["mode"]
+          - path: ["spec#portLevelMtls"]
+            pathtype: "key_value"
+            subpaths: ["mode"]
         type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "port"
-          - type: "generic"
+            - type: "port"
+            - type: "generic"

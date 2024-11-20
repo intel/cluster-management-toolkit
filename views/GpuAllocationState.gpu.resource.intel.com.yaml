@@ -3,35 +3,36 @@ kind: "GpuAllocationState"
 api_family: "gpu.resource.intel.com"
 default_command: "gpuallocationstates"
 command:
-- "gpuallocstates"
-- "gpuallocstate"
+  - "gpuallocstates"
+  - "gpuallocstate"
 listview:
   name: "GPU Allocation States"
   group: "Dynamic Resource Allocation"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "allocatable", "claim_allocations", "status", "age"]
+      fields: ["namespace", "name", "allocatable", "claim_allocations",
+               "status", "age"]
       sortcolumn: "namespace"
   fields:
     allocatable:
       header: "Allocatable:"
       paths:
-      - path: "spec#allocatableGpus"
-        pathtype: "count"
-        type: "raw"
+        - path: "spec#allocatableGpus"
+          pathtype: "count"
+          type: "raw"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     claim_allocations:
       header: "Allocations:"
       paths:
-      - path: "spec#resourceClaimAllocations"
-        pathtype: "count"
-        type: "raw"
+        - path: "spec#resourceClaimAllocations"
+          pathtype: "count"
+          type: "raw"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     status:
       header: "Status:"
@@ -43,12 +44,12 @@ listview:
           mappings:
             Ready:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             NotReady:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "GPU Allocation State Info"
   infopad:
@@ -57,19 +58,21 @@ infoview:
         fields: ["node_name", "status"]
     rows:
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Node"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Node"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       status:
         header: [["Status:", ["main", "infoheader"]]]
         path: "status"
@@ -80,12 +83,12 @@ infoview:
             mappings:
               Ready:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               NotReady:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
   listpad:
     listgetter: "listgetter_dict_list"
     listgetter_args:
@@ -93,21 +96,21 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["device", "type", "model", "memory", "max_vfs", "millicores", "ecc"]
+        fields: ["device", "type", "model", "memory", "max_vfs",
+                 "millicores", "ecc"]
         sortcolumn: "device"
     fields:
       device:
         header: "Device:"
         paths:
-        - path: "value#uid"
-          pathtype: "transform"
-          type: "str"
-          transform:
-            key:
-              regex: ["^([^-]+).*"]
-              groups: [0]
-            output:
-              ["key"]
+          - path: "value#uid"
+            pathtype: "transform"
+            type: "str"
+            transform:
+              key:
+                regex: ["^([^-]+).*"]
+                groups: [0]
+              output: ["key"]
       ecc:
         header: "ECC:"
         path: "value#ecc"
@@ -118,7 +121,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       memory:
         header: "Mem (MiB):"
@@ -126,7 +129,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       millicores:
         header: "Millicores:"
@@ -134,7 +137,7 @@ infoview:
         type: "numerical"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       model:
         header: "Model:"
@@ -167,10 +170,10 @@ infoview:
       itemgetter_args:
         path: "spec#resourceClaimRequests"
         fields:
-        - "key"
-        - "value#spec#count"
-        - "value#spec#memory"
-        - "value#spec#type"
-        - "value#devices"
+          - "key"
+          - "value#spec#count"
+          - "value#spec#memory"
+          - "value#spec#type"
+          - "value#devices"
       # Not supported for now
       sortcolumn: "key"

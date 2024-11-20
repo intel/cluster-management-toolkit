@@ -23,18 +23,19 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       service_account:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccountName"
         type: "str"
   shortcuts:
@@ -50,8 +51,8 @@ infoview:
       itemgetter_args:
         path: "spec#env"
         fields:
-        - "name"
-        - "value"
+          - "name"
+          - "value"
       # Not supported for now
       sortcolumn: "name"
     "Service Account":

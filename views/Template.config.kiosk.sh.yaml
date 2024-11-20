@@ -3,9 +3,9 @@ kind: "Template"
 api_family: "config.kiosk.sh"
 default_command: "templates.kiosk"
 command:
-- "template.kiosk"
-- "ktemplates"
-- "ktemplate"
+  - "template.kiosk"
+  - "ktemplates"
+  - "ktemplate"
 listview:
   name: "Templates"
   group: "Kiosk"
@@ -20,12 +20,13 @@ infoview:
         fields: ["resources"]
     rows:
       resources:
-        header: [["R", ["main", "infoheader_shortcut"]], ["esources:", ["main", "infoheader"]]]
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["esources:", ["main", "infoheader"]]]
         paths:
-        - path: "resources"
-          pathtype: "dictlist"
-          transform:
-            output: ["key"]
+          - path: "resources"
+            pathtype: "dictlist"
+            transform:
+              output: ["key"]
         formatter: "list"
   shortcuts:
     "View resources":

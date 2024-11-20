@@ -3,7 +3,7 @@ kind: "OperatorGroup"
 api_family: "operators.coreos.com"
 default_command: "operatorgroups"
 command:
-- "og"
+  - "og"
 listview:
   name: "Operator Groups"
   group: "API & Extendability"
@@ -21,13 +21,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       last_updated:
         header: [["Last Updated:", ["main", "infoheader"]]]
@@ -42,7 +42,7 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       target_namespaces:
         header: [["T", ["main", "infoheader_shortcut"]], ["arget Namespaces:", ["main", "infoheader"]]]
         path: "spec#targetNamespaces"
@@ -50,7 +50,7 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
   shortcuts:
     "Cluster Version":
       key: "v"

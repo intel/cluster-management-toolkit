@@ -3,11 +3,11 @@ kind: "PodAutoscaler"
 api_family: "autoscaling.internal.knative.dev"
 default_command: "podautoscalers.autoscaling.internal.knative.dev"
 command:
-- "podautoscaler.autoscaling.internal.knative.dev"
-- "podautoscalers.knative"
-- "podautoscaler.knative"
-- "knpodautoscalers"
-- "knpodautoscaler"
+  - "podautoscaler.autoscaling.internal.knative.dev"
+  - "podautoscalers.knative"
+  - "podautoscaler.knative"
+  - "knpodautoscalers"
+  - "knpodautoscaler"
 listview:
   name: "Pod Autoscalers"
   group: "Knative"
@@ -18,12 +18,12 @@ listview:
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -31,21 +31,21 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     reason:
       header: "Reason:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -53,42 +53,44 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Pod Autoscaler Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "protocol_type", "reachability", "scale_target_reference"]
+        fields: ["controller", "protocol_type", "reachability",
+                 "scale_target_reference"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       protocol_type:
         header: [["Protocol Type:", ["main", "infoheader"]]]
         path: "spec#protocolType"
@@ -98,20 +100,23 @@ infoview:
         path: "spec#reachability"
         type: "str"
       scale_target_reference:
-        header: [["S", ["main", "infoheader_shortcut"]], ["cale Target Reference:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["cale Target Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#scaleTargetRef#kind"], ["spec#scaleTargetRef#apiVersion"], ["spec#scaleTargetRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#scaleTargetRef#kind"],
+                   ["spec#scaleTargetRef#apiVersion"],
+                   ["spec#scaleTargetRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   shortcuts:
     "Open controller":
       key: "c"

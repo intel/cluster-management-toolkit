@@ -3,11 +3,11 @@ kind: "OAuthAccessToken"
 api_family: "oauth.openshift.io"
 default_command: "oauthaccesstokens.oauth.openshift.io"
 command:
-- "oauthaccesstoken.oauth.openshift.io"
-- "oauthaccesstokens.openshift"
-- "oauthaccesstoken.openshift"
-- "osoauthaccesstokens"
-- "osoauthaccesstoken"
+  - "oauthaccesstoken.oauth.openshift.io"
+  - "oauthaccesstokens.openshift"
+  - "oauthaccesstoken.openshift"
+  - "osoauthaccesstokens"
+  - "osoauthaccesstoken"
 listview:
   name: "OAuth Access Tokens"
   group: "OpenShift"
@@ -24,8 +24,8 @@ listview:
     expiration:
       header: "Expiration:"
       paths:
-      - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
-        pathtype: "timediff"
+        - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
+          pathtype: "timediff"
       formatter: "timestamp"
     redirect_uri:
       header: "Redirect URI:"
@@ -54,8 +54,8 @@ infoview:
       expiration:
         header: [["Expiration:", ["main", "infoheader"]]]
         paths:
-        - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
-          pathtype: "timediff"
+          - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
+            pathtype: "timediff"
         formatter: "timestamp"
       redirect_uri:
         header: [["Redirect URI:", ["main", "infoheader"]]]

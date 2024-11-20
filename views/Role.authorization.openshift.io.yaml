@@ -3,9 +3,9 @@ kind: "Role"
 api_family: "authorization.openshift.io"
 default_command: "roles.authorization.openshift.io"
 command:
-- "role.authorization.openshift.io"
-- "osroles"
-- "osrole"
+  - "role.authorization.openshift.io"
+  - "osroles"
+  - "osrole"
 listview:
   name: "Roles"
   group: "Authorization & Access Control"
@@ -22,16 +22,20 @@ listview:
         actionfunc: "delete_resource"
 infoview:
   name: "Role Info"
-  infopad:
+  infopad: null
   listpad:
     listgetter: "listgetter_policy_rules"
     infogetter: "generic_infogetter"
     field_indexes:
       Wide:
-        fields: ["resource", "api_group", "non_resource_urls", "resource_names", "verbs_all", "verbs_get", "verbs_list", "verbs_watch", "verbs_create", "verbs_update", "verbs_patch", "verbs_delete", "verbs_misc"]
+        fields: ["resource", "api_group", "non_resource_urls",
+                 "resource_names", "verbs_all", "verbs_get",
+                 "verbs_list", "verbs_watch", "verbs_create",
+                 "verbs_update", "verbs_patch", "verbs_delete", "verbs_misc"]
         sortcolumn: "api_group"
       Normal:
-        fields: ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"]
+        fields: ["resource", "api_group", "non_resource_urls",
+                 "resource_names", "verbs"]
         sortcolumn: "api_group"
     fields:
       api_group:

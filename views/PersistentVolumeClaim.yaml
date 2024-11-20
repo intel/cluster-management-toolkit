@@ -2,25 +2,26 @@
 kind: "PersistentVolumeClaim"
 default_command: "persistentvolumeclaims"
 command:
-- "pvc"
+  - "pvc"
 listview:
   name: "Persistent Volume Claims"
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"]
+      fields: ["namespace", "name", "status", "volume", "capacity",
+               "access_modes", "storage_class", "age", "volume_mode"]
       sortcolumn: "namespace"
   fields:
     access_modes:
       header: "Access Modes:"
       paths:
-      - path: "status#accessModes"
-        pathtype: "remap"
-        substitutions:
-          "ReadWriteOnce": "RWO"
-          "ReadWriteOncePod": "RWOP"
-          "ReadWriteMany": "RWM"
-          "ReadOnlyMany": "ROX"
+        - path: "status#accessModes"
+          pathtype: "remap"
+          substitutions:
+            "ReadWriteOnce": "RWO"
+            "ReadWriteOncePod": "RWOP"
+            "ReadWriteMany": "RWM"
+            "ReadOnlyMany": "ROX"
       type: "raw"
       formatter: "list"
     capacity:
@@ -39,24 +40,24 @@ listview:
           mappings:
             Available:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Bound:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Released:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             __default:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     storage_class:
       header: "Storage Class:"
       path: "spec#storageClassName"
@@ -81,18 +82,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["status", "volume", "capacity", "access_modes", "storage_class", "volume_mode"]
+        fields: ["status", "volume", "capacity", "access_modes",
+                 "storage_class", "volume_mode"]
     rows:
       access_modes:
         header: [["Access Modes:", ["main", "infoheader"]]]
         paths:
-        - path: "status#accessModes"
-          pathtype: "remap"
-          substitutions:
-            "ReadWriteOnce": "RWO"
-            "ReadWriteOncePod": "RWOP"
-            "ReadWriteMany": "RWM"
-            "ReadOnlyMany": "ROX"
+          - path: "status#accessModes"
+            pathtype: "remap"
+            substitutions:
+              "ReadWriteOnce": "RWO"
+              "ReadWriteOncePod": "RWOP"
+              "ReadWriteMany": "RWM"
+              "ReadOnlyMany": "ROX"
         formatter: "list"
       capacity:
         header: [["Capacity:", ["main", "infoheader"]]]
@@ -109,30 +111,32 @@ infoview:
             mappings:
               Available:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Bound:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Released:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               __default:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       storage_class:
-        header: [["S", ["main", "infoheader_shortcut"]], ["torage Class:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["torage Class:", ["main", "infoheader"]]]
         path: "spec#storageClassName"
         type: "str"
       volume:
-        header: [["P", ["main", "infoheader_shortcut"]], ["ersistent Volume:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["ersistent Volume:", ["main", "infoheader"]]]
         path: "spec#volumeName"
         type: "str"
       volume_mode:
@@ -145,12 +149,12 @@ infoview:
       key_paths: ["spec#resources#limits", "spec#resources#requests"]
       key_name: "resource"
       fields:
-      - path: "spec#resources#limits"
-        name: "limit"
-        default:
-      - path: "spec#resources#requests"
-        name: "request"
-        default:
+        - path: "spec#resources#limits"
+          name: "limit"
+          default: null
+        - path: "spec#resources#requests"
+          name: "request"
+          default: null
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:

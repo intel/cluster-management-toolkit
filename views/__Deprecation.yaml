@@ -6,7 +6,7 @@ listview:
   listgetter: "get_metrics_list"
   listgetter_args:
     filter:
-    - "apiserver_requested_deprecated_apis"
+      - "apiserver_requested_deprecated_apis"
   name: "Deprecations"
   group: "Administration"
   check_availability: "is_cluster_reachable"
@@ -23,12 +23,12 @@ listview:
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "version"
+          - type: "kind"
+          - type: "api_group"
+          - type: "version"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     deprecated_removed_release:
       header: "Planned Removal:"
       path: ["removed_release"]
@@ -36,7 +36,7 @@ listview:
       formatter: "list"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
   shortcuts:
     "Edit resource": null
     "View YAML dump": null
@@ -48,32 +48,33 @@ infoview:
     creation_timestamp_path: null
     row_indexes:
       Normal:
-        fields: ["deprecated_api", "deprecated_version", "latest_version", "planned_removal"]
+        fields: ["deprecated_api", "deprecated_version",
+                 "latest_version", "planned_removal"]
     rows:
       deprecated_api:
         header: [["Deprecated API:", ["main", "infoheader"]]]
         paths:
-        - path: [["fields#resource", "fields#group"]]
-          pathtype: "tuple"
+          - path: [["fields#resource", "fields#group"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
       deprecated_version:
         header: [["Deprecated Version:", ["main", "infoheader"]]]
         paths:
-        - path: [["fields#group"], ["fields#version"]]
-          pathtype: "tuple"
+          - path: [["fields#group"], ["fields#version"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "api_group"
-          - type: "version"
+            - type: "api_group"
+            - type: "version"
           field_separators:
-          - type: "kind"
+            - type: "kind"
       latest_version:
         header: [["Latest Version:", ["main", "infoheader"]]]
         path: ["fields#resource", "fields#group", "fields#version"]
@@ -81,13 +82,13 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "api_group"
-          - type: "version"
-          - context: "main"
-            type: "status_not_ok"
+            - type: "api_group"
+            - type: "version"
+            - context: "main"
+              type: "status_not_ok"
           field_separators:
-          - type: "kind"
-          - type: "space"
+            - type: "kind"
+            - type: "space"
       planned_removal:
         header: [["Planned Removal:", ["main", "infoheader"]]]
         path: "fields#removed_release"
@@ -118,10 +119,10 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
   shortcuts:
     # Deprecations have no YAML, last applied configuration or events
     "Show Events": null

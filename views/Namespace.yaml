@@ -2,7 +2,7 @@
 kind: "Namespace"
 default_command: "namespaces"
 command:
-- "ns"
+  - "ns"
 listview:
   name: "Namespaces"
   group: "Core"
@@ -20,12 +20,12 @@ listview:
           mappings:
             Active:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Terminating:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
   actions:
     actionlist:
       "Delete resource":
@@ -56,26 +56,26 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       status:
         header: [["Status:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -86,12 +86,12 @@ infoview:
             mappings:
               Active:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Terminating:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
   listpad:
     listgetter: "listgetter_namespaced_resources"
     listgetter_args:
@@ -114,10 +114,10 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
       resource:
         header: "Resource:"
         path: "metadata#name"

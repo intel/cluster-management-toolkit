@@ -3,10 +3,10 @@ kind: "Project"
 api_family: "config.openshift.io"
 default_command: "projects.config.openshift.io"
 command:
-- "projects.config"
-- "project.config"
-- "projectconfs"
-- "projectconf"
+  - "projects.config"
+  - "project.config"
+  - "projectconfs"
+  - "projectconf"
 listview:
   name: "Projects"
   group: "OpenShift"
@@ -21,15 +21,17 @@ infoview:
         fields: ["cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
   shortcuts:
     "Cluster Version":

@@ -3,14 +3,15 @@ kind: "Elasticsearch"
 api_family: "elasticsearch.k8s.elastic.co"
 default_command: "elasticsearches"
 command:
-- "elsearches"
-- "elsearch"
+  - "elsearches"
+  - "elsearch"
 listview:
   name: "Elastic Searches"
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "available_nodes", "phase", "health", "age"]
+      fields: ["namespace", "name", "version", "available_nodes",
+               "phase", "health", "age"]
       sortcolumn: "namespace"
   fields:
     available_nodes:
@@ -31,20 +32,20 @@ listview:
           mappings:
             ApplyingChanges:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Error:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Ready:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     health:
       header: "Health:"
       path: "status#health"
@@ -56,31 +57,31 @@ listview:
           mappings:
             green:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             red:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             unknown:
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
             yellow:
               field_colors:
-              - context: "main"
-                type: "status_degraded"
+                - context: "main"
+                  type: "status_degraded"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
   actions:
     actionlist:
       "Delete resource":
@@ -93,7 +94,14 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["version", "http_header", "http_service_header", "http_service_type", "http_tls_header", "http_tls_self_signed_header", "http_tls_self_signed_enabled", "http_tls_self_signed_alt_names", "update_strategy_header", "update_strategy_max_surge", "update_strategy_max_unavailable", "available_nodes", "phase", "health"]
+        fields: ["version", "http_header", "http_service_header",
+                 "http_service_type", "http_tls_header",
+                 "http_tls_self_signed_header",
+                 "http_tls_self_signed_enabled",
+                 "http_tls_self_signed_alt_names",
+                 "update_strategy_header", "update_strategy_max_surge",
+                 "update_strategy_max_unavailable", "available_nodes",
+                 "phase", "health"]
     rows:
       available_nodes:
         header: [["Available Nodes:", ["main", "infoheader"]]]
@@ -112,24 +120,24 @@ infoview:
             mappings:
               green:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               red:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               unknown:
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               yellow:
                 field_colors:
-                - context: "main"
-                  type: "status_degraded"
+                  - context: "main"
+                    type: "status_degraded"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       http_header:
         header: [["HTTP:", ["main", "infoheader"]]]
       http_service_header:
@@ -144,16 +152,16 @@ infoview:
       http_tls_self_signed_alt_names:
         header: [["      Alt Names:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#http#tls#selfSignedCertificate#subjectAltNames"
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: "spec#http#tls#selfSignedCertificate#subjectAltNames"
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       http_tls_self_signed_enabled:
         header: [["      Disabled:", ["main", "infoheader"]]]
         path: "spec#http#tls#selfSignedCertificate#disabled"
@@ -172,20 +180,20 @@ infoview:
             mappings:
               ApplyingChanges:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Error:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Ready:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       update_strategy_header:
         header: [["Update Strategy:", ["main", "infoheader"]]]
       update_strategy_max_surge:
@@ -206,4 +214,4 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"

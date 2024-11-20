@@ -3,13 +3,13 @@ kind: "ImageStreamTag"
 api_family: "image.openshift.io"
 default_command: "imagestreamtags.image.openshift.io"
 command:
-- "imagestreamtag.image.openshift.io"
-- "imagestreamtags.openshift"
-- "imagestreamtag.openshift"
-- "osimagestreamtags"
-- "osimagestreamtag"
-- "osimgstreamtags"
-- "osimgstreamtag"
+  - "imagestreamtag.image.openshift.io"
+  - "imagestreamtags.openshift"
+  - "imagestreamtag.openshift"
+  - "osimagestreamtags"
+  - "osimagestreamtag"
+  - "osimgstreamtags"
+  - "osimgstreamtag"
 listview:
   name: "Image Stream Tags"
   group: "OpenShift"
@@ -40,27 +40,27 @@ infoview:
       from:
         header: [["From:", ["main", "infoheader"]]]
         paths:
-        - path: [["tag#from#kind"], ["tag#from#name"]]
-          pathtype: "tuple"
+          - path: [["tag#from#kind"], ["tag#from#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_separators:
-          - type: "url_separator"
+            - type: "url_separator"
       lookup_policy:
         header: [["Lookup Policy:", ["main", "infoheader"]]]
         paths:
-        - path: "lookupPolicy"
-          pathtype: "substitution"
-          when:
-          - key: "local"
-            eq: true
-          substitute: "Local"
-        - path: "lookupPolicy"
-          pathtype: "substitution"
-          when:
-          - key: "local"
-            eq: false
-          substitute: "Remote"
+          - path: "lookupPolicy"
+            pathtype: "substitution"
+            when:
+              - key: "local"
+                eq: true
+            substitute: "Local"
+          - path: "lookupPolicy"
+            pathtype: "substitution"
+            when:
+              - key: "local"
+                eq: false
+            substitute: "Remote"
         default: "Remote"
         type: "str"
       import_policy:
@@ -77,7 +77,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       reference_policy:
         header: [["Reference Policy:", ["main", "infoheader"]]]
         path: "tag#referencePolicy#type"
@@ -90,7 +90,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Docker Image Layers":
       key: "d"
@@ -104,9 +104,9 @@ infoview:
       itemgetter_args:
         path: "image#dockerImageLayers"
         fields:
-        - "name"
-        - "size"
-        - "mediaType"
+          - "name"
+          - "size"
+          - "mediaType"
         # pass_ref: true
     "Docker Image Metadata":
       key: "d"

@@ -3,14 +3,15 @@ kind: "StorageClass"
 api_family: "storage.k8s.io"
 default_command: "storageclasses"
 command:
-- "scs"
-- "sc"
+  - "scs"
+  - "sc"
 listview:
   name: "Storage Classes"
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["name", "provisioner", "reclaim_policy", "volume_binding_mode", "allow_volume_expansion", "age"]
+      fields: ["name", "provisioner", "reclaim_policy",
+               "volume_binding_mode", "allow_volume_expansion", "age"]
   fields:
     allow_volume_expansion:
       header: "Allow Volume Expansion:"
@@ -42,7 +43,9 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["is_default_class", "provisioner", "parameters", "allow_volume_expansion", "mount_options", "reclaim_policy", "volume_binding_mode"]
+        fields: ["is_default_class", "provisioner", "parameters",
+                 "allow_volume_expansion", "mount_options",
+                 "reclaim_policy", "volume_binding_mode"]
     rows:
       allow_volume_expansion:
         header: [["Allow Volume Expansion:", ["main", "infoheader"]]]
@@ -52,20 +55,20 @@ infoview:
       is_default_class:
         header: [["Is Default Class:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#annotations"
-          pathtype: "substitution"
-          subpath: "storageclass.kubernetes.io/is-default-class"
-          when:
-          - key: "storageclass.kubernetes.io/is-default-class"
-            eq: "true"
-          substitute: true
-        - path: "metadata#annotations"
-          pathtype: "substitution"
-          subpath: "storageclass.kubernetes.io/is-default-class"
-          when:
-          - key: "storageclass.kubernetes.io/is-default-class"
-            eq: "false"
-          substitute: false
+          - path: "metadata#annotations"
+            pathtype: "substitution"
+            subpath: "storageclass.kubernetes.io/is-default-class"
+            when:
+              - key: "storageclass.kubernetes.io/is-default-class"
+                eq: "true"
+            substitute: true
+          - path: "metadata#annotations"
+            pathtype: "substitution"
+            subpath: "storageclass.kubernetes.io/is-default-class"
+            when:
+              - key: "storageclass.kubernetes.io/is-default-class"
+                eq: "false"
+            substitute: false
         default: false
         type: "bool"
       mount_options:
@@ -75,17 +78,18 @@ infoview:
         type: "raw"
         formatter: "list"
       parameters:
-        header: [["P", ["main", "infoheader_shortcut"]], ["arameters:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arameters:", ["main", "infoheader"]]]
         paths:
-        - path: "parameters"
-          pathtype: "key_value"
+          - path: "parameters"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       provisioner:
         header: [["Provisioner:", ["main", "infoheader"]]]
         path: "provisioner"
@@ -111,6 +115,7 @@ infoview:
       itemgetter: "get_key_value"
       itemgetter_args:
         path: "parameters"
-      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
+      formatting: [["windowwidget", "default"],
+                   ["windowwidget", "highlight"]]
       # This isn't supported for now
       sortcolumn: "parameter"

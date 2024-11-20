@@ -3,12 +3,12 @@ kind: "Project"
 api_family: "project.openshift.io"
 default_command: "projects"
 command:
-- "projects.project.openshift.io"
-- "project.project.openshift.io"
-- "projects.project"
-- "project.project"
-- "projects"
-- "project"
+  - "projects.project.openshift.io"
+  - "project.project.openshift.io"
+  - "projects.project"
+  - "project.project"
+  - "projects"
+  - "project"
 listview:
   name: "Projects"
   group: "OpenShift"
@@ -26,12 +26,12 @@ listview:
           mappings:
             Active:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Terminating:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
 infoview:
   name: "Project Info"
   infopad:
@@ -40,15 +40,17 @@ infoview:
         fields: ["cluster_version", "phase"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       phase:
         header: [["Status:", ["main", "infoheader"]]]
@@ -60,12 +62,12 @@ infoview:
             mappings:
               Active:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Terminating:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
   shortcuts:
     "Cluster Version":
       key: "v"

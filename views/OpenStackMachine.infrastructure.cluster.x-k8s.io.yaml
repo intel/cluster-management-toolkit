@@ -3,7 +3,7 @@ kind: "OpenStackMachine"
 api_family: "infrastructure.cluster.x-k8s.io"
 default_command: "openstackmachines"
 command:
-- "osm"
+  - "osm"
 listview:
   name: "OpenStack Machines"
   group: "Cluster Configuration"
@@ -23,17 +23,17 @@ listview:
     machine:
       header: "Machine:"
       paths:
-      - path: "metadata#ownerReferences"
-        pathtype: "items"
-        subpaths:
-        - "name"
-        when:
-        - key: "kind"
-          eq: "Machine"
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+            - "name"
+          when:
+            - key: "kind"
+              eq: "Machine"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "hostname"
+          - type: "hostname"
     provider_id:
       header: "Provider ID:"
       path: "spec#providerID"
@@ -48,12 +48,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "OpenStack Machine Info"
   infopad:
@@ -72,37 +72,37 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       external_ips:
         header: [["External-IPs:", ["main", "infoheader"]]]
         paths:
-        - path: "status#addresses"
-          pathtype: "items"
-          subpaths:
-          - "address"
-          when:
-          - key: "type"
-            eq: "ExternalIP"
-          default: ["<none>"]
+          - path: "status#addresses"
+            pathtype: "items"
+            subpaths:
+              - "address"
+            when:
+              - key: "type"
+                eq: "ExternalIP"
+            default: ["<none>"]
         formatter: "address"
       flavor:
         header: [["Flavor:", ["main", "infoheader"]]]
@@ -111,15 +111,15 @@ infoview:
       identity:
         header: [["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
-          pathtype: "tuple"
+          - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           field_separators:
-          - type: "kind"
+            - type: "kind"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         path: "spec#image"
@@ -135,13 +135,13 @@ infoview:
       internal_ips:
         header: [["Internal-IPs:", ["main", "infoheader"]]]
         paths:
-        - path: "status#addresses"
-          pathtype: "items"
-          subpaths:
-          - "address"
-          when:
-          - key: "type"
-            eq: "InternalIP"
+          - path: "status#addresses"
+            pathtype: "items"
+            subpaths:
+              - "address"
+            when:
+              - key: "type"
+                eq: "InternalIP"
         formatter: "address"
       provider_id:
         header: [["Provider ID:", ["main", "infoheader"]]]
@@ -157,19 +157,19 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       security_groups:
         header: [["Security Groups:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#securityGroups"
-          pathtype: "items"
-          subpaths:
-          - "name"
+          - path: "spec#securityGroups"
+            pathtype: "items"
+            subpaths:
+              - "name"
         type: "raw"
         formatter: "list"
       ssh_key_name:

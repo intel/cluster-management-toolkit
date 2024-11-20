@@ -3,11 +3,11 @@ kind: "Metric"
 api_family: "autoscaling.internal.knative.dev"
 default_command: "metrics.autoscaling.internal.knative.dev"
 command:
-- "metric.autoscaling.internal.knative.dev"
-- "metrics.knative"
-- "metric.knative"
-- "knmetrics"
-- "knmetric"
+  - "metric.autoscaling.internal.knative.dev"
+  - "metrics.knative"
+  - "metric.knative"
+  - "knmetrics"
+  - "knmetric"
 listview:
   name: "Metrics"
   group: "Knative"
@@ -18,12 +18,12 @@ listview:
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -31,21 +31,21 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     reason:
       header: "Reason:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -53,12 +53,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Metric Info"
   infopad:
@@ -69,33 +69,33 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       panic_window:
         header: [["Panic Window:", ["main", "infoheader"]]]
         path: "spec#panicWindow"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       scrape_target:
         header: [["Scrape Target:", ["main", "infoheader"]]]
         path: "spec#scrapeTarget"
@@ -106,7 +106,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Open controller":
       key: "c"

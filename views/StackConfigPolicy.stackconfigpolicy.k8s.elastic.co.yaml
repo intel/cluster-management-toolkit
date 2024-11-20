@@ -3,8 +3,8 @@ kind: "StackConfigPolicy"
 api_family: "stackconfigpolicy.k8s.elastic.co"
 default_command: "stackconfigpolicies"
 command:
-- "stackconfpols"
-- "stackconfpol"
+  - "stackconfpols"
+  - "stackconfpol"
 listview:
   name: "Stack Config Policies"
   group: "Logging"
@@ -24,34 +24,34 @@ listview:
           mappings:
             ApplyingChanges:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Error:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Ready:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     ready:
       header: "Ready:"
       paths:
-      - path: "status#ready"
-        pathtype: "regex"
-        regex: "^(\\d+):(\\d+)"
-        default: ["0", "0"]
+        - path: "status#ready"
+          pathtype: "regex"
+          regex: "^(\\d+):(\\d+)"
+          default: ["0", "0"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
         field_separators:
-        - type: "fraction"
+          - type: "fraction"
       align: "right"
   actions:
     actionlist:
@@ -70,16 +70,16 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#resourceSelector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#resourceSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -91,34 +91,34 @@ infoview:
             mappings:
               ApplyingChanges:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Error:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Ready:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#ready"
-          pathtype: "regex"
-          regex: "^(\\d+):(\\d+)"
-          default: ["0", "0"]
+          - path: "status#ready"
+            pathtype: "regex"
+            regex: "^(\\d+):(\\d+)"
+            default: ["0", "0"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "fraction"
+            - type: "fraction"
   shortcuts:
     "Elasticsearch Config":
       key: "e"

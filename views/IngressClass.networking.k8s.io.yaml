@@ -3,8 +3,8 @@ kind: "IngressClass"
 api_family: "networking.k8s.io"
 default_command: "ingressclasses"
 command:
-- "ingclasses"
-- "ingclass"
+  - "ingclasses"
+  - "ingclass"
 listview:
   name: "Ingress Classes"
   group: "Network"
@@ -19,20 +19,20 @@ listview:
     parameters:
       header: "Parameters:"
       paths:
-      - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#namespace"], ["spec#parameters#name"]]
-        pathtype: "tuple"
-        type: ["kind", "api_group", "name", "name"]
+        - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#namespace"], ["spec#parameters#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name", "name"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "namespace"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "namespace"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
-        - type: "namespace"
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
 infoview:
   name: "Ingress Class Info"
   infopad:
@@ -47,18 +47,18 @@ infoview:
       parameters:
         header: [["P", ["main", "infoheader_shortcut"]], ["arameters Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   listpad:
     on_activation:
       call: "resourceinfodispatch"
@@ -73,10 +73,10 @@ infoview:
         ingress_class:
           enabled: true
           allow:
-          - key: "spec#ingressClassName"
-            values:
-              source: "caller"
-              path: "metadata#name"
+            - key: "spec#ingressClassName"
+              values:
+                source: "caller"
+                path: "metadata#name"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:

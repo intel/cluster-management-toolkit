@@ -7,7 +7,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["image_name", "kind", "tag", "import_mode", "scheduled", "reference_policy", "generation"]
+        fields: ["image_name", "kind", "tag", "import_mode",
+                 "scheduled", "reference_policy", "generation"]
     rows:
       generation:
         header: [["Generation:", ["main", "infoheader"]]]
@@ -25,7 +26,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "kind"
+            - type: "kind"
       import_mode:
         header: [["Import Node:", ["main", "infoheader"]]]
         path: "importPolicy#importMode"
@@ -45,7 +46,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   logpad:
     infogetter: "logpad_yaml"
     timestamps: false

@@ -3,7 +3,7 @@ kind: "MachineSet"
 api_family: "machine.openshift.io"
 default_command: "machinesets.machine.openshift.io"
 command:
-- "os-ms"
+  - "os-ms"
 listview:
   name: "Machine Sets"
   group: "OpenShift"
@@ -22,7 +22,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     desired:
       header: "Desired:"
@@ -30,7 +30,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     fully_labelled:
       header: "Fully Labelled:"
@@ -38,7 +38,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     observed:
       header: "Observed:"
@@ -46,7 +46,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     ready:
       header: "Ready:"
@@ -55,7 +55,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Machine Set Info"
@@ -71,7 +71,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       delete_policy:
         header: [["Delete Policy:", ["main", "infoheader"]]]
         path: "spec#deletePolicy"
@@ -83,27 +83,27 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       fully_labelled:
         header: [["  Fully Labelled:", ["main", "infoheader"]]]
         path: "spec#replicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       min_ready_seconds:
         header: [["Min Ready Seconds:", ["main", "infoheader"]]]
         path: "spec#minReadySeconds"
@@ -111,14 +111,14 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       observed:
         header: [["  Observed:", ["main", "infoheader"]]]
         path: "status#replicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       ready:
         header: [["  Ready:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
@@ -126,21 +126,21 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       replicas_header:
         header: [["Replicas:", ["main", "infoheader"]]]
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#selector#matchExpressions"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "spec#selector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"

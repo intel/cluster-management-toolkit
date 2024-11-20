@@ -3,10 +3,10 @@ kind: "SeldonDeployment"
 api_family: "machinelearning.seldon.io"
 default_command: "seldondeployments"
 command:
-- "seldondeploys"
-- "seldondeploy"
-- "seldondeps"
-- "seldondep"
+  - "seldondeploys"
+  - "seldondeploy"
+  - "seldondeps"
+  - "seldondep"
 listview:
   name: "Seldon Deployments"
   group: "Machine Learning"
@@ -24,16 +24,16 @@ listview:
           mappings:
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_warning"
+                - context: "main"
+                  type: "status_warning"
             Creating:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Available:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -59,7 +59,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         path: "status#replicas"
@@ -76,23 +76,23 @@ infoview:
             mappings:
               Failed:
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
               Creating:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Available:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       url:
         header: [["URL:", ["main", "infoheader"]]]
         path: "status#address#url"
         type: "str"
         formatting:
           field_colors:
-          - type: "url"
+            - type: "url"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -100,7 +100,8 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["name", "graph_name", "graph_implementation", "graph_model_uri", "replicas", "graph_parameters"]
+        fields: ["name", "graph_name", "graph_implementation",
+                 "graph_model_uri", "replicas", "graph_parameters"]
         sortcolumn: "name"
     fields:
       name:
@@ -121,26 +122,26 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "url"
+            - type: "url"
       graph_parameters:
         header: "Graph Parameters:"
         paths:
-        - path: "graph#parameters"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - "type"
-          - "value"
-          default: ["<none>"]
+          - path: "graph#parameters"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - "type"
+              - "value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
-          - type: "selector"
+            - type: "keyvalue"
+            - type: "selector"
       replicas:
         header: "Replicas:"
         path: "replicas"
@@ -160,9 +161,9 @@ infoview:
       itemgetter_args:
         path: "status#serviceStatus"
         fields:
-        - "value#svcName"
-        - "value#httpEndpoint"
-        - "value#grpcEndpoint"
+          - "value#svcName"
+          - "value#httpEndpoint"
+          - "value#grpcEndpoint"
       # This isn't supported for now
       sortcolumn: "name"
       selectable: true

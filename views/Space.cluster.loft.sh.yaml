@@ -3,7 +3,7 @@ kind: "Space"
 api_family: "cluster.loft.sh"
 default_command: "spaces.cluster"
 command:
-- "space.cluster"
+  - "space.cluster"
 listview:
   name: "Spaces"
   group: "Lôft"
@@ -14,31 +14,31 @@ listview:
     controller:
       header: "Controller:"
       paths:
-      - path: "metadata#ownerReferences"
-        pathtype: "items"
-        subpaths:
-        - "kind"
-        - "apiVersion"
-        - "name"
-        when:
-        - key: "controller"
-          eq: true
-        type: ["kind", "api_group", "name"]
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+            - "kind"
+            - "apiVersion"
+            - "name"
+          when:
+            - key: "controller"
+              eq: true
+          type: ["kind", "api_group", "name"]
       default: "<none>"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     owner:
       header: "Owner:"
       paths:
-      - path: ["status#owner#user#name", "status#owner#team#name"]
-        pathtype: "str"
+        - path: ["status#owner#user#name", "status#owner#team#name"]
+          pathtype: "str"
       type: "str"
     phase:
       header: "Phase:"
@@ -50,12 +50,12 @@ listview:
           mappings:
             "Active":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Terminating":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
 infoview:
   name: "Space Info"
   # This is necessary because "get" doesn't return the same data as "list"
@@ -64,45 +64,46 @@ infoview:
     row_indexes:
       Normal:
         fields:
-        - "controller"
-        - "phase"
-        - "owner_header"
-        - "owner_user_header"
-        - "owner_user_display_name"
-        - "owner_user_name"
-        - "owner_user_email"
-        - "owner_user_username"
-        - "owner_user_subject"
-        - "owner_team_header"
-        - "owner_team_display_name"
-        - "owner_team_name"
-        - "owner_team_email"
-        - "owner_team_username"
-        - "owner_team_subject"
+          - "controller"
+          - "phase"
+          - "owner_header"
+          - "owner_user_header"
+          - "owner_user_display_name"
+          - "owner_user_name"
+          - "owner_user_email"
+          - "owner_user_username"
+          - "owner_user_subject"
+          - "owner_team_header"
+          - "owner_team_display_name"
+          - "owner_team_name"
+          - "owner_team_email"
+          - "owner_team_username"
+          - "owner_team_subject"
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -113,16 +114,18 @@ infoview:
             mappings:
               "Active":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Terminating":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
       owner_header:
         header: [["Owner:", ["main", "infoheader"]]]
       owner_team_header:
-        header: [["  ", ["main", "infoheader"]], ["T", ["main", "infoheader_shortcut"]], ["eam:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["T", ["main", "infoheader_shortcut"]],
+                 ["eam:", ["main", "infoheader"]]]
       owner_team_display_name:
         header: [["    Display Name:", ["main", "infoheader"]]]
         path: "status#owner#team#displayName"
@@ -149,7 +152,9 @@ infoview:
         type: "str"
         default: "<unset>"
       owner_user_header:
-        header: [["  ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["ser:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["ser:", ["main", "infoheader"]]]
       owner_user_display_name:
         header: [["    Display Name:", ["main", "infoheader"]]]
         path: "status#owner#user#displayName"

@@ -3,9 +3,9 @@ kind: "Team"
 api_family: "management.loft.sh"
 default_command: "teams.management"
 command:
-- "team.management"
-- "teams.mgmnt"
-- "team.mgmnt"
+  - "team.management"
+  - "teams.mgmnt"
+  - "team.mgmnt"
 listview:
   name: "Team"
   group: "Lôft"
@@ -40,10 +40,11 @@ infoview:
         path: "spec#displayName"
         type: "str"
       groups:
-        header: [["G", ["main", "infoheader_shortcut"]], ["roups:", ["main", "infoheader"]]]
+        header: [["G", ["main", "infoheader_shortcut"]],
+                 ["roups:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#groups"
-          pathtype: "list"
+          - path: "spec#groups"
+            pathtype: "list"
         formatter: "list"
       username:
         header: [["Username:", ["main", "infoheader"]]]
@@ -66,20 +67,20 @@ infoview:
       subresources:
         header: "Subresources:"
         paths:
-        - path: "subresources"
-          pathtype: "list"
+          - path: "subresources"
+            pathtype: "list"
         formatter: "list"
       teams:
         header: "Teams:"
         paths:
-        - path: "teams"
-          pathtype: "list"
+          - path: "teams"
+            pathtype: "list"
         formatter: "list"
       verbs:
         header: "Verbs:"
         paths:
-        - path: "verbs"
-          pathtype: "list"
+          - path: "verbs"
+            pathtype: "list"
         formatter: "list"
   shortcuts:
     "List Groups":
@@ -106,7 +107,7 @@ infoview:
       itemgetter_args:
         path: "spec#clusterRoles"
         fields:
-        - "name"
+          - "name"
       # Not supported for now
       sortcolumn: "clusterroles"
       action: "call"

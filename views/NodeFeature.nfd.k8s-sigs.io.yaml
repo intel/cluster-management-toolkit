@@ -3,8 +3,8 @@ kind: "NodeFeature"
 api_family: "nfd.k8s-sigs.io"
 default_command: "nodefeatures"
 command:
-- "nfeats"
-- "nfeat"
+  - "nfeats"
+  - "nfeat"
 listview:
   name: "Node Features"
   group: "Cluster Configuration"
@@ -21,26 +21,26 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       cpu_family:
         header: [["  Family:", ["main", "infoheader"]]]
         path: "spec#features#attributes#cpu.model#elements#family"
@@ -49,10 +49,10 @@ infoview:
       cpu_flags:
         header: [["  ", ["main", "infoheader"]], ["F", ["main", "infoheader_shortcut"]], ["lags:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#features#flags#cpu.cpuid#elements"
-          pathtype: "dictlist"
-          transform:
-            output: ["key"]
+          - path: "spec#features#flags#cpu.cpuid#elements"
+            pathtype: "dictlist"
+            transform:
+              output: ["key"]
         formatter: "list"
         formatting:
           ellipsise: 20
@@ -66,37 +66,37 @@ infoview:
       cpu_cstate:
         header: [["  CState:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#features#attributes#cpu.cstate#elements"
-          pathtype: "substitution"
-          substitute: "Enabled"
-          else: ""
-          when:
-          - key: "enabled"
-            eq: "true"
-        - path: "spec#features#attributes#cpu.cstate#elements"
-          pathtype: "substitution"
-          substitute: "Disabled"
-          else: ""
-          when:
-          - key: "enabled"
-            eq: "false"
+          - path: "spec#features#attributes#cpu.cstate#elements"
+            pathtype: "substitution"
+            substitute: "Enabled"
+            else: ""
+            when:
+              - key: "enabled"
+                eq: "true"
+          - path: "spec#features#attributes#cpu.cstate#elements"
+            pathtype: "substitution"
+            substitute: "Disabled"
+            else: ""
+            when:
+              - key: "enabled"
+                eq: "false"
       cpu_sgx:
         header: [["  SGX:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#features#attributes#cpu.sgx#elements"
-          pathtype: "substitution"
-          substitute: "Enabled"
-          else: ""
-          when:
-          - key: "enabled"
-            eq: "true"
-        - path: "spec#features#attributes#cpu.sgx#elements"
-          pathtype: "substitution"
-          substitute: "Disabled"
-          else: ""
-          when:
-          - key: "enabled"
-            eq: "false"
+          - path: "spec#features#attributes#cpu.sgx#elements"
+            pathtype: "substitution"
+            substitute: "Enabled"
+            else: ""
+            when:
+              - key: "enabled"
+                eq: "true"
+          - path: "spec#features#attributes#cpu.sgx#elements"
+            pathtype: "substitution"
+            substitute: "Disabled"
+            else: ""
+            when:
+              - key: "enabled"
+                eq: "false"
         type: "str"
         default: "<unsupported>"
         formatter: "value_mapper"
@@ -105,8 +105,8 @@ infoview:
             mappings:
               "<unsupported>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       cpu_vendor:
         header: [["  Vendor:", ["main", "infoheader"]]]
         path: "spec#features#attributes#cpu.model#elements#vendor_id"
@@ -114,10 +114,10 @@ infoview:
       network_devices:
         header: [["Net", ["main", "infoheader"]], ["w", ["main", "infoheader_shortcut"]], ["ork Devices:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#features#instances#network.device#elements"
-          pathtype: "items"
-          subpaths:
-          - "attributes#name"
+          - path: "spec#features#instances#network.device#elements"
+            pathtype: "items"
+            subpaths:
+              - "attributes#name"
         formatter: "list"
         formatting:
           ellipsise: 20
@@ -134,27 +134,27 @@ infoview:
       pstate_turbo:
         header: [["  Turbo:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#features#attributes#cpu.pstate#elements"
-          pathtype: "substitution"
-          substitute: "Enabled"
-          else: ""
-          when:
-          - key: "turbo"
-            eq: "true"
-        - path: "spec#features#attributes#cpu.pstate#elements"
-          pathtype: "substitution"
-          substitute: "Disabled"
-          else: ""
-          when:
-          - key: "turbo"
-            eq: "false"
+          - path: "spec#features#attributes#cpu.pstate#elements"
+            pathtype: "substitution"
+            substitute: "Enabled"
+            else: ""
+            when:
+              - key: "turbo"
+                eq: "true"
+          - path: "spec#features#attributes#cpu.pstate#elements"
+            pathtype: "substitution"
+            substitute: "Disabled"
+            else: ""
+            when:
+              - key: "turbo"
+                eq: "false"
       storage:
         header: [["S", ["main", "infoheader_shortcut"]], ["torage:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#features#instances#storage.block#elements"
-          pathtype: "items"
-          subpaths:
-          - "attributes#name"
+          - path: "spec#features#instances#storage.block#elements"
+            pathtype: "items"
+            subpaths:
+              - "attributes#name"
         formatter: "list"
         formatting:
           ellipsise: 20
@@ -170,7 +170,7 @@ infoview:
       itemgetter_args:
         path: "spec#features#flags#cpu.cpuid#elements"
         fields:
-        - "key"
+          - "key"
       # This isn't supported for now
       sortcolumn: "key"
     "Kernel Configuration":
@@ -195,9 +195,9 @@ infoview:
       itemgetter_args:
         path: "spec#features#instances#network.device#elements"
         fields:
-        - "attributes#name"
-        - "attributes#operstate"
-        - "attributes#speed"
+          - "attributes#name"
+          - "attributes#operstate"
+          - "attributes#speed"
       # This isn't supported for now
       sortcolumn: "name"
     "Open controller":
@@ -223,11 +223,11 @@ infoview:
       itemgetter_args:
         path: "spec#features#instances#storage.block#elements"
         fields:
-        - "attributes#name"
-        - "attributes#rotational"
-        - "attributes#zoned"
-        - "attributes#nr_zones"
-        - "attributes#dax"
+          - "attributes#name"
+          - "attributes#rotational"
+          - "attributes#zoned"
+          - "attributes#nr_zones"
+          - "attributes#dax"
       # This isn't supported for now
       sortcolumn: "name"
     "PCI Devices":
@@ -242,11 +242,11 @@ infoview:
       itemgetter_args:
         path: "spec#features#instances#pci.device#elements"
         fields:
-        - "attributes#class"
-        - "attributes#vendor"
-        - "attributes#device"
-        - "attributes#subsystem_vendor"
-        - "attributes#subsystem_device"
+          - "attributes#class"
+          - "attributes#vendor"
+          - "attributes#device"
+          - "attributes#subsystem_vendor"
+          - "attributes#subsystem_device"
       # This isn't supported for now
       sortcolumn: "class"
     "USB Devices":
@@ -261,9 +261,9 @@ infoview:
       itemgetter_args:
         path: "spec#features#instances#usb.device#elements"
         fields:
-        - "attributes#class"
-        - "attributes#vendor"
-        - "attributes#device"
-        - "attributes#serial"
+          - "attributes#class"
+          - "attributes#vendor"
+          - "attributes#device"
+          - "attributes#serial"
       # This isn't supported for now
       sortcolumn: "class"

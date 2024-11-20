@@ -3,13 +3,13 @@ kind: "ImageStream"
 api_family: "image.openshift.io"
 default_command: "imagestreams.image.openshift.io"
 command:
-- "imagestream.image.openshift.io"
-- "imagestreams.openshift"
-- "imagestream.openshift"
-- "osimagestreams"
-- "osimagestream"
-- "osimgstreams"
-- "osimgstream"
+  - "imagestream.image.openshift.io"
+  - "imagestreams.openshift"
+  - "imagestream.openshift"
+  - "osimagestreams"
+  - "osimagestream"
+  - "osimgstreams"
+  - "osimgstream"
 listview:
   name: "Image Streams"
   group: "OpenShift"
@@ -28,15 +28,15 @@ listview:
     tags:
       header: "Tags:"
       paths:
-      - path: "status#tags"
-        pathtype: "items"
-        subpaths:
-        - "tag"
+        - path: "status#tags"
+          pathtype: "items"
+          subpaths:
+            - "tag"
       type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Image Stream Info"
   infopad:
@@ -47,13 +47,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       image_repository:
         header: [["Docker Image Repository:", ["main", "infoheader"]]]
@@ -70,15 +70,15 @@ infoview:
       tags:
         header: [["Tags:", ["main", "infoheader"]]]
         paths:
-        - path: "status#tags"
-          pathtype: "items"
-          subpaths:
-          - "tag"
+          - path: "status#tags"
+            pathtype: "items"
+            subpaths:
+              - "tag"
         type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -109,7 +109,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "kind"
+            - type: "kind"
       import_mode:
         header: "Import Mode:"
         path: "importPolicy#importMode"
@@ -129,7 +129,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Cluster Version":
       key: "v"

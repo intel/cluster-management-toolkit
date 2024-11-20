@@ -3,10 +3,10 @@ kind: "NetworkAuthentication"
 api_family: "policy.linkerd.io"
 default_command: "networkauthentications"
 command:
-- "networkauths"
-- "networkauth"
-- "netauths"
-- "netauth"
+  - "networkauths"
+  - "networkauth"
+  - "netauths"
+  - "netauth"
 listview:
   name: "Network Authentications"
   group: "Network"
@@ -16,7 +16,7 @@ listview:
       sortcolumn: "namespace"
 infoview:
   name: "Network Authentication Info"
-  infopad:
+  infopad: null
   shortcuts:
     "Networks":
       key: "e"
@@ -30,7 +30,7 @@ infoview:
       itemgetter_args:
         path: "spec#networks"
         fields:
-        - "cidr"
-        - "except"
+          - "cidr"
+          - "except"
       # This isn't supported for now
       sortcolumn: "cidr"

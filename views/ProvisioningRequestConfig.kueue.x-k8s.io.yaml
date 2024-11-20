@@ -3,10 +3,10 @@ kind: "ProvisioningRequestConfig"
 api_family: "kueue.x-k8s.io"
 default_command: "provisioningrequestconfigs"
 command:
-- "provreqconfigs"
-- "provreqconfig"
-- "provreqconfs"
-- "provreqconf"
+  - "provreqconfigs"
+  - "provreqconfig"
+  - "provreqconfs"
+  - "provreqconf"
 listview:
   name: "Provisioning Request Configs"
   group: "Batch Scheduling"
@@ -21,7 +21,9 @@ infoview:
         fields: ["provisioning_class_name", "managed_resources"]
     rows:
       managed_resources:
-        header: [["Managed ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["esources:", ["main", "infoheader"]]]
+        header: [["Managed ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["esources:", ["main", "infoheader"]]]
         path: "spec#managedResources"
         default: ["<none>"]
         type: "raw"

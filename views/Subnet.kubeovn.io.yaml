@@ -7,7 +7,9 @@ listview:
   group: "Kube-OVN"
   field_indexes:
     Normal:
-      fields: ["name", "provider", "vpc", "protocol", "cidr_block", "private", "nat_outgoing", "default", "gateway_type", "used_ipv4", "used_ipv6", "excluded_ips", "age"]
+      fields: ["name", "provider", "vpc", "protocol", "cidr_block",
+               "private", "nat_outgoing", "default", "gateway_type",
+               "used_ipv4", "used_ipv6", "excluded_ips", "age"]
   fields:
     cidr_block:
       header: "CIDR block:"
@@ -46,28 +48,28 @@ listview:
     used_ipv4:
       header: "Used IPv4:"
       paths:
-      - path: [["status#v4usingIPs"], ["status#v4availableIPs"]]
-        pathtype: "tuple"
+        - path: [["status#v4usingIPs"], ["status#v4availableIPs"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
         field_separators:
-        - type: "fraction"
+          - type: "fraction"
       align: "right"
     used_ipv6:
       header: "Used IPv6:"
       paths:
-      - path: [["status#v6usingIPs"], ["status#v6availableIPs"]]
-        pathtype: "tuple"
+        - path: [["status#v6usingIPs"], ["status#v6availableIPs"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
         field_separators:
-        - type: "fraction"
+          - type: "fraction"
       align: "right"
     vpc:
       header: "VPC:"
@@ -78,7 +80,15 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cidr_block", "default", "provider", "vpc", "activate_gateway", "dhcpv4_options", "dhcpv4_options_uuid", "dhcpv6_options", "dhcpv6_options_uuid", "disable_gateway_check", "disable_interconnection", "enable_dhcp", "enable_ipv6_ra", "excluded_ips", "gateway", "gateway_node", "gateway_type", "ipv6_ra_configs", "logical_gateway", "nat_outgoing", "private", "protocol", "used_ipv4", "used_ipv6"]
+        fields: ["cidr_block", "default", "provider", "vpc",
+                 "activate_gateway", "dhcpv4_options",
+                 "dhcpv4_options_uuid", "dhcpv6_options",
+                 "dhcpv6_options_uuid", "disable_gateway_check",
+                 "disable_interconnection", "enable_dhcp",
+                 "enable_ipv6_ra", "excluded_ips", "gateway",
+                 "gateway_node", "gateway_type", "ipv6_ra_configs",
+                 "logical_gateway", "nat_outgoing", "private",
+                 "protocol", "used_ipv4", "used_ipv6"]
     rows:
       activate_gateway:
         header: [["Activate Gateway:", ["main", "infoheader"]]]
@@ -128,8 +138,8 @@ infoview:
       excluded_ips:
         header: [["Excluded IPs:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#excludeIps"
-          pathtype: "list"
+          - path: "spec#excludeIps"
+            pathtype: "list"
         formatter: "address"
       gateway:
         header: [["Gateway:", ["main", "infoheader"]]]
@@ -137,12 +147,14 @@ infoview:
         type: "str"
         formatter: "address"
       gateway_node:
-        header: [["Gateway No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e:", ["main", "infoheader"]]]
+        header: [["Gateway No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e:", ["main", "infoheader"]]]
         path: "spec#gatewayNode"
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       gateway_type:
         header: [["Gateway Type:", ["main", "infoheader"]]]
         path: "spec#gatewayType"
@@ -172,33 +184,34 @@ infoview:
         path: "spec#provider"
         type: "str"
       vpc:
-        header: [["V", ["main", "infoheader_shortcut"]], ["PC:", ["main", "infoheader"]]]
+        header: [["V", ["main", "infoheader_shortcut"]],
+                 ["PC:", ["main", "infoheader"]]]
         path: "spec#vpc"
         type: "str"
       used_ipv4:
         header: [["Used IPv4-addresses:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#v4usingIPs"], ["status#v4availableIPs"]]
-          pathtype: "tuple"
+          - path: [["status#v4usingIPs"], ["status#v4availableIPs"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "fraction"
+            - type: "fraction"
       used_ipv6:
         header: [["Used IPv6-addresses:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#v6usingIPs"], ["status#v6availableIPs"]]
-          pathtype: "tuple"
+          - path: [["status#v6usingIPs"], ["status#v6availableIPs"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "fraction"
+            - type: "fraction"
   shortcuts:
     "Open gateway Node":
       key: "d"

@@ -9,7 +9,9 @@ infoview:
     creation_timestamp_path: null
     row_indexes:
       Normal:
-        fields: ["test_set", "category", "severity_header", "severity_fail", "severity_warn", "severity_info", "severity_pass"]
+        fields: ["test_set", "category", "severity_header",
+                 "severity_fail", "severity_warn", "severity_info",
+                 "severity_pass"]
     rows:
       category:
         header: [["Category:", ["main", "infoheader"]]]
@@ -23,15 +25,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       severity_header:
         header: [["Severity:", ["main", "infoheader"]]]
       severity_info:
@@ -42,22 +44,22 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
       severity_pass:
         header: [["  Pass:", ["main", "infoheader"]]]
         path: "pass"
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       severity_warn:
         header: [["  Warn:", ["main", "infoheader"]]]
         path: "warn"
@@ -66,34 +68,34 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
       test_set:
         header: [["Test Set:", ["main", "infoheader"]]]
         paths:
-        - path: [["section"], ["desc"]]
-          pathtype: "tuple"
+          - path: [["section"], ["desc"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "id_prefix"
+            - type: "id_prefix"
       test_set_id:
         header: [["Test Set ID#:", ["main", "infoheader"]]]
         path: "section"
         type: "str"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   listpad:
     on_activation:
       call: "resourceinfodispatch"
@@ -122,16 +124,16 @@ infoview:
             mappings:
               "PASS":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "WARN":
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
               "FAIL":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       test_id:
         header: "ID#:"
         path: "test_number"
@@ -139,4 +141,4 @@ infoview:
         align: "right"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"

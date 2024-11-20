@@ -12,43 +12,43 @@ listview:
     available_replicas:
       header: "Available:"
       paths:
-      - path: ["status#numberAvailable", "status#currentNumberScheduled"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#numberAvailable", "status#currentNumberScheduled"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_pending"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
       align: "right"
     current_replicas:
       header: "Current:"
       paths:
-      - path: ["status#currentNumberScheduled", "status#desiredNumberScheduled"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#currentNumberScheduled", "status#desiredNumberScheduled"]
+          pathtype: "comparison"
+          default: [0, 0]
       align: "right"
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
     desired_replicas:
       header: "Desired:"
       path: "status#desiredNumberScheduled"
@@ -56,7 +56,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     port:
       header: "Port:"
@@ -64,51 +64,51 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "port"
+          - type: "port"
     ready_replicas:
       header: "Ready:"
       paths:
-      - path: ["status#numberReady", "status#currentNumberScheduled"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#numberReady", "status#currentNumberScheduled"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - min: -1
-            max: 0
-            field_colors:
-            - context: "main"
-              type: "status_pending"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
       align: "right"
     uptodate_replicas:
       header: "Up to Date:"
       paths:
-      - path: ["status#updatedNumberScheduled", "status#currentNumberScheduled"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#updatedNumberScheduled", "status#currentNumberScheduled"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_pending"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
       align: "right"
 infoview:
   name: "Kepler Info"
@@ -122,66 +122,66 @@ infoview:
       exporter_node_selector:
         header: [["  Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#exporter#deployment#nodeSelector"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#exporter#deployment#nodeSelector"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       exporter_port:
         header: [["  Port:", ["main", "infoheader"]]]
         path: "spec#exporter#deployment#port"
         type: "int"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       exporter_tolerations:
         header: [["  Tolerations:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#exporter#deployment#tolerations"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "spec#exporter#deployment#tolerations"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
-          - type: "keyvalue_taint"
+            - type: "space"
+            - type: "no_pad"
+            - type: "keyvalue_taint"
       nodes:
         header: [["Nodes:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#currentNumberScheduled"], " Current", ["status#desiredNumberScheduled"], " Desired", ["status#updatedNumberScheduled"], " Up to Date", ["status#numberAvailable"], " Available", ["status#numberMisscheduled"], " Misscheduled"]
-          pathtype: "tuple"
-          default: [0, "", 0, "", 0, "", 0, "", 0, ""]
+          - path: [["status#currentNumberScheduled"], " Current", ["status#desiredNumberScheduled"], " Desired", ["status#updatedNumberScheduled"], " Up to Date", ["status#numberAvailable"], " Available", ["status#numberMisscheduled"], " Misscheduled"]
+            pathtype: "tuple"
+            default: [0, "", 0, "", 0, "", 0, "", 0, ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"

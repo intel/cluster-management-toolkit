@@ -13,35 +13,37 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "provisioner", "storage_class", "clone_strategy", "data_import_cron_source_format"]
+        fields: ["controller", "provisioner", "storage_class",
+                 "clone_strategy", "data_import_cron_source_format"]
     rows:
       clone_strategy:
         header: [["Clone Strategy:", ["main", "infoheader"]]]
         path: "status#cloneStrategy"
         type: "str"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       data_import_cron_source_format:
         header: [["Data Import Cron Source Format:", ["main", "infoheader"]]]
         path: "status#dataImportCronSourceFormat"
@@ -51,7 +53,8 @@ infoview:
         path: "status#provisioner"
         type: "str"
       storage_class:
-        header: [["S", ["main", "infoheader_shortcut"]], ["torage Class:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["torage Class:", ["main", "infoheader"]]]
         path: "status#storageClass"
         type: "str"
   shortcuts:

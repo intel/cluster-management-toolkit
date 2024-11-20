@@ -3,8 +3,8 @@ kind: "Network"
 api_family: "config.openshift.io"
 default_command: "networks.config.openshift.io"
 command:
-- "networks.config"
-- "network.config"
+  - "networks.config"
+  - "network.config"
 listview:
   name: "Networks"
   group: "OpenShift"
@@ -24,13 +24,13 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       network_type:
         header: [["Network Type:", ["main", "infoheader"]]]
         paths:
-        - path: ["status#networkType", "spec#networkType"]
-          pathtype: "value"
-          type: "str"
+          - path: ["status#networkType", "spec#networkType"]
+            pathtype: "value"
+            type: "str"
   shortcuts:
     "Show Cluster Network":
       key: "c"
@@ -44,8 +44,8 @@ infoview:
       itemgetter_args:
         path: ["status#clusterNetwork", "spec#clusterNetwork"]
         fields:
-        - "cidr"
-        - "hostPrefix"
+          - "cidr"
+          - "hostPrefix"
       # This isn't supported for now
       sortcolumn: "cidr"
     "Show Service Network":

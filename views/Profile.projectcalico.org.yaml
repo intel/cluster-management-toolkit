@@ -3,7 +3,7 @@ kind: "Profile"
 api_family: "projectcalico.org"
 default_command: "calicoprofiles"
 command:
-- "calicoprofile"
+  - "calicoprofile"
 listview:
   name: "Profiles"
   group: "Calico"
@@ -18,17 +18,18 @@ infoview:
         fields: ["labels_to_apply"]
     rows:
       labels_to_apply:
-        header: [["L", ["main", "infoheader_shortcut"]], ["abels to Apply:", ["main", "infoheader"]]]
+        header: [["L", ["main", "infoheader_shortcut"]],
+                 ["abels to Apply:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#labelsToApply"]
-          pathtype: "key_value"
+          - path: ["spec#labelsToApply"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
           ellipsise: 3
   shortcuts:
     "List labels to apply":

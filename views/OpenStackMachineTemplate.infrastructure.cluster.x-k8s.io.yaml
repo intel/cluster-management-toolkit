@@ -3,7 +3,7 @@ kind: "OpenStackMachineTemplate"
 api_family: "infrastructure.cluster.x-k8s.io"
 default_command: "openstackmachinetemplates"
 command:
-- "osmt"
+  - "osmt"
 listview:
   name: "OpenStack Machine Templates"
   group: "Cluster Configuration"
@@ -21,13 +21,13 @@ infoview:
       cluster:
         header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Cluster"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Cluster"
         default: "<none>"
       template_cloud_name:
         header: [["  Cloud Name:", ["main", "infoheader"]]]
@@ -42,15 +42,15 @@ infoview:
       template_identity:
         header: [["  ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#template#spec#identityRef#kind"], ["spec#template#spec#identityRef#name"]]
-          pathtype: "tuple"
+          - path: [["spec#template#spec#identityRef#kind"], ["spec#template#spec#identityRef#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           field_separators:
-          - type: "kind"
+            - type: "kind"
       template_image:
         header: [["  Image:", ["main", "infoheader"]]]
         path: "spec#template#spec#image"
@@ -58,10 +58,10 @@ infoview:
       template_security_groups:
         header: [["  Security Groups:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#template#spec#securityGroups"
-          pathtype: "items"
-          subpaths:
-          - "name"
+          - path: "spec#template#spec#securityGroups"
+            pathtype: "items"
+            subpaths:
+              - "name"
         type: "raw"
         formatter: "list"
       template_ssh_key_name:

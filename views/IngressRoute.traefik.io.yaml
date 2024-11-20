@@ -3,8 +3,8 @@ kind: "IngressRoute"
 api_family: "traefik.io"
 default_command: "ingressroutes"
 command:
-- "ingroutes"
-- "ingroute"
+  - "ingroutes"
+  - "ingroute"
 listview:
   name: "Ingress Routes"
   group: "Network"
@@ -41,7 +41,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "kind"
+            - type: "kind"
       match:
         header: "match:"
         path: "match"
@@ -49,16 +49,16 @@ infoview:
       services:
         header: "Services:"
         paths:
-        - path: "services"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "name"
-          type: "raw"
+          - path: "services"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "name"
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           field_separators:
-          - type: "kind"
+            - type: "kind"

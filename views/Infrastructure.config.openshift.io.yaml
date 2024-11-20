@@ -3,8 +3,8 @@ kind: "Infrastructure"
 api_family: "config.openshift.io"
 default_command: "infrastructures.config.openshift.io"
 command:
-- "infrastructures.config"
-- "infrastructure.config"
+  - "infrastructures.config"
+  - "infrastructure.config"
 listview:
   name: "Infrastructures"
   group: "OpenShift"
@@ -31,11 +31,11 @@ infoview:
       cloud_config:
         header: [["Cloud Config:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#cloudConfig#name"
-          pathtype: "value"
-          type: "str"
-          fallback_on_empty: true
-          default: "<empty>"
+          - path: "spec#cloudConfig#name"
+            pathtype: "value"
+            type: "str"
+            fallback_on_empty: true
+            default: "<empty>"
       etcd_discovery_domain:
         header: [["etcd Discovery Domain:", ["main", "infoheader"]]]
         path: "status#etcdDiscoveryDomain"

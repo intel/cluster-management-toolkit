@@ -2,24 +2,26 @@
 kind: "PersistentVolume"
 default_command: "persistentvolumes"
 command:
-- "pv"
+  - "pv"
 listview:
   name: "Persistent Volumes"
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["name", "status", "capacity", "access_modes", "storage_class", "claim", "reclaim_policy", "volume_mode", "age", "reason"]
+      fields: ["name", "status", "capacity", "access_modes",
+               "storage_class", "claim", "reclaim_policy",
+               "volume_mode", "age", "reason"]
   fields:
     access_modes:
       header: "Access Modes:"
       paths:
-      - path: "spec#accessModes"
-        pathtype: "remap"
-        substitutions:
-          "ReadWriteOnce": "RWO"
-          "ReadWriteOncePod": "RWOP"
-          "ReadWriteMany": "RWM"
-          "ReadOnlyMany": "ROX"
+        - path: "spec#accessModes"
+          pathtype: "remap"
+          substitutions:
+            "ReadWriteOnce": "RWO"
+            "ReadWriteOncePod": "RWOP"
+            "ReadWriteMany": "RWM"
+            "ReadOnlyMany": "ROX"
       type: "raw"
       formatter: "list"
     capacity:
@@ -31,17 +33,17 @@ listview:
     claim:
       header: "Claim:"
       paths:
-      - path: [["spec#claimRef#namespace"], ["spec#claimRef#name"]]
-        pathtype: "tuple"
-        default: ["", "<none>"]
-        type: ["name", "name"]
+        - path: [["spec#claimRef#namespace"], ["spec#claimRef#name"]]
+          pathtype: "tuple"
+          default: ["", "<none>"]
+          type: ["name", "name"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "namespace"
-        - type: "generic"
+          - type: "namespace"
+          - type: "generic"
         field_separators:
-        - type: "namespace"
+          - type: "namespace"
     reason:
       header: "Reason:"
       path: "status#reason"
@@ -60,24 +62,24 @@ listview:
           mappings:
             Available:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Bound:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Released:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             __default:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     storage_class:
       header: "Storage Class:"
       path: "spec#storageClassName"
@@ -92,18 +94,21 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["status", "reason", "capacity", "persistent_volume_claim", "access_modes", "csi_driver", "storage_class", "reclaim_policy", "volume_mode"]
+        fields: ["status", "reason", "capacity",
+                 "persistent_volume_claim", "access_modes",
+                 "csi_driver", "storage_class", "reclaim_policy",
+                 "volume_mode"]
     rows:
       access_modes:
         header: [["Access Modes:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#accessModes"
-          pathtype: "remap"
-          substitutions:
-            "ReadWriteOnce": "RWO"
-            "ReadWriteOncePod": "RWOP"
-            "ReadWriteMany": "RWM"
-            "ReadOnlyMany": "ROX"
+          - path: "spec#accessModes"
+            pathtype: "remap"
+            substitutions:
+              "ReadWriteOnce": "RWO"
+              "ReadWriteOncePod": "RWOP"
+              "ReadWriteMany": "RWM"
+              "ReadOnlyMany": "ROX"
         type: "raw"
         formatter: "list"
       capacity:
@@ -113,24 +118,27 @@ infoview:
         formatter: "numerical_with_units"
         align: "right"
       csi_driver:
-        header: [["CSI ", ["main", "infoheader"]], ["D", ["main", "infoheader_shortcut"]], ["river:", ["main", "infoheader"]]]
+        header: [["CSI ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["river:", ["main", "infoheader"]]]
         path: "spec#csi#driver"
         default: "<unset>"
         type: "str"
       persistent_volume_claim:
-        header: [["P", ["main", "infoheader_shortcut"]], ["ersistent Volume Claim:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["ersistent Volume Claim:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#claimRef#namespace"], ["spec#claimRef#name"]]
-          pathtype: "tuple"
-          default: ["", "<none>"]
-          type: ["name", "name"]
+          - path: [["spec#claimRef#namespace"], ["spec#claimRef#name"]]
+            pathtype: "tuple"
+            default: ["", "<none>"]
+            type: ["name", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       reason:
         header: [["Reason:", ["main", "infoheader"]]]
         path: "status#reason"
@@ -150,26 +158,27 @@ infoview:
             mappings:
               Available:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Bound:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Released:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               __default:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       storage_class:
-        header: [["S", ["main", "infoheader_shortcut"]], ["torage Class:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["torage Class:", ["main", "infoheader"]]]
         path: "spec#storageClassName"
         default: "<none>"
         type: "str"
@@ -186,82 +195,87 @@ infoview:
         pvc:
           enabled: true
           allow:
-          - list: "spec#volumes"
-            key: "persistentVolumeClaim#claimName"
-            values:
-              source: "caller"
-              path: "spec#claimRef#name"
-          - key: "metadata#namespace"
-            values:
-              source: "caller"
-              path: "spec#claimRef#namespace"
+            - list: "spec#volumes"
+              key: "persistentVolumeClaim#claimName"
+              values:
+                source: "caller"
+                path: "spec#claimRef#name"
+            - key: "metadata#namespace"
+              values:
+                source: "caller"
+                path: "spec#claimRef#namespace"
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "controller", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "controller", "pod_status",
+                 "node_name", "pod_ip", "age", "restarts",
+                 "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "controller", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "controller", "pod_status",
+                 "node_name", "age", "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       controller:
         header: "Controller:"
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -272,7 +286,7 @@ infoview:
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
@@ -282,14 +296,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:

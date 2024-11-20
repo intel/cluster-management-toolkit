@@ -3,8 +3,8 @@ kind: "ImageListPullJob"
 api_family: "apps.kruise.io"
 default_command: "imagelistpulljobs"
 command:
-- "imglistpulljobs"
-- "imglistpulljob"
+  - "imglistpulljobs"
+  - "imglistpulljob"
 listview:
   name: "Image List Pull Jobs"
   group: "Kruise"
@@ -20,7 +20,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     failed_replicas:
       header: "Failed:"
@@ -31,39 +31,38 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - min: -1
-            max: 0
-            field_colors:
-            - context: "main"
-              type: "status_pending"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
       align: "right"
     images:
       header: "Image:"
       paths:
-      - path: "spec#images"
-        pathtype: "transform"
-        transform:
-          key:
-            regex: ["^([^:]+):(.*)"]
-            groups: [0, 1]
-          output:
-            ["key"]
+        - path: "spec#images"
+          pathtype: "transform"
+          transform:
+            key:
+              regex: ["^([^:]+):(.*)"]
+              groups: [0, 1]
+            output: ["key"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "generic"
-        - type: "version"
+          - type: "generic"
+          - type: "version"
         field_separators:
-        - type: "version"
+          - type: "version"
     message:
       header: "Message:"
       path: "status#message"
@@ -83,15 +82,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: -1
-            max: 0
-            field_colors:
-            - context: "main"
-              type: "status_pending"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
       align: "right"
     total_replicas:
       header: "Total:"
@@ -100,7 +99,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
   actions:
     actionlist:
@@ -123,7 +122,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       completion_policy_header:
         header: [["Completion Policy:", ["main", "infoheader"]]]
       completion_policy_ttl_seconds_after_finished:
@@ -133,7 +132,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       completion_policy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#type"
@@ -141,37 +140,36 @@ infoview:
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
-        - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
-          pathtype: "timestamp_with_age"
+          - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+            pathtype: "timestamp_with_age"
         formatter: "timestamp_with_age"
         formatting:
           field_colors:
           # This is a meta-type, indicating where the timestamp goes
-          - type: "timestamp"
-          - type: "generic"
-          - context: "main"
-            type: "infoheader"
+            - type: "timestamp"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
           # This is a meta-type, indicating where the age goes
-          - type: "age"
-          - type: "generic"
+            - type: "age"
+            - type: "generic"
       images:
         header: [["Images:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#images"
-          pathtype: "transform"
-          transform:
-            key:
-              regex: ["^([^:]+):(.*)"]
-              groups: [0, 1]
-            output:
-              ["key"]
+          - path: "spec#images"
+            pathtype: "transform"
+            transform:
+              key:
+                regex: ["^([^:]+):(.*)"]
+                groups: [0, 1]
+              output: ["key"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       message:
         header: [["Message:", ["main", "infoheader"]]]
         path: "status#message"
@@ -188,16 +186,16 @@ infoview:
       node_selector_label:
         header: [["  Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       parallelism:
         header: [["Parallelism:", ["main", "infoheader"]]]
         path: "spec#parallelism"
@@ -205,37 +203,37 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       pod_selector_header:
         header: [["Pod Selector:", ["main", "infoheader"]]]
       pod_selector_label:
         header: [["  Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#podSelector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#podSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       pod_selector_set_based:
         header: [["  Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#podSelector#matchExpressions"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "spec#podSelector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       pull_policy_backoff_limit:
         header: [["  Backoff Limit:", ["main", "infoheader"]]]
         path: "spec#pullPolicy#backoffLimit"
@@ -243,7 +241,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       pull_policy_header:
         header: [["Pull Policy:", ["main", "infoheader"]]]
       pull_policy_policy:
@@ -258,32 +256,32 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#desired"], " Desired", ["status#active"], " Active", ["status#failed"], " Failed", ["status#succeeded"], " Succeeded"]
-          pathtype: "tuple"
-          default: [0, "", 0, "", 0, "", 0, ""]
+          - path: [["status#desired"], " Desired", ["status#active"], " Active", ["status#failed"], " Failed", ["status#succeeded"], " Succeeded"]
+            pathtype: "tuple"
+            default: [0, "", 0, "", 0, "", 0, ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
   shortcuts:
     "Show node names":
       key: "m"

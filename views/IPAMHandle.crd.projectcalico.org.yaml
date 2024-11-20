@@ -18,21 +18,21 @@ infoview:
       blocks:
         header: [["Blocks:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#block"
-          pathtype: "dictlist"
-          transform:
-            key:
-              regex: ["^([^/]+)/(.+)"]
-              groups: [0, 1]
-              join: ["/"]
-            output: ["key"]
-            sorted: true
+          - path: "spec#block"
+            pathtype: "dictlist"
+            transform:
+              key:
+                regex: ["^([^/]+)/(.+)"]
+                groups: [0, 1]
+                join: ["/"]
+              output: ["key"]
+              sorted: true
         formatter: "address"
         formatting:
           field_separators:
-          - type: "ipv4address"
-          - type: "ipv6address"
-          - type: "ipmask"
+            - type: "ipv4address"
+            - type: "ipv6address"
+            - type: "ipmask"
       deleted:
         header: [["Deleted:", ["main", "infoheader"]]]
         path: "spec#deleted"

@@ -3,14 +3,15 @@ kind: "PriorityLevelConfiguration"
 api_family: "flowcontrol.apiserver.k8s.io"
 default_command: "prioritylevelconfigurations"
 command:
-- "priolevelconfs"
-- "priolevelconf"
+  - "priolevelconfs"
+  - "priolevelconf"
 listview:
   name: "Priority Level Configurations"
   group: "Scheduling & Scaling"
   field_indexes:
     Normal:
-      fields: ["name", "priority_type", "nominal_concurrency_shares", "queues", "hand_size", "queue_length_limit", "age"]
+      fields: ["name", "priority_type", "nominal_concurrency_shares",
+               "queues", "hand_size", "queue_length_limit", "age"]
   fields:
     hand_size:
       header: "Hand Size:"
@@ -19,16 +20,17 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     nominal_concurrency_shares:
       header: "Nominal Concurrency Shares:"
       paths:
-      - path: ["spec#limited#nominalConcurrencyShares", "spec#limited#assuredConcurrencyShares"]
-        pathtype: "value"
+        - path: ["spec#limited#nominalConcurrencyShares",
+                 "spec#limited#assuredConcurrencyShares"]
+          pathtype: "value"
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     priority_type:
       header: "Priority Type:"
       path: "spec#type"
@@ -40,7 +42,7 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     queues:
       header: "Queues:"
       path: "spec#limited#limitResponse#queuing#queues"
@@ -48,24 +50,28 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Priority Level Configuration Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "priority_type", "nominal_concurrency_shares", "queues", "hand_size", "queue_length_limit", "queues"]
+        fields: ["cluster_version", "priority_type",
+                 "nominal_concurrency_shares", "queues",
+                 "hand_size", "queue_length_limit", "queues"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       hand_size:
         header: [["Hand Size:", ["main", "infoheader"]]]
@@ -73,15 +79,15 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       nominal_concurrency_shares:
         header: [["Nominal Concurrency Shares:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#limited#assuredConcurrencyShares"
-          pathtype: "value"
+          - path: "spec#limited#assuredConcurrencyShares"
+            pathtype: "value"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       priority_type:
         header: [["Priority Type:", ["main", "infoheader"]]]
         path: "spec#type"
@@ -92,14 +98,14 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       queues:
         header: [["Queues:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#queues"
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Cluster Version":
       key: "v"

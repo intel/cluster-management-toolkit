@@ -3,8 +3,8 @@ kind: "Replica"
 api_family: "longhorn.io"
 default_command: "replicas.longhorn.io"
 command:
-- "lhreplicas"
-- "lhreplica"
+  - "lhreplicas"
+  - "lhreplica"
 listview:
   name: "Replicas"
   group: "Storage & Backups"
@@ -26,12 +26,12 @@ listview:
           mappings:
             "stopped":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "running":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -56,20 +56,20 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       state:
         header: [["State:", ["main", "infoheader"]]]
         path: "status#currentState"
@@ -80,9 +80,9 @@ infoview:
             mappings:
               "stopped":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"

@@ -3,8 +3,8 @@ kind: "ServingRuntime"
 api_family: "serving.kserve.io"
 default_command: "servingruntimes"
 command:
-- "srvruntimes"
-- "srvruntime"
+  - "srvruntimes"
+  - "srvruntime"
 listview:
   name: "Serving Runtimes"
   group: "Machine Learning"
@@ -14,7 +14,7 @@ listview:
       sortcolumn: "namespace"
 infoview:
   name: "Serving Runtime Info"
-  infopad:
+  infopad: null
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -39,7 +39,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Containers":
       key: "c"

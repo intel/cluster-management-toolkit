@@ -3,8 +3,8 @@ kind: "OLM"
 api_family: "operator.openshift.io"
 default_command: "olms"
 command:
-- "olms.operator"
-- "olm.operator"
+  - "olms.operator"
+  - "olm.operator"
 listview:
   name: "OLMs"
   group: "OpenShift"
@@ -21,13 +21,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
   shortcuts:
     "Cluster Version":
@@ -54,10 +54,10 @@ infoview:
       itemgetter_args:
         path: "status#generations"
         fields:
-        - "resource"
-        - "group"
-        - "namespace"
-        - "name"
+          - "resource"
+          - "group"
+          - "namespace"
+          - "name"
       # Not supported for now
       sortcolumn: "resource"
       action: "call"

@@ -3,8 +3,8 @@ kind: "ResourceDistribution"
 api_family: "apps.kruise.io"
 default_command: "resourcedistributions"
 command:
-- "kruiserds"
-- "kruiserd"
+  - "kruiserds"
+  - "kruiserd"
 listview:
   name: "Resource Distributions"
   group: "Kruise"
@@ -19,7 +19,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     failed:
       header: "Failed:"
@@ -28,7 +28,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     succeeded:
       header: "Succeeded:"
@@ -37,14 +37,16 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Resource Distributions Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["succeeded", "failed", "desired", "targets_header", "targets_included_namespaces", "targets_excluded_namespaces", "targets_namespace_selector"]
+        fields: ["succeeded", "failed", "desired",
+                 "targets_header", "targets_included_namespaces",
+                 "targets_excluded_namespaces", "targets_namespace_selector"]
     rows:
       desired:
         header: [["Desired:", ["main", "infoheader"]]]
@@ -53,7 +55,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       failed:
         header: [["Failed:", ["main", "infoheader"]]]
         path: "status#failed"
@@ -61,7 +63,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       succeeded:
         header: [["Succeeded:", ["main", "infoheader"]]]
         path: "status#succeeded"
@@ -69,46 +71,46 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       targets_header:
         header: [["Targets:", ["main", "infoheader"]]]
       targets_excluded_namespaces:
         header: [["  Excluded Namespaces:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#targets#excludedNamespaces#list"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          default: ["<none>"]
+          - path: "spec#targets#excludedNamespaces#list"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       targets_included_namespaces:
         header: [["  Included Namespaces:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#targets#includedNamespaces#list"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          default: ["<none>"]
+          - path: "spec#targets#includedNamespaces#list"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       targets_namespace_selector:
         header: [["  Namespace Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#targets#namespaceLabelSelector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#targets#namespaceLabelSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   shortcuts:
     "Resource":
       key: "r"

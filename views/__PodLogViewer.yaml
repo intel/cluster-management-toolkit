@@ -2,8 +2,8 @@
 kind: "__PodLogViewer"
 default_command: "podlogviewer"
 command:
-- "podlogs"
-- "podlog"
+  - "podlogs"
+  - "podlog"
 listview:
   name: "Pod Log Viewer"
   group: "Administration"
@@ -14,7 +14,8 @@ listview:
   labels: null
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "container", "status", "node_name", "image_id"]
+      fields: ["namespace", "name", "container", "status",
+               "node_name", "image_id"]
       sortcolumn: "namespace"
   fields:
     container:
@@ -35,7 +36,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "namespace"
+          - type: "namespace"
     node_name:
       header: "Node:"
       path: "node_name"
@@ -43,7 +44,7 @@ listview:
       default: "<none>"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     status:
       header: "Status:"
       datagetter: "datagetter_container_status"

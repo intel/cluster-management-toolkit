@@ -3,8 +3,8 @@ kind: "PyTorchJob"
 api_family: "kubeflow.org"
 default_command: "pytorchjobs"
 command:
-- "ptjobs"
-- "ptjob"
+  - "ptjobs"
+  - "ptjob"
 listview:
   name: "PyTorch Jobs"
   group: "Kubeflow"
@@ -16,95 +16,105 @@ listview:
     completion_time_with_age:
       header: "Completion Time:"
       paths:
-      - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
-        pathtype: "timestamp_with_age"
+        - paths: [["status#startTime"],
+                  " (", "Duration: ",
+                  ["status#completionTime"], ")"]
+          pathtype: "timestamp_with_age"
       formatter: "timestamp_with_age"
       formatting:
         field_colors:
-        # This is a meta-type, indicating where the timestamp goes
-        - type: "timestamp"
-        - type: "generic"
-        - type: "generic"
-        # This is a meta-type, indicating where the age goes
-        - type: "age"
-        - type: "generic"
+          # This is a meta-type, indicating where the timestamp goes
+          - type: "timestamp"
+          - type: "generic"
+          - type: "generic"
+          # This is a meta-type, indicating where the age goes
+          - type: "age"
+          - type: "generic"
     state:
       header: "State:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "type"
-        index: -1
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "type"
+          index: -1
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Created:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_warning"
+                - context: "main"
+                  type: "status_warning"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Succeeded:
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             PyTorchJobCreated:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
 infoview:
   name: "PyTorch Job Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "masters_header", "masters_replicas", "masters_restart_policy", "masters_status", "workers_header", "workers_replicas", "workers_restart_policy", "workers_status", "completion_time_with_age", "state"]
+        fields: ["controller",
+                 "masters_header", "masters_replicas",
+                 "masters_restart_policy", "masters_status",
+                 "workers_header", "workers_replicas",
+                 "workers_restart_policy", "workers_status",
+                 "completion_time_with_age", "state"]
     rows:
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
-        - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
-          pathtype: "timestamp_with_age"
+          - paths: [["status#startTime"],
+                    " (", "Duration: ",
+                    ["status#completionTime"], ")"]
+            pathtype: "timestamp_with_age"
         formatter: "timestamp_with_age"
         formatting:
           field_colors:
-          # This is a meta-type, indicating where the timestamp goes
-          - type: "timestamp"
-          - type: "generic"
-          - context: "main"
-            type: "infoheader"
-          # This is a meta-type, indicating where the age goes
-          - type: "age"
-          - type: "generic"
+            # This is a meta-type, indicating where the timestamp goes
+            - type: "timestamp"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
+            # This is a meta-type, indicating where the age goes
+            - type: "age"
+            - type: "generic"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       masters_header:
         header: [["Masters:", ["main", "infoheader"]]]
       masters_replicas:
@@ -119,55 +129,60 @@ infoview:
       masters_status:
         header: [["  Status:", ["main", "infoheader"]]]
         paths:
-        - path: ["Succeeded: ", ["status#replicaStatuses#Master#succeeded"], "Active: ", ["status#replicaStatuses#Master#active"], "Failed: ", ["status#replicaStatuses#Master#failed"]]
-          pathtype: "tuple"
-          default: ["", 0, "", 0, "", 0]
+          - path: ["Succeeded: ",
+                   ["status#replicaStatuses#Master#succeeded"],
+                   "Active: ",
+                   ["status#replicaStatuses#Master#active"],
+                   "Failed: ",
+                   ["status#replicaStatuses#Master#failed"]]
+            pathtype: "tuple"
+            default: ["", 0, "", 0, "", 0]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
           field_separators:
-          - type: "no_pad"
-          - type: "list"
-          - type: "no_pad"
-          - type: "list"
-          - type: "no_pad"
+            - type: "no_pad"
+            - type: "list"
+            - type: "no_pad"
+            - type: "list"
+            - type: "no_pad"
       state:
         header: [["State:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "type"
-          index: -1
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "type"
+            index: -1
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Created:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Failed:
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Succeeded:
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               PyTorchJobCreated:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
       workers_header:
         header: [["Workers:", ["main", "infoheader"]]]
       workers_replicas:
@@ -182,97 +197,106 @@ infoview:
       workers_status:
         header: [["  Status:", ["main", "infoheader"]]]
         paths:
-        - path: ["Succeeded: ", ["status#replicaStatuses#Worker#succeeded"], "Active: ", ["status#replicaStatuses#Worker#active"], "Failed: ", ["status#replicaStatuses#Worker#failed"]]
-          pathtype: "tuple"
-          default: ["", 0, "", 0, "", 0]
+          - path: ["Succeeded: ",
+                   ["status#replicaStatuses#Worker#succeeded"],
+                   "Active: ",
+                   ["status#replicaStatuses#Worker#active"],
+                   "Failed: ",
+                   ["status#replicaStatuses#Worker#failed"]]
+            pathtype: "tuple"
+            default: ["", 0, "", 0, "", 0]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
           field_separators:
-          - type: "no_pad"
-          - type: "list"
-          - type: "no_pad"
-          - type: "list"
-          - type: "no_pad"
+            - type: "no_pad"
+            - type: "list"
+            - type: "no_pad"
+            - type: "list"
+            - type: "no_pad"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
       _kind: "Pod"
       _label_selector_key_values:
-      - ["training.kubeflow.org/job-name", ["metadata#name"]]
+        - ["training.kubeflow.org/job-name", ["metadata#name"]]
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "age", "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       controller:
         header: "Controller:"
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -283,7 +307,7 @@ infoview:
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
@@ -293,14 +317,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:

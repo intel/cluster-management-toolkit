@@ -3,10 +3,10 @@ kind: "RoleBinding"
 api_family: "authorization.openshift.io"
 default_command: "rolebindings.authorization.openshift.io"
 command:
-- "rolebinding.authorization.openshift.io"
-- "osrolebindings"
-- "osrolebinding"
-- "osrb"
+  - "rolebinding.authorization.openshift.io"
+  - "osrolebindings"
+  - "osrolebinding"
+  - "osrb"
 listview:
   name: "Role Bindings"
   group: "Authorization & Access Control"
@@ -21,20 +21,20 @@ listview:
     role:
       header: "Role:"
       paths:
-      - path: "roleRef#name"
+        - path: "roleRef#name"
     subjects:
       header: "Subjects:"
       paths:
-      - path: "subjects"
-        pathtype: "items"
-        subpaths:
-        - "kind"
-        - "name"
+        - path: "subjects"
+          pathtype: "items"
+          subpaths:
+            - "kind"
+            - "name"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "generic"
+          - type: "kind"
+          - type: "generic"
   actions:
     actionlist:
       "Delete resource":
@@ -47,29 +47,34 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "role_ref_header", "role_ref_name", "role_ref_kind", "role_ref_exists"]
+        fields: ["cluster_version", "role_ref_header", "role_ref_name",
+                 "role_ref_kind", "role_ref_exists"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       role_ref_exists:
         header: [["  Exists:", ["main", "infoheader"]]]
         paths:
-        - path: ["Role", "authorization.openshift.io", ["metadata#namespace"], ["roleRef#name"], []]
-          pathtype: "lookup"
-          when:
-          - key: "metadata#name"
-            notnone: true
-          substitute: "True"
-          unknown: "Unknown"
+          - path: ["Role", "authorization.openshift.io",
+                   ["metadata#namespace"],
+                   ["roleRef#name"], []]
+            pathtype: "lookup"
+            when:
+              - key: "metadata#name"
+                notnone: true
+            substitute: "True"
+            unknown: "Unknown"
         default: "False"
         formatter: "value_mapper"
         formatting:
@@ -77,30 +82,31 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       role_ref_header:
-        header: [["R", ["main", "infoheader_shortcut"]], ["ole Reference:", ["main", "infoheader"]]]
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["ole Reference:", ["main", "infoheader"]]]
       role_ref_kind:
         header: [["  Kind:", ["main", "infoheader"]]]
         paths:
-        - path: ["Role", "authorization.openshift.io"]
-          pathtype: "tuple"
+          - path: ["Role", "authorization.openshift.io"]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
       role_ref_name:
         header: [["  Name:", ["main", "infoheader"]]]
         path: "roleRef#name"
@@ -127,13 +133,16 @@ infoview:
       exists:
         header: "Exists:"
         paths:
-        - path: [["kind"], ["apiGroup"], ["namespace", "_extra_data#namespace"], ["name"], []]
-          pathtype: "lookup"
-          when:
-          - key: "metadata#name"
-            notnone: true
-          substitute: "True"
-          unknown: "Unknown"
+          - path: [["kind"],
+                   ["apiGroup"],
+                   ["namespace", "_extra_data#namespace"],
+                   ["name"], []]
+            pathtype: "lookup"
+            when:
+              - key: "metadata#name"
+                notnone: true
+            substitute: "True"
+            unknown: "Unknown"
         default: "False"
         formatter: "value_mapper"
         formatting:
@@ -141,16 +150,16 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       name:
         header: "Name:"
         path: "name"
@@ -158,20 +167,20 @@ infoview:
       namespace:
         header: "Namespace:"
         paths:
-        - path: ["namespace", "_extra_data#namespace"]
+          - path: ["namespace", "_extra_data#namespace"]
         type: "str"
       kind:
         header: "Kind:"
         paths:
-        - path: [["kind"], ["apiGroup"]]
-          pathtype: "tuple"
+          - path: [["kind"], ["apiGroup"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
   shortcuts:
     "Cluster Version":
       key: "v"

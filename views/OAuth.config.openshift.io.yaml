@@ -3,8 +3,8 @@ kind: "OAuth"
 api_family: "config.openshift.io"
 default_command: "oauths.config.openshift.io"
 command:
-- "oauths.config"
-- "oauth.config"
+  - "oauths.config"
+  - "oauth.config"
 listview:
   name: "Oauths"
   group: "OpenShift"
@@ -21,27 +21,27 @@ infoview:
       access_token_max_age:
         header: [["Access Token Max Age:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#tokenConfig#accessTokenMaxAgeSeconds"], "s"]
-          pathtype: "tuple"
-          type: "raw"
-          default: [0, ""]
+          - path: [["spec#tokenConfig#accessTokenMaxAgeSeconds"], "s"]
+            pathtype: "tuple"
+            type: "raw"
+            default: [0, ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "unit"
+            - type: "numerical"
+            - type: "unit"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       login_name:
         header: [["Login Name:", ["main", "infoheader"]]]
@@ -72,8 +72,8 @@ infoview:
       itemgetter_args:
         path: "spec#identityProviders"
         fields:
-        - "type"
-        - "name"
-        - "mappingMethod"
+          - "type"
+          - "name"
+          - "mappingMethod"
       # This isn't supported for now
       sortcolumn: "type"

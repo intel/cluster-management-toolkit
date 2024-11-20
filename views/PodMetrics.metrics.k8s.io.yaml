@@ -3,16 +3,18 @@ kind: "PodMetrics"
 api_family: "metrics.k8s.io"
 default_command: "podmetrics"
 command:
-- "podmetric"
+  - "podmetric"
 listview:
   name: "Pod Metrics"
   group: "Monitoring"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "cpu_total", "mem_total", "container_count", "start_time", "window"]
+      fields: ["namespace", "name", "cpu_total", "mem_total",
+               "container_count", "start_time", "window"]
       sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "cpu_total_short", "mem_total", "start_time", "window"]
+      fields: ["namespace", "name", "cpu_total_short",
+               "mem_total", "start_time", "window"]
       sortcolumn: "namespace"
   fields:
     container_count:
@@ -21,36 +23,36 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     cpu_total:
       header: "CPU (millicores):"
       paths:
-      - path: "containers"
-        pathtype: "items"
-        subpath: "usage#cpu"
-        action: "sum"
-        type: "cpu_usage"
+        - path: "containers"
+          pathtype: "items"
+          subpath: "usage#cpu"
+          action: "sum"
+          type: "cpu_usage"
       formatter: "float"
       align: "right"
     cpu_total_short:
       header: "CPU:"
       paths:
-      - path: "containers"
-        pathtype: "items"
-        subpath: "usage#cpu"
-        action: "sum"
-        type: "cpu_usage"
+        - path: "containers"
+          pathtype: "items"
+          subpath: "usage#cpu"
+          action: "sum"
+          type: "cpu_usage"
       align: "right"
       formatter: "float"
     mem_total:
       header: "Memory:"
       paths:
-      - path: "containers"
-        pathtype: "items"
-        subpath: "usage#memory"
-        action: "sum"
-        type: "mem_usage"
+        - path: "containers"
+          pathtype: "items"
+          subpath: "usage#memory"
+          action: "sum"
+          type: "mem_usage"
       align: "right"
       formatter: "mem"
     start_time:
@@ -72,7 +74,8 @@ infoview:
         fields: ["pod", "window"]
     rows:
       pod:
-        header: [["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["od:", ["main", "infoheader"]]]
         path: "metadata#name"
         type: "str"
       window:

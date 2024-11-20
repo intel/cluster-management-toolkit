@@ -18,25 +18,25 @@ listview:
     degraded:
       header: "Degraded:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpaths:
-        - "status"
-        when:
-        - key: "type"
-          eq: "Degraded"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpaths:
+            - "status"
+          when:
+            - key: "type"
+              eq: "Degraded"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
       type: "str"
     degraded_machine_count:
       header: "Degraded Machine Count:"
@@ -46,15 +46,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     degraded_machine_count_short:
       header: "Degraded Count:"
@@ -64,15 +64,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     machine_count:
       header: "Machine Count:"
@@ -80,7 +80,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     machine_count_short:
       header: "Machines:"
@@ -88,7 +88,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     paused:
       header: "Paused:"
@@ -100,7 +100,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     ready_machine_count_short:
       header: "Ready:"
@@ -108,17 +108,17 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     updated:
       header: "Updated:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Updated"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Updated"
       type: "str"
     updated_machine_count:
       header: "Updated Machine Count:"
@@ -126,7 +126,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     updated_machine_count_short:
       header: "Updated Count:"
@@ -134,17 +134,17 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     updating:
       header: "Updating:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Updating"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Updating"
       type: "str"
 infoview:
   name: "Machine Config Pool Info"
@@ -160,25 +160,25 @@ infoview:
       degraded:
         header: [["Degraded:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpaths:
-          - "status"
-          when:
-          - key: "type"
-            eq: "Degraded"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpaths:
+              - "status"
+            when:
+              - key: "type"
+                eq: "Degraded"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
         type: "str"
       degraded_machine_count:
         header: [["Degraded Machine Count:", ["main", "infoheader"]]]
@@ -188,48 +188,48 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       machine_config_selector:
         header: [["Machine Config Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#machineConfigSelector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#machineConfigSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       machine_count:
         header: [["Machine Count:", ["main", "infoheader"]]]
         path: "status#machineCount"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       node_selector:
         header: [["Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#nodeSelector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#nodeSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       paused:
         header: [["Paused:", ["main", "infoheader"]]]
         path: "spec#paused"
@@ -240,16 +240,16 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       updated:
         header: [["Updated:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Updated"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Updated"
         type: "str"
       updated_machine_count:
         header: [["Updated Machine Count:", ["main", "infoheader"]]]
@@ -257,16 +257,16 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       updating:
         header: [["Updating:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Updating"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Updating"
         type: "str"
   shortcuts:
     "Show Machine Config list":
@@ -282,9 +282,9 @@ infoview:
       itemgetter_args:
         path: "spec#configuration#source"
         fields:
-        - "name"
-        - "kind"
-        - "apiVersion"
+          - "name"
+          - "kind"
+          - "apiVersion"
       # Not supported for now
       sortcolumn: "name"
       action: "call"

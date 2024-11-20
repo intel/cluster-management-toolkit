@@ -3,8 +3,8 @@ kind: "MiniCluster"
 api_family: "flux-framework.org"
 default_command: "miniclusters"
 command:
-- "miniclrs"
-- "miniclr"
+  - "miniclrs"
+  - "miniclr"
 listview:
   name: "Mini Clusters"
   group: "API & Extendability"
@@ -16,43 +16,43 @@ listview:
     state:
       header: "State:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "type"
-        when:
-        - key: "type"
-          in: ["JobFinished", "JobRunning", "JobWaitingForResources", "JobRequested", "JobMiniClusterReady"]
-        - key: "status"
-          eq: "True"
-        default: "<unset>"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "type"
+          when:
+            - key: "type"
+              in: ["JobFinished", "JobRunning", "JobWaitingForResources", "JobRequested", "JobMiniClusterReady"]
+            - key: "status"
+              eq: "True"
+          default: "<unset>"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             JobFinished:
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             JobMiniClusterReady:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             JobRequested:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             JobRunning:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             JobWaitingForResources:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
   actions:
     actionlist:
       "Delete resource":
@@ -80,43 +80,43 @@ infoview:
       state:
         header: [["State:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "type"
-          when:
-          - key: "type"
-            in: ["JobFinished", "JobRunning", "JobWaitingForResources", "JobRequested", "JobMiniClusterReady"]
-          - key: "status"
-            eq: "True"
-          default: "<unset>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "type"
+            when:
+              - key: "type"
+                in: ["JobFinished", "JobRunning", "JobWaitingForResources", "JobRequested", "JobMiniClusterReady"]
+              - key: "status"
+                eq: "True"
+            default: "<unset>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               JobFinished:
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               JobMiniClusterReady:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               JobRequested:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               JobRunning:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               JobWaitingForResources:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -145,16 +145,16 @@ infoview:
       completions:
         header: "Completions:"
         paths:
-        - path: [["status#succeeded"], ["spec#completions"]]
-          pathtype: "tuple"
-          default: [0, 0]
+          - path: [["status#succeeded"], ["spec#completions"]]
+            pathtype: "tuple"
+            default: [0, 0]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "fraction"
+            - type: "fraction"
         align: "right"
       completion_time:
         header: "Completion Time:"
@@ -164,107 +164,107 @@ infoview:
       completion_time_with_age:
         header: "Completion Time:"
         paths:
-        - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
-          pathtype: "timestamp_with_age"
+          - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+            pathtype: "timestamp_with_age"
         formatter: "timestamp_with_age"
         formatting:
           field_colors:
           # This is a meta-type, indicating where the timestamp goes
-          - type: "timestamp"
-          - type: "generic"
-          - type: "generic"
+            - type: "timestamp"
+            - type: "generic"
+            - type: "generic"
           # This is a meta-type, indicating where the age goes
-          - type: "age"
-          - type: "generic"
+            - type: "age"
+            - type: "generic"
       containers_template:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#template#spec#initContainers"
-          - "spec#template#spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-          type: "raw"
+          - paths:
+              - "spec#template#spec#initContainers"
+              - "spec#template#spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+            type: "raw"
         formatter: "list"
       controller:
         header: "Controller:"
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       duration:
         header: "Duration:"
         paths:
-        - paths: [["status#startTime"], ["status#completionTime"]]
-          pathtype: "timediff"
+          - paths: [["status#startTime"], ["status#completionTime"]]
+            pathtype: "timediff"
         default: 0
         formatter: "age"
         align: "right"
       state:
         header: "State:"
         paths:
-        - path: "status"
-          pathtype: "substitution"
-          subpath: "active"
-          when:
-          - key: "active"
-            notnone: true
-          - key: "active"
-            gt: 0
-          substitute: "Running"
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "reason"
-          when:
-          - key: "type"
-            eq: "Failed"
-          - key: "status"
-            eq: "True"
-        - path: "status#conditions"
-          pathtype: "substitution"
-          subpath: "type"
-          when:
-          - key: "status"
-            eq: "True"
-          - key: "type"
-            eq: "Complete"
-          substitute: "Completed"
+          - path: "status"
+            pathtype: "substitution"
+            subpath: "active"
+            when:
+              - key: "active"
+                notnone: true
+              - key: "active"
+                gt: 0
+            substitute: "Running"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "reason"
+            when:
+              - key: "type"
+                eq: "Failed"
+              - key: "status"
+                eq: "True"
+          - path: "status#conditions"
+            pathtype: "substitution"
+            subpath: "type"
+            when:
+              - key: "status"
+                eq: "True"
+              - key: "type"
+                eq: "Complete"
+            substitute: "Completed"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Active:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Completed:
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               __default:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"

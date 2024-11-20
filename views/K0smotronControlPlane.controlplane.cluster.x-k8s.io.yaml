@@ -3,8 +3,8 @@ kind: "K0smotronControlPlane"
 api_family: "controlplane.cluster.x-k8s.io"
 default_command: "k0smotroncontrolplanes"
 command:
-- "k0scps"
-- "k0scp"
+  - "k0scps"
+  - "k0scp"
 listview:
   name: "K0smotron Control Planes"
   group: "Cluster Configuration"
@@ -28,16 +28,16 @@ infoview:
       etcd_image:
         header: [["  Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#etcd#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#etcd#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       etcd_persistence_header:
         header: [["  Persistence:", ["main", "infoheader"]]]
       etcd_persistence_size:
@@ -66,7 +66,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       service_konnectivity_port:
         header: [["  Konnectivity-port:", ["main", "infoheader"]]]
         path: "spec#service#konnectivityPort"
@@ -74,7 +74,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       service_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#service#type"
@@ -85,4 +85,4 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"

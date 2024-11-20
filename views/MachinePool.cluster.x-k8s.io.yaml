@@ -3,7 +3,7 @@ kind: "MachinePool"
 api_family: "cluster.x-k8s.io"
 default_command: "machinepools"
 command:
-- "mp"
+  - "mp"
 listview:
   name: "Machine Pools"
   group: "Cluster Configuration"
@@ -22,31 +22,31 @@ listview:
           mappings:
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Terminating:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Provisioning:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     replicas:
       header: "Replicas:"
       path: "status#replicas"
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     version:
       header: "Version:"
@@ -54,4 +54,4 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"

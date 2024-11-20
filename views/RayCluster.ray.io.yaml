@@ -3,14 +3,15 @@ kind: "RayCluster"
 api_family: "ray.io"
 default_command: "rayclusters"
 command:
-- "rayclrs"
-- "rayclr"
+  - "rayclrs"
+  - "rayclr"
 listview:
   name: "Ray Clusters"
   group: "KubeRay"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "available_workers", "desired_workers", "age"]
+      fields: ["namespace", "name", "available_workers",
+               "desired_workers", "age"]
       sortcolumn: "namespace"
   fields:
     available_workers:
@@ -21,7 +22,7 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     desired_workers:
       header: "Desired Workers:"
       path: "status#desiredWorkerReplicas"
@@ -30,13 +31,18 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Ray Cluster Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "ray_version", "available_workers", "desired_workers", "desired_resources_header", "desired_cpus", "desired_gpus", "desired_tpus", "desired_mem", "endpoints_header", "endpoint_client", "endpoint_dashboard", "endpoint_gcs", "endpoint_metrics", "endpoint_serve"]
+        fields: ["controller", "ray_version", "available_workers",
+                 "desired_workers", "desired_resources_header",
+                 "desired_cpus", "desired_gpus", "desired_tpus",
+                 "desired_mem", "endpoints_header", "endpoint_client",
+                 "endpoint_dashboard", "endpoint_gcs",
+                 "endpoint_metrics", "endpoint_serve"]
     rows:
       available_workers:
         header: [["Available Workers:", ["main", "infoheader"]]]
@@ -45,30 +51,31 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       desired_cpus:
         header: [["  CPUs:", ["main", "infoheader"]]]
         path: "status#desiredCPU"
@@ -76,7 +83,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       desired_gpus:
         header: [["  GPUs:", ["main", "infoheader"]]]
         path: "status#desiredGPU"
@@ -84,7 +91,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       desired_mem:
         header: [["  Memory:", ["main", "infoheader"]]]
         path: "status#desiredMemory"
@@ -100,7 +107,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       desired_workers:
         header: [["Desired Workers:", ["main", "infoheader"]]]
         path: "status#desiredWorkerReplicas"
@@ -108,42 +115,42 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       endpoint_client:
         header: [["  Client:", ["main", "infoheader"]]]
         path: "status#endpoints#client"
         type: "str"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       endpoint_dashboard:
         header: [["  Dashboard:", ["main", "infoheader"]]]
         path: "status#endpoints#dashboard"
         type: "str"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       endpoint_gcs:
         header: [["  GCS:", ["main", "infoheader"]]]
         path: "status#endpoints#gcs"
         type: "str"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       endpoint_metrics:
         header: [["  Metrics:", ["main", "infoheader"]]]
         path: "status#endpoints#metrics"
         type: "str"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       endpoint_serve:
         header: [["  Serve:", ["main", "infoheader"]]]
         path: "status#endpoints#serve"
         type: "str"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       endpoints_header:
         header: [["Endpoints:", ["main", "infoheader"]]]
       ray_version:
@@ -152,7 +159,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Open controller":
       key: "c"

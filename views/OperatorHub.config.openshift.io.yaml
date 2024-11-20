@@ -3,8 +3,8 @@ kind: "OperatorHub"
 api_family: "config.openshift.io"
 default_command: "operatorhubs.config.openshift.io"
 command:
-- "operatorhubs.config"
-- "operatorhub.config"
+  - "operatorhubs.config"
+  - "operatorhub.config"
 listview:
   name: "Operator Hubs"
   group: "OpenShift"
@@ -21,13 +21,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
   shortcuts:
     "Cluster Version":
@@ -53,9 +53,9 @@ infoview:
       itemgetter_args:
         path: "status#sources"
         fields:
-        - "name"
-        - "status"
-        - "disabled"
+          - "name"
+          - "status"
+          - "disabled"
       headers: ["Name:", "Status:", "Disabled:"]
       # Not supported for now
       sortcolumn: "status"

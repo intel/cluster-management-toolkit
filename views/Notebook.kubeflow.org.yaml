@@ -17,39 +17,39 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     state:
       header: "State:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "type"
-        index: -1
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "type"
+          index: -1
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Created:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_warning"
+                - context: "main"
+                  type: "status_warning"
             PodScheduled:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Succeeded:
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
   actions:
     actionlist:
       "Delete resource":
@@ -71,38 +71,38 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       state:
         header: [["State:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "type"
-          index: -1
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "type"
+            index: -1
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Created:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Failed:
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
               PodScheduled:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Succeeded:
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
   shortcuts:
     "Template":
       key: "t"

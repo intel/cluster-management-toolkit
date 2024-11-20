@@ -3,12 +3,12 @@ kind: "Image"
 api_family: "config.openshift.io"
 default_command: "images.config.openshift.io"
 command:
-- "image.config.openshift.io"
-- "images.config"
-- "image.config"
-- "osconfimages"
-- "osconfimage"
-- "osconfimg"
+  - "image.config.openshift.io"
+  - "images.config"
+  - "image.config"
+  - "osconfimages"
+  - "osconfimage"
+  - "osconfimg"
 listview:
   name: "Images"
   group: "OpenShift"
@@ -29,13 +29,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       external_registry_hostnames:
         header: [["External Registry Hostnames:", ["main", "infoheader"]]]

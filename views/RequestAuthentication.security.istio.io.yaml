@@ -3,8 +3,8 @@ kind: "RequestAuthentication"
 api_family: "security.istio.io"
 default_command: "requestauthentications"
 command:
-- "reqauths"
-- "reqauth"
+  - "reqauths"
+  - "reqauth"
 listview:
   name: "Request Authentications"
   group: "Istio"
@@ -22,16 +22,16 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   listpad:
     on_activation:
       call: "resourceinfodispatch"
@@ -75,6 +75,6 @@ infoview:
       itemgetter_args:
         path: "spec#targetRefs"
         fields:
-        - "kind"
-        - "group"
-        - "name"
+          - "kind"
+          - "group"
+          - "name"

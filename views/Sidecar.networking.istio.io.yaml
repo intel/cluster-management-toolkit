@@ -24,22 +24,23 @@ infoview:
       workload_selector:
         header: [["Workload Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#workloadSelector#labels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#workloadSelector#labels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   listpad:
     listgetter: "get_sidecar_rule_list"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"]
+        fields: ["traffic_type", "port", "bind", "capture_mode",
+                 "default_endpoint", "hosts"]
         sortcolumn: "traffic_type"
     fields:
       bind:
@@ -67,12 +68,12 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "service"
-          - type: "port"
-          - type: "protocol"
+            - type: "service"
+            - type: "port"
+            - type: "protocol"
           field_separators:
-          - type: "port"
-          - type: "service"
+            - type: "port"
+            - type: "service"
       traffic_type:
         header: "Traffic Type:"
         path: "traffic_type"

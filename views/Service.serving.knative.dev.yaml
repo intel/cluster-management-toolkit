@@ -3,19 +3,20 @@ kind: "Service"
 api_family: "serving.knative.dev"
 default_command: "knservices"
 command:
-- "services.knative"
-- "service.knative"
-- "svcs.knative"
-- "svc.knative"
-- "knservice"
-- "knsvcs"
-- "knsvc"
+  - "services.knative"
+  - "service.knative"
+  - "svcs.knative"
+  - "svc.knative"
+  - "knservice"
+  - "knsvcs"
+  - "knsvc"
 listview:
   name: "Services"
   group: "Knative"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "url", "latest_created", "latest_ready", "age", "ready", "reason"]
+      fields: ["namespace", "name", "url", "latest_created",
+               "latest_ready", "age", "ready", "reason"]
       sortcolumn: "namespace"
   fields:
     latest_created:
@@ -29,12 +30,12 @@ listview:
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -42,21 +43,21 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     reason:
       header: "Reason:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -64,12 +65,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     url:
       header: "URL:"
       path: "status#address#url"
@@ -79,25 +80,30 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["url", "latest_created_revision", "latest_ready_revision", "ready"]
+        fields: ["url", "latest_created_revision",
+                 "latest_ready_revision", "ready"]
     rows:
       latest_created_revision:
-        header: [["Latest Crea", ["main", "infoheader"]], ["t", ["main", "infoheader_shortcut"]], ["ed Revision:", ["main", "infoheader"]]]
+        header: [["Latest Crea", ["main", "infoheader"]],
+                 ["t", ["main", "infoheader_shortcut"]],
+                 ["ed Revision:", ["main", "infoheader"]]]
         path: "status#latestCreatedRevisionName"
         type: "str"
       latest_ready_revision:
-        header: [["Latest ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eady Revision:", ["main", "infoheader"]]]
+        header: [["Latest ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["eady Revision:", ["main", "infoheader"]]]
         path: "status#latestReadyRevisionName"
         type: "str"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -105,12 +111,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       url:
         header: [["URL:", ["main", "infoheader"]]]
         path: "status#address#url"
@@ -152,9 +158,9 @@ infoview:
       itemgetter_args:
         path: "status#traffic"
         fields:
-        - "revisionName"
-        - "percent"
-        - "latestRevision"
+          - "revisionName"
+          - "percent"
+          - "latestRevision"
       # This isn't supported for now
       sortcolumn: "revision_name"
     "View Pod Template":

@@ -17,28 +17,29 @@ infoview:
         fields: ["controller"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -56,34 +57,34 @@ infoview:
       machine_config_labels:
         header: "Machine Config Labels:"
         paths:
-        - path: "machineConfigLabels"
-          pathtype: "key_value"
+          - path: "machineConfigLabels"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       operand:
         header: "Operand:"
         paths:
-        - path: "operand"
-          pathtype: "key_value"
+          - path: "operand"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       priority:
         header: "Priority:"
         path: "priority"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       profile:
         header: "Profile:"
@@ -113,7 +114,7 @@ infoview:
       itemgetter_args:
         path: "spec#profile"
         fields:
-        - "name"
+          - "name"
         pass_ref: true
       # Not supported for now
       sortcolumn: "name"

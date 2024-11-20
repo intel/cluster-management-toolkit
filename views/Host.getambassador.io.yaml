@@ -15,7 +15,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "hostname"
+          - type: "hostname"
     request_policy:
       header: "Request Policy:"
       path: "spec#requestPolicy#insecure#action"
@@ -25,7 +25,11 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["acme_provider_header", "acme_provider_authority", "acme_provider_email", "ambassador_id", "hostname", "request_policy_header", "request_policy_action", "request_policy_additional_port", "tls_secret", "tls_context"]
+        fields: ["acme_provider_header", "acme_provider_authority",
+                 "acme_provider_email", "ambassador_id", "hostname",
+                 "request_policy_header", "request_policy_action",
+                 "request_policy_additional_port",
+                 "tls_secret", "tls_context"]
     rows:
       acme_provider_authority:
         header: [["  Authority:", ["main", "infoheader"]]]
@@ -50,7 +54,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "hostname"
+            - type: "hostname"
       request_policy_header:
         header: [["Request Policy:", ["main", "infoheader"]]]
       request_policy_action:
@@ -64,12 +68,16 @@ infoview:
         type: "int"
         formatter: "numerical"
       tls_context:
-        header: [["TLS ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["ontext:", ["main", "infoheader"]]]
+        header: [["TLS ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["ontext:", ["main", "infoheader"]]]
         path: "spec#tlsContext#name"
         default: "<unset>"
         type: "str"
       tls_secret:
-        header: [["TLS ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
+        header: [["TLS ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ecret:", ["main", "infoheader"]]]
         path: "spec#tlsSecret#name"
         default: "<unset>"
         type: "str"

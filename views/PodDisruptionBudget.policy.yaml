@@ -3,62 +3,68 @@ kind: "PodDisruptionBudget"
 api_family: "policy"
 default_command: "poddisruptionbudgets"
 command:
-- "pdb"
+  - "pdb"
 listview:
   name: "Pod Disruption Budgets"
   group: "Policy"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "min_available", "max_unavailable", "allowed_disruptions", "age"]
+      fields: ["namespace", "name", "min_available",
+               "max_unavailable", "allowed_disruptions", "age"]
       sortcolumn: "namespace"
   fields:
     allowed_disruptions:
       header: "Allowed Disruptions:"
       paths:
-      - path: "status#disruptionsAllowed"
-        type: "int"
+        - path: "status#disruptionsAllowed"
+          type: "int"
       align: "right"
       default: 0
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     max_unavailable:
       header: "Max Unavailable:"
       paths:
-      - path: "spec#maxUnavailable"
-        type: "int"
+        - path: "spec#maxUnavailable"
+          type: "int"
       align: "right"
       default: "<unset>"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     min_available:
       header: "Min Available:"
       paths:
-      - path: "spec#minAvailable"
-        type: "int"
+        - path: "spec#minAvailable"
+          type: "int"
       align: "right"
       default: "<unset>"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Pod Disruption Budget Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "unhealthy_pod_eviction_policy", "disruptions_allowed"]
+        fields: ["cluster_version", "min_available", "max_unavailable",
+                 "label_selector", "set_based_selector", "status_header",
+                 "expected_pods", "current_healthy", "desired_healthy",
+                 "unhealthy_pod_eviction_policy", "disruptions_allowed"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       current_healthy:
         header: [["  Current Healthy:", ["main", "infoheader"]]]
@@ -66,28 +72,28 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       desired_healthy:
         header: [["  Desired Healthy:", ["main", "infoheader"]]]
         path: "status#desiredHealthy"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       disruptions_allowed:
         header: [["  Disruptions Allowed:", ["main", "infoheader"]]]
         path: "status#disruptionsAllowed"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       expected_pods:
         header: [["  Expected Pods:", ["main", "infoheader"]]]
         path: "status#expectedPods"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       max_unavailable:
         header: [["Max Unavailable:", ["main", "infoheader"]]]
         path: "spec#maxUnavailable"
@@ -95,7 +101,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       min_available:
         header: [["Min Available:", ["main", "infoheader"]]]
         path: "spec#minAvailable"
@@ -103,34 +109,34 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#selector#matchExpressions"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "spec#selector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       status_header:
         header: [["Status:", ["main", "infoheader"]]]
       unhealthy_pod_eviction_policy:

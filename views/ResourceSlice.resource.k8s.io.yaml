@@ -3,8 +3,8 @@ kind: "ResourceSlice"
 api_family: "resource.k8s.io"
 default_command: "resourceslices"
 command:
-- "resslices"
-- "resslice"
+  - "resslices"
+  - "resslice"
 listview:
   name: "Resource Slices"
   group: "Dynamic Resource Allocation"
@@ -29,48 +29,52 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "node_name", "pool", "resource_slice_count", "driver"]
+        fields: ["controller", "node_name", "pool",
+                 "resource_slice_count", "driver"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       driver:
         header: [["Driver:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#driver", "driverName"]
-          pathtype: "str"
-          default: "<unset>"
+          - path: ["spec#driver", "driverName"]
+            pathtype: "str"
+            default: "<unset>"
         type: "str"
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#nodeName", "nodeName"]
-          pathtype: "str"
-          default: "<unset>"
+          - path: ["spec#nodeName", "nodeName"]
+            pathtype: "str"
+            default: "<unset>"
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pool:
         header: [["Pool:", ["main", "infoheader"]]]
         path: "spec#pool#name"
@@ -98,17 +102,17 @@ infoview:
       attributes:
         header: "Attributes:"
         paths:
-        - path: "basic#attributes"
-          pathtype: "key_value"
-          subpaths:
-          - "bool"
-          - "int"
-          - "string"
-          - "version"
+          - path: "basic#attributes"
+            pathtype: "key_value"
+            subpaths:
+              - "bool"
+              - "int"
+              - "string"
+              - "version"
         formatter: "list"
         formatting:
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
   shortcuts:
     "Open controller":
       key: "c"

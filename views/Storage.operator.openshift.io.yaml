@@ -3,10 +3,10 @@ kind: "Storage"
 api_family: "operator.openshift.io"
 default_command: "storages.operator.openshift.io"
 command:
-- "storages.operator"
-- "storage.operator"
-- "storages"
-- "storage"
+  - "storages.operator"
+  - "storage.operator"
+  - "storages"
+  - "storage"
 listview:
   name: "Storages"
   group: "OpenShift"
@@ -18,18 +18,21 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "version"]
+        fields: ["cluster_version", "loglevel", "operator_loglevel",
+                 "management_state", "version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       loglevel:
         header: [["Loglevel:", ["main", "infoheader"]]]
@@ -49,7 +52,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Cluster Version":
       key: "v"

@@ -3,16 +3,17 @@ kind: "PodGroup"
 api_family: "scheduling.volcano.sh"
 default_command: "podgroups.scheduling.volcano.sh"
 command:
-- "volcanopodgroups"
-- "volcanopodgroup"
-- "volcpodgrps"
-- "volcpodgrp"
+  - "volcanopodgroups"
+  - "volcanopodgroup"
+  - "volcpodgrps"
+  - "volcpodgrp"
 listview:
   name: "Pod Groups"
   group: "Batch Scheduling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "min_members", "running", "queue", "phase", "age"]
+      fields: ["namespace", "name", "min_members", "running",
+               "queue", "phase", "age"]
       sortcolumn: "phase"
   fields:
     min_members:
@@ -21,7 +22,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     phase:
       header: "Phase:"
@@ -33,28 +34,28 @@ listview:
           mappings:
             Completed:
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_error"
+                - context: "main"
+                  type: "status_error"
             Inqueue:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Unknown:
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     queue:
       header: "Queue:"
       path: "spec#queue"
@@ -66,57 +67,59 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Pod Group Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "queue", "priority_class", "min_members", "min_task_members", "running", "phase"]
+        fields: ["controller", "queue", "priority_class",
+                 "min_members", "min_task_members", "running", "phase"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       min_members:
         header: [["Min Members:", ["main", "infoheader"]]]
         path: "spec#minMember"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       min_task_members:
         header: [["Min Task Members:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#minTaskMember"
-          pathtype: "key_value"
+          - path: "spec#minTaskMember"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -127,55 +130,57 @@ infoview:
             mappings:
               Allocated:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Binding:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Bound:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Failed:
                 field_colors:
-                - context: "main"
-                  type: "status_error"
+                  - context: "main"
+                    type: "status_error"
               Inqueue:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Pipelined:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Releasing:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Succeeded:
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               Unknown:
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       priority_class:
-        header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["riority Class:", ["main", "infoheader"]]]
         path: "spec#priorityClassName"
         default: "<default>"
         type: "str"
       queue:
-        header: [["Q", ["main", "infoheader_shortcut"]], ["ueue:", ["main", "infoheader"]]]
+        header: [["Q", ["main", "infoheader_shortcut"]],
+                 ["ueue:", ["main", "infoheader"]]]
         path: "spec#queue"
         type: "str"
       running:
@@ -185,7 +190,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Open controller":
       key: "c"

@@ -7,7 +7,8 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "host", "target", "port", "termination", "target_weight", "wildcard", "age"]
+      fields: ["namespace", "name", "host", "target", "port",
+               "termination", "target_weight", "wildcard", "age"]
       sortcolumn: "namespace"
   fields:
     host:
@@ -20,32 +21,33 @@ listview:
       type: "raw"
       formatting:
         field_colors:
-        - type: "port"
+          - type: "port"
     target:
       header: "Target:"
       paths:
-      - path: [["spec#to#kind"], ["spec#to#name"]]
-        pathtype: "tuple"
+        - path: [["spec#to#kind"], ["spec#to#name"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "generic"
+          - type: "kind"
+          - type: "generic"
         field_separators:
-        - type: "kind"
+          - type: "kind"
     target_weight:
       header: "Weight:"
       path: "spec#to#weight"
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     termination:
       header: "Termination:"
       paths:
-      - path: [["spec#tls#termination"], ["spec#tls#insecureEdgeTerminationPolicy"]]
-        pathtype: "tuple"
+        - path: [["spec#tls#termination"],
+                 ["spec#tls#insecureEdgeTerminationPolicy"]]
+          pathtype: "tuple"
       formatter: "list"
     wildcard:
       header: "Wildcard:"
@@ -56,31 +58,33 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "host", "target", "port", "termination", "target_weight", "wildcard"]
+        fields: ["controller", "host", "target", "port",
+                 "termination", "target_weight", "wildcard"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       host:
         header: [["Host:", ["main", "infoheader"]]]
         path: "spec#host"
@@ -91,31 +95,33 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       target:
-        header: [["T", ["main", "infoheader_shortcut"]], ["arget:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["arget:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#to#kind"], ["spec#to#name"]]
-          pathtype: "tuple"
+          - path: [["spec#to#kind"], ["spec#to#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           field_separators:
-          - type: "kind"
+            - type: "kind"
       target_weight:
         header: [["Weight:", ["main", "infoheader"]]]
         path: "spec#to#weight"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       termination:
         header: [["Termination:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#tls#termination"], ["spec#tls#insecureEdgeTerminationPolicy"]]
-          pathtype: "tuple"
+          - path: [["spec#tls#termination"],
+                   ["spec#tls#insecureEdgeTerminationPolicy"]]
+            pathtype: "tuple"
         formatter: "list"
       wildcard:
         header: [["Wildcard:", ["main", "infoheader"]]]
@@ -152,14 +158,15 @@ infoview:
       helptext: "List ingress points"
       widget: "windowwidget"
       title: "Ingress Points:"
-      headers: ["Host:", "Router Canonical Hostname:", "Router Name:", "Wildcard Policy:"]
+      headers: ["Host:", "Router Canonical Hostname:",
+                "Router Name:", "Wildcard Policy:"]
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "status#ingress"
         fields:
-        - "host"
-        - "routerCanonicalHostname"
-        - "routerName"
-        - "wildcardPolicy"
+          - "host"
+          - "routerCanonicalHostname"
+          - "routerName"
+          - "wildcardPolicy"
       # Not supported for now
       sortcolumn: "host"

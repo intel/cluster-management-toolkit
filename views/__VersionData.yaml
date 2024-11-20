@@ -2,8 +2,8 @@
 kind: "__VersionData"
 default_command: "versions"
 command:
-- "version"
-- "cv"
+  - "version"
+  - "cv"
 listview:
   name: "Version Data"
   group: "Administration"
@@ -13,246 +13,251 @@ listview:
     file_not_found_status: "No version data found"
     skip_empty_paths: true
     paths:
-    - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/latest.yaml"
-      filetype: "yaml"
-      pathtype: "raw"
-      _extra_data:
-        name: "Cluster Management Toolkit"
-        installed_version:
-          fieldgetter: "fieldgetter_cmt_version"
-          fieldgetter_args:
-            fields:
-            - 0
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/<<<changelog>>>"
-          filetype: "text"
-          pathtype: "raw"
-          substitutions:
-            "changelog": "changelog"
-        formatter: "markdown"
-        formatter_args:
-          # First match in the file is what we want
-          include_start: true
-          include_end: true
-          strip_empty_start: true
-          strip_empty_end: true
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "crc"
-      pathtype: "dict"
-      _extra_data:
-        name: "CRC"
-        installed_version:
-          fieldgetter: "fieldgetter_crc_version"
-          fieldgetter_args:
-            fields:
-            - 0
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/crc_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "kubernetes"
-      pathtype: "dict"
-      _extra_data:
-        name: "Kubernetes"
-        installed_version:
-          fieldgetter: "fieldgetter_api_server_version"
-          fieldgetter_args:
-            fields:
-            - 2
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/kubernetes_current_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-        formatter_args:
-          # First match in the file is what we want
-          start: "## Changelog since "
-          include_start: true
-          end: "# v"
-          include_end: false
-          strip_empty_start: false
-          strip_empty_end: true
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "helm"
-      pathtype: "dict"
-      _extra_data:
-        name: "Helm"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/bin/helm"
-            args: ["version"]
-            version_regex: '^version.BuildInfo{Version:"v(\d+)(\.)(\d+)(\.)(\d+)".*'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/helm_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "antctl"
-      pathtype: "dict"
-      _extra_data:
-        name: "antctl (Antrea)"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/bin/antctl"
-            args: ["version"]
-            version_regex: '^antctlVersion: v(\d+)(\.)(\d+)(\.)(\d+)'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/antrea_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "calicoctl"
-      pathtype: "dict"
-      _extra_data:
-        name: "calicoctl (Calico)"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/bin/calicoctl"
-            args: ["version"]
-            version_regex: '^Client Version:\s+v(\d+)(\.)(\d+)(\.)(\d+)'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/calico_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "cilium-cli"
-      pathtype: "dict"
-      _extra_data:
-        name: "cilium-cli (Cilium)"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/bin/cilium"
-            args: ["version"]
-            version_regex: '^cilium-cli:\s+v(\d+)(\.)(\d+)(\.)(\d+).*'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/cilium_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "argocd"
-      pathtype: "dict"
-      _extra_data:
-        name: "argocd (Argo CD)"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/bin/argocd"
-            args: ["version"]
-            version_regex: '^argocd: v(\d+)(\.)(\d+)(\.)(\d+)\+.*|$'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/argocd_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "kargo"
-      pathtype: "dict"
-      _extra_data:
-        name: "kargo (Kargo)"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/bin/kargo"
-            args: ["version"]
-            version_regex: '^Client Version: v(\d+)(\.)(\d+)(\.)(\d+)'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/kargo_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "kustomize"
-      pathtype: "dict"
-      _extra_data:
-        name: "kustomize"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/bin/kustomize"
-            args: ["version"]
-            version_regex: '^v(\d+)(\.)(\d+)(\.)(\d+)'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/kustomize_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "rke2"
-      pathtype: "dict"
-      _extra_data:
-        name: "RKE2"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/local/bin/rke2"
-            args: ["--version"]
-            version_regex: '^rke2 version v(\d+)(\.)(\d+)(\.)(\d+)(\+)([a-z0-9]+).*'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/rke2_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
-    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
-      filetype: "yaml"
-      path: "cmctl"
-      pathtype: "dict"
-      _extra_data:
-        name: "cmctl (cert-manager)"
-        installed_version:
-          fieldgetter: "fieldgetter_executable_version"
-          fieldgetter_args:
-            executable: "/usr/bin/cmctl"
-            args: ["version", "--client"]
-            version_regex: '^.*GitVersion:"v(\d+)(\.)(\d+)(\.)(\d+)".*$'
-        file_not_found_status: "No changelog found"
-        paths:
-        - filepath: "{HOME}/.cmt/version-cache/cert-manager_changelog.md"
-          filetype: "text"
-          pathtype: "raw"
-        formatter: "markdown"
+      - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/latest.yaml"
+        filetype: "yaml"
+        pathtype: "raw"
+        _extra_data:
+          name: "Cluster Management Toolkit"
+          installed_version:
+            fieldgetter: "fieldgetter_cmt_version"
+            fieldgetter_args:
+              fields:
+                - 0
+          file_not_found_status: "No changelog found"
+          paths:
+            # yamllint disable-line rule:line-length
+            - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/<<<changelog>>>"
+              filetype: "text"
+              pathtype: "raw"
+              substitutions:
+                "changelog": "changelog"
+          formatter: "markdown"
+          formatter_args:
+            # First match in the file is what we want
+            include_start: true
+            include_end: true
+            strip_empty_start: true
+            strip_empty_end: true
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "crc"
+        pathtype: "dict"
+        _extra_data:
+          name: "CRC"
+          installed_version:
+            fieldgetter: "fieldgetter_crc_version"
+            fieldgetter_args:
+              fields:
+                - 0
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/crc_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "kubernetes"
+        pathtype: "dict"
+        _extra_data:
+          name: "Kubernetes"
+          installed_version:
+            fieldgetter: "fieldgetter_api_server_version"
+            fieldgetter_args:
+              fields:
+                - 2
+          file_not_found_status: "No changelog found"
+          paths:
+            # yamllint disable-line rule:line-length
+            - filepath: "{HOME}/.cmt/version-cache/kubernetes_current_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+          formatter_args:
+            # First match in the file is what we want
+            start: "## Changelog since "
+            include_start: true
+            end: "# v"
+            include_end: false
+            strip_empty_start: false
+            strip_empty_end: true
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "helm"
+        pathtype: "dict"
+        _extra_data:
+          name: "Helm"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/bin/helm"
+              args: ["version"]
+              # yamllint disable-line rule:line-length
+              version_regex: '^version.BuildInfo{Version:"v(\d+)(\.)(\d+)(\.)(\d+)".*'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/helm_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "antctl"
+        pathtype: "dict"
+        _extra_data:
+          name: "antctl (Antrea)"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/bin/antctl"
+              args: ["version"]
+              version_regex: '^antctlVersion: v(\d+)(\.)(\d+)(\.)(\d+)'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/antrea_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "calicoctl"
+        pathtype: "dict"
+        _extra_data:
+          name: "calicoctl (Calico)"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/bin/calicoctl"
+              args: ["version"]
+              version_regex: '^Client Version:\s+v(\d+)(\.)(\d+)(\.)(\d+)'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/calico_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "cilium-cli"
+        pathtype: "dict"
+        _extra_data:
+          name: "cilium-cli (Cilium)"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/bin/cilium"
+              args: ["version"]
+              version_regex: '^cilium-cli:\s+v(\d+)(\.)(\d+)(\.)(\d+).*'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/cilium_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "argocd"
+        pathtype: "dict"
+        _extra_data:
+          name: "argocd (Argo CD)"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/bin/argocd"
+              args: ["version"]
+              version_regex: '^argocd: v(\d+)(\.)(\d+)(\.)(\d+)\+.*|$'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/argocd_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "kargo"
+        pathtype: "dict"
+        _extra_data:
+          name: "kargo (Kargo)"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/bin/kargo"
+              args: ["version"]
+              version_regex: '^Client Version: v(\d+)(\.)(\d+)(\.)(\d+)'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/kargo_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "kustomize"
+        pathtype: "dict"
+        _extra_data:
+          name: "kustomize"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/bin/kustomize"
+              args: ["version"]
+              version_regex: '^v(\d+)(\.)(\d+)(\.)(\d+)'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/kustomize_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "rke2"
+        pathtype: "dict"
+        _extra_data:
+          name: "RKE2"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/local/bin/rke2"
+              args: ["--version"]
+              # yamllint disable-line rule:line-length
+              version_regex: '^rke2 version v(\d+)(\.)(\d+)(\.)(\d+)(\+)([a-z0-9]+).*'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/rke2_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+        filetype: "yaml"
+        path: "cmctl"
+        pathtype: "dict"
+        _extra_data:
+          name: "cmctl (cert-manager)"
+          installed_version:
+            fieldgetter: "fieldgetter_executable_version"
+            fieldgetter_args:
+              executable: "/usr/bin/cmctl"
+              args: ["version", "--client"]
+              version_regex: '^.*GitVersion:"v(\d+)(\.)(\d+)(\.)(\d+)".*$'
+          file_not_found_status: "No changelog found"
+          paths:
+            - filepath: "{HOME}/.cmt/version-cache/cert-manager_changelog.md"
+              filetype: "text"
+              pathtype: "raw"
+          formatter: "markdown"
   infogetter: "generic_infogetter"
   field_indexes:
     Normal:
-      fields: ["name", "installed_version", "latest_version", "release_date", "last_checked", "note"]
+      fields: ["name", "installed_version", "latest_version",
+               "release_date", "last_checked", "note"]
       sortcolumn: "name"
   labels: null
   fields:
     installed_version:
       header: "Current Version:"
       paths:
-      - path: "_extra_data#installed_version"
-        pathtype: "fieldgetter"
+        - path: "_extra_data#installed_version"
+          pathtype: "fieldgetter"
       type: "version"
     latest_version:
       header: "Latest Version:"
@@ -275,8 +280,8 @@ listview:
     release_date:
       header: "Release Date:"
       paths:
-      - path: "release_date"
-        pathtype: "str"
+        - path: "release_date"
+          pathtype: "str"
       type: "str"
       formatter: "timestamp"
   listview_args:
@@ -285,8 +290,8 @@ listview:
         source: "caller"
         enabled: true
         block:
-        - key: "installed_version"
-          values: [""]
+          - key: "installed_version"
+            values: [""]
   shortcuts:
     # Overrides:
     "Edit resource": null
@@ -300,7 +305,7 @@ listview:
         var: "filters#uninstalled#enabled"
       force_update: true
   statusmsg:
-  - ["Hide uninstalled components: ", ["var", "filters#uninstalled#enabled"]]
+    - ["Hide uninstalled components: ", ["var", "filters#uninstalled#enabled"]]
 infoview:
   name: "Version Info"
   infopad:
@@ -309,13 +314,14 @@ infoview:
     creation_timestamp_path: null
     row_indexes:
       Normal:
-        fields: ["installed_version", "latest_version", "release_date", "note", "mtime"]
+        fields: ["installed_version", "latest_version",
+                 "release_date", "note", "mtime"]
     rows:
       installed_version:
         header: [["Installed Version:", ["main", "infoheader"]]]
         paths:
-        - path: "_extra_data#installed_version"
-          pathtype: "fieldgetter"
+          - path: "_extra_data#installed_version"
+            pathtype: "fieldgetter"
         type: "version"
       latest_version:
         header: [["Latest Version:", ["main", "infoheader"]]]
@@ -334,8 +340,8 @@ infoview:
       release_date:
         header: [["Release Date:", ["main", "infoheader"]]]
         paths:
-        - path: ["targetDate", "release_date"]
-          pathtype: "str"
+          - path: ["targetDate", "release_date"]
+            pathtype: "str"
         type: "str"
         formatter: "timestamp"
   logpad:

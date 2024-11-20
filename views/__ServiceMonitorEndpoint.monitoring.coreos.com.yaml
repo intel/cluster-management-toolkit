@@ -8,7 +8,14 @@ infoview:
     name_path: null
     row_indexes:
       Normal:
-        fields: ["enable_http2", "honor_labels", "honor_timestamps", "bearer_token_file", "path", "port", "scheme", "scrape_timeout", "interval", "tls_config_header", "tls_config_insecure_skip_verify", "tls_config_server_name", "tls_config_ca_header", "tls_config_ca_file", "tls_config_ca_secret_header", "tls_config_ca_secret_name", "tls_config_ca_secret_key", "tls_config_ca_secret_optional"]
+        fields: ["enable_http2", "honor_labels", "honor_timestamps",
+                 "bearer_token_file", "path", "port", "scheme",
+                 "scrape_timeout", "interval", "tls_config_header",
+                 "tls_config_insecure_skip_verify",
+                 "tls_config_server_name", "tls_config_ca_header",
+                 "tls_config_ca_file", "tls_config_ca_secret_header",
+                 "tls_config_ca_secret_name", "tls_config_ca_secret_key",
+                 "tls_config_ca_secret_optional"]
     rows:
       bearer_token_file:
         header: [["Bearer Token File:", ["main", "infoheader"]]]
@@ -16,7 +23,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "path"
+            - type: "path"
       enable_http2:
         header: [["Enable HTTP2:", ["main", "infoheader"]]]
         path: "enableHttp2"
@@ -50,7 +57,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "service"
+            - type: "service"
       scheme:
         header: [["Scheme:", ["main", "infoheader"]]]
         path: "scheme"
@@ -58,7 +65,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "service"
+            - type: "service"
       scrape_timeout:
         header: [["Scrape Timeout:", ["main", "infoheader"]]]
         path: "scrapeTimeout"
@@ -74,7 +81,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "path"
+            - type: "path"
       tls_config_ca_header:
         header: [["  CA:", ["main", "infoheader"]]]
       tls_config_ca_secret_header:
@@ -86,7 +93,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "path"
+            - type: "path"
       tls_config_ca_secret_name:
         header: [["      Name:", ["main", "infoheader"]]]
         path: "tlsConfig#ca#secret#name"
@@ -94,7 +101,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "path"
+            - type: "path"
       tls_config_ca_secret_optional:
         header: [["      Optional:", ["main", "infoheader"]]]
         path: "tlsConfig#ca#secret#optional"
@@ -111,16 +118,16 @@ infoview:
             mappings:
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       tls_config_server_name:
         header: [["  Server Name:", ["main", "infoheader"]]]
         path: "tlsConfig#serverName"

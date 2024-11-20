@@ -3,8 +3,8 @@ kind: "Scheduler"
 api_family: "config.openshift.io"
 default_command: "schedulers.config.openshift.io"
 command:
-- "schedulers.config"
-- "scheduler.config"
+  - "schedulers.config"
+  - "scheduler.config"
 listview:
   name: "Schedulers"
   group: "OpenShift"
@@ -16,7 +16,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["default_node_selector", "control_planes_schedulable", "profile"]
+        fields: ["default_node_selector", "control_planes_schedulable",
+                 "profile"]
     rows:
       control_planes_schedulable:
         header: [["Control Planes Schedulable:", ["main", "infoheader"]]]

@@ -3,10 +3,10 @@ kind: "Revision"
 api_family: "serving.knative.dev"
 default_command: "revisions.serving.knative.dev"
 command:
-- "revisions.knative"
-- "revision.knative"
-- "knrevisions"
-- "knrevision"
+  - "revisions.knative"
+  - "revision.knative"
+  - "knrevisions"
+  - "knrevision"
 listview:
   name: "Revisions"
   group: "Knative"
@@ -18,12 +18,12 @@ listview:
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -31,28 +31,29 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     reason:
       header: "Reason:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
 infoview:
   name: "Revision Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "container_concurrency", "actual_replicas", "enable_service_links", "timeout"]
+        fields: ["controller", "container_concurrency",
+                 "actual_replicas", "enable_service_links", "timeout"]
     rows:
       actual_replicas:
         header: [["Actual Replicas:", ["main", "infoheader"]]]
@@ -60,37 +61,38 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       container_concurrency:
         header: [["Container Concurrency:", ["main", "infoheader"]]]
         path: "spec#containerConcurrency"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       enable_service_links:
         header: [["Enable ServiceLinks:", ["main", "infoheader"]]]
         path: "spec#enableServiceLinks"
@@ -98,15 +100,15 @@ infoview:
       timeout:
         header: [["Timeout:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#timeoutSeconds"], "s"]
-          pathtype: "tuple"
+          - path: [["spec#timeoutSeconds"], "s"]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "unit"
+            - type: "numerical"
+            - type: "unit"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
   shortcuts:
     "Open controller":
       key: "c"
@@ -131,8 +133,8 @@ infoview:
       itemgetter_args:
         path: "status#containerStatuses"
         fields:
-        - "name"
-        - "imageDigest"
+          - "name"
+          - "imageDigest"
       # Not supported for now
       sortcolumn: "name"
     "View containers":

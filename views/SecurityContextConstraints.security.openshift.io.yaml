@@ -7,9 +7,13 @@ listview:
   group: "OpenShift"
   field_indexes:
     Wide:
-      fields: ["name", "privileged", "capabilities", "selinux", "runasuser", "fsgroup", "supgroups", "priority", "readonly_rootfs", "age", "volumes"]
+      fields: ["name", "privileged", "capabilities", "selinux",
+               "runasuser", "fsgroup", "supgroups", "priority",
+               "readonly_rootfs", "age", "volumes"]
     Normal:
-      fields: ["name", "privileged", "capabilities", "selinux", "runasuser", "fsgroup", "supgroups", "priority", "readonly_rootfs", "age"]
+      fields: ["name", "privileged", "capabilities", "selinux",
+               "runasuser", "fsgroup", "supgroups", "priority",
+               "readonly_rootfs", "age"]
   fields:
     capabilities:
       header: "Capabilities:"
@@ -27,7 +31,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     privileged:
       header: "Privileged:"
@@ -64,27 +68,27 @@ infoview:
     row_indexes:
       Normal:
         fields:
-        - "cluster_version"
-        - "description"
-        - "privileged"
-        - "allow_host_dir_volume_plugin"
-        - "allow_host_ipc"
-        - "allow_host_network"
-        - "allow_host_pid"
-        - "allow_host_ports"
-        - "allow_privilege_escalation"
-        - "capabilities"
-        - "required_drop_capabilities"
-        - "selinux"
-        - "runasuser"
-        - "fsgroup"
-        - "users"
-        - "groups"
-        - "supgroups"
-        - "priority"
-        - "readonly_rootfs"
-        - "seccomp_profiles"
-        - "volumes"
+          - "cluster_version"
+          - "description"
+          - "privileged"
+          - "allow_host_dir_volume_plugin"
+          - "allow_host_ipc"
+          - "allow_host_network"
+          - "allow_host_pid"
+          - "allow_host_ports"
+          - "allow_privilege_escalation"
+          - "capabilities"
+          - "required_drop_capabilities"
+          - "selinux"
+          - "runasuser"
+          - "fsgroup"
+          - "users"
+          - "groups"
+          - "supgroups"
+          - "priority"
+          - "readonly_rootfs"
+          - "seccomp_profiles"
+          - "volumes"
     rows:
       allow_host_dir_volume_plugin:
         header: [["Allow Host IPC:", ["main", "infoheader"]]]
@@ -123,15 +127,17 @@ infoview:
         type: "raw"
         formatter: "list"
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       description:
         header: [["Description:", ["main", "infoheader"]]]
@@ -142,7 +148,8 @@ infoview:
         path: "fsGroup#type"
         type: "str"
       groups:
-        header: [["G", ["main", "infoheader_shortcut"]], ["roups:", ["main", "infoheader"]]]
+        header: [["G", ["main", "infoheader_shortcut"]],
+                 ["roups:", ["main", "infoheader"]]]
         path: "groups"
         default: ["<unset>"]
         type: "raw"
@@ -154,7 +161,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       privileged:
         header: [["Privileged:", ["main", "infoheader"]]]
         path: "allowPrivilegedContainer"
@@ -166,7 +173,8 @@ infoview:
         default: false
         type: "bool"
       required_drop_capabilities:
-        header: [["R", ["main", "infoheader_shortcut"]], ["equired Drop Capabilities:", ["main", "infoheader"]]]
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["equired Drop Capabilities:", ["main", "infoheader"]]]
         path: "requiredDropCapabilities"
         default: ["<none>"]
         type: "raw"
@@ -180,7 +188,8 @@ infoview:
         path: "seLinuxContext#type"
         type: "str"
       seccomp_profiles:
-        header: [["S", ["main", "infoheader_shortcut"]], ["eccomp Profiles:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["eccomp Profiles:", ["main", "infoheader"]]]
         path: "seccompProfiles"
         default: ["<none>"]
         type: "raw"
@@ -191,13 +200,16 @@ infoview:
         type: "raw"
         formatter: "list"
       users:
-        header: [["U", ["main", "infoheader_shortcut"]], ["sers:", ["main", "infoheader"]]]
+        header: [["U", ["main", "infoheader_shortcut"]],
+                 ["sers:", ["main", "infoheader"]]]
         path: "users"
         default: ["<unset>"]
         type: "raw"
         formatter: "list"
       volumes:
-        header: [["Vo", ["main", "infoheader"]], ["l", ["main", "infoheader_shortcut"]], ["umes:", ["main", "infoheader"]]]
+        header: [["Vo", ["main", "infoheader"]],
+                 ["l", ["main", "infoheader_shortcut"]],
+                 ["umes:", ["main", "infoheader"]]]
         path: "volumes"
         default: ["<none>"]
         type: "raw"

@@ -3,8 +3,8 @@ kind: "Network"
 api_family: "operator.openshift.io"
 default_command: "networks.operator.openshift.io"
 command:
-- "networks.operator"
-- "network.operator"
+  - "networks.operator"
+  - "network.operator"
 listview:
   name: "Networks"
   group: "OpenShift"
@@ -19,32 +19,32 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Network Info"
   infopad:
     row_indexes:
       Normal:
         fields:
-        - "deploy_kube_proxy"
-        - "disable_multi_network"
-        - "use_multi_network_policy"
-        - "loglevel"
-        - "operator_loglevel"
-        - "management_state"
-        - "ready_replicas"
-        - "version"
-        - "disable_network_diagnostics"
-        - "default_network_header"
-        - "default_network_type"
-        - "default_network_header_note"
-        - "default_network_openshift_sdn_config"
-        - "default_network_openshift_sdn_enable_unidling"
-        - "default_network_openshift_sdn_mtu"
-        - "default_network_openshift_sdn_mode"
-        - "default_network_openshift_sdn_vxlan_port"
-        - "cluster_network"
-        - "service_network"
+          - "deploy_kube_proxy"
+          - "disable_multi_network"
+          - "use_multi_network_policy"
+          - "loglevel"
+          - "operator_loglevel"
+          - "management_state"
+          - "ready_replicas"
+          - "version"
+          - "disable_network_diagnostics"
+          - "default_network_header"
+          - "default_network_type"
+          - "default_network_header_note"
+          - "default_network_openshift_sdn_config"
+          - "default_network_openshift_sdn_enable_unidling"
+          - "default_network_openshift_sdn_mtu"
+          - "default_network_openshift_sdn_mode"
+          - "default_network_openshift_sdn_vxlan_port"
+          - "cluster_network"
+          - "service_network"
     rows:
       deploy_kube_proxy:
         header: [["Deploy kube-proxy:", ["main", "infoheader"]]]
@@ -79,31 +79,31 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       cluster_network:
         header: [["Cluster Network:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#clusterNetwork"
-          pathtype: "items"
-          subpaths:
-          - "cidr"
-          - str: "("
-          - str: "Host Prefix: "
-          - "hostPrefix"
-          - str: ")"
+          - path: "spec#clusterNetwork"
+            pathtype: "items"
+            subpaths:
+              - "cidr"
+              - str: "("
+              - str: "Host Prefix: "
+              - "hostPrefix"
+              - str: ")"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "address"
-          - type: "generic"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
+            - type: "address"
+            - type: "generic"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
-          - type: "no_pad"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
+            - type: "no_pad"
+            - type: "no_pad"
       default_network_header:
         header: [["Default Network:", ["main", "infoheader"]]]
       default_network_header_note:
@@ -127,7 +127,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       default_network_openshift_sdn_vxlan_port:
         header: [["    VXLAN Port:", ["main", "infoheader"]]]
         path: "spec#defaultNetwork#openshiftSDNConfig#vxlanPort"
@@ -135,7 +135,7 @@ infoview:
         default: "4789"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       default_network_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#defaultNetwork#type"
@@ -156,7 +156,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Additional networks":
       key: "a"
@@ -170,11 +170,11 @@ infoview:
       itemgetter_args:
         path: "spec#additionalNetworks"
         fields:
-        - "namespace"
-        - "name"
-        - "type"
-        - "rawCNIConfig"
-        - "simpleMacvlanConfig"
+          - "namespace"
+          - "name"
+          - "type"
+          - "rawCNIConfig"
+          - "simpleMacvlanConfig"
       # Not supported for now
       sortcolumn: "namespace"
     "View observed configuration":

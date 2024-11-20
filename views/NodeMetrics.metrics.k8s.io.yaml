@@ -3,7 +3,7 @@ kind: "NodeMetrics"
 api_family: "metrics.k8s.io"
 default_command: "nodemetrics"
 command:
-- "nodemetric"
+  - "nodemetric"
 listview:
   name: "Node Metrics"
   group: "Monitoring"
@@ -14,15 +14,15 @@ listview:
     cpu_usage:
       header: "CPU (millicores):"
       paths:
-      - path: "usage#cpu"
-        type: "cpu_usage"
+        - path: "usage#cpu"
+          type: "cpu_usage"
       align: "right"
       formatter: "float"
     memory_usage:
       header: "Memory:"
       paths:
-      - path: "usage#memory"
-        type: "mem_usage"
+        - path: "usage#memory"
+          type: "mem_usage"
       formatter: "mem"
       align: "right"
     window:
@@ -41,14 +41,14 @@ infoview:
       cpu_usage:
         header: [["CPU (millicores):", ["main", "infoheader"]]]
         paths:
-        - path: "usage#cpu"
-          type: "cpu_usage"
+          - path: "usage#cpu"
+            type: "cpu_usage"
         formatter: "float"
       memory_usage:
         header: [["Memory:", ["main", "infoheader"]]]
         paths:
-        - path: "usage#memory"
-          type: "mem_usage"
+          - path: "usage#memory"
+            type: "mem_usage"
         formatter: "mem"
       window:
         header: [["Window:", ["main", "infoheader"]]]

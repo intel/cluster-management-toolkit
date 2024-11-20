@@ -3,8 +3,8 @@ kind: "Numatopology"
 api_family: "nodeinfo.volcano.sh"
 default_command: "numatopologies"
 command:
-- "numatopos"
-- "numatopo"
+  - "numatopos"
+  - "numatopo"
 listview:
   name: "NUMA Topologies"
   group: "Batch Scheduling"
@@ -21,15 +21,15 @@ infoview:
       numa_resources:
         header: [["NMU Resources:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#numares"
-          pathtype: "key_value"
+          - path: "spec#numares"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       policy_header:
         header: [["Policy:", ["main", "infoheader"]]]
       policy_cpu_topology:
@@ -63,14 +63,14 @@ infoview:
       numa_details:
         header: "NUMA Details:"
         paths:
-        - path: "value"
-          pathtype: "key_value"
-          default: ["<unset>"]
+          - path: "value"
+            pathtype: "key_value"
+            default: ["<unset>"]
         type: "str"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"

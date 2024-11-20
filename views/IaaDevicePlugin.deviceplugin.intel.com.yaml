@@ -3,8 +3,8 @@ kind: "IaaDevicePlugin"
 api_family: "deviceplugin.intel.com"
 default_command: "iaadeviceplugins"
 command:
-- "iaadevplugins"
-- "iaadevplugin"
+  - "iaadevplugins"
+  - "iaadevplugin"
 listview:
   name: "IAA Device Plugins"
   group: "Accelerators"
@@ -20,15 +20,15 @@ listview:
     node_selector:
       header: "Node Selector:"
       paths:
-      - path: ["spec#nodeSelector"]
-        pathtype: "key_value"
+        - path: ["spec#nodeSelector"]
+          pathtype: "key_value"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "key"
-        - type: "value"
+          - type: "key"
+          - type: "value"
         field_separators:
-        - type: "selector"
+          - type: "selector"
     number_ready:
       header: "Ready:"
       path: "status#numberReady"
@@ -44,48 +44,48 @@ infoview:
       controlled_daemon_set:
         header: [["Controlled ", ["main", "infoheader"]], ["D", ["main", "infoheader_shortcut"]], ["aemon Set:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#controlledDaemonSet#kind"], ["status#controlledDaemonSet#apiVersion"], ["status#controlledDaemonSet#namespace"], ["status#controlledDaemonSet#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name", "name"]
+          - path: [["status#controlledDaemonSet#kind"], ["status#controlledDaemonSet#apiVersion"], ["status#controlledDaemonSet#namespace"], ["status#controlledDaemonSet#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "namespace"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
-          default: ["<none>"]
+          - path: "spec#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       init_image:
         header: [["Init Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#initImage"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
-          default: ["<none>"]
+          - path: "spec#initImage"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       kernel_vf_drivers:
         header: [["Kernel VF Drivers:", ["main", "infoheader"]]]
         path: "spec#kernelVfDrivers"
@@ -97,26 +97,26 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       max_num_devices:
         header: [["Max # of Devices:", ["main", "infoheader"]]]
         path: "spec#maxNumDevices"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       node_selector:
         header: [["Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#nodeSelector"]
-          pathtype: "key_value"
+          - path: ["spec#nodeSelector"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       preferred_allocation_policy:
         header: [["Preferred Allocation Policy:", ["main", "infoheader"]]]
         path: "spec#preferredAllocationPolicy"
@@ -124,15 +124,15 @@ infoview:
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#numberReady"], ["status#desiredNumberScheduled"]]
-          pathtype: "tuple"
+          - path: [["status#numberReady"], ["status#desiredNumberScheduled"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "fraction"
+            - type: "fraction"
       resource_manager:
         header: [["Resource Manager:", ["main", "infoheader"]]]
         path: "spec#resourceManager"
@@ -143,7 +143,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:

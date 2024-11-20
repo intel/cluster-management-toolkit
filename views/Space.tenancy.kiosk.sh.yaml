@@ -3,9 +3,9 @@ kind: "Space"
 api_family: "tenancy.kiosk.sh"
 default_command: "spaces.kiosk"
 command:
-- "space.kiosk"
-- "kspaces"
-- "kspace"
+  - "space.kiosk"
+  - "kspaces"
+  - "kspace"
 listview:
   name: "Spaces"
   group: "Kiosk"
@@ -27,12 +27,12 @@ listview:
           mappings:
             Active:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Terminating:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
 infoview:
   name: "Space Info"
   infopad:
@@ -41,11 +41,14 @@ infoview:
         fields: ["represented_namespace", "owner", "status"]
     rows:
       owner:
-        header: [["O", ["main", "infoheader_shortcut"]], ["wner:", ["main", "infoheader"]]]
+        header: [["O", ["main", "infoheader_shortcut"]],
+                 ["wner:", ["main", "infoheader"]]]
         path: "spec#account"
         type: "str"
       represented_namespace:
-        header: [["Represented ", ["main", "infoheader"]], ["N", ["main", "infoheader_shortcut"]], ["amespace:", ["main", "infoheader"]]]
+        header: [["Represented ", ["main", "infoheader"]],
+                 ["N", ["main", "infoheader_shortcut"]],
+                 ["amespace:", ["main", "infoheader"]]]
         path: "metadata#name"
         type: "str"
       status:
@@ -58,12 +61,12 @@ infoview:
             mappings:
               Active:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Terminating:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
   listpad:
     listgetter: "listgetter_namespaced_resources"
     infogetter: "generic_infogetter"
@@ -84,10 +87,10 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
       resource:
         header: "Resource:"
         path: "metadata#name"

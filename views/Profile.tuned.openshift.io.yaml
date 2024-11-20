@@ -3,8 +3,8 @@ kind: "Profile"
 api_family: "tuned.openshift.io"
 default_command: "profiles.tuned.openshift.io"
 command:
-- "profiles.tuned"
-- "profile.tuned"
+  - "profiles.tuned"
+  - "profile.tuned"
 listview:
   name: "Profiles"
   group: "OpenShift"
@@ -16,36 +16,36 @@ listview:
     applied:
       header: "Applied:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpaths:
-        - "status"
-        when:
-        - key: "type"
-          eq: "Applied"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpaths:
+            - "status"
+          when:
+            - key: "type"
+              eq: "Applied"
       type: "str"
     degraded:
       header: "Degraded:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpaths:
-        - "status"
-        when:
-        - key: "type"
-          eq: "Degraded"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpaths:
+            - "status"
+          when:
+            - key: "type"
+              eq: "Degraded"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
       type: "str"
     tuned:
       header: "Tuned:"
@@ -56,18 +56,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["tuned", "commandline", "debug", "stalld", "applied", "degraded"]
+        fields: ["tuned", "commandline", "debug",
+                 "stalld", "applied", "degraded"]
     rows:
       applied:
         header: [["Applied:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpaths:
-          - "status"
-          when:
-          - key: "type"
-            eq: "Applied"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpaths:
+              - "status"
+            when:
+              - key: "type"
+                eq: "Applied"
         type: "str"
       commandline:
         header: [["Boot Commandline:", ["main", "infoheader"]]]
@@ -80,25 +81,25 @@ infoview:
       degraded:
         header: [["Degraded:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpaths:
-          - "status"
-          when:
-          - key: "type"
-            eq: "Degraded"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpaths:
+              - "status"
+            when:
+              - key: "type"
+                eq: "Degraded"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
         type: "str"
       stalld:
         header: [["stalld:", ["main", "infoheader"]]]

@@ -3,7 +3,7 @@ kind: "KubeHunterReport"
 api_family: "aquasecurity.github.io"
 default_command: "kubehunterreports"
 command:
-- "kubehunter"
+  - "kubehunter"
 listview:
   name: "Kube-Hunter Reports"
   group: "Security"
@@ -14,15 +14,15 @@ listview:
     scanner:
       header: "Scanner:"
       paths:
-      - path: [["report#scanner#name"], ["report#scanner#version"]]
-        pathtype: "tuple"
+        - path: [["report#scanner#name"], ["report#scanner#version"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "generic"
-        - type: "version"
+          - type: "generic"
+          - type: "version"
         field_separators:
-        - type: "version"
+          - type: "version"
     severity_high:
       header: "High:"
       path: "report#summary#highCount"
@@ -31,15 +31,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     severity_medium:
       header: "Medium:"
@@ -49,15 +49,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_medium"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_medium"
       align: "right"
     severity_low:
       header: "Low:"
@@ -67,15 +67,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_medium"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_medium"
       align: "right"
     severity_unknown:
       header: "Unknown:"
@@ -85,15 +85,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
 infoview:
   name: "Kube-Hunter Report Info"
@@ -105,15 +105,15 @@ infoview:
       scanner:
         header: [["Scanner:", ["main", "infoheader"]]]
         paths:
-        - path: [["report#scanner#name"], ["report#scanner#version"]]
-          pathtype: "tuple"
+          - path: [["report#scanner#name"], ["report#scanner#version"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       severity_header:
         header: [["Severity:", ["main", "infoheader"]]]
       severity_high:
@@ -124,15 +124,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       severity_low:
         header: [["      Low:", ["main", "infoheader"]]]
         path: "report#summary#lowCount"
@@ -141,15 +141,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
       severity_medium:
         header: [["   Medium:", ["main", "infoheader"]]]
         path: "report#summary#mediumCount"
@@ -158,15 +158,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
       severity_unknown:
         header: [["  Unknown:", ["main", "infoheader"]]]
         path: "report#summary#unknownCount"
@@ -175,15 +175,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       vendor:
         header: [["Vendor:", ["main", "infoheader"]]]
         path: "report#scanner#vendor"
@@ -227,20 +227,20 @@ infoview:
             mappings:
               high:
                 field_colors:
-                - context: "types"
-                  type: "watermark_high"
+                  - context: "types"
+                    type: "watermark_high"
               medium:
                 field_colors:
-                - context: "types"
-                  type: "watermark_medium"
+                  - context: "types"
+                    type: "watermark_medium"
               low:
                 field_colors:
-                - context: "types"
-                  type: "watermark_low"
+                  - context: "types"
+                    type: "watermark_low"
               unknown:
                 field_colors:
-                - context: "types"
-                  type: "watermark_high"
+                  - context: "types"
+                    type: "watermark_high"
       vid:
         header: "VID:"
         path: "vid"

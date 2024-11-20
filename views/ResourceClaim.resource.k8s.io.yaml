@@ -3,8 +3,8 @@ kind: "ResourceClaim"
 api_family: "resource.k8s.io"
 default_command: "resourceclaims"
 command:
-- "resclaims"
-- "resclaim"
+  - "resclaims"
+  - "resclaim"
 listview:
   name: "Resource Claims"
   group: "Dynamic Resource Allocation"
@@ -17,7 +17,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "parameters_ref", "resource_class", "allocation_mode", "deallocation_requested", "device_header", "device_requests", "device_allocations", "reserved_for"]
+        fields: ["controller", "parameters_ref", "resource_class",
+                 "allocation_mode", "deallocation_requested",
+                 "device_header", "device_requests",
+                 "device_allocations", "reserved_for"]
     rows:
       allocation_mode:
         header: [["Allocation Mode:", ["main", "infoheader"]]]
@@ -25,87 +28,96 @@ infoview:
         default: "<unset>"
         type: "str"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       deallocation_requested:
         header: [["Deallocation Requested:", ["main", "infoheader"]]]
         path: "status#deallocationRequested"
         type: "str"
         default: false
       device_allocations:
-        header: [["  ", ["main", "infoheader"]], ["A", ["main", "infoheader_shortcut"]], ["llocations:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["A", ["main", "infoheader_shortcut"]],
+                 ["llocations:", ["main", "infoheader"]]]
         paths:
-        - path: "status#allocation#devices#results"
-          pathtype: "items"
-          subpaths:
-          - "request"
+          - path: "status#allocation#devices#results"
+            pathtype: "items"
+            subpaths:
+              - "request"
         default: "<none>"
         formatter: "list"
       device_header:
         header: [["Devices:", ["main", "infoheader"]]]
       device_requests:
-        header: [["  Re", ["main", "infoheader"]], ["q", ["main", "infoheader_shortcut"]], ["uests:", ["main", "infoheader"]]]
+        header: [["  Re", ["main", "infoheader"]],
+                 ["q", ["main", "infoheader_shortcut"]],
+                 ["uests:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#devices#requests"
-          pathtype: "items"
-          subpaths:
-          - "name"
+          - path: "spec#devices#requests"
+            pathtype: "items"
+            subpaths:
+              - "name"
         default: "<none>"
         formatter: "list"
       parameters_ref:
-        header: [["P", ["main", "infoheader_shortcut"]], ["arameters Ref:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arameters Ref:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#parametersRef#kind"], ["spec#parametersRef#apiVersion"], ["spec#parametersRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
-          default: ["<unset>"]
-          fallback_on_empty: true
+          - path: [["spec#parametersRef#kind"],
+                   ["spec#parametersRef#apiVersion"],
+                   ["spec#parametersRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
+            default: ["<unset>"]
+            fallback_on_empty: true
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       reserved_for:
-        header: [["R", ["main", "infoheader_shortcut"]], ["eserved For:", ["main", "infoheader"]]]
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["eserved For:", ["main", "infoheader"]]]
         paths:
-        - path: "status#reservedFor"
-          pathtype: "items"
-          subpaths:
-          - "resource"
-          - "name"
-          type: "raw"
-          default: ["<none>"]
+          - path: "status#reservedFor"
+            pathtype: "items"
+            subpaths:
+              - "resource"
+              - "name"
+            type: "raw"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           field_separators:
-          - type: "kind"
+            - type: "kind"
           ellipsise: 3
       resource_class:
         header: [["Resource Class:", ["main", "infoheader"]]]
@@ -163,7 +175,7 @@ infoview:
         path: "status#allocation#devices#results"
         pass_ref: true
         fields:
-        - "request"
+          - "request"
       # Not supported for now
       sortcolumn: "request"
       action: "call"
@@ -186,7 +198,7 @@ infoview:
         path: "spec#devices#requests"
         pass_ref: true
         fields:
-        - "name"
+          - "name"
       # Not supported for now
       sortcolumn: "name"
       action: "call"
@@ -209,10 +221,10 @@ infoview:
       itemgetter_args:
         path: "status#reservedFor"
         fields:
-        - "resource"
-        - "apiGroup"
-        - "name"
-        - "uid"
+          - "resource"
+          - "apiGroup"
+          - "name"
+          - "uid"
       # Not supported for now
       sortcolumn: "resource"
       action: "call"

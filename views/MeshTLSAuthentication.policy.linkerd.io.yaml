@@ -3,8 +3,8 @@ kind: "MeshTLSAuthentication"
 api_family: "policy.linkerd.io"
 default_command: "meshtlsauthentications"
 command:
-- "meshtlsauths"
-- "meshtlsauth"
+  - "meshtlsauths"
+  - "meshtlsauth"
 listview:
   name: "Mesh TLS Authentications"
   group: "Network"
@@ -14,7 +14,7 @@ listview:
       sortcolumn: "namespace"
 infoview:
   name: "Mesh TLS Authentication Info"
-  infopad:
+  infopad: null
   shortcuts:
     "mTLS Identities":
       key: "i"
@@ -39,10 +39,10 @@ infoview:
       itemgetter_args:
         path: "spec#identityRefs"
         fields:
-        - "kind"
-        - "group"
-        - "namespace"
-        - "name"
+          - "kind"
+          - "group"
+          - "namespace"
+          - "name"
       selectable: true
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"

@@ -3,8 +3,8 @@ kind: "MutatingWebhookConfiguration"
 api_family: "admissionregistration.k8s.io"
 default_command: "mutatingwebhookconfigurations"
 command:
-- "mwhcs"
-- "mwhc"
+  - "mwhcs"
+  - "mwhc"
 listview:
   name: "Mutating Webhook Configurations"
   group: "API & Extendability"
@@ -18,7 +18,7 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
   actions:
     actionlist:
@@ -34,7 +34,7 @@ listview:
         actionfunc: "force_delete_resource"
 infoview:
   name: "Mutating Webhook Configuration Info"
-  infopad:
+  infopad: null
   listpad:
     on_activation:
       call: "resourceinfodispatch"

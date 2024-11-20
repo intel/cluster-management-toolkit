@@ -3,14 +3,14 @@ kind: "NetworkPolicy"
 api_family: "controlplane.antrea.io"
 default_command: "networkpolicies.controlplane.antrea.io"
 command:
-- "controlplanenetworkpolicies"
-- "controlplanenetworkpolicy"
-- "cpnetworkpolicies"
-- "cpnetworkpolicy"
-- "cpnetpolicies"
-- "cpnetpolicy"
-- "cpnetpols"
-- "cpnetpol"
+  - "controlplanenetworkpolicies"
+  - "controlplanenetworkpolicy"
+  - "cpnetworkpolicies"
+  - "cpnetworkpolicy"
+  - "cpnetpolicies"
+  - "cpnetpolicy"
+  - "cpnetpols"
+  - "cpnetpol"
 listview:
   name: "Network Policy Infos"
   group: "Antrea"
@@ -21,23 +21,23 @@ listview:
     source:
       header: "Source:"
       paths:
-      - path: [["sourceRef#namespace"], ["sourceRef#name"]]
-        default: ["<global>", "<unset>"]
-        pathtype: "tuple"
+        - path: [["sourceRef#namespace"], ["sourceRef#name"]]
+          default: ["<global>", "<unset>"]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "namespace"
-        - type: "generic"
+          - type: "namespace"
+          - type: "generic"
         field_separators:
-        - type: "namespace"
+          - type: "namespace"
     source_type:
       header: "Source Type:"
       path: "sourceRef#type"
       type: "str"
       formatting:
         field_colors:
-        - type: "kind"
+          - type: "kind"
 infoview:
   name: "Network Policy Info"
   infopad:
@@ -58,14 +58,14 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       source_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "sourceRef#type"
         type: "str"
         formatting:
           field_colors:
-          - type: "kind"
+            - type: "kind"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:

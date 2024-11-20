@@ -3,9 +3,9 @@ kind: "MachineSet"
 api_family: "cluster.x-k8s.io"
 default_command: "machinesets.cluster.x-k8s.io"
 command:
-- "x-machinesets"
-- "x-machineset"
-- "x-ms"
+  - "x-machinesets"
+  - "x-machineset"
+  - "x-ms"
 listview:
   name: "Machine Sets"
   group: "Cluster Configuration"
@@ -20,7 +20,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     cluster:
       header: "Cluster:"
@@ -32,7 +32,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     replicas:
       header: "Replicas:"
@@ -40,7 +40,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     version:
       header: "Version:"
@@ -48,7 +48,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Machine Info"
   infopad:
@@ -62,7 +62,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       cluster:
         header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
@@ -71,26 +71,26 @@ infoview:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       delete_policy:
         header: [["Delete Policy:", ["main", "infoheader"]]]
         path: "spec#deletePolicy"
@@ -98,23 +98,23 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
@@ -122,24 +122,24 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       template_bootstrap:
         header: [["  B", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["otstrap:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#template#spec#bootstrap#configRef#kind"], ["spec#template#spec#bootstrap#configRef#apiVersion"], ["spec#template#spec#bootstrap#configRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#template#spec#bootstrap#configRef#kind"], ["spec#template#spec#bootstrap#configRef#apiVersion"], ["spec#template#spec#bootstrap#configRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       template_cluster_name:
         header: [["  Cluster Name:", ["main", "infoheader"]]]
         path: "spec#template#spec#clusterName"
@@ -153,26 +153,26 @@ infoview:
       template_infrastructure:
         header: [["  ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["nfrastructure:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#template#spec#infrastructureRef#kind"], ["spec#template#spec#infrastructureRef#apiVersion"], ["spec#template#spec#infrastructureRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#template#spec#infrastructureRef#kind"], ["spec#template#spec#infrastructureRef#apiVersion"], ["spec#template#spec#infrastructureRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       template_version:
         header: [["  Version:", ["main", "infoheader"]]]
         path: "spec#template#spec#version"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Open controller":
       key: "c"

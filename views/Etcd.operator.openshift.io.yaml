@@ -16,38 +16,46 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Etcd Info"
   infopad:
     row_indexes:
       Wide:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "cipher_suites", "min_tls_version", "ready_replicas"]
+        fields: ["cluster_version", "loglevel", "operator_loglevel",
+                 "management_state", "cipher_suites", "min_tls_version",
+                 "ready_replicas"]
       Normal:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "cipher_suites_ellipsise", "min_tls_version", "ready_replicas"]
+        fields: ["cluster_version", "loglevel", "operator_loglevel",
+                 "management_state", "cipher_suites_ellipsise",
+                 "min_tls_version", "ready_replicas"]
     rows:
       cipher_suites:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ipher Suites:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ipher Suites:", ["main", "infoheader"]]]
         path: "spec#observedConfig#servingInfo#cipherSuites"
         type: "raw"
         formatter: "list"
       cipher_suites_ellipsise:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ipher Suites:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ipher Suites:", ["main", "infoheader"]]]
         path: "spec#observedConfig#servingInfo#cipherSuites"
         type: "raw"
         formatter: "list"
         formatting:
           ellipsise: 3
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       loglevel:
         header: [["Loglevel:", ["main", "infoheader"]]]
@@ -63,7 +71,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       operator_loglevel:
         header: [["Operator Loglevel:", ["main", "infoheader"]]]
         path: "spec#operatorLogLevel"
@@ -74,7 +82,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -87,7 +95,8 @@ infoview:
       name_path: "nodeName"
     field_indexes:
       Normal:
-        fields: ["name", "current_revision", "last_failure_reason", "last_failure"]
+        fields: ["name", "current_revision", "last_failure_reason",
+                 "last_failure"]
         sortcolumn: "type"
     fields:
       name:
@@ -100,7 +109,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       last_failure_reason:
         header: "Last Failure Reason:"
@@ -113,12 +122,12 @@ infoview:
             mappings:
               <none>:
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               __default:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       last_failure:
         header: "Last Failure:"
         path: "lastFailedTime"

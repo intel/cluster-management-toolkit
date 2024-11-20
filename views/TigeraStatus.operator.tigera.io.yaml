@@ -12,13 +12,13 @@ listview:
     available:
       header: "Available:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Available"
-        default: "Unknown"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Available"
+          default: "Unknown"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -26,22 +26,22 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     degraded:
       header: "Degraded:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Degraded"
-        default: "Unknown"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Degraded"
+          default: "Unknown"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -49,22 +49,22 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     progressing:
       header: "Progressing:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Progressing"
-        default: "Unknown"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Progressing"
+          default: "Unknown"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -72,22 +72,22 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "False":
               field_colors:
-              - context: "main"
-                type: "default"
+                - context: "main"
+                  type: "default"
     since:
       header: "Since:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "lastTransitionTime"
-        when:
-        - key: "type"
-          eq: "Available"
-        type: "timestamp"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "lastTransitionTime"
+          when:
+            - key: "type"
+              eq: "Available"
+          type: "timestamp"
       default: -1
       formatter: "age"
       align: "right"
@@ -101,13 +101,13 @@ infoview:
       available:
         header: [["Available:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Available"
-          default: "Unknown"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Available"
+            default: "Unknown"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -115,22 +115,22 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       degraded:
         header: [["Degraded:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Degraded"
-          default: "Unknown"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Degraded"
+            default: "Unknown"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -138,22 +138,22 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       progressing:
         header: [["Progressing:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Progressing"
-          default: "Unknown"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Progressing"
+            default: "Unknown"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -161,21 +161,21 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "default"
+                  - context: "main"
+                    type: "default"
       since:
         header: [["Since:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "lastTransitionTime"
-          when:
-          - key: "type"
-            eq: "Available"
-          type: "timestamp"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "lastTransitionTime"
+            when:
+              - key: "type"
+                eq: "Available"
+            type: "timestamp"
         default: -1
         formatter: "age"

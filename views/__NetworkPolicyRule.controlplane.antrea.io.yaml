@@ -8,7 +8,10 @@ infoview:
     name_path: null
     row_indexes:
       Normal:
-        fields: ["name", "action", "direction", "enable_logging", "priority", "from_header", "from_address_groups", "to_header", "to_ipblocks_header", "to_ipblocks_cidr", "services"]
+        fields: ["name", "action", "direction", "enable_logging",
+                 "priority", "from_header", "from_address_groups",
+                 "to_header", "to_ipblocks_header", "to_ipblocks_cidr",
+                 "services"]
     rows:
       action:
         header: [["Action:", ["main", "infoheader"]]]
@@ -31,7 +34,8 @@ infoview:
         formatting:
           ellipsise: 3
       from_header:
-        header: [["F", ["main", "infoheader_shortcut"]], ["rom:", ["main", "infoheader"]]]
+        header: [["F", ["main", "infoheader_shortcut"]],
+                 ["rom:", ["main", "infoheader"]]]
       name:
         header: [["Name:", ["main", "infoheader"]]]
         path: "name"
@@ -45,22 +49,22 @@ infoview:
       services:
         header: [["Service:", ["main", "infoheader"]]]
         paths:
-        - path: "services"
-          pathtype: "items"
-          subpaths:
-          - "port"
-          - "endPort"
-          - "protocol"
-          type: "raw"
+          - path: "services"
+            pathtype: "items"
+            subpaths:
+              - "port"
+              - "endPort"
+              - "protocol"
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "port"
-          - type: "port"
-          - type: "protocol"
+            - type: "port"
+            - type: "port"
+            - type: "protocol"
           field_separators:
-          - type: "range"
-          - type: "service"
+            - type: "range"
+            - type: "service"
       to_header:
         header: [["To:", ["main", "infoheader"]]]
       to_ipblocks_header:
@@ -68,17 +72,17 @@ infoview:
       to_ipblocks_cidr:
         header: [["    CIDR:", ["main", "infoheader"]]]
         paths:
-        - path: "to#ipBlocks"
-          pathtype: "items"
-          subpaths:
-          - "cidr#ip"
-          - "cidr#prefixLength"
-          default: ["<unset>"]
+          - path: "to#ipBlocks"
+            pathtype: "items"
+            subpaths:
+              - "cidr#ip"
+              - "cidr#prefixLength"
+            default: ["<unset>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "address"
-          - type: "ipmask"
+            - type: "address"
+            - type: "ipmask"
   shortcuts:
     "List Address Groups (From)":
       key: "f"

@@ -3,8 +3,8 @@ kind: "PackageManifest"
 api_family: "packages.operators.coreos.com"
 default_command: "packagemanifests"
 command:
-- "pkgmanifests"
-- "pkgmanifest"
+  - "pkgmanifests"
+  - "pkgmanifest"
 listview:
   name: "Package Manifests"
   group: "API & Extendability"
@@ -23,14 +23,18 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Package Manifest Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["package_name", "catalog_header", "catalog_display_name", "catalog_source", "catalog_namespace", "catalog_publisher", "provider_header", "provider_name", "provider_url", "channels", "default_channel"]
+        fields: ["package_name", "catalog_header",
+                 "catalog_display_name", "catalog_source",
+                 "catalog_namespace", "catalog_publisher",
+                 "provider_header", "provider_name", "provider_url",
+                 "channels", "default_channel"]
     rows:
       catalog_header:
         header: [["Catalog:", ["main", "infoheader"]]]
@@ -39,12 +43,14 @@ infoview:
         path: "status#catalogSourceDisplayName"
         type: "str"
       catalog_namespace:
-        header: [["  ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["atalog Namespace:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["atalog Namespace:", ["main", "infoheader"]]]
         path: "status#catalogSourceNamespace"
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       catalog_publisher:
         header: [["  Publisher:", ["main", "infoheader"]]]
         path: "status#catalogSourcePublisher"
@@ -54,12 +60,14 @@ infoview:
         path: "status#catalogSource"
         type: "str"
       channels:
-        header: [["C", ["main", "infoheader"]], ["h", ["main", "infoheader_shortcut"]], ["annels:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader"]],
+                 ["h", ["main", "infoheader_shortcut"]],
+                 ["annels:", ["main", "infoheader"]]]
         paths:
-        - path: "status#channels"
-          pathtype: "items"
-          subpaths:
-          - "name"
+          - path: "status#channels"
+            pathtype: "items"
+            subpaths:
+              - "name"
         formatter: "list"
       default_channel:
         header: [["Default Channel:", ["main", "infoheader"]]]
@@ -104,9 +112,9 @@ infoview:
       itemgetter_args:
         path: "status#channels"
         fields:
-        - "name"
-        - "currentCSVDesc#displayName"
-        - "currentCSVDesc#version"
+          - "name"
+          - "currentCSVDesc#displayName"
+          - "currentCSVDesc#version"
         pass_ref: true
       # Not supported for now
       sortcolumn: "displayname"

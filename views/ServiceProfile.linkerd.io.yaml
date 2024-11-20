@@ -3,8 +3,8 @@ kind: "ServiceProfile"
 api_family: "linkerd.io"
 default_command: "serviceprofiles"
 command:
-- "svcprofs"
-- "svcprof"
+  - "svcprofs"
+  - "svcprof"
 listview:
   name: "Service Profiles"
   group: "Network"
@@ -14,7 +14,7 @@ listview:
       sortcolumn: "namespace"
 infoview:
   name: "Service Profile Info"
-  infopad:
+  infopad: null
   shortcuts:
     "Routes":
       key: "r"
@@ -28,8 +28,8 @@ infoview:
       itemgetter_args:
         path: "spec#routes"
         fields:
-        - "name"
-        - "condition#pathRegex"
-        - "condition#method"
+          - "name"
+          - "condition#pathRegex"
+          - "condition#method"
       # This isn't supported for now
       sortcolumn: "name"

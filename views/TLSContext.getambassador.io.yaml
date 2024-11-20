@@ -7,9 +7,11 @@ listview:
   group: "Network"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "secret", "min_tls_version", "max_tls_version", "hosts", "age"]
+      fields: ["namespace", "name", "secret", "min_tls_version",
+               "max_tls_version", "hosts", "age"]
     Normal:
-      fields: ["namespace", "name", "secret", "min_tls_version", "max_tls_version", "age"]
+      fields: ["namespace", "name", "secret", "min_tls_version",
+               "max_tls_version", "age"]
   fields:
     hosts:
       header: "Hosts:"
@@ -23,7 +25,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
     min_tls_version:
       header: "Min TLS Version:"
       path: "spec#min_tls_version"
@@ -31,7 +33,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
     secret:
       header: "Secret:"
       path: "spec#secret"
@@ -41,7 +43,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["ambassador_id", "hosts", "sni", "min_tls_version", "max_tls_version", "tls_secret", "ca_secret", "cert_revocation_list_secret", "secret_namespacing", "cert_required", "alpn_protocols", "tls_cipher_suites", "tls_ecdh_curves", "cert_chain_file", "cacert_chain_file", "private_key_file"]
+        fields: ["ambassador_id", "hosts", "sni", "min_tls_version",
+                 "max_tls_version", "tls_secret", "ca_secret",
+                 "cert_revocation_list_secret", "secret_namespacing",
+                 "cert_required", "alpn_protocols", "tls_cipher_suites",
+                 "tls_ecdh_curves", "cert_chain_file", "cacert_chain_file",
+                 "private_key_file"]
     rows:
       alpn_protocols:
         header: [["ALPN Protocols:", ["main", "infoheader"]]]
@@ -59,7 +66,8 @@ infoview:
         default: "<unset>"
         type: "str"
       ca_secret:
-        header: [["C", ["main", "infoheader_shortcut"]], ["A Secret:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["A Secret:", ["main", "infoheader"]]]
         path: "spec#ca_secret"
         default: "<unset>"
         type: "str"
@@ -74,12 +82,16 @@ infoview:
         default: false
         type: "bool"
       cert_revocation_list_secret:
-        header: [["Cert ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["evocation List Secret:", ["main", "infoheader"]]]
+        header: [["Cert ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["evocation List Secret:", ["main", "infoheader"]]]
         path: "spec#v3CRLSecret"
         default: "<unset>"
         type: "str"
       hosts:
-        header: [["H", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["sts:", ["main", "infoheader"]]]
+        header: [["H", ["main", "infoheader"]],
+                 ["o", ["main", "infoheader_shortcut"]],
+                 ["sts:", ["main", "infoheader"]]]
         path: "spec#hosts"
         type: "raw"
         formatter: "list"
@@ -90,7 +102,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       min_tls_version:
         header: [["Min TLS Version:", ["main", "infoheader"]]]
         path: "spec#min_tls_version"
@@ -98,7 +110,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       private_key_file:
         header: [["Private Key File:", ["main", "infoheader"]]]
         path: "spec#private_key_file"
@@ -115,19 +127,24 @@ infoview:
         default: "<unset>"
         type: "str"
       tls_cipher_suites:
-        header: [["T", ["main", "infoheader_shortcut"]], ["LS Ciphers:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["LS Ciphers:", ["main", "infoheader"]]]
         path: "spec#cipher_suites"
         default: "<unset>"
         type: "raw"
         formatter: "list"
       tls_ecdh_curves:
-        header: [["TLS ", ["main", "infoheader"]], ["E", ["main", "infoheader_shortcut"]], ["CDH Curves:", ["main", "infoheader"]]]
+        header: [["TLS ", ["main", "infoheader"]],
+                 ["E", ["main", "infoheader_shortcut"]],
+                 ["CDH Curves:", ["main", "infoheader"]]]
         path: "spec#ecdh_curves"
         default: "<unset>"
         type: "raw"
         formatter: "list"
       tls_secret:
-        header: [["TLS ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
+        header: [["TLS ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ecret:", ["main", "infoheader"]]]
         path: "spec#secret"
         default: "<unset>"
         type: "str"

@@ -3,13 +3,15 @@ kind: "PodSecurityPolicy"
 api_family: "policy"
 default_command: "podsecuritypolicies"
 command:
-- "psp"
+  - "psp"
 listview:
   name: "Pod Security Policies"
   group: "Policy"
   field_indexes:
     Normal:
-      fields: ["name", "privileged", "capabilities", "selinux", "runasuser", "fsgroup", "supgroups", "readonly_rootfs", "volumes", "age"]
+      fields: ["name", "privileged", "capabilities", "selinux",
+               "runasuser", "fsgroup", "supgroups", "readonly_rootfs",
+               "volumes", "age"]
   fields:
     capabilities:
       header: "Capabilities:"
@@ -55,43 +57,43 @@ infoview:
     row_indexes:
       Normal:
         fields:
-        - "allow_privilege_escalation"
-        - "capabilities_header"
-        - "capabilities_allowed"
-        - "capabilities_default_add"
-        - "capabilities_required_drop"
-        - "host_resources_header"
-        - "host_resources_allowed_paths"
-        - "host_resources_allow_network_use"
-        - "host_resources_permitted_network_ports"
-        - "host_resources_allow_host_ipc"
-        - "host_resources_allow_host_pid"
-        - "sysctls_header"
-        - "sysctls_allowed_unsafe"
-        - "sysctls_forbidden"
-        - "selinux_header"
-        - "selinux_rule"
-        - "selinux_level"
-        - "selinux_role"
-        - "selinux_type"
-        - "selinux_user"
-        - "run_as_user_header"
-        - "run_as_user_rule"
-        - "run_as_user_ranges"
-        - "run_as_group_header"
-        - "run_as_group_rule"
-        - "run_as_group_ranges"
-        - "fsgroup_header"
-        - "fsgroup_rule"
-        - "fsgroup_ranges"
-        - "supplemental_groups_header"
-        - "supplemental_groups_rule"
-        - "supplemental_groups_ranges"
-        - "readonly_rootfs"
-        - "volumes"
-        - "runtime_class_header"
-        - "runtime_class_allowed"
-        - "runtime_class_default"
+          - "allow_privilege_escalation"
+          - "capabilities_header"
+          - "capabilities_allowed"
+          - "capabilities_default_add"
+          - "capabilities_required_drop"
+          - "host_resources_header"
+          - "host_resources_allowed_paths"
+          - "host_resources_allow_network_use"
+          - "host_resources_permitted_network_ports"
+          - "host_resources_allow_host_ipc"
+          - "host_resources_allow_host_pid"
+          - "sysctls_header"
+          - "sysctls_allowed_unsafe"
+          - "sysctls_forbidden"
+          - "selinux_header"
+          - "selinux_rule"
+          - "selinux_level"
+          - "selinux_role"
+          - "selinux_type"
+          - "selinux_user"
+          - "run_as_user_header"
+          - "run_as_user_rule"
+          - "run_as_user_ranges"
+          - "run_as_group_header"
+          - "run_as_group_rule"
+          - "run_as_group_ranges"
+          - "fsgroup_header"
+          - "fsgroup_rule"
+          - "fsgroup_ranges"
+          - "supplemental_groups_header"
+          - "supplemental_groups_rule"
+          - "supplemental_groups_ranges"
+          - "readonly_rootfs"
+          - "volumes"
+          - "runtime_class_header"
+          - "runtime_class_allowed"
+          - "runtime_class_default"
     rows:
       allow_privilege_escalation:
         header: [["Allow Privilege Escalation:", ["main", "infoheader"]]]
@@ -122,26 +124,26 @@ infoview:
       fsgroup_ranges:
         header: [["  Ranges:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#fsGroup#ranges"
-          pathtype: "items"
-          subpaths:
-          - "min"
-          - "max"
-          default: ["<unset>"]
+          - path: "spec#fsGroup#ranges"
+            pathtype: "items"
+            subpaths:
+              - "min"
+              - "max"
+            default: ["<unset>"]
         formatter: "list"
         formatting:
           field_separators:
-          - type: "range"
+            - type: "range"
           mapping:
             mappings:
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               __default:
                 field_colors:
-                - context: "types"
-                  type: "numerical"
+                  - context: "types"
+                    type: "numerical"
       fsgroup_rule:
         header: [["  Rule:", ["main", "infoheader"]]]
         path: "spec#fsGroup#rule"
@@ -150,35 +152,35 @@ infoview:
       host_resources_allowed_paths:
         header: [["  Allowed Paths:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#allowedHostPaths"
-          pathtype: "items"
-          subpath: "pathPrefix"
-          when:
-          - key: "readOnly"
-            eq: true
-          suffix:
-          - " (Read Only)"
-        - path: "spec#allowedHostPaths"
-          pathtype: "items"
-          subpath: "pathPrefix"
-          when:
-          - key: "readOnly"
-            ne: true
-        - path: "spec#allowedHostPaths"
-          pathtype: "items"
-          subpath: "pathPrefix"
-          when:
-          - key: "readOnly"
-            none: true
+          - path: "spec#allowedHostPaths"
+            pathtype: "items"
+            subpath: "pathPrefix"
+            when:
+              - key: "readOnly"
+                eq: true
+            suffix:
+              - " (Read Only)"
+          - path: "spec#allowedHostPaths"
+            pathtype: "items"
+            subpath: "pathPrefix"
+            when:
+              - key: "readOnly"
+                ne: true
+          - path: "spec#allowedHostPaths"
+            pathtype: "items"
+            subpath: "pathPrefix"
+            when:
+              - key: "readOnly"
+                none: true
         default: "All"
         type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "path"
-          - type: "none"
+            - type: "path"
+            - type: "none"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
       host_resources_allow_host_ipc:
         header: [["  Allow Host IPC:", ["main", "infoheader"]]]
         path: "spec#hostIpc"
@@ -198,18 +200,18 @@ infoview:
       host_resources_permitted_network_ports:
         header: [["  Permitted Network Port Ranges:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#hostPorts"
-          pathtype: "items"
-          subpaths:
-          - "min"
-          - "max"
+          - path: "spec#hostPorts"
+            pathtype: "items"
+            subpaths:
+              - "min"
+              - "max"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "range"
+            - type: "range"
       readonly_rootfs:
         header: [["Read Only Root FS:", ["main", "infoheader"]]]
         path: "spec#readOnlyRootFilesystem"
@@ -220,26 +222,26 @@ infoview:
       run_as_group_ranges:
         header: [["  Ranges:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#runAsGroup#ranges"
-          pathtype: "items"
-          subpaths:
-          - "min"
-          - "max"
-          default: ["<unset>"]
+          - path: "spec#runAsGroup#ranges"
+            pathtype: "items"
+            subpaths:
+              - "min"
+              - "max"
+            default: ["<unset>"]
         formatter: "list"
         formatting:
           field_separators:
-          - type: "range"
+            - type: "range"
           mapping:
             mappings:
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               __default:
                 field_colors:
-                - context: "types"
-                  type: "numerical"
+                  - context: "types"
+                    type: "numerical"
       run_as_group_rule:
         header: [["  Rule:", ["main", "infoheader"]]]
         path: "spec#runAsGroup#rule"
@@ -250,26 +252,26 @@ infoview:
       run_as_user_ranges:
         header: [["  Ranges:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#runAsUser#ranges"
-          pathtype: "items"
-          subpaths:
-          - "min"
-          - "max"
-          default: ["<unset>"]
+          - path: "spec#runAsUser#ranges"
+            pathtype: "items"
+            subpaths:
+              - "min"
+              - "max"
+            default: ["<unset>"]
         formatter: "list"
         formatting:
           field_separators:
-          - type: "range"
+            - type: "range"
           mapping:
             mappings:
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               __default:
                 field_colors:
-                - context: "types"
-                  type: "numerical"
+                  - context: "types"
+                    type: "numerical"
       run_as_user_rule:
         header: [["  Rule:", ["main", "infoheader"]]]
         path: "spec#runAsUser#rule"
@@ -286,8 +288,8 @@ infoview:
             mappings:
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       runtime_class_default:
         header: [["  Default Runtime Class:", ["main", "infoheader"]]]
         path: "spec#runtimeClass#defaultRuntimeClassName"
@@ -327,26 +329,26 @@ infoview:
       supplemental_groups_ranges:
         header: [["  Ranges:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#supplementalGroups#ranges"
-          pathtype: "items"
-          subpaths:
-          - "min"
-          - "max"
-          default: ["<unset>"]
+          - path: "spec#supplementalGroups#ranges"
+            pathtype: "items"
+            subpaths:
+              - "min"
+              - "max"
+            default: ["<unset>"]
         formatter: "list"
         formatting:
           field_separators:
-          - type: "range"
+            - type: "range"
           mapping:
             mappings:
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               __default:
                 field_colors:
-                - context: "types"
-                  type: "numerical"
+                  - context: "types"
+                    type: "numerical"
       supplemental_groups_rule:
         header: [["  Rule:", ["main", "infoheader"]]]
         path: "spec#supplementalGroups#rule"
@@ -363,8 +365,8 @@ infoview:
             mappings:
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       sysctls_forbidden:
         header: [["  Forbidden:", ["main", "infoheader"]]]
         path: "spec#forbiddenSysctls"
@@ -376,8 +378,8 @@ infoview:
             mappings:
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       sysctls_header:
         header: [["sysctls:", ["main", "infoheader"]]]
       volumes:

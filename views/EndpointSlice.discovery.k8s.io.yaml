@@ -3,16 +3,18 @@ kind: "EndpointSlice"
 api_family: "discovery.k8s.io"
 default_command: "endpointslices"
 command:
-- "eps"
+  - "eps"
 listview:
   name: "Endpoint Slices"
   group: "Core"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "ports", "endpoints", "addresstype", "age"]
+      fields: ["namespace", "name", "ports", "endpoints",
+               "addresstype", "age"]
       sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "ports_compact", "endpoints_ellipsise", "addresstype", "age"]
+      fields: ["namespace", "name", "ports_compact",
+               "endpoints_ellipsise", "addresstype", "age"]
       sortcolumn: "namespace"
   fields:
     addresstype:
@@ -34,38 +36,38 @@ listview:
     ports:
       header: "Ports:"
       paths:
-      - path: "ports"
-        pathtype: "items"
-        subpaths:
-        - "name"
-        - "port"
-        - "protocol"
-        type: "raw"
+        - path: "ports"
+          pathtype: "items"
+          subpaths:
+            - "name"
+            - "port"
+            - "protocol"
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "service"
-        - type: "port"
-        - type: "protocol"
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
         field_separators:
-        - type: "port"
-        - type: "service"
+          - type: "port"
+          - type: "service"
     ports_compact:
       header: "Ports:"
       paths:
-      - path: "ports"
-        pathtype: "items"
-        subpaths:
-        - "port"
-        - "protocol"
-        type: "raw"
+        - path: "ports"
+          pathtype: "items"
+          subpaths:
+            - "port"
+            - "protocol"
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "port"
-        - type: "protocol"
+          - type: "port"
+          - type: "protocol"
         field_separators:
-        - type: "service"
+          - type: "service"
         ellipsise: 3
   actions:
     actionlist:
@@ -82,28 +84,29 @@ infoview:
         fields: ["controller"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -111,7 +114,8 @@ infoview:
     infogetter: "get_eps_subsets_info"
     field_indexes:
       Normal:
-        fields: ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"]
+        fields: ["addresstype", "addresses", "ports_eps", "status",
+                 "target_ref", "topology"]
     fields:
       addresses:
         header: "Addresses:"
@@ -127,12 +131,12 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "service"
-          - type: "port"
-          - type: "protocol"
+            - type: "service"
+            - type: "port"
+            - type: "protocol"
           field_separators:
-          - type: "port"
-          - type: "service"
+            - type: "port"
+            - type: "service"
       status:
         header: "Status:"
       target_ref:
@@ -142,14 +146,14 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "namespace"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
       topology:
         header: "Topology:"
         path: "topology"
@@ -157,10 +161,10 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   shortcuts:
     "Open controller":
       key: "c"

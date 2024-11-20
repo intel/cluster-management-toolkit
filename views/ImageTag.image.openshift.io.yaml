@@ -3,13 +3,13 @@ kind: "ImageTag"
 api_family: "image.openshift.io"
 default_command: "imagetags.image.openshift.io"
 command:
-- "imagetag.image.openshift.io"
-- "imagetags.openshift"
-- "imagetag.openshift"
-- "osimagetags"
-- "osimagetag"
-- "osimgtags"
-- "osimgtag"
+  - "imagetag.image.openshift.io"
+  - "imagetags.openshift"
+  - "imagetag.openshift"
+  - "osimagetags"
+  - "osimagetag"
+  - "osimgtags"
+  - "osimgtag"
 listview:
   name: "Image Tags"
   group: "OpenShift"
@@ -25,26 +25,26 @@ listview:
     spec:
       header: "Spec:"
       paths:
-      - path: "spec#importPolicy"
-        pathtype: "substitution"
-        when:
-        - key: "scheduled"
-          eq: true
-        substitute: "Scheduled"
-      - path: "status"
-        pathtype: "substitution"
-        when:
-        - key: "tag"
-          eq: "latest"
-        substitute: "Track"
-      - path: "status"
-        pathtype: "substitution"
-        when:
-        - key: "tag"
-          notmissing: true
-        - key: "tag"
-          ne: "latest"
-        substitute: "Tag"
+        - path: "spec#importPolicy"
+          pathtype: "substitution"
+          when:
+            - key: "scheduled"
+              eq: true
+          substitute: "Scheduled"
+        - path: "status"
+          pathtype: "substitution"
+          when:
+            - key: "tag"
+              eq: "latest"
+          substitute: "Track"
+        - path: "status"
+          pathtype: "substitution"
+          when:
+            - key: "tag"
+              notmissing: true
+            - key: "tag"
+              ne: "latest"
+          substitute: "Tag"
       default: ["<unknown>"]
       formatter: "list"
     tag:
@@ -53,7 +53,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
     version:
       header: "Version:"
       path: "spec#annotations#version"
@@ -61,7 +61,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Image Tag Info"
   infopad:
@@ -72,13 +72,13 @@ infoview:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       description:
         header: [["Description:", ["main", "infoheader"]]]
@@ -93,12 +93,12 @@ infoview:
       from:
         header: [["From:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#from#kind"], ["spec#from#name"]]
-          pathtype: "tuple"
+          - path: [["spec#from#kind"], ["spec#from#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_separators:
-          - type: "url_separator"
+            - type: "url_separator"
       import_policy:
         header: [["Import Policy:", ["main", "infoheader"]]]
         path: "spec#importPolicy#importMode"
@@ -116,26 +116,26 @@ infoview:
       spec:
         header: [["Spec:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#importPolicy"
-          pathtype: "substitution"
-          when:
-          - key: "scheduled"
-            eq: true
-          substitute: "Scheduled"
-        - path: "status"
-          pathtype: "substitution"
-          when:
-          - key: "tag"
-            eq: "latest"
-          substitute: "Track"
-        - path: "status"
-          pathtype: "substitution"
-          when:
-          - key: "tag"
-            notmissing: true
-          - key: "tag"
-            ne: "latest"
-          substitute: "Tag"
+          - path: "spec#importPolicy"
+            pathtype: "substitution"
+            when:
+              - key: "scheduled"
+                eq: true
+            substitute: "Scheduled"
+          - path: "status"
+            pathtype: "substitution"
+            when:
+              - key: "tag"
+                eq: "latest"
+            substitute: "Track"
+          - path: "status"
+            pathtype: "substitution"
+            when:
+              - key: "tag"
+                notmissing: true
+              - key: "tag"
+                ne: "latest"
+            substitute: "Tag"
         default: ["<unknown>"]
         formatter: "list"
       tag:
@@ -144,7 +144,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#annotations#version"
@@ -152,7 +152,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Cluster Version":
       key: "v"

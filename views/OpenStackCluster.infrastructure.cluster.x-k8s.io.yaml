@@ -3,7 +3,7 @@ kind: "OpenStackCluster"
 api_family: "infrastructure.cluster.x-k8s.io"
 default_command: "openstackclusters"
 command:
-- "osc"
+  - "osc"
 listview:
   name: "OpenStack Clusters"
   group: "Cluster Configuration"
@@ -41,12 +41,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     subnet:
       header: "Subnet:"
       path: "status#network#subnet#id"
@@ -75,17 +75,17 @@ infoview:
       control_plane_endpoint:
         header: [["Control Plane Endpoint:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#controlPlaneEndpoint#host"], ["spec#controlPlaneEndpoint#port"]]
-          pathtype: "tuple"
-          type: ["name", "name"]
+          - path: [["spec#controlPlaneEndpoint#host"], ["spec#controlPlaneEndpoint#port"]]
+            pathtype: "tuple"
+            type: ["name", "name"]
         # FIXME: The formatter needs to be improved to handle lists that contain addresses, etc.
         formatter: "list"
         formatting:
           field_colors:
-          - type: "address"
-          - type: "port"
+            - type: "address"
+            - type: "port"
           field_separators:
-          - type: "port"
+            - type: "port"
       dns_nameservers:
         header: [["DNS Nameservers:", ["main", "infoheader"]]]
         path: "spec#dnsNameservers"
@@ -94,15 +94,15 @@ infoview:
       identity:
         header: [["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
-          pathtype: "tuple"
+          - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           field_separators:
-          - type: "kind"
+            - type: "kind"
       network_header:
         header: [["Network:", ["main", "infoheader"]]]
       network_id:
@@ -123,12 +123,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       router_header:
         header: [["Router:", ["main", "infoheader"]]]
       router_id:

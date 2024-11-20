@@ -3,10 +3,10 @@ kind: "ResourceClaimTemplate"
 api_family: "resource.k8s.io"
 default_command: "resourceclaimtemplates"
 command:
-- "resclaimtemplates"
-- "resclaimtemplate"
-- "resclaimtempls"
-- "resclaimtempl"
+  - "resclaimtemplates"
+  - "resclaimtemplate"
+  - "resclaimtempls"
+  - "resclaimtempl"
 listview:
   name: "Resource Claim Templates"
   group: "Dynamic Resource Allocation"
@@ -19,7 +19,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["parameters_ref", "resource_class", "allocation_mode", "device_requests"]
+        fields: ["parameters_ref", "resource_class",
+                 "allocation_mode", "device_requests"]
     rows:
       allocation_mode:
         header: [["Allocation Mode:", ["main", "infoheader"]]]
@@ -27,32 +28,37 @@ infoview:
         default: "<unset>"
         type: "str"
       device_requests:
-        header: [["Device Re", ["main", "infoheader"]], ["q", ["main", "infoheader_shortcut"]], ["uests:", ["main", "infoheader"]]]
+        header: [["Device Re", ["main", "infoheader"]],
+                 ["q", ["main", "infoheader_shortcut"]],
+                 ["uests:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#spec#devices#requests"
-          pathtype: "items"
-          subpaths:
-          - "name"
+          - path: "spec#spec#devices#requests"
+            pathtype: "items"
+            subpaths:
+              - "name"
         default: "<none>"
         formatter: "list"
       parameters_ref:
-        header: [["P", ["main", "infoheader_shortcut"]], ["arameters Ref:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arameters Ref:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#spec#parametersRef#kind"], ["spec#spec#parametersRef#apiVersion"], ["spec#spec#parametersRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
-          default: ["<unset>"]
-          fallback_on_empty: true
+          - path: [["spec#spec#parametersRef#kind"],
+                   ["spec#spec#parametersRef#apiVersion"],
+                   ["spec#spec#parametersRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
+            default: ["<unset>"]
+            fallback_on_empty: true
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       resource_class:
         header: [["Resource Class:", ["main", "infoheader"]]]
         path: "spec#spec#resourceClassName"
@@ -85,10 +91,10 @@ infoview:
         path: "spec#spec#devices#requests"
         pass_ref: true
         fields:
-        - "name"
-        - "deviceClassName"
-        - "allocationMode"
-        - "count"
+          - "name"
+          - "deviceClassName"
+          - "allocationMode"
+          - "count"
       # Not supported for now
       sortcolumn: "name"
       action: "call"

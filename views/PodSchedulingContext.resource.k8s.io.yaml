@@ -3,8 +3,8 @@ kind: "PodSchedulingContext"
 api_family: "resource.k8s.io"
 default_command: "podschedulingcontexts"
 command:
-- "podschedctxs"
-- "podschedctx"
+  - "podschedctxs"
+  - "podschedctx"
 listview:
   name: "Pod Scheduling Contexts"
   group: "Dynamic Resource Allocation"
@@ -20,43 +20,47 @@ infoview:
         fields: ["controller", "node_name"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         path: "spec#selectedNode"
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       potential_nodes:
-        header: [["P", ["main", "infoheader_shortcut"]], ["otential Nodes:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["otential Nodes:", ["main", "infoheader"]]]
         path: "spec#potentialNodes"
         type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
           ellipsise: 20
   shortcuts:
     "Open controller":

@@ -17,7 +17,9 @@ infoview:
         fields: ["hostnames"]
     rows:
       hostnames:
-        header: [["H", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["stnames:", ["main", "infoheader"]]]
+        header: [["H", ["main", "infoheader"]],
+                 ["o", ["main", "infoheader_shortcut"]],
+                 ["stnames:", ["main", "infoheader"]]]
         path: "spec#hostnames"
         type: "raw"
         formatter: "list"
@@ -44,10 +46,10 @@ infoview:
       itemgetter_args:
         path: "spec#parentRefs"
         fields:
-        - "kind"
-        - "group"
-        - "name"
-        - "port"
+          - "kind"
+          - "group"
+          - "name"
+          - "port"
       # This isn't supported for now
       sortcolumn: "group"
       selectable: true

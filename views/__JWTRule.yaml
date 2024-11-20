@@ -8,10 +8,14 @@ infoview:
     creation_timestamp_path: null
     row_indexes:
       Normal:
-        fields: ["issuer", "timeout", "forward_original_token", "audiences", "jwks_uri", "from_headers", "from_cookies", "from_params", "output_claim_to_headers", "output_payload_to_header"]
+        fields: ["issuer", "timeout", "forward_original_token",
+                 "audiences", "jwks_uri", "from_headers",
+                 "from_cookies", "from_params",
+                 "output_claim_to_headers", "output_payload_to_header"]
     rows:
       audiences:
-        header: [["A", ["main", "infoheader_shortcut"]], ["udiences:", ["main", "infoheader"]]]
+        header: [["A", ["main", "infoheader_shortcut"]],
+                 ["udiences:", ["main", "infoheader"]]]
         path: "audiences"
         default: ["<unset>"]
         type: "raw"
@@ -24,7 +28,9 @@ infoview:
         default: false
         type: "bool"
       from_cookies:
-        header: [["From ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["ookies:", ["main", "infoheader"]]]
+        header: [["From ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["ookies:", ["main", "infoheader"]]]
         path: "fromCookies"
         default: ["<unset>"]
         type: "raw"
@@ -32,33 +38,36 @@ infoview:
         formatting:
           ellipsise: 5
       from_headers:
-        header: [["F", ["main", "infoheader_shortcut"]], ["rom Headers (name:prefix):", ["main", "infoheader"]]]
+        header: [["F", ["main", "infoheader_shortcut"]],
+                 ["rom Headers (name:prefix):", ["main", "infoheader"]]]
         paths:
-        - path: "fromHeaders"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - "prefix"
+          - path: "fromHeaders"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - "prefix"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
           field_prefixes:
-          -
-            - type: "no_pad"
-          -
-            - type: "quote"
+            -
+              - type: "no_pad"
+            -
+              - type: "quote"
           field_suffixes:
-          -
-            - type: "no_pad"
-          -
-            - type: "quote"
+            -
+              - type: "no_pad"
+            -
+              - type: "quote"
           ellipsise: 3
       from_params:
-        header: [["From ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["arams:", ["main", "infoheader"]]]
+        header: [["From ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["arams:", ["main", "infoheader"]]]
         path: "fromParams"
         default: ["<unset>"]
         type: "raw"
@@ -76,32 +85,34 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "url"
+            - type: "url"
       output_claim_to_headers:
-        header: [["O", ["main", "infoheader_shortcut"]], ["utput Claim to Headers (header:claim):", ["main", "infoheader"]]]
+        header: [["O", ["main", "infoheader_shortcut"]],
+                 ["utput Claim to Headers (header:claim):",
+                  ["main", "infoheader"]]]
         paths:
-        - path: "outputClaimToHeaders"
-          pathtype: "items"
-          subpaths:
-          - "header"
-          - "claim"
+          - path: "outputClaimToHeaders"
+            pathtype: "items"
+            subpaths:
+              - "header"
+              - "claim"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
           field_prefixes:
-          -
-            - type: "quote"
-          -
-            - type: "quote"
+            -
+              - type: "quote"
+            -
+              - type: "quote"
           field_suffixes:
-          -
-            - type: "quote"
-          -
-            - type: "quote"
+            -
+              - type: "quote"
+            -
+              - type: "quote"
           ellipsise: 3
       output_payload_to_header:
         header: [["Output Payload to Header:", ["main", "infoheader"]]]
@@ -154,9 +165,9 @@ infoview:
       itemgetter_args:
         path: "fromHeaders"
         fields:
-        - "name"
-        - name: "prefix"
-          quote: true
+          - "name"
+          - name: "prefix"
+            quote: true
       # This isn't supported for now
       sortcolumn: "name"
     "From Params":
@@ -195,8 +206,8 @@ infoview:
       itemgetter_args:
         path: "outputClaimToHeaders"
         fields:
-        - "header"
-        - name: "claim"
-          quote: true
+          - "header"
+          - name: "claim"
+            quote: true
       # This isn't supported for now
       sortcolumn: "header"

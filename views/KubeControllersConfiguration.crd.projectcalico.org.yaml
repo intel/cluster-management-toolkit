@@ -3,8 +3,8 @@ kind: "KubeControllersConfiguration"
 api_family: "crd.projectcalico.org"
 default_command: "kubecontrollersconfigurations"
 command:
-- "kubectlconfs"
-- "kubectlconf"
+  - "kubectlconfs"
+  - "kubectlconf"
 listview:
   name: "Kube Controllers Configurations"
   group: "Calico"
@@ -17,50 +17,50 @@ infoview:
     row_indexes:
       Normal:
         fields:
-        - "configuration_header"
-        - "configuration_etcd_v3_compaction_period"
-        - "configuration_health_checks"
-        - "configuration_log_severity_screen"
-        - "configuration_namespace_controller_header"
-        - "configuration_namespace_controller_enabled"
-        - "configuration_namespace_controller_reconciler_period"
-        - "configuration_node_controller_header"
-        - "configuration_node_controller_enabled"
-        - "configuration_node_controller_reconciler_period"
-        - "configuration_node_controller_host_endpoint_enabled"
-        - "configuration_node_controller_host_endpoint_auto_create"
-        - "configuration_node_controller_sync_labels"
-        - "configuration_policy_controller_header"
-        - "configuration_policy_controller_enabled"
-        - "configuration_policy_controller_reconciler_period"
-        - "configuration_service_account_controller_header"
-        - "configuration_service_account_controller_enabled"
-        - "configuration_service_account_controller_reconciler_period"
-        - "configuration_workload_endpoint_controller_header"
-        - "configuration_workload_endpoint_controller_enabled"
-        - "configuration_workload_endpoint_controller_reconciler_period"
-        - "running_configuration_header"
-        - "running_etcd_v3_compaction_period"
-        - "running_health_checks"
-        - "running_log_severity_screen"
-        - "running_namespace_controller_header"
-        - "running_namespace_controller_enabled"
-        - "running_namespace_controller_reconciler_period"
-        - "running_node_controller_header"
-        - "running_node_controller_enabled"
-        - "running_node_controller_reconciler_period"
-        - "running_node_controller_host_endpoint_enabled"
-        - "running_node_controller_host_endpoint_auto_create"
-        - "running_node_controller_sync_labels"
-        - "running_policy_controller_header"
-        - "running_policy_controller_enabled"
-        - "running_policy_controller_reconciler_period"
-        - "running_service_account_controller_header"
-        - "running_service_account_controller_enabled"
-        - "running_service_account_controller_reconciler_period"
-        - "running_workload_endpoint_controller_header"
-        - "running_workload_endpoint_controller_enabled"
-        - "running_workload_endpoint_controller_reconciler_period"
+          - "configuration_header"
+          - "configuration_etcd_v3_compaction_period"
+          - "configuration_health_checks"
+          - "configuration_log_severity_screen"
+          - "configuration_namespace_controller_header"
+          - "configuration_namespace_controller_enabled"
+          - "configuration_namespace_controller_reconciler_period"
+          - "configuration_node_controller_header"
+          - "configuration_node_controller_enabled"
+          - "configuration_node_controller_reconciler_period"
+          - "configuration_node_controller_host_endpoint_enabled"
+          - "configuration_node_controller_host_endpoint_auto_create"
+          - "configuration_node_controller_sync_labels"
+          - "configuration_policy_controller_header"
+          - "configuration_policy_controller_enabled"
+          - "configuration_policy_controller_reconciler_period"
+          - "configuration_service_account_controller_header"
+          - "configuration_service_account_controller_enabled"
+          - "configuration_service_account_controller_reconciler_period"
+          - "configuration_workload_endpoint_controller_header"
+          - "configuration_workload_endpoint_controller_enabled"
+          - "configuration_workload_endpoint_controller_reconciler_period"
+          - "running_configuration_header"
+          - "running_etcd_v3_compaction_period"
+          - "running_health_checks"
+          - "running_log_severity_screen"
+          - "running_namespace_controller_header"
+          - "running_namespace_controller_enabled"
+          - "running_namespace_controller_reconciler_period"
+          - "running_node_controller_header"
+          - "running_node_controller_enabled"
+          - "running_node_controller_reconciler_period"
+          - "running_node_controller_host_endpoint_enabled"
+          - "running_node_controller_host_endpoint_auto_create"
+          - "running_node_controller_sync_labels"
+          - "running_policy_controller_header"
+          - "running_policy_controller_enabled"
+          - "running_policy_controller_reconciler_period"
+          - "running_service_account_controller_header"
+          - "running_service_account_controller_enabled"
+          - "running_service_account_controller_reconciler_period"
+          - "running_workload_endpoint_controller_header"
+          - "running_workload_endpoint_controller_enabled"
+          - "running_workload_endpoint_controller_reconciler_period"
     rows:
       configuration_header:
         header: [["Configuration:", ["main", "infoheader"]]]
@@ -82,14 +82,14 @@ infoview:
       configuration_namespace_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#controllers"
-          pathtype: "substitution"
-          subpath: "namespace"
-          when:
-          - key: "namespace"
-            isdict: true
-          substitute: "True"
-          default: "False"
+          - path: "spec#controllers"
+            pathtype: "substitution"
+            subpath: "namespace"
+            when:
+              - key: "namespace"
+                isdict: true
+            substitute: "True"
+            default: "False"
         formatter: "list"
       configuration_namespace_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
@@ -102,13 +102,13 @@ infoview:
       configuration_node_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "node"
-            isdict: true
-          substitute: "True"
-          default: "False"
+          - path: "spec#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "node"
+                isdict: true
+            substitute: "True"
+            default: "False"
       configuration_node_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
         path: "spec#controllers#node#reconcilerPeriod"
@@ -118,15 +118,15 @@ infoview:
       configuration_node_controller_host_endpoint_enabled:
         header: [["    Node to Host Endpoint Synchronisation:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#controllers#node#hostEndpoint"
-          pathtype: "str"
-          default: "Disabled"
+          - path: "spec#controllers#node#hostEndpoint"
+            pathtype: "str"
+            default: "Disabled"
       configuration_node_controller_host_endpoint_auto_create:
         header: [["      Endpoint Autocreate:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#controllers#node#hostEndpoint#autoCreate"
-          pathtype: "str"
-          default: "Disabled"
+          - path: "spec#controllers#node#hostEndpoint#autoCreate"
+            pathtype: "str"
+            default: "Disabled"
       configuration_node_controller_sync_labels:
         header: [["    Sync Labels:", ["main", "infoheader"]]]
         path: "spec#controllers#node#syncLabels"
@@ -137,13 +137,13 @@ infoview:
       configuration_policy_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "policy"
-            isdict: true
-          substitute: "True"
-          default: "False"
+          - path: "spec#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "policy"
+                isdict: true
+            substitute: "True"
+            default: "False"
       configuration_policy_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
         path: "spec#controllers#policy#reconcilerPeriod"
@@ -155,13 +155,13 @@ infoview:
       configuration_service_account_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "serviceAccount"
-            isdict: true
-          substitute: "True"
-          default: "False"
+          - path: "spec#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "serviceAccount"
+                isdict: true
+            substitute: "True"
+            default: "False"
       configuration_service_account_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
         path: "spec#controllers#serviceAccount#reconcilerPeriod"
@@ -173,13 +173,13 @@ infoview:
       configuration_workload_endpoint_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "workloadEndpoint"
-            isdict: true
-          substitute: "True"
-          default: "False"
+          - path: "spec#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "workloadEndpoint"
+                isdict: true
+            substitute: "True"
+            default: "False"
       configuration_workload_endpoint_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
         path: "spec#controllers#workloadEndpoint#reconcilerPeriod"
@@ -206,22 +206,22 @@ infoview:
       running_namespace_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          subpath: "namespace"
-          when:
-          - key: "namespace"
-            notnone: true
-          substitute: "True"
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          subpath: "namespace"
-          when:
-          - key: "namespace"
-            notmissing: true
-          - key: "namespace"
-            none: true
-          substitute: "False"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            subpath: "namespace"
+            when:
+              - key: "namespace"
+                notnone: true
+            substitute: "True"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            subpath: "namespace"
+            when:
+              - key: "namespace"
+                notmissing: true
+              - key: "namespace"
+                none: true
+            substitute: "False"
         formatter: "list"
       running_namespace_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
@@ -233,20 +233,20 @@ infoview:
       running_node_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "node"
-            notnone: true
-          substitute: "True"
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "node"
-            notmissing: true
-          - key: "node"
-            none: true
-          substitute: "False"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "node"
+                notnone: true
+            substitute: "True"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "node"
+                notmissing: true
+              - key: "node"
+                none: true
+            substitute: "False"
       running_node_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
         path: "status#runningConfig#controllers#node#reconcilerPeriod"
@@ -255,25 +255,25 @@ infoview:
       running_node_controller_host_endpoint_enabled:
         header: [["    Node to Host Endpoint Synchronisation:", ["main", "infoheader"]]]
         paths:
-        - path: "status#runningConfig#controllers#node"
-          pathtype: "substitution"
-          when:
-          - key: "hostEndpoint"
-            notnone: true
-          substitute: "True"
-        - path: "status#runningConfig#controllers#node"
-          pathtype: "substitution"
-          when:
-          - key: "hostEndpoint"
-            notmissing: true
-          - key: "hostEndpoint"
-            none: true
-          substitute: "False"
+          - path: "status#runningConfig#controllers#node"
+            pathtype: "substitution"
+            when:
+              - key: "hostEndpoint"
+                notnone: true
+            substitute: "True"
+          - path: "status#runningConfig#controllers#node"
+            pathtype: "substitution"
+            when:
+              - key: "hostEndpoint"
+                notmissing: true
+              - key: "hostEndpoint"
+                none: true
+            substitute: "False"
       running_node_controller_host_endpoint_auto_create:
         header: [["      Endpoint Autocreate:", ["main", "infoheader"]]]
         paths:
-        - path: "status#runningConfig#controllers#node#hostEndpoint#autoCreate"
-          pathtype: "str"
+          - path: "status#runningConfig#controllers#node#hostEndpoint#autoCreate"
+            pathtype: "str"
       running_node_controller_sync_labels:
         header: [["    Sync Labels:", ["main", "infoheader"]]]
         path: "status#runningConfig#controllers#node#syncLabels"
@@ -283,20 +283,20 @@ infoview:
       running_policy_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "policy"
-            notnone: true
-          substitute: "True"
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "policy"
-            notmissing: true
-          - key: "policy"
-            none: true
-          substitute: "False"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "policy"
+                notnone: true
+            substitute: "True"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "policy"
+                notmissing: true
+              - key: "policy"
+                none: true
+            substitute: "False"
       running_policy_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
         path: "status#runningConfig#controllers#policy#reconcilerPeriod"
@@ -307,20 +307,20 @@ infoview:
       running_service_account_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "serviceAccount"
-            notnone: true
-          substitute: "True"
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "serviceAccount"
-            notmissing: true
-          - key: "serviceAccount"
-            none: true
-          substitute: "False"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "serviceAccount"
+                notnone: true
+            substitute: "True"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "serviceAccount"
+                notmissing: true
+              - key: "serviceAccount"
+                none: true
+            substitute: "False"
       running_service_account_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
         path: "status#runningConfig#controllers#serviceAccount#reconcilerPeriod"
@@ -331,20 +331,20 @@ infoview:
       running_workload_endpoint_controller_enabled:
         header: [["    Enabled:", ["main", "infoheader"]]]
         paths:
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "workloadEndpoint"
-            notnone: true
-          substitute: "True"
-        - path: "status#runningConfig#controllers"
-          pathtype: "substitution"
-          when:
-          - key: "workloadEndpoint"
-            notmissing: true
-          - key: "workloadEndpoint"
-            none: true
-          substitute: "False"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "workloadEndpoint"
+                notnone: true
+            substitute: "True"
+          - path: "status#runningConfig#controllers"
+            pathtype: "substitution"
+            when:
+              - key: "workloadEndpoint"
+                notmissing: true
+              - key: "workloadEndpoint"
+                none: true
+            substitute: "False"
       running_workload_endpoint_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
         path: "status#runningConfig#controllers#workloadEndpoint#reconcilerPeriod"

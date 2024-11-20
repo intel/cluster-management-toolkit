@@ -19,21 +19,23 @@ listview:
     trials_running:
       header: "Trials Running:"
       paths:
-      - path: [["status#trialsRunning"], ["status#trials"]]
-        pathtype: "tuple"
-        default: [0, 0]
+        - path: [["status#trialsRunning"], ["status#trials"]]
+          pathtype: "tuple"
+          default: [0, 0]
       align: "right"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Experiment Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["algorithm", "resume_policy", "max_trials", "max_failed_trials", "parallel_trials", "trials_running", "running_trials"]
+        fields: ["algorithm", "resume_policy", "max_trials",
+                 "max_failed_trials", "parallel_trials",
+                 "trials_running", "running_trials"]
     rows:
       algorithm:
         header: [["Algorithm:", ["main", "infoheader"]]]
@@ -47,7 +49,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       max_trials:
         header: [["Max Trials:", ["main", "infoheader"]]]
         path: "spec#maxTrialCount"
@@ -55,7 +57,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       parallel_trials:
         header: [["Paralllel Trials:", ["main", "infoheader"]]]
         path: "spec#parallelTrialCount"
@@ -63,14 +65,15 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       resume_policy:
         header: [["Resume Policy:", ["main", "infoheader"]]]
         path: "spec#resumePolicy"
         default: "<unset>"
         type: "str"
       running_trials:
-        header: [["R", ["main", "infoheader_shortcut"]], ["unning Trials:", ["main", "infoheader"]]]
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["unning Trials:", ["main", "infoheader"]]]
         path: "status#runningTrialList"
         default: ["<none>"]
         type: "raw"
@@ -78,15 +81,15 @@ infoview:
       trials_running:
         header: [["Trials Running:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#trialsRunning"], ["status#trials"]]
-          pathtype: "tuple"
-          default: [0, 0]
+          - path: [["status#trialsRunning"], ["status#trials"]]
+            pathtype: "tuple"
+            default: [0, 0]
         align: "right"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Running Trials":
       key: "r"

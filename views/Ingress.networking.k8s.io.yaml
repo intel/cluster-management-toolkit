@@ -3,7 +3,7 @@ kind: "Ingress"
 api_family: "networking.k8s.io"
 default_command: "ingresses"
 command:
-- "ing"
+  - "ing"
 listview:
   name: "Ingresses"
   group: "Network"
@@ -19,38 +19,38 @@ listview:
     address:
       header: "Address:"
       paths:
-      - path: "status#loadBalancer#ingress"
-        pathtype: "items"
-        subpaths:
-        - "hostname"
-        - "ip"
+        - path: "status#loadBalancer#ingress"
+          pathtype: "items"
+          subpaths:
+            - "hostname"
+            - "ip"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "address"
+          - type: "address"
         field_separators:
-        - type: "no_pad"
+          - type: "no_pad"
     hosts:
       header: "Hosts:"
       paths:
-      - path: ["spec#rules"]
-        pathtype: "items"
-        subpath:
-        - "host"
+        - path: ["spec#rules"]
+          pathtype: "items"
+          subpath:
+            - "host"
       formatter: "list"
     ports:
       header: "Ports:"
       paths:
-      - path: ["spec#rules#http#paths#backend#service#port"]
-        pathtype: "appenditems"
-        subpath:
-        - "name"
-        - "number"
+        - path: ["spec#rules#http#paths#backend#service#port"]
+          pathtype: "appenditems"
+          subpath:
+            - "name"
+            - "number"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "port"
-        - type: "service"
+          - type: "port"
+          - type: "service"
 infoview:
   name: "Ingress Info"
   infopad:
@@ -65,17 +65,17 @@ infoview:
       default_backend:
         header: [["D", ["main", "infoheader_shortcut"]], ["efault Backend:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#defaultBackend#resource#kind"], ["spec#defaultBackend#resource#apiGroup"], ["spec#defaultBackend#resource#name"]]
-          pathtype: "tuple"
+          - path: [["spec#defaultBackend#resource#kind"], ["spec#defaultBackend#resource#apiGroup"], ["spec#defaultBackend#resource#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   listpad:
     listgetter: "get_ingress_rule_list"
     infogetter: "generic_infogetter"
@@ -90,10 +90,10 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
       host:
         header: "Host:"
         path: "host"
@@ -109,10 +109,10 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "port"
-          - type: "service"
+            - type: "port"
+            - type: "service"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
       path:
         header: "Path:"
         path: "path"
@@ -161,6 +161,6 @@ infoview:
       itemgetter_args:
         path: "spec#tls"
         fields:
-        - name: "secretName"
-          default: "<none>"
-        - "hosts"
+          - name: "secretName"
+            default: "<none>"
+          - "hosts"

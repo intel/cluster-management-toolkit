@@ -3,10 +3,10 @@ kind: "Project"
 api_family: "management.loft.sh"
 default_command: "projects.management.loft.sh"
 command:
-- "projects.management"
-- "project.management"
-- "projs.mgmnt"
-- "proj.mgmnt"
+  - "projects.management"
+  - "project.management"
+  - "projs.mgmnt"
+  - "proj.mgmnt"
 listview:
   name: "Projects"
   group: "Lôft"
@@ -23,36 +23,42 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["display_name", "description", "allowed_clusters", "allowed_templates", "members"]
+        fields: ["display_name", "description",
+                 "allowed_clusters", "allowed_templates", "members"]
     rows:
       allowed_clusters:
-        header: [["Allowed ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["lusters:", ["main", "infoheader"]]]
+        header: [["Allowed ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["lusters:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#allowedClusters"
-          pathtype: "items"
-          subpaths:
-          - "name"
+          - path: "spec#allowedClusters"
+            pathtype: "items"
+            subpaths:
+              - "name"
         formatter: "list"
       allowed_templates:
-        header: [["Allowed ", ["main", "infoheader"]], ["T", ["main", "infoheader_shortcut"]], ["emplates:", ["main", "infoheader"]]]
+        header: [["Allowed ", ["main", "infoheader"]],
+                 ["T", ["main", "infoheader_shortcut"]],
+                 ["emplates:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#allowedTemplates"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "group"
-          - "name"
-          # The second is really "api_group", not kind, but the version is stripped, so it's detected as a core API
-          type: ["kind", "kind", "name"]
+          - path: "spec#allowedTemplates"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "group"
+              - "name"
+            # The second is really "api_group", not kind,
+            # but the version is stripped, so it's detected as a core API
+            type: ["kind", "kind", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       description:
         header: [["Description:", ["main", "infoheader"]]]
         path: "spec#description"
@@ -64,26 +70,27 @@ infoview:
       members:
         header: [["Members:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#members"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "group"
-          - "clusterRole"
-          - "name"
-          # The second is really "api_group", not kind, but the version is stripped, so it's detected as a core API
-          type: ["kind", "kind", "name", "name"]
+          - path: "spec#members"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "group"
+              - "clusterRole"
+              - "name"
+            # The second is really "api_group", not kind,
+            # but the version is stripped, so it's detected as a core API
+            type: ["kind", "kind", "name", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -101,20 +108,20 @@ infoview:
       subresources:
         header: "Subresources:"
         paths:
-        - path: "subresources"
-          pathtype: "list"
+          - path: "subresources"
+            pathtype: "list"
         formatter: "list"
       users:
         header: "Users:"
         paths:
-        - path: "users"
-          pathtype: "list"
+          - path: "users"
+            pathtype: "list"
         formatter: "list"
       verbs:
         header: "Verbs:"
         paths:
-        - path: "verbs"
-          pathtype: "list"
+          - path: "verbs"
+            pathtype: "list"
         formatter: "list"
   shortcuts:
     "List Allowed Clusters":
@@ -129,7 +136,7 @@ infoview:
       itemgetter_args:
         path: "spec#allowedClusters"
         fields:
-        - "name"
+          - "name"
       # Not supported for now
       sortcolumn: "name"
     "List Allowed Templates":
@@ -144,9 +151,9 @@ infoview:
       itemgetter_args:
         path: "spec#allowedTemplates"
         fields:
-        - "kind"
-        - "group"
-        - "name"
+          - "kind"
+          - "group"
+          - "name"
       # Not supported for now
       sortcolumn: "name"
     "List Members":
@@ -160,9 +167,9 @@ infoview:
       itemgetter_args:
         path: "spec#members"
         fields:
-        - "kind"
-        - "group"
-        - "clusterRole"
-        - "name"
+          - "kind"
+          - "group"
+          - "clusterRole"
+          - "name"
       # Not supported for now
       sortcolumn: "cluster_role"

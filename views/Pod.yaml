@@ -2,73 +2,78 @@
 kind: "Pod"
 default_command: "pods"
 command:
-- "po"
+  - "po"
 listview:
   name: "Pods"
   group: "Workloads"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "controller", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+      fields: ["namespace", "name", "controller", "pod_status",
+               "node_name", "pod_ip", "age", "restarts",
+               "last_restart", "containers"]
       sortcolumn: "pod_status"
     Normal:
-      fields: ["namespace", "name", "controller", "pod_status", "node_name", "age", "restarts", "last_restart"]
+      fields: ["namespace", "name", "controller", "pod_status",
+               "node_name", "age", "restarts", "last_restart"]
       sortcolumn: "pod_status"
     Compact:
-      fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+      fields: ["namespace", "name", "pod_status", "age",
+               "restarts", "last_restart"]
       sortcolumn: "pod_status"
   fields:
     containers:
       header: "Containers:"
       paths:
-      - paths:
-        - "spec#initContainers"
-        - "spec#containers"
-        pathtype: "items"
-        subpaths:
-        - "name"
-        - subpath: "image"
-          regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-        type: "raw"
+        - paths:
+            - "spec#initContainers"
+            - "spec#containers"
+          pathtype: "items"
+          subpaths:
+            - "name"
+            - subpath: "image"
+              regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "generic"
-        - type: "version"
+          - type: "generic"
+          - type: "version"
         field_separators:
-        - type: "version"
+          - type: "version"
     controller:
       header: "Controller:"
       paths:
-      - path: "metadata#ownerReferences"
-        pathtype: "items"
-        subpaths:
-        - "kind"
-        - "apiVersion"
-        - "name"
-        when:
-        - key: "controller"
-          eq: true
-        type: ["kind", "api_group", "name"]
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+            - "kind"
+            - "apiVersion"
+            - "name"
+          when:
+            - key: "controller"
+              eq: true
+          type: ["kind", "api_group", "name"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     last_restart:
       header: "Latest Restart:"
       paths:
-      - path: "status#containerStatuses"
-        pathtype: "items"
-        subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-        when:
-        - key: "restartCount"
-          gt: 0
-        action: "latest"
-        type: "timestamp"
+        - path: "status#containerStatuses"
+          pathtype: "items"
+          subpath: ["state#running#startedAt",
+                    "lastState#terminated#finishedAt"]
+          when:
+            - key: "restartCount"
+              gt: 0
+          action: "latest"
+          type: "timestamp"
       default: -1
       formatter: "age"
       align: "right"
@@ -79,7 +84,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     pod_ip:
       header: "Pod IP:"
       path: "status#podIP"
@@ -89,14 +94,14 @@ listview:
     restarts:
       header: "Restarts:"
       paths:
-      - path: "status#containerStatuses"
-        pathtype: "items"
-        subpath: "restartCount"
-        action: "sum"
-        type: "int"
+        - path: "status#containerStatuses"
+          pathtype: "items"
+          subpath: "restartCount"
+          action: "sum"
+          type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
       default: 0
   listview_args:
@@ -105,16 +110,16 @@ listview:
         source: "object"
         enabled: true
         block:
-        - key: "status#phase"
-          values: ["Failed"]
-        - key: "status#reason"
-          values: ["Evicted"]
+          - key: "status#phase"
+            values: ["Failed"]
+          - key: "status#reason"
+            values: ["Evicted"]
       successful:
         source: "object"
         enabled: false
         block:
-        - key: "status#phase"
-          values: ["Succeeded"]
+          - key: "status#phase"
+            values: ["Succeeded"]
   actions:
     actionlist:
       "Delete resource":
@@ -147,115 +152,124 @@ listview:
         var: "filters#successful#enabled"
       force_update: true
   statusmsg:
-  - ["Hide evicted pods: ", ["var", "filters#evicted#enabled"]]
-  - ["Hide successful pods: ", ["var", "filters#successful#enabled"]]
+    - ["Hide evicted pods: ", ["var", "filters#evicted#enabled"]]
+    - ["Hide successful pods: ", ["var", "filters#successful#enabled"]]
 infoview:
   name: "Pod Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["phase", "conditions", "scheduler", "priority", "priority_class", "preemption_policy", "qos_class", "host_ips", "pod_ips", "termination_grace_period", "enable_service_links"]
+        fields: ["phase", "conditions", "scheduler",
+                 "priority", "priority_class", "preemption_policy",
+                 "qos_class", "host_ips", "pod_ips",
+                 "termination_grace_period", "enable_service_links"]
     rows:
       conditions:
         header: [["Conditions:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "type"
-          when:
-          - key: "type"
-            in: ["ContainersReady", "Degraded", "DiskPressure", "DisruptionTarget", "Initialized", "MemoryPressure", "NetworkUnavailable", "OutOfDisk", "PIDPressure", "PodHasNetwork", "PodReadyToStartContainers", "PodScheduled", "Progressing", "Ready"]
-          - key: "status"
-            eq: "True"
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "type"
-          when:
-          - key: "type"
-            in: ["ContainersReady", "Initialized", "PodHasNetwork", "PodScheduled", "Progressing", "Ready"]
-          - key: "status"
-            eq: "False"
-          prefix: "!"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "type"
+            when:
+              - key: "type"
+                in: ["ContainersReady", "Degraded", "DiskPressure",
+                     "DisruptionTarget", "Initialized",
+                     "MemoryPressure", "NetworkUnavailable",
+                     "OutOfDisk", "PIDPressure", "PodHasNetwork",
+                     "PodReadyToStartContainers", "PodScheduled",
+                     "Progressing", "Ready"]
+              - key: "status"
+                eq: "True"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "type"
+            when:
+              - key: "type"
+                in: ["ContainersReady", "Initialized", "PodHasNetwork",
+                     "PodScheduled", "Progressing", "Ready"]
+              - key: "status"
+                eq: "False"
+            prefix: "!"
         formatter: "list"
         formatting:
           mapping:
             mappings:
               "ContainersReady":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "!ContainersReady":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Degraded":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "DiskPressure":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "DisruptionTarget":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Initialized":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "!Initialized":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "MemoryPressure":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "NetworkUnavailable":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "OutOfDisk":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "PIDPressure":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "PodHasNetwork":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "PodReadyToStartContainers":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "PodScheduled":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "!PodScheduled":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Progressing":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "!Progressing":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Ready":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "!Ready":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       enable_service_links:
         header: [["Enable Service Links:", ["main", "infoheader"]]]
         path: "spec#enableServiceLinks"
@@ -263,59 +277,59 @@ infoview:
       host_ips:
         header: [["Host IPs:", ["main", "infoheader"]]]
         paths:
-        - path: "status#hostIP"
-          pathtype: "str"
-        - path: "status#hostIPs"
-          pathtype: "items"
-          subpath: "ip"
+          - path: "status#hostIP"
+            pathtype: "str"
+          - path: "status#hostIPs"
+            pathtype: "items"
+            subpath: "ip"
         unique: true
         formatter: "address"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata"
-          pathtype: "substitution"
-          substitute: "Terminating"
-          else: ["status#phase"]
-          when:
-          - key: "metadata"
-            notmissing: "deletionTimestamp"
+          - path: "metadata"
+            pathtype: "substitution"
+            substitute: "Terminating"
+            else: ["status#phase"]
+            when:
+              - key: "metadata"
+                notmissing: "deletionTimestamp"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "Failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Pending":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Succeeded":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Terminating":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       pod_ips:
         header: [["Pod IPs:", ["main", "infoheader"]]]
         paths:
-        - path: "status#podIP"
-          pathtype: "str"
-        - path: "status#podIPs"
-          pathtype: "items"
-          subpath: "ip"
+          - path: "status#podIP"
+            pathtype: "str"
+          - path: "status#podIPs"
+            pathtype: "items"
+            subpath: "ip"
         unique: true
         formatter: "address"
       preemption_policy:
@@ -330,9 +344,10 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       priority_class:
-        header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["riority Class:", ["main", "infoheader"]]]
         path: "spec#priorityClassName"
         default: "<default>"
         type: "str"
@@ -347,24 +362,24 @@ infoview:
       termination_grace_period:
         header: [["Termination Grace Period:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#terminationGracePeriodSeconds"], "s"]
-          pathtype: "tuple"
-          when:
-          - key: "spec#terminationGracePeriodSeconds"
-            gt: 0
-        - path: [["spec#terminationGracePeriodSeconds"]]
-          pathtype: "tuple"
-          when:
-          - key: "spec#terminationGracePeriodSeconds"
-            eq: 0
-          substitute: ["Immediately", ""]
+          - path: [["spec#terminationGracePeriodSeconds"], "s"]
+            pathtype: "tuple"
+            when:
+              - key: "spec#terminationGracePeriodSeconds"
+                gt: 0
+          - path: [["spec#terminationGracePeriodSeconds"]]
+            pathtype: "tuple"
+            when:
+              - key: "spec#terminationGracePeriodSeconds"
+                eq: 0
+            substitute: ["Immediately", ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "unit"
+            - type: "numerical"
+            - type: "unit"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
   listpad:
     listgetter: "get_pod_resource_list"
     listgetter_args:
@@ -386,12 +401,12 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       type:
         header: "Type:"
         path: "type"
@@ -406,158 +421,158 @@ infoview:
             mappings:
               "Available":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Bound":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Completed":
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               "ContainerCreating":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "ContainerStatusUnknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               "CrashLoopBackOff":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "CreateContainerConfigError":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "CreateContainerError":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<empty>":
                 field_colors:
-                - context: "types"
-                  type: "none"
+                  - context: "types"
+                    type: "none"
               "ErrImageNeverPull":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "ErrImagePull":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Error":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "GuestNotRunning":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Healthy":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "ImageInspectError":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "ImagePullBackOff":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<missing>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               "KubeletNotReady":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "KubeletReady":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Normal":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "NotReady":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "OK":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "<optional>":
                 field_colors:
-                - context: "types"
-                  type: "none"
+                  - context: "types"
+                    type: "none"
               "Pending":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "PodInitializing":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "PodTerminating":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Ready":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Released":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "TopologyAffinityError":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Unhealthy":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               "UNKNOWN":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               "Unreachable":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               "Warning":
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
       restarts:
         header: "Restarts:"
         paths:
-        - path: "restarts"
-          pathtype: "remap"
-          substitutions:
-            "__-1": ""
+          - path: "restarts"
+            pathtype: "remap"
+            substitutions:
+              "__-1": ""
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       age:
         header: "Age:"
@@ -587,10 +602,11 @@ infoview:
       widget: "executecommand"
       inputtitle: "Command to execute:"
       widget_args:
-        kinds: [["Container", ""], ["InitContainer", ""], ["EphemeralContainer", ""]]
+        kinds: [["Container", ""],
+                ["InitContainer", ""],
+                ["EphemeralContainer", ""]]
         command: ["/bin/sh"]
         wait_for_keypress: true
-    # This is only supported in Kubernetes v1.23+; do we need to add some sort of conditional support for this?
     "Open ephemeral shell in container":
       key: "d"
       modifier: "ctrl"
@@ -607,7 +623,9 @@ infoview:
       helptext: "Open a shell inside container"
       widget: "executecommand"
       widget_args:
-        kinds: [["Container", ""], ["InitContainer", ""], ["EphemeralContainer", ""]]
+        kinds: [["Container", ""],
+                ["InitContainer", ""],
+                ["EphemeralContainer", ""]]
         command: ["/bin/sh"]
     "Show tolerations":
       key: "t"
@@ -667,9 +685,9 @@ infoview:
         source: "selected"
         path: "volumeMounts"
         fields:
-        - "name"
-        - "mountPath"
-        - "readOnly"
+          - "name"
+          - "mountPath"
+          - "readOnly"
       # This isn't supported for now
       sortcolumn: "name"
     "Show volumes":
@@ -684,10 +702,12 @@ infoview:
       itemgetter_args:
         path: "spec#volumes"
         fields:
-        - "name"
-        - name: ["configMap", "downwardAPI", "emptyDir", "fc", "hostPath", "image", "nfs", "projected", "secret"]
-          value: "key"
-        - name: ["configMap", "downwardAPI", "emptyDir", "fc", "hostPath", "image", "nfs", "projected", "secret"]
+          - "name"
+          - name: ["configMap", "downwardAPI", "emptyDir",
+                   "fc", "hostPath", "image", "nfs", "projected", "secret"]
+            value: "key"
+          - name: ["configMap", "downwardAPI", "emptyDir",
+                   "fc", "hostPath", "image", "nfs", "projected", "secret"]
       # This isn't supported for now
       sortcolumn: "name"
     "Topology spread constraints":

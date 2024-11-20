@@ -14,7 +14,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["dashboard_set_based_selector", "auth_header", "auth_disable_login_form", "auth_disable_signout_menu", "auth_enable_anonymous", "loglevel", "log_mode", "admin_user", "admin_password", "ingress_header", "ingress_enabled", "ingress_hostname", "ingress_path", "ingress_pathtype"]
+        fields: ["dashboard_set_based_selector", "auth_header",
+                 "auth_disable_login_form", "auth_disable_signout_menu",
+                 "auth_enable_anonymous", "loglevel", "log_mode",
+                 "admin_user", "admin_password", "ingress_header",
+                 "ingress_enabled", "ingress_hostname", "ingress_path",
+                 "ingress_pathtype"]
     rows:
       admin_password:
         header: [["Admin Password:", ["main", "infoheader"]]]
@@ -41,19 +46,19 @@ infoview:
       dashboard_set_based_selector:
         header: [["Dashboard Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#dashboardLabelSelector"
-          subpath: "matchExpressions"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "spec#dashboardLabelSelector"
+            subpath: "matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       ingress_enabled:
         header: [["  Enabled:", ["main", "infoheader"]]]
         path: "spec#ingress#enabled"
@@ -66,7 +71,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "hostname"
+            - type: "hostname"
       ingress_path:
         header: [["  Path:", ["main", "infoheader"]]]
         path: "spec#ingress#path"

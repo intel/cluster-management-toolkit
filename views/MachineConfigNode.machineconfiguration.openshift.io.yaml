@@ -14,15 +14,15 @@ listview:
     cordoned:
       header: "Cordoned:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Cordoned"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Cordoned"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -30,24 +30,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     drained:
       header: "Drained:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Drained"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Drained"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -55,24 +55,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     rebooted:
       header: "Rebooted:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "RebootedNode"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "RebootedNode"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -80,24 +80,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     reloaded_crio:
       header: "Reloaded CRI-O:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "ReloadedCRIO"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "ReloadedCRIO"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -105,24 +105,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     resumed:
       header: "Resumed:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Resumed"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Resumed"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -130,24 +130,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
     update_compatible:
       header: "Update Compatible:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "UpdateCompatible"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "UpdateCompatible"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -155,24 +155,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     update_complete:
       header: "Update Complete:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "UpdateComplete"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "UpdateComplete"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -180,24 +180,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     update_executed:
       header: "Update Executed:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "UpdateExecuted"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "UpdateExecuted"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -205,24 +205,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     updated:
       header: "Updated:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Updated"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Updated"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -230,24 +230,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     updated_files_and_os:
       header: "Updated Files and OS:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "AppliedFilesAndOS"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "AppliedFilesAndOS"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -255,24 +255,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     update_postaction_complete:
       header: "Update Postaction Complete:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "UpdatePostActionComplete"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "UpdatePostActionComplete"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -280,24 +280,24 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     update_prepared:
       header: "Update Prepared:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "UpdatePrepared"
-        - key: "reason"
-          ne: "NotYetOccured"
-        default: ["<unset>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "UpdatePrepared"
+            - key: "reason"
+              ne: "NotYetOccured"
+          default: ["<unset>"]
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -305,12 +305,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Machine Config Node Info"
   infopad:
@@ -324,28 +324,28 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       configuration_desired:
         header: [["  Desired:", ["main", "infoheader"]]]
         path: "status#configVersion#desired"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       configuration_header:
         header: [["Configuration:", ["main", "infoheader"]]]
       cordoned:
         header: [["Cordoned:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Cordoned"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Cordoned"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -353,24 +353,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       drained:
         header: [["Drained:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Drained"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Drained"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -378,12 +378,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       machine_config_pool:
         header: [["Machine Config ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["ool:", ["main", "infoheader"]]]
         path: "spec#pool#name"
@@ -391,29 +391,29 @@ infoview:
       node_name:
         header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Node"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Node"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       rebooted:
         header: [["Rebooted:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "RebootedNode"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "RebootedNode"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -421,24 +421,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       reloaded_crio:
         header: [["Reloaded CRI-O:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "ReloadedCRIO"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "ReloadedCRIO"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -446,24 +446,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       resumed:
         header: [["Resumed:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Resumed"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Resumed"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -471,24 +471,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
       update_compatible:
         header: [["Update Compatible:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "UpdateCompatible"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "UpdateCompatible"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -496,24 +496,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       update_complete:
         header: [["Update Complete:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "UpdateComplete"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "UpdateComplete"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -521,24 +521,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       update_executed:
         header: [["Update Executed:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "UpdateExecuted"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "UpdateExecuted"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -546,24 +546,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       updated:
         header: [["Updated:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Updated"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Updated"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -571,24 +571,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       updated_files_and_os:
         header: [["Updated Files and OS:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "AppliedFilesAndOS"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "AppliedFilesAndOS"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -596,24 +596,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       update_postaction_complete:
         header: [["Update Postaction Complete:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "UpdatePostActionComplete"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "UpdatePostActionComplete"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -621,24 +621,24 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       update_prepared:
         header: [["Update Prepared:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "UpdatePrepared"
-          - key: "reason"
-            ne: "NotYetOccured"
-          default: ["<unset>"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "UpdatePrepared"
+              - key: "reason"
+                ne: "NotYetOccured"
+            default: ["<unset>"]
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -646,12 +646,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
   shortcuts:
     "Open Machine Config Pool":
       key: "p"

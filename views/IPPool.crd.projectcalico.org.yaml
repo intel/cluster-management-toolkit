@@ -3,9 +3,9 @@ kind: "IPPool"
 api_family: "crd.projectcalico.org"
 default_command: "ippools"
 command:
-- "calicoippools"
-- "calicoippool"
-- "cipp"
+  - "calicoippools"
+  - "calicoippool"
+  - "cipp"
 listview:
   name: "IP Pools"
   group: "Calico"
@@ -30,7 +30,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       cidr:
         header: [["CIDR:", ["main", "infoheader"]]]
         path: "spec#cidr"

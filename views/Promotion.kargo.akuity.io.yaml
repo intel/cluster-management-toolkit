@@ -3,16 +3,17 @@ kind: "Promotion"
 api_family: "kargo.akuity.io"
 default_command: "promotions"
 command:
-- "kargopromotions"
-- "kargopromotion"
-- "kargoproms"
-- "kargoprom"
+  - "kargopromotions"
+  - "kargopromotion"
+  - "kargoproms"
+  - "kargoprom"
 listview:
   name: "Promotions"
   group: "CI / CD"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "stage", "freight", "phase", "age", "message"]
+      fields: ["namespace", "name", "stage", "freight", "phase",
+               "age", "message"]
       sortcolumn: "namespace"
   fields:
     freight:
@@ -34,24 +35,24 @@ listview:
           mappings:
             Errored:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Succeeded:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     stage:
       header: "Stage:"
       path: "spec#stage"
@@ -61,31 +62,33 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "stage", "freight", "phase", "message", "finished_at"]
+        fields: ["controller", "stage", "freight", "phase",
+                 "message", "finished_at"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       finished_at:
         header: [["Finished At:", ["main", "infoheader"]]]
         path: "status#finishedAt"
@@ -111,24 +114,24 @@ infoview:
             mappings:
               Errored:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Failed:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Succeeded:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       stage:
         header: [["Stage:", ["main", "infoheader"]]]
         path: "spec#stage"

@@ -3,8 +3,8 @@ kind: "ResourceClaimParameters"
 api_family: "resource.k8s.io"
 default_command: "resourceclaimparameters"
 command:
-- "resclaimparams"
-- "resclaimparam"
+  - "resclaimparams"
+  - "resclaimparam"
 listview:
   name: "Resource Claim Parameters"
   group: "Dynamic Resource Allocation"
@@ -15,21 +15,21 @@ listview:
     generated_from:
       header: "Generated From:"
       paths:
-      - path:
-        - ["generatedFrom#kind"]
-        - ["generatedFrom#apiGroup"]
-        - ["generatedFrom#name"]
-        pathtype: "tuple"
+        - path:
+            - ["generatedFrom#kind"]
+            - ["generatedFrom#apiGroup"]
+            - ["generatedFrom#name"]
+          pathtype: "tuple"
       type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
 infoview:
   name: "Resource Claim Parameters Info"
   infopad:
@@ -38,23 +38,24 @@ infoview:
         fields: ["generated_from"]
     rows:
       generated_from:
-        header: [["G", ["main", "infoheader_shortcut"]], ["enerated From:", ["main", "infoheader"]]]
+        header: [["G", ["main", "infoheader_shortcut"]],
+                 ["enerated From:", ["main", "infoheader"]]]
         paths:
-        - path:
-          - ["generatedFrom#kind"]
-          - ["generatedFrom#apiGroup"]
-          - ["generatedFrom#name"]
-          pathtype: "tuple"
+          - path:
+              - ["generatedFrom#kind"]
+              - ["generatedFrom#apiGroup"]
+              - ["generatedFrom#name"]
+            pathtype: "tuple"
         type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   shortcuts:
     "Open source parameters":
       key: "g"

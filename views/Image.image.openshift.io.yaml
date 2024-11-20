@@ -3,13 +3,13 @@ kind: "Image"
 api_family: "image.openshift.io"
 default_command: "images.image.openshift.io"
 command:
-- "image.image.openshift.io"
-- "images.openshift"
-- "image.openshift"
-- "osimages"
-- "osimage"
-- "osimgs"
-- "osimg"
+  - "image.image.openshift.io"
+  - "images.openshift"
+  - "image.openshift"
+  - "osimages"
+  - "osimage"
+  - "osimgs"
+  - "osimg"
 listview:
   name: "Images"
   group: "OpenShift"
@@ -29,9 +29,9 @@ listview:
     label_name:
       header: "Label Name:"
       paths:
-      - path: ["dockerImageMetadata#Config#Labels#name", "dockerImageMetadata#Config#Labels#Name"]
-        pathtype: "value"
-        default: "<unset>"
+        - path: ["dockerImageMetadata#Config#Labels#name", "dockerImageMetadata#Config#Labels#Name"]
+          pathtype: "value"
+          default: "<unset>"
       type: "str"
 infoview:
   name: "Image Info"
@@ -48,9 +48,9 @@ infoview:
       author:
         header: [["Author:", ["main", "infoheader"]]]
         paths:
-        - path: ["dockerImageMetadata#Author", "dockerImageMetadata#Config#Labels#vendor"]
-          pathtype: "value"
-          default: "foo"
+          - path: ["dockerImageMetadata#Author", "dockerImageMetadata#Config#Labels#vendor"]
+            pathtype: "value"
+            default: "foo"
         type: "str"
       description:
         header: [["Summary:", ["main", "infoheader"]]]
@@ -71,12 +71,12 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       size:
         header: [["Size:", ["main", "infoheader"]]]
         paths:
-        - path: "dockerImageMetadata#Size"
-          type: "disk_usage"
+          - path: "dockerImageMetadata#Size"
+            type: "disk_usage"
         formatter: "numerical_with_units"
   shortcuts:
     "Docker Image Configuration":
@@ -112,7 +112,7 @@ infoview:
       itemgetter_args:
         path: "dockerImageLayers"
         fields:
-        - "name"
-        - "size"
-        - "mediaType"
+          - "name"
+          - "size"
+          - "mediaType"
         # pass_ref: true

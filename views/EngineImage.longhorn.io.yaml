@@ -3,10 +3,10 @@ kind: "EngineImage"
 api_family: "longhorn.io"
 default_command: "engineimages.longhorn.io"
 command:
-- "lhengineimages"
-- "lhengineimage"
-- "lhengineimgs"
-- "lhengineimg"
+  - "lhengineimages"
+  - "lhengineimage"
+  - "lhengineimgs"
+  - "lhengineimg"
 listview:
   name: "Engine Images"
   group: "Storage & Backups"
@@ -17,22 +17,22 @@ listview:
     message:
       header: "Message:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "ready"
       type: "str"
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -40,12 +40,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     state:
       header: "State:"
       path: "status#state"
@@ -56,8 +56,8 @@ listview:
           mappings:
             "deployed":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -70,21 +70,22 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["image", "reference_count", "incompatible", "state", "ready", "message"]
+        fields: ["image", "reference_count", "incompatible",
+                 "state", "ready", "message"]
     rows:
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       incompatible:
         header: [["Incompatible:", ["main", "infoheader"]]]
         path: "status#incompatible"
@@ -92,22 +93,22 @@ infoview:
       message:
         header: [["Message:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "message"
-          when:
-          - key: "type"
-            eq: "ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "message"
+            when:
+              - key: "type"
+                eq: "ready"
         type: "str"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -115,12 +116,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       reference_count:
         header: [["Reference Count:", ["main", "infoheader"]]]
         path: "status#refCount"
@@ -136,5 +137,5 @@ infoview:
             mappings:
               "deployed":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"

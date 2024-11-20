@@ -9,7 +9,8 @@ infoview:
     creation_timestamp_path: null
     row_indexes:
       Normal:
-        fields: ["test_case", "check_id", "category", "severity", "result", "description_header", "description"]
+        fields: ["test_case", "check_id", "category", "severity",
+                 "result", "description_header", "description"]
     rows:
       category:
         header: [["Category:", ["main", "infoheader"]]]
@@ -28,33 +29,33 @@ infoview:
       result:
         header: [["Result:", ["main", "infoheader"]]]
         paths:
-        - path: "success"
-          pathtype: "remap"
-          substitutions:
-            __True: "Success"
-            __False: "Fail"
+          - path: "success"
+            pathtype: "remap"
+            substitutions:
+              __True: "Success"
+              __False: "Fail"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "Success":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Fail":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       severity:
         header: [["Severity:", ["main", "infoheader"]]]
         paths:
-        - path: "severity"
-          pathtype: "remap"
-          substitutions:
-            "CRITICAL": "Critical"
-            "HIGH": "High"
-            "LOW": "Low"
-            "MEDIUM": "Medium"
+          - path: "severity"
+            pathtype: "remap"
+            substitutions:
+              "CRITICAL": "Critical"
+              "HIGH": "High"
+              "LOW": "Low"
+              "MEDIUM": "Medium"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -62,20 +63,20 @@ infoview:
             mappings:
               "Critical":
                 field_colors:
-                - context: "main"
-                  type: "severity_critical"
+                  - context: "main"
+                    type: "severity_critical"
               "High":
                 field_colors:
-                - context: "main"
-                  type: "severity_high"
+                  - context: "main"
+                    type: "severity_high"
               "Low":
                 field_colors:
-                - context: "main"
-                  type: "severity_low"
+                  - context: "main"
+                    type: "severity_low"
               "Medium":
                 field_colors:
-                - context: "main"
-                  type: "severity_medium"
+                  - context: "main"
+                    type: "severity_medium"
       test_case:
         header: [["Test Case:", ["main", "infoheader"]]]
         path: "title"

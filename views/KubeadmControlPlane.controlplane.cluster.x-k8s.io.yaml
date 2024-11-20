@@ -3,8 +3,8 @@ kind: "KubeadmControlPlane"
 api_family: "controlplane.cluster.x-k8s.io"
 default_command: "kubeadmcontrolplanes"
 command:
-- "kubeadmcps"
-- "kubeadmcp"
+  - "kubeadmcps"
+  - "kubeadmcp"
 listview:
   name: "Kubeadm Control Planes"
   group: "Cluster Configuration"
@@ -23,35 +23,35 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     controller:
       header: "Controller:"
       paths:
-      - path: "metadata#ownerReferences"
-        pathtype: "items"
-        subpaths:
-        - "kind"
-        - "apiVersion"
-        - "name"
-        when:
-        - key: "controller"
-          eq: true
-        type: ["kind", "api_group", "name"]
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+            - "kind"
+            - "apiVersion"
+            - "name"
+          when:
+            - key: "controller"
+              eq: true
+          type: ["kind", "api_group", "name"]
       default: "<none>"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     initialized:
       header: "Initialized:"
       path: "status#initialized"
@@ -62,19 +62,19 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
     ready:
       header: "Ready:"
       path: "status#readyReplicas"
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     replicas:
       header: "Replicas:"
@@ -82,7 +82,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     unavailable:
       header: "Unavailable:"
@@ -90,7 +90,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     updated:
       header: "Updated:"
@@ -98,7 +98,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     version:
       header: "Version:"
@@ -106,7 +106,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Kubeadm Control Plane Info"
   infopad:
@@ -124,35 +124,35 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       initialized:
         header: [["Initialized:", ["main", "infoheader"]]]
         path: "status#initialized"
@@ -163,26 +163,26 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         path: "status#replicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       selector:
         header: [["Selector:", ["main", "infoheader"]]]
         path: "status#selector"
@@ -192,40 +192,40 @@ infoview:
       template_infrastructure:
         header: [["  ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["nfrastructure:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#machineTemplate#infrastructureRef#kind"], ["metadata#namespace"], ["spec#machineTemplate#infrastructureRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "name", "name"]
+          - path: [["spec#machineTemplate#infrastructureRef#kind"], ["metadata#namespace"], ["spec#machineTemplate#infrastructureRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "name", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "namespace"
-          - type: "generic"
+            - type: "kind"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind"
+            - type: "namespace"
       unavailable:
         header: [["Unavailable:", ["main", "infoheader"]]]
         path: "status#unavailableReplicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       updated:
         header: [["Updated:", ["main", "infoheader"]]]
         path: "status#updatedReplicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Open controller":
       key: "c"
@@ -275,9 +275,9 @@ infoview:
       itemgetter_args:
         path: "spec#kubeadmConfigSpec#files"
         fields:
-        - "path"
-        - "owner"
-        - "permissions"
+          - "path"
+          - "owner"
+          - "permissions"
       action: "call"
       action_call: "decode_and_view_file_templates"
       action_args:

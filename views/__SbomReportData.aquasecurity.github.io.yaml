@@ -9,7 +9,8 @@ infoview:
     creation_timestamp_path: null
     row_indexes:
       Normal:
-        fields: ["name", "type", "version", "licenses", "bom_ref", "pkg_url", "supplier"]
+        fields: ["name", "type", "version", "licenses",
+                 "bom_ref", "pkg_url", "supplier"]
     rows:
       bom_ref:
         header: [["BOM Reference:", ["main", "infoheader"]]]
@@ -18,11 +19,11 @@ infoview:
       licenses:
         header: [["Licenses:", ["main", "infoheader"]]]
         paths:
-        - path: "licenses"
-          pathtype: "items"
-          subpaths:
-          - "license#name"
-          default: ["<unspecified>"]
+          - path: "licenses"
+            pathtype: "items"
+            subpaths:
+              - "license#name"
+            default: ["<unspecified>"]
         type: "list"
         formatter: "list"
       name:
@@ -49,17 +50,17 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   listpad:
     on_activation:
       call: null
     listgetter: "listgetter_path"
     listgetter_args:
       paths:
-      - path: "properties"
-        type: "list"
-        key_name: "__type"
-        key_value: "Basic"
+        - path: "properties"
+          type: "list"
+          key_name: "__type"
+          key_value: "Basic"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:

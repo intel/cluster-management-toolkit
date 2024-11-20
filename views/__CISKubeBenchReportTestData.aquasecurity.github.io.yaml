@@ -21,28 +21,28 @@ infoview:
             mappings:
               "PASS":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "WARN":
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
               "FAIL":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       test:
         header: [["Test:", ["main", "infoheader"]]]
         paths:
-        - path: [["test_number"], ["test_desc"]]
-          pathtype: "tuple"
+          - path: [["test_number"], ["test_desc"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "id_prefix"
+            - type: "id_prefix"
   logpad:
     infogetter: "logpad_msg_getter"
     infogetter_args:

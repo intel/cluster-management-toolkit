@@ -2,7 +2,7 @@
 kind: "__NodeResource"
 default_command: "noderesources"
 command:
-- "noderes"
+  - "noderes"
 listview:
   name: "Resources"
   group: "Core"
@@ -67,10 +67,10 @@ infoview:
         resource:
           enabled: true
           allow:
-          - key: "status#allocatable#<<<name>>>"
-            substitutions:
-              "<<<name>>>": ["name"]
-            exists: true
+            - key: "status#allocatable#<<<name>>>"
+              substitutions:
+                "<<<name>>>": ["name"]
+              exists: true
     infogetter: "generic_infogetter"
     infogetter_args:
       _pass_caller_obj: true
