@@ -2712,6 +2712,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] =
         "api": "clusterqueues",
         "namespaced": False,
     },
+    ("Cohort", "kueue.x-k8s.io"): {
+        "api_paths": ["apis/kueue.x-k8s.io/v1alpha1/"],
+        "api": "cohorts",
+        "namespaced": False,
+    },
     ("ResourceFlavor", "kueue.x-k8s.io"): {
         "api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
         "api": "resourceflavors",
@@ -2722,18 +2727,25 @@ kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] =
         "api": "localqueues",
     },
     ("MultiKueueCluster", "kueue.x-k8s.io"): {
-        "api_paths": ["apis/kueue.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/kueue.x-k8s.io/v1beta1/",
+                      "apis/kueue.x-k8s.io/v1alpha1/"],
         "api": "multikueueclusters",
         "namespaced": False,
     },
     ("MultiKueueConfig", "kueue.x-k8s.io"): {
-        "api_paths": ["apis/kueue.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/kueue.x-k8s.io/v1beta1/",
+                      "apis/kueue.x-k8s.io/v1alpha1/"],
         "api": "multikueueconfigs",
         "namespaced": False,
     },
     ("ProvisioningRequestConfig", "kueue.x-k8s.io"): {
         "api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
         "api": "provisioningrequestconfigs",
+        "namespaced": False,
+    },
+    ("Topology", "kueue.x-k8s.io"): {
+        "api_paths": ["apis/kueue.x-k8s.io/v1alpha1/"],
+        "api": "topologies",
         "namespaced": False,
     },
     ("WorkloadPriorityClass", "kueue.x-k8s.io"): {
