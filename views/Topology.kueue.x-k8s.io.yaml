@@ -1,0 +1,34 @@
+---
+kind: "Topology"
+api_family: "kueue.x-k8s.io"
+default_command: "resourceflavors"
+listview:
+  name: "Topolgy"
+  group: "Batch Scheduling"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Topolgy Info"
+  infopad:
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#levels"
+      enumeration: "reverse"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["priority", "node_label"]
+        sortcolumn: "priority"
+    fields:
+      priority:
+        header: "Priority:"
+        path: "_extra_data#enumeration"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      node_label:
+        header: "Node Label:"
+        path: "nodeLabel"
+        type: "str"

@@ -3,6 +3,10 @@ kind: "ResourceFlavor"
 api_family: "kueue.x-k8s.io"
 default_command: "resourceflavors"
 command:
+  - "resourceflavours"
+  - "resourceflavour"
+  - "resflavours"
+  - "resflavour"
   - "resflavors"
   - "resflavor"
 listview:
@@ -16,7 +20,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["node_labels", "node_taints"]
+        fields: ["node_labels", "node_taints", "topology"]
     rows:
       node_labels:
         header: [["N", ["main", "infoheader"]],
@@ -54,7 +58,26 @@ infoview:
           field_separators:
             - type: "keyvalue"
             - type: "field"
+      topology:
+        header: [["To", ["main", "infoheader"]],
+                 ["p", ["main", "infoheader_shortcut"]],
+                 ["ology:", ["main", "infoheader"]]]
+        path: "spec#topologyName"
+        default: "<unset>"
+        type: "str"
   shortcuts:
+    "Open Topology":
+      # If we add a listpad we'll need to use another shortcut
+      key: "p"
+      read_only: true
+      helptext: "Open info page for Topology"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#topologyName"
+        kind: "Topology"
+        api_family: "kueue.x-k8s.io"
     "Show Node Labels":
       key: "o"
       read_only: true
