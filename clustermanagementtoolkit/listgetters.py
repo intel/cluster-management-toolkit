@@ -49,7 +49,7 @@ from clustermanagementtoolkit.cmtlib import disksize_to_human, get_since
 from clustermanagementtoolkit.cmtlib import timestamp_to_datetime
 from clustermanagementtoolkit.cmtlib import make_label_selector, make_set_expression_list
 
-from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
+from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, deep_set, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
 from clustermanagementtoolkit.cmttypes import ProgrammingError, StatusGroup
 
@@ -2203,6 +2203,8 @@ def listgetter_path(obj: dict, **kwargs: Any) -> tuple[dict | list[dict], int]:
     paths = deep_get(kwargs, DictPath("paths"))
     multipath = deep_get(kwargs, DictPath("multipath"))
     join_key = deep_get(kwargs, DictPath("join_key"))
+    # "standard", "reverse", ""
+    enumeration: str = deep_get(kwargs, DictPath("enumeration"), "")
 
     # A multipath is a path to a dict that in turn contains lists, where you'd want the name
     # of the path containing the lists as a newly created key
@@ -2265,7 +2267,7 @@ def listgetter_path(obj: dict, **kwargs: Any) -> tuple[dict | list[dict], int]:
                     subobj[path_field] = deep_get(item, DictPath(path_field))
                 vlist.append(subobj)
     else:
-        tmp2 = deep_get(obj, DictPath(path))
+        tmp2: list[Any] = deep_get(obj, DictPath(path), [])
         vlist = []
         if rename_bare is not None and tmp2 is not None:
             for item in tmp2:
@@ -2284,6 +2286,16 @@ def listgetter_path(obj: dict, **kwargs: Any) -> tuple[dict | list[dict], int]:
                     d["key"] = key
                     d["value"] = value
                     vlist.append(d)
+        elif enumeration:
+            for i, item in enumerate(tmp2):
+                if isinstance(item, dict):
+                    if enumeration == "standard":
+                        deep_set(item, DictPath("_extra_data#enumeration"), i,
+                                 create_path = True)
+                    elif enumeration == "reverse":
+                        deep_set(item, DictPath("_extra_data#enumeration"), len(tmp2) - i,
+                                 create_path = True)
+                    vlist.append(item)
         else:
             vlist = tmp2
 
