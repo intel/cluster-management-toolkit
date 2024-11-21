@@ -4244,6 +4244,29 @@ class UIProps:
             self.update_forced = True
             self.force_idle()
             return Retval.MATCH
+        if c == ord("a"):
+            if self.annotations:
+                title = ""
+
+                windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
+                             items=self.annotations, headers=annotation_headers,
+                             title=title, cursor=False)
+
+                self.refresh_all()
+                return Retval.MATCH
+        if c == ord("l"):
+            if self.labels:
+                windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
+                             items=self.labels, headers=label_headers, cursor=False)
+
+                self.refresh_all()
+                return Retval.MATCH
+
+        # Everything below is either for logpads or listpads;
+        # leave the shortcuts unused for cases where they're not needed
+        if self.listpad is None and self.logpad is None:
+            return Retval.NOMATCH
+
         if c == ord("r"):
             # Reverse the sort order
             if self.listpad is not None and self.reversible:
@@ -4449,23 +4472,6 @@ class UIProps:
                 self.refresh = True
                 self.find_prev_match()
             return Retval.MATCH
-        if c == ord("a"):
-            if self.annotations:
-                title = ""
-
-                windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
-                             items=self.annotations, headers=annotation_headers,
-                             title=title, cursor=False)
-
-                self.refresh_all()
-                return Retval.MATCH
-        if c == ord("l"):
-            if self.labels:
-                windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
-                             items=self.labels, headers=label_headers, cursor=False)
-
-                self.refresh_all()
-                return Retval.MATCH
 
         # Nothing good enough for you, eh?
         return Retval.NOMATCH
