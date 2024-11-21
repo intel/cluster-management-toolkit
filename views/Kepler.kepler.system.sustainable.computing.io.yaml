@@ -7,7 +7,9 @@ listview:
   group: "Monitoring"
   field_indexes:
     Normal:
-      fields: ["name", "port", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "age"]
+      fields: ["name", "port", "desired_replicas", "current_replicas",
+               "ready_replicas", "uptodate_replicas", "available_replicas",
+               "age"]
   fields:
     available_replicas:
       header: "Available:"
@@ -32,7 +34,8 @@ listview:
     current_replicas:
       header: "Current:"
       paths:
-        - path: ["status#currentNumberScheduled", "status#desiredNumberScheduled"]
+        - path: ["status#currentNumberScheduled",
+                 "status#desiredNumberScheduled"]
           pathtype: "comparison"
           default: [0, 0]
       align: "right"
@@ -93,7 +96,8 @@ listview:
     uptodate_replicas:
       header: "Up to Date:"
       paths:
-        - path: ["status#updatedNumberScheduled", "status#currentNumberScheduled"]
+        - path: ["status#updatedNumberScheduled",
+                 "status#currentNumberScheduled"]
           pathtype: "comparison"
           default: [0, 0]
       formatter: "value_mapper"
@@ -115,7 +119,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["exporter_header", "exporter_node_selector", "exporter_port", "exporter_tolerations", "nodes"]
+        fields: ["exporter_header", "exporter_node_selector",
+                 "exporter_port", "exporter_tolerations", "nodes"]
     rows:
       exporter_header:
         header: [["Exporter:", ["main", "infoheader"]]]
@@ -159,7 +164,16 @@ infoview:
       nodes:
         header: [["Nodes:", ["main", "infoheader"]]]
         paths:
-          - path: [["status#currentNumberScheduled"], " Current", ["status#desiredNumberScheduled"], " Desired", ["status#updatedNumberScheduled"], " Up to Date", ["status#numberAvailable"], " Available", ["status#numberMisscheduled"], " Misscheduled"]
+          - path: [["status#currentNumberScheduled"],
+                   " Current",
+                   ["status#desiredNumberScheduled"],
+                   " Desired",
+                   ["status#updatedNumberScheduled"],
+                   " Up to Date",
+                   ["status#numberAvailable"],
+                   " Available",
+                   ["status#numberMisscheduled"],
+                   " Misscheduled"]
             pathtype: "tuple"
             default: [0, "", 0, "", 0, "", 0, "", 0, ""]
         formatter: "list"

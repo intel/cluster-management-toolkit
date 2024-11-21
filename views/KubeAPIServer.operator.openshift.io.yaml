@@ -22,10 +22,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "ready_replicas"]
+        fields: ["cluster_version", "loglevel", "operator_loglevel",
+                 "management_state", "ready_replicas"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -66,7 +69,8 @@ infoview:
       name_path: "nodeName"
     field_indexes:
       Normal:
-        fields: ["name", "current_revision", "last_failure_reason", "last_failure"]
+        fields: ["name", "current_revision", "last_failure_reason",
+                 "last_failure"]
         sortcolumn: "type"
     fields:
       name:

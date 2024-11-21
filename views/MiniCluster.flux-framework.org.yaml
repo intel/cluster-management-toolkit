@@ -21,7 +21,9 @@ listview:
           subpath: "type"
           when:
             - key: "type"
-              in: ["JobFinished", "JobRunning", "JobWaitingForResources", "JobRequested", "JobMiniClusterReady"]
+              in: ["JobFinished", "JobRunning",
+                   "JobWaitingForResources", "JobRequested",
+                   "JobMiniClusterReady"]
             - key: "status"
               eq: "True"
           default: "<unset>"
@@ -85,7 +87,9 @@ infoview:
             subpath: "type"
             when:
               - key: "type"
-                in: ["JobFinished", "JobRunning", "JobWaitingForResources", "JobRequested", "JobMiniClusterReady"]
+                in: ["JobFinished", "JobRunning",
+                     "JobWaitingForResources", "JobRequested",
+                     "JobMiniClusterReady"]
               - key: "status"
                 eq: "True"
             default: "<unset>"
@@ -131,10 +135,14 @@ infoview:
       api_family: "batch"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time_with_age", "completion_mode", "suspended", "containers_template"]
+        fields: ["namespace", "name", "controller", "completions",
+                 "duration", "state", "age", "completion_time_with_age",
+                 "completion_mode", "suspended", "containers_template"]
         sortcolumn: "state"
       Normal:
-        fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time", "completion_mode", "containers_template"]
+        fields: ["namespace", "name", "controller", "completions",
+                 "duration", "state", "age", "completion_time",
+                 "completion_mode", "containers_template"]
         sortcolumn: "state"
     fields:
       completion_mode:
@@ -164,16 +172,18 @@ infoview:
       completion_time_with_age:
         header: "Completion Time:"
         paths:
-          - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+          - paths: [["status#startTime"],
+                    " (", "Duration: ",
+                    ["status#completionTime"], ")"]
             pathtype: "timestamp_with_age"
         formatter: "timestamp_with_age"
         formatting:
           field_colors:
-          # This is a meta-type, indicating where the timestamp goes
+            # This is a meta-type, indicating where the timestamp goes
             - type: "timestamp"
             - type: "generic"
             - type: "generic"
-          # This is a meta-type, indicating where the age goes
+            # This is a meta-type, indicating where the age goes
             - type: "age"
             - type: "generic"
       containers_template:

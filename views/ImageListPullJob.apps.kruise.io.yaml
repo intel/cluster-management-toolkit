@@ -10,7 +10,9 @@ listview:
   group: "Kruise"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "total_replicas", "active_replicas", "succeeded_replicas", "failed_replicas", "images", "pull_policy", "age", "message"]
+      fields: ["namespace", "name", "total_replicas", "active_replicas",
+               "succeeded_replicas", "failed_replicas", "images",
+               "pull_policy", "age", "message"]
       sortcolumn: "namespace"
   fields:
     active_replicas:
@@ -113,7 +115,16 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["images", "node_selector_header", "node_selector_names", "node_selector_label", "pod_selector_header", "pod_selector_label", "pod_selector_set_based", "pull_policy_header", "pull_policy_policy", "pull_policy_backoff_limit", "pull_policy_timeout_seconds", "completion_policy_header", "completion_policy_active_deadline_seconds", "completion_policy_ttl_seconds_after_finished", "completion_policy_type", "parallelism", "replicas", "completion_time_with_age", "message"]
+        fields: ["images", "node_selector_header", "node_selector_names",
+                 "node_selector_label", "pod_selector_header",
+                 "pod_selector_label", "pod_selector_set_based",
+                 "pull_policy_header", "pull_policy_policy",
+                 "pull_policy_backoff_limit", "pull_policy_timeout_seconds",
+                 "completion_policy_header",
+                 "completion_policy_active_deadline_seconds",
+                 "completion_policy_ttl_seconds_after_finished",
+                 "completion_policy_type", "parallelism", "replicas",
+                 "completion_time_with_age", "message"]
     rows:
       completion_policy_active_deadline_seconds:
         header: [["  Active Deadline Seconds:", ["main", "infoheader"]]]
@@ -140,17 +151,19 @@ infoview:
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
-          - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+          - paths: [["status#startTime"],
+                    " (", "Duration: ",
+                    ["status#completionTime"], ")"]
             pathtype: "timestamp_with_age"
         formatter: "timestamp_with_age"
         formatting:
           field_colors:
-          # This is a meta-type, indicating where the timestamp goes
+            # This is a meta-type, indicating where the timestamp goes
             - type: "timestamp"
             - type: "generic"
             - context: "main"
               type: "infoheader"
-          # This is a meta-type, indicating where the age goes
+            # This is a meta-type, indicating where the age goes
             - type: "age"
             - type: "generic"
       images:
@@ -178,7 +191,9 @@ infoview:
       node_selector_header:
         header: [["Node Selector:", ["main", "infoheader"]]]
       node_selector_names:
-        header: [["  Na", ["main", "infoheader"]], ["m", ["main", "infoheader_shortcut"]], ["es:", ["main", "infoheader"]]]
+        header: [["  Na", ["main", "infoheader"]],
+                 ["m", ["main", "infoheader_shortcut"]],
+                 ["es:", ["main", "infoheader"]]]
         path: "spec#selector#names"
         default: "<unset>"
         type: "raw"
@@ -260,7 +275,14 @@ infoview:
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-          - path: [["status#desired"], " Desired", ["status#active"], " Active", ["status#failed"], " Failed", ["status#succeeded"], " Succeeded"]
+          - path: [["status#desired"],
+                   " Desired",
+                   ["status#active"],
+                   " Active",
+                   ["status#failed"],
+                   " Failed",
+                   ["status#succeeded"],
+                   " Succeeded"]
             pathtype: "tuple"
             default: [0, "", 0, "", 0, "", 0, ""]
         formatter: "list"

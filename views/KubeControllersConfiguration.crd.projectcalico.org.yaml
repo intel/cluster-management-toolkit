@@ -116,7 +116,8 @@ infoview:
         type: "raw"
         formatter: "age"
       configuration_node_controller_host_endpoint_enabled:
-        header: [["    Node to Host Endpoint Synchronisation:", ["main", "infoheader"]]]
+        header: [["    Node to Host Endpoint Synchronisation:",
+                  ["main", "infoheader"]]]
         paths:
           - path: "spec#controllers#node#hostEndpoint"
             pathtype: "str"
@@ -253,7 +254,8 @@ infoview:
         type: "raw"
         formatter: "age"
       running_node_controller_host_endpoint_enabled:
-        header: [["    Node to Host Endpoint Synchronisation:", ["main", "infoheader"]]]
+        header: [["    Node to Host Endpoint Synchronisation:",
+                  ["main", "infoheader"]]]
         paths:
           - path: "status#runningConfig#controllers#node"
             pathtype: "substitution"
@@ -269,11 +271,13 @@ infoview:
               - key: "hostEndpoint"
                 none: true
             substitute: "False"
+      # yamllint disable rule:line-length
       running_node_controller_host_endpoint_auto_create:
         header: [["      Endpoint Autocreate:", ["main", "infoheader"]]]
         paths:
           - path: "status#runningConfig#controllers#node#hostEndpoint#autoCreate"
             pathtype: "str"
+      # yamllint enable rule:line-length
       running_node_controller_sync_labels:
         header: [["    Sync Labels:", ["main", "infoheader"]]]
         path: "status#runningConfig#controllers#node#syncLabels"
@@ -323,6 +327,7 @@ infoview:
             substitute: "False"
       running_service_account_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
+        # yamllint disable-line rule:line-length
         path: "status#runningConfig#controllers#serviceAccount#reconcilerPeriod"
         type: "raw"
         formatter: "age"
@@ -347,6 +352,7 @@ infoview:
             substitute: "False"
       running_workload_endpoint_controller_reconciler_period:
         header: [["    Reconciler Period:", ["main", "infoheader"]]]
+        # yamllint disable-line rule:line-length
         path: "status#runningConfig#controllers#workloadEndpoint#reconcilerPeriod"
         type: "raw"
         formatter: "age"

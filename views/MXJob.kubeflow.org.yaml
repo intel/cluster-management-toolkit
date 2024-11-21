@@ -7,22 +7,25 @@ listview:
   group: "Kubeflow"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age", "state", "completion_time_with_age"]
+      fields: ["namespace", "name", "age", "state",
+               "completion_time_with_age"]
       sortcolumn: "state"
   fields:
     completion_time_with_age:
       header: "Completion Time:"
       paths:
-        - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+        - paths: [["status#startTime"],
+                  " (", "Duration: ",
+                  ["status#completionTime"], ")"]
           pathtype: "timestamp_with_age"
       formatter: "timestamp_with_age"
       formatting:
         field_colors:
-        # This is a meta-type, indicating where the timestamp goes
+          # This is a meta-type, indicating where the timestamp goes
           - type: "timestamp"
           - type: "generic"
           - type: "generic"
-        # This is a meta-type, indicating where the age goes
+          # This is a meta-type, indicating where the age goes
           - type: "age"
           - type: "generic"
     state:
@@ -68,26 +71,37 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "job_mode", "schedulers_header", "schedulers_replicas", "schedulers_restart_policy", "schedulers_status", "servers_header", "servers_replicas", "servers_restart_policy", "servers_status", "workers_header", "workers_replicas", "workers_restart_policy", "workers_status", "run_policy_header", "run_policy_clean_pod_policy", "run_policy_suspend", "completion_time_with_age", "state"]
+        fields: ["controller", "job_mode", "schedulers_header",
+                 "schedulers_replicas", "schedulers_restart_policy",
+                 "schedulers_status", "servers_header",
+                 "servers_replicas", "servers_restart_policy",
+                 "servers_status", "workers_header", "workers_replicas",
+                 "workers_restart_policy", "workers_status",
+                 "run_policy_header", "run_policy_clean_pod_policy",
+                 "run_policy_suspend", "completion_time_with_age",
+                 "state"]
     rows:
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
-          - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+          - paths: [["status#startTime"],
+                    " (", "Duration: ",
+                    ["status#completionTime"], ")"]
             pathtype: "timestamp_with_age"
         formatter: "timestamp_with_age"
         formatting:
           field_colors:
-          # This is a meta-type, indicating where the timestamp goes
+            # This is a meta-type, indicating where the timestamp goes
             - type: "timestamp"
             - type: "generic"
             - context: "main"
               type: "infoheader"
-          # This is a meta-type, indicating where the age goes
+            # This is a meta-type, indicating where the age goes
             - type: "age"
             - type: "generic"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -144,7 +158,12 @@ infoview:
       schedulers_status:
         header: [["  Status:", ["main", "infoheader"]]]
         paths:
-          - path: ["Succeeded: ", ["status#replicaStatuses#Scheduler#succeeded"], "Active: ", ["status#replicaStatuses#Scheduler#active"], "Failed: ", ["status#replicaStatuses#Scheduler#failed"]]
+          - path: ["Succeeded: ",
+                   ["status#replicaStatuses#Scheduler#succeeded"],
+                   "Active: ",
+                   ["status#replicaStatuses#Scheduler#active"],
+                   "Failed: ",
+                   ["status#replicaStatuses#Scheduler#failed"]]
             pathtype: "tuple"
             default: ["", 0, "", 0, "", 0]
         formatter: "list"
@@ -180,7 +199,12 @@ infoview:
       servers_status:
         header: [["  Status:", ["main", "infoheader"]]]
         paths:
-          - path: ["Succeeded: ", ["status#replicaStatuses#Server#succeeded"], "Active: ", ["status#replicaStatuses#Server#active"], "Failed: ", ["status#replicaStatuses#Server#failed"]]
+          - path: ["Succeeded: ",
+                   ["status#replicaStatuses#Server#succeeded"],
+                   "Active: ",
+                   ["status#replicaStatuses#Server#active"],
+                   "Failed: ",
+                   ["status#replicaStatuses#Server#failed"]]
             pathtype: "tuple"
             default: ["", 0, "", 0, "", 0]
         formatter: "list"
@@ -243,7 +267,12 @@ infoview:
       workers_status:
         header: [["  Status:", ["main", "infoheader"]]]
         paths:
-          - path: ["Succeeded: ", ["status#replicaStatuses#Worker#succeeded"], "Active: ", ["status#replicaStatuses#Worker#active"], "Failed: ", ["status#replicaStatuses#Worker#failed"]]
+          - path: ["Succeeded: ",
+                   ["status#replicaStatuses#Worker#succeeded"],
+                   "Active: ",
+                   ["status#replicaStatuses#Worker#active"],
+                   "Failed: ",
+                   ["status#replicaStatuses#Worker#failed"]]
             pathtype: "tuple"
             default: ["", 0, "", 0, "", 0]
         formatter: "list"
@@ -273,13 +302,17 @@ infoview:
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart",
+                 "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age", "restarts",
+                 "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
@@ -328,7 +361,8 @@ infoview:
         paths:
           - path: "status#containerStatuses"
             pathtype: "items"
-            subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
             when:
               - key: "restartCount"
                 gt: 0

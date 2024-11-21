@@ -10,7 +10,8 @@ listview:
   group: "Accelerators"
   field_indexes:
     Normal:
-      fields: ["name", "desired_number_scheduled", "number_ready", "node_selector", "age"]
+      fields: ["name", "desired_number_scheduled", "number_ready",
+               "node_selector", "age"]
   fields:
     desired_number_scheduled:
       header: "Desired:"
@@ -39,12 +40,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controlled_daemon_set", "image", "init_image", "node_selector", "shared_device_number", "loglevel", "replicas"]
+        fields: ["controlled_daemon_set", "image", "init_image",
+                 "node_selector", "shared_device_number", "loglevel",
+                 "replicas"]
     rows:
       controlled_daemon_set:
-        header: [["Controlled ", ["main", "infoheader"]], ["D", ["main", "infoheader_shortcut"]], ["aemon Set:", ["main", "infoheader"]]]
+        header: [["Controlled ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["aemon Set:", ["main", "infoheader"]]]
         paths:
-          - path: [["status#controlledDaemonSet#kind"], ["status#controlledDaemonSet#apiVersion"], ["status#controlledDaemonSet#namespace"], ["status#controlledDaemonSet#name"]]
+          - path: [["status#controlledDaemonSet#kind"],
+                   ["status#controlledDaemonSet#apiVersion"],
+                   ["status#controlledDaemonSet#namespace"],
+                   ["status#controlledDaemonSet#name"]]
             pathtype: "tuple"
             type: ["kind", "api_group", "name", "name"]
         formatter: "list"

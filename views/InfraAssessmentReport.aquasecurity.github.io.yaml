@@ -10,7 +10,8 @@ listview:
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "scanner", "severity_critical", "severity_high", "severity_medium", "severity_low", "age"]
+      fields: ["namespace", "name", "scanner", "severity_critical",
+               "severity_high", "severity_medium", "severity_low", "age"]
       sortcolumn: "namespace"
   fields:
     scanner:
@@ -102,10 +103,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "scanner", "vendor", "severity_header", "severity_critical", "severity_high", "severity_medium", "severity_low"]
+        fields: ["controller", "scanner", "vendor", "severity_header",
+                 "severity_critical", "severity_high", "severity_medium",
+                 "severity_low"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

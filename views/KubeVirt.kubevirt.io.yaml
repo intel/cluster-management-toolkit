@@ -47,10 +47,14 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "image_pull_policy", "observed_kubevirt_registry", "observed_kubevirt_version", "target_kubevirt_registry", "target_kubevirt_version", "replicas", "phase"]
+        fields: ["controller", "image_pull_policy",
+                 "observed_kubevirt_registry", "observed_kubevirt_version",
+                 "target_kubevirt_registry", "target_kubevirt_version",
+                 "replicas", "phase"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

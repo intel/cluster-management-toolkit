@@ -13,7 +13,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["ambassador_id", "load_balancer_header", "load_balancer_policy", "retry_policy", "diagnostics_header", "diagnostics_enabled", "diagnostics_allow_non_local", "liveness_probe_header", "liveness_probe_enabled", "liveness_probe_rewrite", "liveness_probe_service", "readiness_probe_header", "readiness_probe_enabled", "readiness_probe_rewrite", "readiness_probe_service"]
+        fields: ["ambassador_id", "load_balancer_header",
+                 "load_balancer_policy", "retry_policy", "diagnostics_header",
+                 "diagnostics_enabled", "diagnostics_allow_non_local",
+                 "liveness_probe_header", "liveness_probe_enabled",
+                 "liveness_probe_rewrite", "liveness_probe_service",
+                 "readiness_probe_header", "readiness_probe_enabled",
+                 "readiness_probe_rewrite", "readiness_probe_service"]
     rows:
       ambassador_id:
         header: [["Ambassador ID:", ["main", "infoheader"]]]
@@ -33,7 +39,9 @@ infoview:
       diagnostics_header:
         header: [["Diagnostics:", ["main", "infoheader"]]]
       load_balancer_header:
-        header: [["L", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["ad Balancer:", ["main", "infoheader"]]]
+        header: [["L", ["main", "infoheader"]],
+                 ["o", ["main", "infoheader_shortcut"]],
+                 ["ad Balancer:", ["main", "infoheader"]]]
       load_balancer_policy:
         header: [["  Policy:", ["main", "infoheader"]]]
         path: "spec#config#load_balancer#policy"

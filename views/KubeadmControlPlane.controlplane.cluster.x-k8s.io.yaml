@@ -10,7 +10,9 @@ listview:
   group: "Cluster Configuration"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "controller", "initialized", "api_server_available", "replicas", "ready", "updated", "unavailable", "age", "version"]
+      fields: ["namespace", "name", "controller", "initialized",
+               "api_server_available", "replicas", "ready", "updated",
+               "unavailable", "age", "version"]
       sortcolumn: "namespace"
   fields:
     api_server_available:
@@ -112,7 +114,9 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "initialized", "api_server_available", "selector", "replicas", "ready", "updated", "unavailable", "template_header", "template_infrastructure", "version"]
+        fields: ["controller", "initialized", "api_server_available",
+                 "selector", "replicas", "ready", "updated", "unavailable",
+                 "template_header", "template_infrastructure", "version"]
     rows:
       api_server_available:
         header: [["API-server Available:", ["main", "infoheader"]]]
@@ -131,7 +135,8 @@ infoview:
                   - context: "main"
                     type: "status_not_ok"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -190,9 +195,13 @@ infoview:
       template_header:
         header: [["Machine Template:", ["main", "infoheader"]]]
       template_infrastructure:
-        header: [["  ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["nfrastructure:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["I", ["main", "infoheader_shortcut"]],
+                 ["nfrastructure:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#machineTemplate#infrastructureRef#kind"], ["metadata#namespace"], ["spec#machineTemplate#infrastructureRef#name"]]
+          - path: [["spec#machineTemplate#infrastructureRef#kind"],
+                   ["metadata#namespace"],
+                   ["spec#machineTemplate#infrastructureRef#name"]]
             pathtype: "tuple"
             type: ["kind", "name", "name"]
         default: "<none>"

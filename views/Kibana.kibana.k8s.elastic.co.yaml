@@ -7,7 +7,8 @@ listview:
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "count", "available_nodes", "status", "elasticsearch_status", "health", "age"]
+      fields: ["namespace", "name", "version", "count", "available_nodes",
+               "status", "elasticsearch_status", "health", "age"]
       sortcolumn: "namespace"
   fields:
     available_nodes:
@@ -119,7 +120,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["elasticsearch_ref", "label_selector", "version", "count", "http_header", "http_service_header", "http_service_type", "http_tls_header", "http_tls_self_signed_header", "http_tls_self_signed_enabled", "http_tls_self_signed_alt_names", "available_nodes", "status", "elasticsearch_status", "health"]
+        fields: ["elasticsearch_ref", "label_selector", "version", "count",
+                 "http_header", "http_service_header", "http_service_type",
+                 "http_tls_header", "http_tls_self_signed_header",
+                 "http_tls_self_signed_enabled",
+                 "http_tls_self_signed_alt_names", "available_nodes",
+                 "status", "elasticsearch_status", "health"]
     rows:
       available_nodes:
         header: [["Available Nodes:", ["main", "infoheader"]]]
@@ -141,9 +147,11 @@ infoview:
           item_separator:
             type: "fraction"
       elasticsearch_ref:
-        header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
+        header: [["E", ["main", "infoheader_shortcut"]],
+                 ["lasticsearch Reference:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"], ["spec#elasticsearchRef#name"]]
+          - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"],
+                   ["spec#elasticsearchRef#name"]]
             pathtype: "tuple"
             default: ["<unset>", "<unset>"]
         formatter: "list"
@@ -273,13 +281,16 @@ infoview:
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip",
+                 "age", "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age", "restarts",
+                 "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
@@ -328,7 +339,8 @@ infoview:
         paths:
           - path: "status#containerStatuses"
             pathtype: "items"
-            subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
             when:
               - key: "restartCount"
                 gt: 0
@@ -387,7 +399,8 @@ infoview:
         _pass_obj: true
         kind: "Elasticsearch"
         api_family: "elasticsearch.k8s.elastic.co"
-        namespace_path: ["spec#elasticsearchRef#namespace", "metadata#namespace"]
+        namespace_path: ["spec#elasticsearchRef#namespace",
+                         "metadata#namespace"]
         name_path: "spec#elasticsearchRef#name"
     "Pod template":
       key: "t"

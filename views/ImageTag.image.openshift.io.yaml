@@ -15,7 +15,8 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "spec", "import_policy", "tag", "version", "age"]
+      fields: ["namespace", "name", "spec", "import_policy", "tag",
+               "version", "age"]
       sortcolumn: "namespace"
   fields:
     import_policy:
@@ -67,10 +68,14 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "display_name", "description", "provider_display_name", "from", "import_policy", "reference_policy", "spec", "tag", "version"]
+        fields: ["cluster_version", "display_name", "description",
+                 "provider_display_name", "from", "import_policy",
+                 "reference_policy", "spec", "tag", "version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

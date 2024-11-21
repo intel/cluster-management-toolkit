@@ -10,7 +10,8 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "max_unhealthy", "expected_machines", "current_healthy", "age"]
+      fields: ["namespace", "name", "max_unhealthy",
+               "expected_machines", "current_healthy", "age"]
       sortcolumn: "namespace"
   fields:
     current_healthy:
@@ -41,10 +42,15 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "label_selector", "set_based_selector", "max_unhealthy", "expected_machines", "current_healthy", "remediations_allowed", "node_startup_timeout"]
+        fields: ["cluster_version", "label_selector",
+                 "set_based_selector", "max_unhealthy", "expected_machines",
+                 "current_healthy", "remediations_allowed",
+                 "node_startup_timeout"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

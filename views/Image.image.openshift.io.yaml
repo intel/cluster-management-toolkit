@@ -29,7 +29,8 @@ listview:
     label_name:
       header: "Label Name:"
       paths:
-        - path: ["dockerImageMetadata#Config#Labels#name", "dockerImageMetadata#Config#Labels#Name"]
+        - path: ["dockerImageMetadata#Config#Labels#name",
+                 "dockerImageMetadata#Config#Labels#Name"]
           pathtype: "value"
           default: "<unset>"
       type: "str"
@@ -39,7 +40,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["description", "metadata_version", "image_reference", "architecture", "author", "manifest_type", "size"]
+        fields: ["description", "metadata_version", "image_reference",
+                 "architecture", "author", "manifest_type", "size"]
     rows:
       architecture:
         header: [["Architecture:", ["main", "infoheader"]]]
@@ -48,7 +50,8 @@ infoview:
       author:
         header: [["Author:", ["main", "infoheader"]]]
         paths:
-          - path: ["dockerImageMetadata#Author", "dockerImageMetadata#Config#Labels#vendor"]
+          - path: ["dockerImageMetadata#Author",
+                   "dockerImageMetadata#Config#Labels#vendor"]
             pathtype: "value"
             default: "foo"
         type: "str"
@@ -111,8 +114,8 @@ infoview:
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "dockerImageLayers"
+        # pass_ref: true
         fields:
           - "name"
           - "size"
           - "mediaType"
-        # pass_ref: true

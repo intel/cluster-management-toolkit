@@ -20,14 +20,17 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "additional_trusted_ca", "internal_registry_hostname", "external_registry_hostnames"]
+        fields: ["cluster_version", "additional_trusted_ca",
+                 "internal_registry_hostname", "external_registry_hostnames"]
     rows:
       additional_trusted_ca:
         header: [["Additional Trusted CA:", ["main", "infoheader"]]]
         path: "spec#additionalTrustedCA#name"
         type: "str"
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

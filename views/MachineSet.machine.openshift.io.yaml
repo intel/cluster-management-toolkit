@@ -9,10 +9,12 @@ listview:
   group: "OpenShift"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "desired", "observed", "ready", "available", "fully_labelled", "age"]
+      fields: ["namespace", "name", "desired", "observed", "ready",
+               "available", "fully_labelled", "age"]
       sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "desired", "observed", "ready", "available", "age"]
+      fields: ["namespace", "name", "desired", "observed", "ready",
+               "available", "age"]
       sortcolumn: "namespace"
   fields:
     available:
@@ -62,7 +64,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["label_selector", "set_based_selector", "delete_policy", "min_ready_seconds", "replicas_header", "desired", "observed", "ready", "available", "fully_labelled"]
+        fields: ["label_selector", "set_based_selector",
+                 "delete_policy", "min_ready_seconds",
+                 "replicas_header", "desired", "observed", "ready",
+                 "available", "fully_labelled"]
     rows:
       available:
         header: [["  Available:", ["main", "infoheader"]]]

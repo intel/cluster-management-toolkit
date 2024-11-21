@@ -6,10 +6,15 @@ listview:
   name: "Machine Config Nodes"
   group: "OpenShift"
   field_indexes:
-    Normal:
-      fields: ["name", "updated", "update_prepared", "update_executed", "update_postaction_complete", "update_complete", "resumed", "age"]
     Wide:
-      fields: ["name", "updated", "update_prepared", "update_executed", "update_postaction_complete", "update_complete", "resumed", "update_compatible", "updated_files_and_os", "cordoned", "drained", "rebooted", "reloaded_crio", "age"]
+      fields: ["name", "updated", "update_prepared", "update_executed",
+               "update_postaction_complete", "update_complete", "resumed",
+               "update_compatible", "updated_files_and_os", "cordoned",
+               "drained", "rebooted", "reloaded_crio", "age"]
+    Normal:
+      fields: ["name", "updated", "update_prepared", "update_executed",
+               "update_postaction_complete", "update_complete", "resumed",
+               "age"]
   fields:
     cordoned:
       header: "Cordoned:"
@@ -316,7 +321,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["node_name", "machine_config_pool", "updated", "update_prepared", "update_executed", "update_postaction_complete", "update_complete", "resumed", "update_compatible", "updated_files_and_os", "cordoned", "drained", "rebooted", "reloaded_crio", "configuration_header", "configuration_current", "configuration_desired"]
+        fields: ["node_name", "machine_config_pool", "updated",
+                 "update_prepared", "update_executed",
+                 "update_postaction_complete", "update_complete", "resumed",
+                 "update_compatible", "updated_files_and_os", "cordoned",
+                 "drained", "rebooted", "reloaded_crio",
+                 "configuration_header", "configuration_current",
+                 "configuration_desired"]
     rows:
       configuration_current:
         header: [["  Current:", ["main", "infoheader"]]]
@@ -385,11 +396,15 @@ infoview:
                   - context: "main"
                     type: "status_not_ok"
       machine_config_pool:
-        header: [["Machine Config ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["ool:", ["main", "infoheader"]]]
+        header: [["Machine Config ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["ool:", ["main", "infoheader"]]]
         path: "spec#pool#name"
         type: "str"
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

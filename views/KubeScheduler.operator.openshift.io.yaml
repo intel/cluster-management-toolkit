@@ -22,24 +22,32 @@ infoview:
   infopad:
     row_indexes:
       Wide:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "cipher_suites", "min_tls_version", "ready_replicas"]
+        fields: ["cluster_version", "loglevel", "operator_loglevel",
+                 "management_state", "cipher_suites", "min_tls_version",
+                 "ready_replicas"]
       Normal:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "cipher_suites_ellipsise", "min_tls_version", "ready_replicas"]
+        fields: ["cluster_version", "loglevel", "operator_loglevel",
+                 "management_state", "cipher_suites_ellipsise",
+                 "min_tls_version", "ready_replicas"]
     rows:
       cipher_suites:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ipher Suites:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ipher Suites:", ["main", "infoheader"]]]
         path: "spec#observedConfig#servingInfo#cipherSuites"
         type: "raw"
         formatter: "list"
       cipher_suites_ellipsise:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ipher Suites:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ipher Suites:", ["main", "infoheader"]]]
         path: "spec#observedConfig#servingInfo#cipherSuites"
         type: "raw"
         formatter: "list"
         formatting:
           ellipsise: 3
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

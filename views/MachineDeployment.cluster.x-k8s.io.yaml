@@ -13,7 +13,8 @@ listview:
   group: "Cluster Configuration"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "cluster", "replicas", "ready", "updated", "unavailable", "phase", "age", "version"]
+      fields: ["namespace", "name", "cluster", "replicas", "ready",
+               "updated", "unavailable", "phase", "age", "version"]
       sortcolumn: "namespace"
   fields:
     cluster:
@@ -92,10 +93,18 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster", "label_selector", "min_ready", "progress_deadline", "revision_history_limit", "replicas", "ready", "updated", "unavailable", "update_strategy", "phase", "template_header", "template_cluster_name", "template_labels", "template_failure_domain", "template_bootstrap", "template_infrastructure", "template_version"]
+        fields: ["cluster", "label_selector", "min_ready",
+                 "progress_deadline", "revision_history_limit",
+                 "replicas", "ready", "updated", "unavailable",
+                 "update_strategy", "phase", "template_header",
+                 "template_cluster_name", "template_labels",
+                 "template_failure_domain", "template_bootstrap",
+                 "template_infrastructure", "template_version"]
     rows:
       cluster:
-        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
+        header: [["Cl", ["main", "infoheader"]],
+                 ["u", ["main", "infoheader_shortcut"]],
+                 ["ster:", ["main", "infoheader"]]]
         path: "spec#clusterName"
         type: "str"
       label_selector:
@@ -185,9 +194,13 @@ infoview:
           field_colors:
             - type: "numerical"
       template_bootstrap:
-        header: [["  B", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["otstrap:", ["main", "infoheader"]]]
+        header: [["  B", ["main", "infoheader"]],
+                 ["o", ["main", "infoheader_shortcut"]],
+                 ["otstrap:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#template#spec#bootstrap#configRef#kind"], ["spec#template#spec#bootstrap#configRef#apiVersion"], ["spec#template#spec#bootstrap#configRef#name"]]
+          - path: [["spec#template#spec#bootstrap#configRef#kind"],
+                   ["spec#template#spec#bootstrap#configRef#apiVersion"],
+                   ["spec#template#spec#bootstrap#configRef#name"]]
             pathtype: "tuple"
             type: ["kind", "api_group", "name"]
         default: "<none>"
@@ -211,9 +224,13 @@ infoview:
       template_header:
         header: [["Template:", ["main", "infoheader"]]]
       template_infrastructure:
-        header: [["  ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["nfrastructure:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["I", ["main", "infoheader_shortcut"]],
+                 ["nfrastructure:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#template#spec#infrastructureRef#kind"], ["spec#template#spec#infrastructureRef#apiVersion"], ["spec#template#spec#infrastructureRef#name"]]
+          - path: [["spec#template#spec#infrastructureRef#kind"],
+                   ["spec#template#spec#infrastructureRef#apiVersion"],
+                   ["spec#template#spec#infrastructureRef#name"]]
             pathtype: "tuple"
             type: ["kind", "api_group", "name"]
         default: "<none>"
@@ -263,7 +280,11 @@ infoview:
       update_strategy:
         header: [["Update Strategy:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#strategy#type"], " (", "Max Surge: ", ["spec#strategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["spec#strategy#rollingUpdate#maxUnavailable"], ")"]
+          - path: [["spec#strategy#type"],
+                   " (", "Max Surge: ",
+                   ["spec#strategy#rollingUpdate#maxSurge"],
+                   "Max Unavailable: ",
+                   ["spec#strategy#rollingUpdate#maxUnavailable"], ")"]
             pathtype: "tuple"
             when:
               - key: "spec#strategy#type"
@@ -280,11 +301,11 @@ infoview:
             - type: "generic"
             - context: "main"
               type: "infoheader"
-          # Ideally we want to achieve numerical with unit here
+            # Ideally we want to achieve numerical with unit here
             - type: "numerical"
             - context: "main"
               type: "infoheader"
-          # Ideally we want to achieve numerical with unit here
+            # Ideally we want to achieve numerical with unit here
             - type: "numerical"
             - type: "generic"
           field_separators:

@@ -38,14 +38,18 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster", "controller", "control_plane", "ready", "data_secret_name"]
+        fields: ["cluster", "controller", "control_plane", "ready",
+                 "data_secret_name"]
     rows:
       cluster:
-        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
+        header: [["Cl", ["main", "infoheader"]],
+                 ["u", ["main", "infoheader_shortcut"]],
+                 ["ster:", ["main", "infoheader"]]]
         path: "metadata#labels#cluster.x-k8s.io/cluster-name"
         type: "str"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -68,7 +72,9 @@ infoview:
             - type: "kind_api_group"
             - type: "kind"
       control_plane:
-        header: [["Control ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["lane:", ["main", "infoheader"]]]
+        header: [["Control ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["lane:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -107,7 +113,9 @@ infoview:
                   - context: "main"
                     type: "status_not_ok"
       data_secret_name:
-        header: [["Data ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret Name:", ["main", "infoheader"]]]
+        header: [["Data ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ecret Name:", ["main", "infoheader"]]]
         path: "status#dataSecretName"
         type: "str"
   shortcuts:

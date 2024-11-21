@@ -30,7 +30,9 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["description", "from", "manifest_media_type", "metadata_version", "lookup_policy", "import_policy", "reference_policy", "version"]
+        fields: ["description", "from", "manifest_media_type",
+                 "metadata_version", "lookup_policy", "import_policy",
+                 "reference_policy", "version"]
     rows:
       description:
         header: [["Description:", ["main", "infoheader"]]]
@@ -103,11 +105,11 @@ infoview:
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "image#dockerImageLayers"
+        # pass_ref: true
         fields:
           - "name"
           - "size"
           - "mediaType"
-        # pass_ref: true
     "Docker Image Metadata":
       key: "d"
       read_only: true

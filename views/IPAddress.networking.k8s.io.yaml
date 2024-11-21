@@ -20,7 +20,10 @@ listview:
     parent_ref:
       header: "Parent Reference:"
       paths:
-        - path: [["spec#parentRef#resource"], ["spec#parentRef#group"], ["spec#parentRef#namespace"], ["spec#parentRef#name"]]
+        - path: [["spec#parentRef#resource"],
+                 ["spec#parentRef#group"],
+                 ["spec#parentRef#namespace"],
+                 ["spec#parentRef#name"]]
           pathtype: "tuple"
           type: ["kind", "api_group", "name", "name"]
       formatter: "list"
@@ -48,9 +51,14 @@ infoview:
         type: "str"
         formatter: "address"
       parent_ref:
-        header: [["Parent ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eference:", ["main", "infoheader"]]]
+        header: [["Parent ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["eference:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#parentRef#resource"], ["spec#parentRef#group"], ["spec#parentRef#namespace"], ["spec#parentRef#name"]]
+          - path: [["spec#parentRef#resource"],
+                   ["spec#parentRef#group"],
+                   ["spec#parentRef#namespace"],
+                   ["spec#parentRef#name"]]
             pathtype: "tuple"
             type: ["kind", "api_group", "name", "name"]
         formatter: "list"

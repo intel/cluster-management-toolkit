@@ -42,10 +42,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "lookup_policy", "tags", "public_image_repository", "image_repository"]
+        fields: ["cluster_version", "lookup_policy", "tags",
+                 "public_image_repository", "image_repository"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -90,7 +93,8 @@ infoview:
       api_family: "image.openshift.io"
     field_indexes:
       Normal:
-        fields: ["kind", "image_name", "import_mode", "scheduled", "tag", "reference_policy", "generation"]
+        fields: ["kind", "image_name", "import_mode", "scheduled",
+                 "tag", "reference_policy", "generation"]
         sortcolumn: "name"
     fields:
       image_name:

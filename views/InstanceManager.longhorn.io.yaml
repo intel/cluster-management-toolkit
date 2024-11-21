@@ -38,7 +38,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["node_name", "image", "data_engine", "type", "ip_address", "state"]
+        fields: ["node_name", "image", "data_engine", "type",
+                 "ip_address", "state"]
     rows:
       data_engine:
         header: [["Data Engine:", ["main", "infoheader"]]]
@@ -66,7 +67,9 @@ infoview:
         type: "raw"
         formatter: "address"
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

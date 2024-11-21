@@ -14,9 +14,23 @@ infoview:
   infopad:
     row_indexes:
       Wide:
-        fields: ["domain", "namespace_label_selector", "namespace_set_based_selector", "client_tls_header", "client_tls_ca_name", "client_tls_client_certificate_policy", "http_empty_requests_policy", "endpoint_publishing_strategy", "tls_ciphers", "min_tls_version", "desired_replicas", "available_replicas"]
+        fields: ["domain", "namespace_label_selector",
+                 "namespace_set_based_selector", "client_tls_header",
+                 "client_tls_ca_name",
+                 "client_tls_client_certificate_policy",
+                 "http_empty_requests_policy",
+                 "endpoint_publishing_strategy", "tls_ciphers",
+                 "min_tls_version", "desired_replicas",
+                 "available_replicas"]
       Normal:
-        fields: ["domain", "namespace_label_selector", "namespace_set_based_selector", "client_tls_header", "client_tls_ca_name", "client_tls_client_certificate_policy", "http_empty_requests_policy", "endpoint_publishing_strategy", "tls_ciphers_ellipsise", "min_tls_version", "desired_replicas", "available_replicas"]
+        fields: ["domain", "namespace_label_selector",
+                 "namespace_set_based_selector", "client_tls_header",
+                 "client_tls_ca_name",
+                 "client_tls_client_certificate_policy",
+                 "http_empty_requests_policy",
+                 "endpoint_publishing_strategy",
+                 "tls_ciphers_ellipsise", "min_tls_version",
+                 "desired_replicas", "available_replicas"]
     rows:
       available_replicas:
         header: [["Available Replicas:", ["main", "infoheader"]]]
@@ -104,13 +118,15 @@ infoview:
             - type: "space"
             - type: "no_pad"
       tls_ciphers:
-        header: [["T", ["main", "infoheader_shortcut"]], ["LS Ciphers:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["LS Ciphers:", ["main", "infoheader"]]]
         path: "status#tlsProfile#ciphers"
         default: "<unset>"
         type: "raw"
         formatter: "list"
       tls_ciphers_ellipsise:
-        header: [["T", ["main", "infoheader_shortcut"]], ["LS Ciphers:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["LS Ciphers:", ["main", "infoheader"]]]
         path: "status#tlsProfile#ciphers"
         default: "<unset>"
         type: "raw"

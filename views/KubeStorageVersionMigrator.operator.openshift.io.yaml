@@ -26,10 +26,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "ready_replicas", "version"]
+        fields: ["cluster_version", "loglevel", "operator_loglevel",
+                 "management_state", "ready_replicas", "version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

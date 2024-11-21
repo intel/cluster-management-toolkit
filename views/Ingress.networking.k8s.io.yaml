@@ -9,7 +9,8 @@ listview:
   group: "Network"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "class", "hosts", "address", "ports", "age"]
+      fields: ["namespace", "name", "class", "hosts", "address",
+               "ports", "age"]
       sortcolumn: "namespace"
   fields:
     class:
@@ -59,13 +60,17 @@ infoview:
         fields: ["class", "default_backend"]
     rows:
       class:
-        header: [["C", ["main", "infoheader_shortcut"]], ["lass:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["lass:", ["main", "infoheader"]]]
         path: "spec#ingressClassName"
         type: "str"
       default_backend:
-        header: [["D", ["main", "infoheader_shortcut"]], ["efault Backend:", ["main", "infoheader"]]]
+        header: [["D", ["main", "infoheader_shortcut"]],
+                 ["efault Backend:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#defaultBackend#resource#kind"], ["spec#defaultBackend#resource#apiGroup"], ["spec#defaultBackend#resource#name"]]
+          - path: [["spec#defaultBackend#resource#kind"],
+                   ["spec#defaultBackend#resource#apiGroup"],
+                   ["spec#defaultBackend#resource#name"]]
             pathtype: "tuple"
         formatter: "list"
         formatting:

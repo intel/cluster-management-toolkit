@@ -19,7 +19,10 @@ listview:
     parameters:
       header: "Parameters:"
       paths:
-        - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#namespace"], ["spec#parameters#name"]]
+        - path: [["spec#parameters#kind"],
+                 ["spec#parameters#apiGroup"],
+                 ["spec#parameters#namespace"],
+                 ["spec#parameters#name"]]
           pathtype: "tuple"
           type: ["kind", "api_group", "name", "name"]
       formatter: "list"
@@ -45,9 +48,12 @@ infoview:
         path: "spec#controller"
         type: "str"
       parameters:
-        header: [["P", ["main", "infoheader_shortcut"]], ["arameters Reference:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arameters Reference:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#name"]]
+          - path: [["spec#parameters#kind"],
+                   ["spec#parameters#apiGroup"],
+                   ["spec#parameters#name"]]
             pathtype: "tuple"
             type: ["kind", "api_group", "name"]
         formatter: "list"

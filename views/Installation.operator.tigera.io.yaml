@@ -99,7 +99,12 @@ infoview:
       configuration_node_update_strategy:
         header: [["  Node Update Strategy:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#nodeUpdateStrategy#type"], " (", "Max Surge: ", ["spec#nodeUpdateStrategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["spec#nodeUpdateStrategy#rollingUpdate#maxUnavailable"], ")"]
+          - path: [["spec#nodeUpdateStrategy#type"],
+                   " (", "Max Surge: ",
+                   ["spec#nodeUpdateStrategy#rollingUpdate#maxSurge"],
+                   "Max Unavailable: ",
+                   ["spec#nodeUpdateStrategy#rollingUpdate#maxUnavailable"],
+                   ")"]
             pathtype: "tuple"
             when:
               - key: "spec#nodeUpdateStrategy#type"
@@ -116,11 +121,11 @@ infoview:
             - type: "generic"
             - context: "main"
               type: "infoheader"
-          # Ideally we want to achieve numerical with unit here
+            # Ideally we want to achieve numerical with unit here
             - type: "numerical"
             - context: "main"
               type: "infoheader"
-          # Ideally we want to achieve numerical with unit here
+            # Ideally we want to achieve numerical with unit here
             - type: "numerical"
             - type: "generic"
           field_separators:
@@ -164,6 +169,7 @@ infoview:
             - type: "numerical"
       status_calico_network_node_address_detection_v4:
         header: [["    Node Address Detection v4:", ["main", "infoheader"]]]
+        # yamllint disable-line rule:line-length
         path: "status#computed#calicoNetwork#nodeAddressAutodetectionV4#firstFound"
         type: "bool"
       status_control_plane_replicas:
@@ -191,8 +197,14 @@ infoview:
             - type: "path"
       status_node_update_strategy:
         header: [["  Node Update Strategy:", ["main", "infoheader"]]]
+        # yamllint disable rule:line-length
         paths:
-          - path: [["status#computed#nodeUpdateStrategy#type"], " (", "Max Surge: ", ["status#computed#nodeUpdateStrategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["status#computed#nodeUpdateStrategy#rollingUpdate#maxUnavailable"], ")"]
+          - path: [["status#computed#nodeUpdateStrategy#type"],
+                   " (", "Max Surge: ",
+                   ["status#computed#nodeUpdateStrategy#rollingUpdate#maxSurge"],
+                   "Max Unavailable: ",
+                   ["status#computed#nodeUpdateStrategy#rollingUpdate#maxUnavailable"],
+                   ")"]
             pathtype: "tuple"
             when:
               - key: "spec#nodeUpdateStrategy#type"
@@ -202,6 +214,7 @@ infoview:
             when:
               - key: "spec#nodeUpdateStrategy#type"
                 eq: "Recreate"
+        # yamllint enable rule:line-length
         formatter: "list"
         formatting:
           field_colors:
@@ -209,11 +222,11 @@ infoview:
             - type: "generic"
             - context: "main"
               type: "infoheader"
-          # Ideally we want to achieve numerical with unit here
+            # Ideally we want to achieve numerical with unit here
             - type: "numerical"
             - context: "main"
               type: "infoheader"
-          # Ideally we want to achieve numerical with unit here
+            # Ideally we want to achieve numerical with unit here
             - type: "numerical"
             - type: "generic"
           field_separators:
