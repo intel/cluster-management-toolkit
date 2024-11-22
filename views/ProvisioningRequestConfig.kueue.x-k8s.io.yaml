@@ -18,7 +18,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["provisioning_class_name", "managed_resources"]
+        fields: ["provisioning_class_name", "managed_resources",
+                 "retry_strategy_header",
+                 "retry_strategy_backoff_limit_header",
+                 "retry_strategy_backoff_limit_count",
+                 "retry_strategy_backoff_base_seconds",
+                 "retry_strategy_backoff_max_seconds"]
     rows:
       managed_resources:
         header: [["Managed ", ["main", "infoheader"]],
@@ -33,6 +38,44 @@ infoview:
         path: "spec#provisioningClassName"
         default: "<unset>"
         type: "str"
+      retry_strategy_backoff_limit_count:
+        header: [["    Count:", ["main", "infoheader"]]]
+        path: "spec#retryStrategy#backoffLimitCount"
+        default: 3
+        type: "int"
+        formatter: "numerical"
+      retry_strategy_backoff_limit_header:
+        header: [["  Backoff Limit:", ["main", "infoheader"]]]
+      retry_strategy_backoff_base_seconds:
+        header: [["    Base Seconds:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#retryStrategy#backoffBaseSeconds"], "s"]
+          pathtype: "tuple"
+          default: ["1800", ""]
+        type: "list"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "unit"
+          field_separators:
+          - type: "no_pad"
+      retry_strategy_backoff_max_seconds:
+        header: [["    Max:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#retryStrategy#backoffMaxSeconds"], "s"]
+          pathtype: "tuple"
+          default: ["1800", ""]
+        type: "list"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "unit"
+          field_separators:
+          - type: "no_pad"
+      retry_strategy_header:
+        header: [["Retry Strategy:", ["main", "infoheader"]]]
   shortcuts:
     "Managed Resources":
       key: "r"

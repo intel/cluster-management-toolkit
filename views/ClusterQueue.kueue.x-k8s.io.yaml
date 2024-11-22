@@ -86,6 +86,7 @@ infoview:
                  "preemption_borrow_within_cohort_max_priority_threshold",
                  "preemption_reclaim_within_cohort",
                  "preemption_within_cluster_queue", "stop_policy",
+                 "admission_checks",
                  "workloads_header", "workloads_admitted", "workloads_pending",
                  "workloads_reserving", "active"]
     rows:
@@ -111,6 +112,13 @@ infoview:
                 field_colors:
                   - context: "main"
                     type: "status_not_ok"
+      admission_checks:
+        header: [["Admission ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["hecks:", ["main", "infoheader"]]]
+        path: "spec#admissionChecks"
+        type: "raw"
+        formatter: "list"
       cohort:
         header: [["Cohort:", ["main", "infoheader"]]]
         path: "spec#cohort"
@@ -244,6 +252,25 @@ infoview:
             - type: "numerical"
         align: "right"
   shortcuts:
+    "Admission Checks":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Admission Checks"
+      widget: "windowwidget"
+      title: "Admission Checks:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#admissionChecks"
+      # This isn't supported for now
+      sortcolumn: "name"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "AdmissionCheck"
+        api_family: "kueue.x-k8s.io"
+        name_path: 0
     "Flavors Reservations":
       key: "f"
       read_only: true
