@@ -19,9 +19,9 @@ import sys
 from typing import NoReturn
 
 PROGRAMNAME = "mdtable.py"
-PROGRAMVERSION = "v0.0.1"
+PROGRAMVERSION = "v0.0.2"
 
-PROGRAMDESCRIPTION = "Reformat tabulated data to as Markdown"
+PROGRAMDESCRIPTION = "Reformat tabulated data to Markdown"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
 COPYRIGHT = "Copyright © 2024 David Weinehall"
