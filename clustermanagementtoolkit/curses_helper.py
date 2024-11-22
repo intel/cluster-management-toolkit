@@ -1503,10 +1503,10 @@ def confirmationbox(stdscr: curses.window, **kwargs: Any) -> bool:
     global ignoreinput  # pylint: disable=global-statement
 
     maxy, maxx = stdscr.getmaxyx()
-    y = deep_get(kwargs, DictPath("y"), maxy // 2)
-    x = deep_get(kwargs, DictPath("x"), maxx // 2)
-    default = deep_get(kwargs, DictPath("default"), False)
-    title = deep_get(kwargs, DictPath("title"), "")
+    y: int = deep_get(kwargs, DictPath("y"), maxy // 2)
+    x: int = deep_get(kwargs, DictPath("x"), maxx // 2)
+    default: bool = deep_get(kwargs, DictPath("default"), False)
+    title: str = deep_get(kwargs, DictPath("title"), "")
 
     ignoreinput = False
     retval = default

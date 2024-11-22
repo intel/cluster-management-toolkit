@@ -99,7 +99,7 @@ def format_markdown(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef
         Returns:
             ([themearray]): A list of themearrays
     """
-    format_lookup = {
+    format_lookup: dict[tuple[bool, bool, bool], ThemeAttr] = {
         # codeblock, bold, italics
         (False, False, False): ThemeAttr("types", "generic"),
         (True, False, False): ThemeAttr("types", "markdown_code"),
@@ -400,11 +400,12 @@ def format_yaml_line(line: str, **kwargs: Any) -> tuple[list[ThemeRef | ThemeStr
     tmpline: list[ThemeRef | ThemeStr] = []
 
     # [whitespace]-<whitespace><value>
-    yaml_list_regex = re.compile(r"^(\s*)- (.*)")
+    yaml_list_regex: re.Pattern[str] = re.compile(r"^(\s*)- (.*)")
     # <key>:<whitespace><value>
     # <key>:<whitespace>&<anchor>[<whitespace><value>]
     # <key>: *<alias>
-    yaml_key_reference_value_regex = re.compile(r"^([^:]+)(:\s*)(&|\*|)([^\s]+)([\s]+.+|)")
+    yaml_key_reference_value_regex: re.Pattern[str] = \
+        re.compile(r"^([^:]+)(:\s*)(&|\*|)([^\s]+)([\s]+.+|)")
 
     if line.lstrip(" ").startswith("#"):
         tmpline += [
@@ -703,9 +704,10 @@ def format_haproxy(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef 
     if deep_get(kwargs, DictPath("raw"), False):
         return format_none(lines)
 
-    haproxy_section_regex = re.compile(r"^(\s*)(global|defaults|frontend|"
-                                       r"backend|listen|resolvers|mailers|peers)(\s*)(.*)")
-    haproxy_setting_regex = re.compile(r"^(\s*)(\S+)(\s+)(.+)")
+    haproxy_section_regex: re.Pattern[str] = re.compile(r"^(\s*)(global|defaults|frontend|"
+                                                        "backend|listen|resolvers|"
+                                                        r"mailers|peers)(\s*)(.*)")
+    haproxy_setting_regex: re.Pattern[str] = re.compile(r"^(\s*)(\S+)(\s+)(.+)")
 
     for line in lines:
         # Is it whitespace?
@@ -772,16 +774,16 @@ def format_caddyfile(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
     if isinstance(lines, str):
         lines = split_msg(lines)
 
-    single_site = True
-    site = False
+    single_site: bool = True
+    site: bool = False
 
-    block_open_regex = re.compile(r"^(\s*)({)(.*)")
-    snippet_regex = re.compile(r"^(\s*)(\(.+?\))(.*)")
-    site_regex = re.compile(r"^(\s*)(\S+?)(\s+{\s*$|$)")
-    block_close_regex = re.compile(r"^(\s*)(}\s*$)")
-    matcher_regex = re.compile(r"^(\s*)(@.*?|\*/.*?)(\s.*)")
-    directive_regex = re.compile(r"^(\s*)(.+?)(\s.*|$)")
-    argument_regex = re.compile(r"^(.*?)(\s{\s*$|$)")
+    block_open_regex: re.Pattern[str] = re.compile(r"^(\s*)({)(.*)")
+    snippet_regex: re.Pattern[str] = re.compile(r"^(\s*)(\(.+?\))(.*)")
+    site_regex: re.Pattern[str] = re.compile(r"^(\s*)(\S+?)(\s+{\s*$|$)")
+    block_close_regex: re.Pattern[str] = re.compile(r"^(\s*)(}\s*$)")
+    matcher_regex: re.Pattern[str] = re.compile(r"^(\s*)(@.*?|\*/.*?)(\s.*)")
+    directive_regex: re.Pattern[str] = re.compile(r"^(\s*)(.+?)(\s.*|$)")
+    argument_regex: re.Pattern[str] = re.compile(r"^(.*?)(\s{\s*$|$)")
 
     for line in lines:
         tmpline: list[ThemeRef | ThemeStr] = []
@@ -918,7 +920,6 @@ def format_mosquitto(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
         Returns:
             list[themearray]: A list of themearrays
     """
-
     dumps: list[list[ThemeRef | ThemeStr]] = []
 
     if isinstance(lines, str):
@@ -927,7 +928,7 @@ def format_mosquitto(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
     if deep_get(kwargs, DictPath("raw"), False):
         return format_none(lines)
 
-    mosquitto_variable_regex = re.compile(r"^(\S+)(\s)(.+)")
+    mosquitto_variable_regex: re.Pattern[str] = re.compile(r"^(\S+)(\s)(.+)")
 
     for line in lines:
         # Is it whitespace?
@@ -973,7 +974,6 @@ def format_nginx(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | 
         Returns:
             list[themearray]: A list of themearrays
     """
-
     dumps: list[list[ThemeRef | ThemeStr]] = []
 
     if deep_get(kwargs, DictPath("raw"), False):
@@ -982,7 +982,7 @@ def format_nginx(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | 
     if isinstance(lines, str):
         lines = split_msg(lines)
 
-    key_regex = re.compile(r"^(\s*)(#.*$|}|\S+|$)(.+;|.+{|)(\s*#.*$|)")
+    key_regex: re.Pattern[str] = re.compile(r"^(\s*)(#.*$|}|\S+|$)(.+;|.+{|)(\s*#.*$|)")
 
     for line in lines:
         dump: list[ThemeRef | ThemeStr] = []
@@ -1057,12 +1057,12 @@ def format_xml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | Th
     if isinstance(lines, str):
         lines = split_msg(lines)
 
-    escape_regex = re.compile(r"^(\s*)(&)(.+?)(;)(.*)")
-    content_regex = re.compile(r"^(.*?)(<.*|&.*)")
-    tag_open_regex = re.compile(r"^(\s*)(</|<!--|<\?|<)(.*)")
-    tag_named_regex = re.compile(r"^(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
-    tag_close_regex = re.compile(r"^(\s*)(/>|\?>|-->|--!>|>)(.*)")
-    remainder_regex = \
+    escape_regex: re.Pattern[str] = re.compile(r"^(\s*)(&)(.+?)(;)(.*)")
+    content_regex: re.Pattern[str] = re.compile(r"^(.*?)(<.*|&.*)")
+    tag_open_regex: re.Pattern[str] = re.compile(r"^(\s*)(</|<!--|<\?|<)(.*)")
+    tag_named_regex: re.Pattern[str] = re.compile(r"^(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
+    tag_close_regex: re.Pattern[str] = re.compile(r"^(\s*)(/>|\?>|-->|--!>|>)(.*)")
+    remainder_regex: re.Pattern[str] = \
         re.compile(r"^(\s*\S+?)(=|)(\"[^\"]+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)")
 
     i = 0
@@ -1236,7 +1236,6 @@ def format_python_traceback(lines: str | list[str],
         Returns:
             list[themearray]: A list of themearrays
     """
-
     dumps: list[list[ThemeRef | ThemeStr]] = []
 
     if isinstance(lines, str):
@@ -1290,7 +1289,6 @@ def format_toml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | T
         Returns:
             list[themearray]: A list of themearrays
     """
-
     # Necessary improvements:
     # * Instead of only checking for lines that end with a comment for key = value,
     #   and for full comment lines, check for lines that end with a comment
@@ -1309,8 +1307,8 @@ def format_toml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | T
     if isinstance(lines, str):
         lines = split_msg(lines)
 
-    key_value_regex = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
-    comment_end_regex = re.compile(r"^(.*)(#.*)")
+    key_value_regex: re.Pattern[str] = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
+    comment_end_regex: re.Pattern[str] = re.compile(r"^(.*)(#.*)")
 
     tmpline: list[ThemeRef | ThemeStr] = []
 
@@ -1389,7 +1387,6 @@ def format_fluentbit(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
         Returns:
             list[themearray]: A list of themearrays
     """
-
     dumps: list[list[ThemeRef | ThemeStr]] = []
 
     if deep_get(kwargs, DictPath("raw"), False):
@@ -1398,7 +1395,7 @@ def format_fluentbit(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
     if isinstance(lines, str):
         lines = split_msg(lines)
 
-    key_value_regex = re.compile(r"^(\s*)(\S*)(\s*)(.*)")
+    key_value_regex: re.Pattern[str] = re.compile(r"^(\s*)(\S*)(\s*)(.*)")
 
     for line in lines:
         tmpline: list[ThemeRef | ThemeStr] = []
@@ -1446,7 +1443,6 @@ def format_ini(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | Th
         Returns:
             list[themearray]: A list of themearrays
     """
-
     dumps: list[list[ThemeRef | ThemeStr]] = []
 
     if deep_get(kwargs, DictPath("raw"), False):
@@ -1455,7 +1451,7 @@ def format_ini(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | Th
     if isinstance(lines, str):
         lines = split_msg(lines)
 
-    key_value_regex = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
+    key_value_regex: re.Pattern[str] = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
 
     for line in lines:
         tmpline: list[ThemeRef | ThemeStr] = []
@@ -1503,7 +1499,6 @@ def format_known_hosts(lines: str | list[str], **kwargs: Any) -> list[list[Theme
         Returns:
             list[themearray]: A list of themearrays
     """
-
     dumps: list[list[ThemeRef | ThemeStr]] = []
 
     if deep_get(kwargs, DictPath("raw"), False):
@@ -1512,7 +1507,7 @@ def format_known_hosts(lines: str | list[str], **kwargs: Any) -> list[list[Theme
     if isinstance(lines, str):
         lines = split_msg(lines)
 
-    host_keytype_key_regex = re.compile(r"^(\S+)(\s+)(\S+)(\s+)(\S+)")
+    host_keytype_key_regex: re.Pattern[str] = re.compile(r"^(\S+)(\s+)(\S+)(\s+)(\S+)")
 
     for line in lines:
         tmpline: list[ThemeRef | ThemeStr] = []
@@ -1540,8 +1535,8 @@ def format_known_hosts(lines: str | list[str], **kwargs: Any) -> list[list[Theme
     return dumps
 
 
-formatter_mapping = (
-    # (startswith, endswith, formatter)
+# (startswith, endswith, formatter)
+formatter_mapping: tuple[tuple[str | tuple[str, ...], str | tuple[str, ...], Callable], ...] = (
     ("YAML", "YAML", format_yaml),
     ("JSON", "JSON", format_yaml),
     ("NDJSON", "NDJSON", format_yaml),
@@ -1576,8 +1571,9 @@ def map_dataformat(dataformat: str) -> Callable[[str | list[str]],
         Returns:
             (function reference): The formatter to use
     """
-
     for prefix, suffix, formatter_ in formatter_mapping:
+        if not isinstance(suffix, str):
+            sys.exit(f"{type(prefix)=}\n{type(suffix)=}\n{type(formatter_)=}")
         if dataformat.startswith(prefix) and dataformat.endswith(suffix):
             return formatter_
     return format_none
@@ -1604,7 +1600,7 @@ formatter_allowlist: dict[str, Callable] = {
 
 
 # These are based on attributes of the name of the cmdata
-cmdata_format: list[tuple[str, str, str, str, str]] = [
+cmdata_format: tuple[tuple[str, str, str, str, str], ...] = (
     # cm namespace, cm name prefix, cmdata prefix, cmdata suffix, dataformat
     # To do an exact match on cmdata set both cmdata prefix and cmdata suffix to the same string
     # (this will work unless you have a string that contains the same substring twice)
@@ -1692,11 +1688,11 @@ cmdata_format: list[tuple[str, str, str, str, str]] = [
     ("openshift-ovn-kubernetes", "ovnkube-config", "ovnkube.conf", "ovnkube.conf", "INI"),
     # Keep last; match everything that does not match anything
     ("", "", "", "", "Text"),
-]
+)
 
 
 # These are based on the data itself
-cmdata_header: list[tuple[str, str]] = [
+cmdata_header: tuple[tuple[str, str], ...] = (
     ("<?xml ", "XML"),
     ("/bin/sh", "Shell Script"),
     ("/usr/bin/env bash", "BASH"),
@@ -1709,37 +1705,37 @@ cmdata_header: list[tuple[str, str]] = [
     ("perl", "Perl"),
     ("perl", "Ruby"),
     ("-----BEGIN CERTIFICATE-----", "CRT"),
-]
+)
 
 
 # Binary file headers
-cmdata_bin_header: list[tuple[int, list[int], str]] = [
-    (0, [0x1f, 0x8b], "gz / tar+gz"),
-    (0, [0x1f, 0x9d], "lzw / tar+lzw"),
-    (0, [0x1f, 0xa0], "lzh / tar+lzh"),
-    (0, [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x0], "xz / tar+xz"),
-    (0, [0x42, 0x5a, 0x68], "bz2 / tar+bz2"),
-    (0, [0x4c, 0x49, 0x50], "lzip"),
-    (2, [0x2d, 0x68, 0x6c, 0x30, 0x2d], "lzh (no compression)"),
-    (2, [0x2d, 0x68, 0x6c, 0x35, 0x2d], "lzh (8KiB sliding window)"),
-    (0, [0x51, 0x46, 0x49], "qcow"),
-    (0, [0x30, 0x37, 0x30, 0x37, 0x30, 0x37], "cpio"),
-    (0, [0x28, 0xb5, 0x2f, 0xfd], "zstd"),
-    (0, [0x50, 0x4b, 0x03, 0x04], "zip"),
-    (0, [0x50, 0x4b, 0x05, 0x06], "zip (empty)"),
-    (0, [0x50, 0x4b, 0x07, 0x08], "zip (spanned archive)"),
-    (0, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00], "rar (v1.50+)"),
-    (0, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00], "rar (v5.00+)"),
-    (0, [0x7f, 0x45, 0x4c, 0x46], "ELF"),
-    (0x8001, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
-    (0x8801, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
-    (0x9001, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
-    (0, [0x75, 0x73, 0x74, 0x61, 0x72, 0x00, 0x30, 0x30], "tar"),
-    (0, [0x75, 0x73, 0x74, 0x61, 0x72, 0x20, 0x20, 0x00], "tar"),
-    (0, [0x78, 0x61, 0x72, 0x21], "xar"),
-    (0, [0x21, 0x3c, 0x61, 0x72, 0x63, 0x68, 0x3e, 0x0a], "deb"),
-    (0, [0xed, 0xab, 0xee, 0xdb], "rpm"),
-]
+cmdata_bin_header: tuple[tuple[int, tuple[int, ...], str], ...] = (
+    (0, (0x1f, 0x8b), "gz / tar+gz"),
+    (0, (0x1f, 0x9d), "lzw / tar+lzw"),
+    (0, (0x1f, 0xa0), "lzh / tar+lzh"),
+    (0, (0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x0), "xz / tar+xz"),
+    (0, (0x42, 0x5a, 0x68), "bz2 / tar+bz2"),
+    (0, (0x4c, 0x49, 0x50), "lzip"),
+    (2, (0x2d, 0x68, 0x6c, 0x30, 0x2d), "lzh (no compression)"),
+    (2, (0x2d, 0x68, 0x6c, 0x35, 0x2d), "lzh (8KiB sliding window)"),
+    (0, (0x51, 0x46, 0x49), "qcow"),
+    (0, (0x30, 0x37, 0x30, 0x37, 0x30, 0x37), "cpio"),
+    (0, (0x28, 0xb5, 0x2f, 0xfd), "zstd"),
+    (0, (0x50, 0x4b, 0x03, 0x04), "zip"),
+    (0, (0x50, 0x4b, 0x05, 0x06), "zip (empty)"),
+    (0, (0x50, 0x4b, 0x07, 0x08), "zip (spanned archive)"),
+    (0, (0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00), "rar (v1.50+)"),
+    (0, (0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00), "rar (v5.00+)"),
+    (0, (0x7f, 0x45, 0x4c, 0x46), "ELF"),
+    (0x8001, (0x43, 0x44, 0x30, 0x30, 0x31), "ISO 9660"),
+    (0x8801, (0x43, 0x44, 0x30, 0x30, 0x31), "ISO 9660"),
+    (0x9001, (0x43, 0x44, 0x30, 0x30, 0x31), "ISO 9660"),
+    (0, (0x75, 0x73, 0x74, 0x61, 0x72, 0x00, 0x30, 0x30), "tar"),
+    (0, (0x75, 0x73, 0x74, 0x61, 0x72, 0x20, 0x20, 0x00), "tar"),
+    (0, (0x78, 0x61, 0x72, 0x21), "xar"),
+    (0, (0x21, 0x3c, 0x61, 0x72, 0x63, 0x68, 0x3e, 0x0a), "deb"),
+    (0, (0xed, 0xab, 0xee, 0xdb), "rpm"),
+)
 
 
 # pylint: disable-next=too-many-locals,too-many-branches
@@ -1762,7 +1758,7 @@ def identify_cmdata(cmdata_name: str, cm_name: str,
     if not data:
         return "Empty", format_none
 
-    uudata = False
+    uudata: bool = False
 
     if "\n" not in data:
         try:

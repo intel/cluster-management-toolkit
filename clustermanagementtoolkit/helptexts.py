@@ -92,6 +92,7 @@ infoviewheader_part2 = [
     ("[F3]", "Switch main view (recheck available API resources)"),
     ("[F5]", "Refresh information"),
     ("[F12]", "Show information about the program"),
+    ("^", "Go to parent view"),
 ]
 
 irreversiblelistmovement = [

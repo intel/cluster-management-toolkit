@@ -1129,7 +1129,7 @@ def ansible_results_extract(event: dict) -> tuple[int, dict]:
         Parameters:
             event (dict): The output from the run
         Returns:
-            (int, dict):
+            ((int, dict)):
                 (int): 0 on success, -1 if host is unreachable, retval on other failure
                 (dict): A dict
     """
@@ -1577,7 +1577,7 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> tuple[int, dict]:
                 verbose (bool): Output status updates for every new Ansible event
                 quiet (bool): Disable console output
         Returns:
-            (int, dict):
+            ((int, dict)):
                 (int): The return value
                 (dict): The results of the run
     """
@@ -1639,13 +1639,13 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
 
         Parameters:
             playbook (FilePath): The playbook to run
-            selection (list[str]): The hosts to run the play on
+            selection ([str]): The hosts to run the play on
             kwargs (dict):
                 values (dict): Extra values to set for the hosts
                 verbose (bool): Output status updates for every new Ansible event
                 quiet (bool): Disable console output
         Returns:
-            (int, dict):
+            ((int, dict)):
                 (int): The result from ansible_run_playbook();
                        -errno.ENOENT if the inventory is missing or empty
                 (dict): The results of the run

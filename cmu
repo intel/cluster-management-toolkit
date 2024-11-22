@@ -48,7 +48,7 @@ import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
 from typing import Any, cast, Optional, Type
-from collections.abc import Callable, Sequence, Set
+from collections.abc import Callable, Sequence
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -1990,60 +1990,6 @@ def get_journalctl_log(obj: dict, **kwargs: Any) -> \
     return timestamps, facilities, severities, messages
 
 
-# pylint: disable-next=unused-argument,too-many-locals
-def get_traceflow(obj: dict, **kwargs: Any) -> \
-        tuple[list[datetime], list[str], list[LogLevel], list[list[ThemeRef | ThemeStr] | str]]:
-    """
-    Extract log entries from a traceflow.
-
-        Parameters:
-            obj (dict): The object to extract log entries from
-            **kwargs (dict[str, Any]): Keyword arguments
-        Returns:
-            (([datetime], [str], [str], [str])):
-                ([str]): A list of timestamps
-                ([str]): A list of facilities
-                ([str]): A list of severities
-                ([ThemeArray] | str): A list of ThemeArrays
-    """
-    timestamps: list[datetime] = []
-    facilities: list[str] = []
-    severities: list[LogLevel] = []
-    messages: list[list[ThemeRef | ThemeStr] | str] = []
-
-    for result in deep_get(obj, DictPath("status#results"), []):
-        node = deep_get(result, DictPath("node"), "<unset>")
-        nodestr_len = len(node) + themearray_len([ThemeRef("separators", "facility_prefix"),
-                                                  ThemeRef("separators", "facility_suffix"),
-                                                  ThemeRef("separators", "facility_padding")])
-        tmp_timestamp = deep_get(result, DictPath("timestamp"), -1)
-        if tmp_timestamp >= 0:
-            saved_timestamp = datetime.fromtimestamp(tmp_timestamp)
-        else:
-            saved_timestamp = none_timestamp()
-        message: list[ThemeRef | ThemeStr] = []
-        for observation in deep_get(result, DictPath("observations"), []):
-            facility = node
-            timestamp = saved_timestamp
-            for key, value in sorted(observation.items()):
-                facilities.append(facility)
-                timestamps.append(timestamp.astimezone())
-                message = []
-                if not facility and node:
-                    message.append(ThemeStr("".ljust(nodestr_len), ThemeAttr("main", "default")))
-                message += [
-                    ThemeStr(key, ThemeAttr("types", "yaml_key")),
-                    ThemeRef("separators", "yaml_key_separator"),
-                    ThemeRef("separators", "space"),
-                    ThemeStr(value, ThemeAttr("types", "yaml_value")),
-                ]
-                messages.append(message)
-                facility = ""
-                timestamp = none_timestamp()
-
-    return timestamps, facilities, severities, messages
-
-
 # pylint: disable-next=unused-argument
 def get_task_log(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
@@ -2362,6 +2308,16 @@ def get_control_plane() -> tuple[Optional[dict], str]:
 
 # pylint: disable-next=unused-argument
 def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Set Kubernetes cluster context.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                selected (dict): The selected obj from a listpad
+        Returns:
+            (Retval): The return value
+    """
     global force_refresh_apis  # pylint: disable=global-statement
 
     selected = deep_get(kwargs, DictPath("selected"))
@@ -2378,6 +2334,14 @@ def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 # pylint: disable-next=too-many-locals
 def generate_list_header(uip: UIProps, field_dict: dict, is_taggable: bool = False) -> None:
+    """
+    Generate the header for the listpad.
+
+        Parameters:
+            uip (UIProps): A reference to the UI Properties object
+            field_dict (dict): The dict containing the description of the field
+            is_taggable (bool): Is the list taggable?
+    """
     headerarray: list[ThemeRef | ThemeStr] = []
     first = True
 
@@ -2451,7 +2415,7 @@ def generate_list_header(uip: UIProps, field_dict: dict, is_taggable: bool = Fal
     uip.tabstops = tabstops
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals,too-many-positional-arguments
+# pylint: disable-next=too-many-arguments,too-many-locals
 def generate_list_row(uip: UIProps, data: Type, field_list: dict,
                       ypos: int, is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
@@ -2653,7 +2617,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     uip.last_action = datetime.now()
     uip.idle_timeout = 5
-    tagged_items: Set[Type] = set()
+    tagged_items: set[Type] = set()
     serverstatus: str = "ok"
 
     first_fetch: bool = True
@@ -3173,7 +3137,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
             all_ns = "<All>"
             if selected_namespace == "":
-                preselection: str | Set = all_ns
+                preselection: str | set = all_ns
             else:
                 preselection = selected_namespace
             namespace_list = [{
@@ -4068,12 +4032,26 @@ clusteroverview_shortcuts = {
 
 # pylint: disable-next=unused-argument
 def read_file_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGroup]]:
+    """
+    Asynchronously read the contents of a file.
+
+        Parameters:
+            *args(Any): Unused
+            **kwargs (dict[str, Any]): Keyword arguments
+                file_not_found_status (str): The status message to return on file not found
+                path (str): The path to get the data from
+                filetype (str): The filetype
+        Returns:
+            (([Any], dict)):
+                ([Any]): The list of results
+                (status): The status message
+    """
     file_not_found_status: str = deep_get(kwargs,
                                           DictPath("file_not_found_status"), "File not found")
     path: str = deep_get(kwargs, DictPath("path"))
     filetype: str = deep_get(kwargs, DictPath("filetype"), "string")
 
-    status = StatusGroup.OK
+    status: StatusGroup = StatusGroup.OK
     result: list[Any] = []
 
     try:
@@ -4093,6 +4071,21 @@ def read_file_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGr
 
 # pylint: disable-next=unused-argument
 def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGroup]]:
+    """
+    Asynchronously run an Ansible playbook.
+
+        Parameters:
+            *args(Any): Unused
+            **kwargs (dict[str, Any]): Keyword arguments
+                playbook (FilePath): The playbook to run
+                selection ([str]): The hosts to run the play on
+                verbose (bool): Output status updates for every new Ansible event
+        Returns:
+            ((int, dict)):
+                (int): The result from ansible_run_playbook();
+                       -errno.ENOENT if the inventory is missing or empty
+                (dict): The results of the run
+    """
     playbook = deep_get(kwargs, DictPath("playbook"))
     selection = deep_get(kwargs, DictPath("selection"))
     verbose = deep_get(kwargs, DictPath("verbose"), False)
@@ -4349,21 +4342,21 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         infoarrays: list[list[ThemeRef | ThemeStr]] = [
             [
                 ThemeStr("Control Plane: ", ThemeAttr("main", "infoheader")),
-                ThemeStr(f"{name}", ThemeAttr("types", "generic"))
+                ThemeStr(f"{name}", ThemeAttr("types", "generic")),
             ], [
                 ThemeStr("Cluster Name: ", ThemeAttr("main", "infoheader")),
-                ThemeStr(f"{kh.cluster_name}", ThemeAttr("types", "generic"))
+                ThemeStr(f"{kh.cluster_name}", ThemeAttr("types", "generic")),
             ], [
                 ThemeStr("Cluster Context: ", ThemeAttr("main", "infoheader")),
-                ThemeStr(f"{kh.context_name}", ThemeAttr("types", "generic"))
+                ThemeStr(f"{kh.context_name}", ThemeAttr("types", "generic")),
             ], [
                 ThemeStr("Kubernetes Distro: ", ThemeAttr("main", "infoheader")),
                 k8s_distro_string,
             ], [
                 ThemeStr("Internal IP-address(es): ", ThemeAttr("main", "infoheader")),
-            ] + internal_ips_array, [
+            ] + internal_ips_array, [  # type: ignore
                 ThemeStr("External IP-address(es): ", ThemeAttr("main", "infoheader")),
-            ] + external_ips_array, [
+            ] + external_ips_array, [  # type: ignore
                 # Kubernetes port
                 # KubeDNS
                 # control plane load, disk, mem, uptime (requires ansible or local)
@@ -4434,7 +4427,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 ThemeRef("separators", "percentage"),
             ], [
                 ThemeStr(" Swap: ", ThemeAttr("main", "infoheader")),
-            ] + percentagebar_or_string_swap,
+            ] + percentagebar_or_string_swap,  # type: ignore
         ]
 
         if loadavg_raw and meminfo_raw and stat_raw:
@@ -4484,11 +4477,11 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     evlens[i] = max(evlens[i], len(val))
 
         # Draw the events over the bottom of the visible area of the listpad
-        eventarrays: list[ThemeRef | ThemeStr] = [
+        eventarrays: list[list[ThemeRef | ThemeStr]] = [
             [ThemeStr("Events:", ThemeAttr("main", "listheader_compact"))],
         ]
 
-        tmp2: list[ThemeStr] = []
+        tmp2: list[ThemeRef | ThemeStr] = []
         for i, header in enumerate(evheaders):
             tmp2.append(ThemeStr(header.ljust(evlens[i]), ThemeAttr("main", "listheader")))
             if i < len(evheaders):
@@ -4574,7 +4567,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 ], [
                     ThemeStr(" ", ThemeAttr("main", "listheader")),
                     ThemeStr("Taints: ", ThemeAttr("main", "infoheader")),
-                ] + selectednodetaints, [
+                ] + selectednodetaints, [  # type: ignore
                     # Empty line
                 ], [
                     # Empty line
@@ -6022,6 +6015,10 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             if (retval := selectwindow(uip, refresh_apis=True)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
+        elif c == ord("^"):
+            retval = listviewdispatch(uip.stdscr, obj={}, kind=kind, root=True)
+            if retval == Retval.RETURNFULL:
+                return retval
         elif c == ord("B"):
             uip.toggle_borders()
             uip.refresh_all()
@@ -6436,7 +6433,7 @@ def eventdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
     return resourceinfodispatch(stdscr, obj=ref, kind=kind)
 
 
-# pylint: disable-next=too-many-arguments,too-many-positional-arguments
+# pylint: disable-next=too-many-arguments
 def log_add_line(timestamps: list[datetime], facilities: list[str],
                  severities: list[LogLevel], messages: list[list[ThemeRef | ThemeStr] | str],
                  timestamp: Optional[datetime], facility: str,
@@ -7505,7 +7502,7 @@ def containerinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             if tmpselection is not None and tmpselection != "":
                 selection = tmpselection
             uip.refresh_all()
-            if selection is not None and selection:
+            if selection is not None and selection and isinstance(selection, str):
                 log_level = name_to_loglevel(selection)
             uip.yoffset = 0
             uip.xoffset = 0
@@ -7703,7 +7700,7 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
     stdscr.refresh()
 
 
-# noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches
 def executecommand(stdscr: curses.window,
                    obj: dict, container: str, msg: list[ANSIThemeStr],
                    command: list[str], waitforkeypress: bool) -> None:
@@ -7802,9 +7799,12 @@ def executecommand(stdscr: curses.window,
 
 # pylint: disable-next=too-many-branches
 def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
+    global defaultview  # pylint: disable=global-statement
+
+    root: bool = deep_get(kwargs, DictPath("root"), False)
     obj = deep_get(kwargs, DictPath("obj"))
     selection = deep_get(kwargs, DictPath("selection"))
-    if obj is None and selection is None:
+    if not root and obj is None and selection is None:
         return Retval.RETURNDONE
 
     kind = deep_get(kwargs, DictPath("kind"))
@@ -7841,9 +7841,15 @@ def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
         if tmp is not None:
             api_family = ""
 
-    view = checkforview((kind, api_family))
+    if isinstance(kind, str):
+        kind = (kind, api_family)
+    view = checkforview(kind)
 
     if view is not None:
+        if root:
+            defaultview = view
+            return Retval.RETURNFULL
+
         if "viewfunc" in views[view]:
             viewfunc = views[view]["viewfunc"]
         else:
@@ -8295,6 +8301,21 @@ def view_obj(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 def view_yaml(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    View data formatted as YAML.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                selection (dict): The selected object
+                obj (dict): The object to get information from
+                path (str): The path to get the data from
+                include_root (bool): Include the object root (currently necessary for list objects)
+                named_title (str): The title to use for the window
+                title (str): The title to use for the window
+        Returns:
+            (Retval): The return value
+    """
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
@@ -8321,6 +8342,21 @@ def view_yaml(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 def view_json(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    View data formatted as JSON.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                selection (dict): The selected object
+                obj (dict): The object to get information from
+                path (str): The path to get the data from
+                include_root (bool): Include the object root (currently necessary for list objects)
+                named_title (str): The title to use for the window
+                title (str): The title to use for the window
+        Returns:
+            (Retval): The return value
+    """
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
@@ -8363,10 +8399,10 @@ def view_pod_logs(stdscr: curses.window, **kwargs: Any) -> Retval:
         containers.append((namespace, name, container_name))
         containers_full.append((namespace, name, container_name, image_id))
 
-    multilog_args = {
+    multilog_args: dict[str, Any] = {
         "multilog_containers": containers,
         "multilog_containers_full": containers_full,
-        "all_same_namespace": len(namespaces) == 1
+        "all_same_namespace": len(namespaces) == 1,
     }
 
     return containerinfoloop(stdscr, container=None, kind=None, obj=None, **multilog_args)
@@ -8389,7 +8425,18 @@ def action_view_pod_logs(**kwargs: Any) -> Retval:
 
 
 def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Retval:
-    obj = deep_get(kwargs, DictPath("obj"))
+    """
+    View the last applied configuration (if available).
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                obj (dict): The object to extract data from
+                title (str): The title to use for the page
+        Returns:
+            (Retval): The return value
+    """
+    obj: dict[str, Any] = deep_get(kwargs, DictPath("obj"), {})
 
     last_applied_configuration_path = \
         DictPath("metadata#annotations#kubectl.kubernetes.io/last-applied-configuration")
@@ -8403,7 +8450,7 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Ret
     except DecodeException:
         return Retval.RETURNDONE
 
-    title = deep_get(kwargs, DictPath("title"))
+    title = deep_get(kwargs, DictPath("title"), "")
     # themearrays = formatters.format_yaml([data])
     formatter = formatters.format_yaml
     return resourceinfodispatch(stdscr, obj=[data], kind=("__ResourceView", ""),
@@ -9676,16 +9723,27 @@ def populate_playbooklist(**kwargs: Any) -> tuple[list[dict], dict]:
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> list[dict[str, Any]]:
+    """
+    Format the selection list.
+
+        Parameters:
+            uip (UIProps): A reference to the UI Properties object
+            **kwargs (dict[str, Any]): Keyword arguments
+                refresh_apis (bool): Should the list of available APIs be refreshed?
+    """
     global force_refresh_apis  # pylint: disable=global-statement
 
     if force_refresh_apis:
         force_refresh_apis = False
         refresh_apis = True
 
-    hide_unavailable = deep_get(cmtlib.cmtconfig,
-                                DictPath("__Selector#hide_unavailable_apis"), True)
-    categorise = deep_get(cmtlib.cmtconfig, DictPath("__Selector#categorise"), True)
-    sortcolumn = deep_get(cmtlib.cmtconfig, DictPath("__Selector#sortcolumn"), "family")
+    hide_unavailable: bool = \
+        deep_get(cmtlib.cmtconfig,
+                 DictPath("__Selector#hide_unavailable_apis"), True)
+    categorise: bool = \
+        deep_get(cmtlib.cmtconfig, DictPath("__Selector#categorise"), True)
+    sortcolumn: bool = \
+        deep_get(cmtlib.cmtconfig, DictPath("__Selector#sortcolumn"), "family")
 
     if sortcolumn == "family":
         if categorise:
@@ -9807,9 +9865,19 @@ def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> list[dict
     return items
 
 
-def selectwindow(uip: UIProps, refresh_apis: bool = False) -> Retval:
+def selectwindow(uip: UIProps, **kwargs: Any) -> Retval:
+    """
+    The view selector.
+
+        Parameters:
+            uip (UIProps): A reference to the UI Properties object
+            **kwargs (dict[str, Any]): Keyword arguments
+                refresh_apis (bool): Should the list of available APIs be refreshed?
+    """
     # Ideally we want to return to the same selection
     global defaultview  # pylint: disable=global-statement
+
+    refresh_apis: bool = deep_get(kwargs, DictPath("refresh_apis"), False)
 
     uip.refresh_all()
     items = format_selection_list(uip, refresh_apis)
@@ -10133,11 +10201,12 @@ infogetter_allowlist: dict[str, Callable] = {
     "get_task_log": get_task_log,
     "get_cmt_log": get_cmt_log,
     "get_themearrays": infogetters.get_themearrays,
-    "get_traceflow": get_traceflow,
+    "get_traceflow": infogetters.get_traceflow,
 }
 
 
-# These views are always defined internally and cannot be disabled
+# These views are always defined internally and cannot be disabled,
+# except if check_availability() returns False.
 views_special: dict[str, dict[str, Any]] = {
     "Selector": {
         "windowheader": "Selector",
@@ -10213,6 +10282,7 @@ key_mappings: dict[str, list[int]] = {
 }
 
 
+# pylint: disable-next=too-many-branches
 def map_key(view_file: str, shortcut: str, activatedfun: Optional[Callable],
             key: str, modifier: str) -> tuple[list[int], str]:
     """
@@ -10297,7 +10367,7 @@ def populate_views(force_refresh: bool = False) -> None:
     else:
         tmp_available_api_families = {}
 
-    available_api_families: Set = set()
+    available_api_families: set[tuple[str, str]] = set()
     for kind, kind_data in tmp_available_api_families.items():
         if deep_get(kind_data, DictPath("available"), False):
             available_api_families.add(kind)
@@ -10996,6 +11066,13 @@ def populate_views(force_refresh: bool = False) -> None:
 
 
 def setupui(stdscr: curses.window) -> None:
+    """
+    Setup the curses UI.
+    Note: We might want to move this to curses_helper.py.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+    """
     # Hide the cursor; seems some implementations of curses (or terminals?)
     # might not support toggling the cursor; they will throw an exception instead.
     # Catch this an pretend that everything is fine.

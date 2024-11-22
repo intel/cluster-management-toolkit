@@ -5,11 +5,14 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+# pylint: disable=too-many-lines
+
 """
 Get information
 """
 
 import base64
+from datetime import datetime
 from typing import Any, Type
 
 from clustermanagementtoolkit import cmtlib
@@ -19,12 +22,17 @@ from clustermanagementtoolkit.cmttypes import ProgrammingError, StatusGroup
 
 from clustermanagementtoolkit import itemgetters
 
+from clustermanagementtoolkit.curses_helper import themearray_len
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
+
 from clustermanagementtoolkit import datagetters
 
 from clustermanagementtoolkit.kubernetes_helper import get_node_roles, get_node_status
 from clustermanagementtoolkit.kubernetes_helper import get_containers
 from clustermanagementtoolkit.kubernetes_helper import get_controller_from_owner_references
 from clustermanagementtoolkit.kubernetes_helper import get_pod_restarts_total
+
+from clustermanagementtoolkit.logparser import LogLevel
 
 
 def format_controller(controller: tuple[tuple[str, str], str], show_kind: str) -> tuple[str, str]:
@@ -958,3 +966,57 @@ def get_themearrays(obj: dict, **kwargs: Any) -> dict:
             (dict): The themearrays
     """
     return obj
+
+
+# pylint: disable-next=unused-argument,too-many-locals
+def get_traceflow(obj: dict, **kwargs: Any) -> \
+        tuple[list[datetime], list[str], list[LogLevel], list[list[ThemeRef | ThemeStr] | str]]:
+    """
+    Extract log entries from a traceflow.
+
+        Parameters:
+            obj (dict): The object to extract log entries from
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            (([datetime], [str], [str], [str])):
+                ([str]): A list of timestamps
+                ([str]): A list of facilities
+                ([str]): A list of severities
+                ([ThemeArray] | str): A list of ThemeArrays
+    """
+    timestamps: list[datetime] = []
+    facilities: list[str] = []
+    severities: list[LogLevel] = []
+    messages: list[list[ThemeRef | ThemeStr] | str] = []
+
+    for result in deep_get(obj, DictPath("status#results"), []):
+        node = deep_get(result, DictPath("node"), "<unset>")
+        nodestr_len = len(node) + themearray_len([ThemeRef("separators", "facility_prefix"),
+                                                  ThemeRef("separators", "facility_suffix"),
+                                                  ThemeRef("separators", "facility_padding")])
+        tmp_timestamp = deep_get(result, DictPath("timestamp"), -1)
+        if tmp_timestamp >= 0:
+            saved_timestamp = datetime.fromtimestamp(tmp_timestamp)
+        else:
+            saved_timestamp = cmtlib.none_timestamp()
+        message: list[ThemeRef | ThemeStr] = []
+        for observation in deep_get(result, DictPath("observations"), []):
+            facility = node
+            timestamp = saved_timestamp
+            for key, value in sorted(observation.items()):
+                facilities.append(facility)
+                timestamps.append(timestamp.astimezone())
+                message = []
+                if not facility and node:
+                    message.append(ThemeStr("".ljust(nodestr_len), ThemeAttr("main", "default")))
+                message += [
+                    ThemeStr(key, ThemeAttr("types", "yaml_key")),
+                    ThemeRef("separators", "yaml_key_separator"),
+                    ThemeRef("separators", "space"),
+                    ThemeStr(value, ThemeAttr("types", "yaml_value")),
+                ]
+                messages.append(message)
+                facility = ""
+                timestamp = cmtlib.none_timestamp()
+
+    return timestamps, facilities, severities, messages
