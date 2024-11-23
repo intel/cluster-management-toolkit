@@ -11,13 +11,22 @@ listview:
   field_indexes:
     Normal:
       fields: ["namespace", "name", "display_name",
-               "source_type", "publisher", "age"]
-      sortcolumn: "namespace"
+               "source_type", "publisher", "priority", "age"]
+      sortcolumn: "priority"
   fields:
     display_name:
       header: "Display Name:"
       path: "spec#displayName"
       type: "str"
+    priority:
+      header: "Priority:"
+      path: "spec#priority"
+      default: "<unset>"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
     publisher:
       header: "Publisher:"
       path: "spec#publisher"
@@ -31,7 +40,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["display_name", "image", "publisher", "source_type"]
+        fields: ["display_name", "image", "publisher", "source_type", "priority"]
     rows:
       display_name:
         header: [["Display Name:", ["main", "infoheader"]]]
@@ -41,6 +50,14 @@ infoview:
         header: [["Image:", ["main", "infoheader"]]]
         path: "spec#image"
         type: "str"
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "spec#priority"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
       publisher:
         header: [["Publisher:", ["main", "infoheader"]]]
         path: "spec#publisher"
