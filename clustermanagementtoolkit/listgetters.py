@@ -2291,10 +2291,10 @@ def listgetter_path(obj: dict, **kwargs: Any) -> tuple[dict | list[dict], int]:
                 if isinstance(item, dict):
                     if enumeration == "standard":
                         deep_set(item, DictPath("_extra_data#enumeration"), i,
-                                 create_path = True)
+                                 create_path=True)
                     elif enumeration == "reverse":
                         deep_set(item, DictPath("_extra_data#enumeration"), len(tmp2) - i,
-                                 create_path = True)
+                                 create_path=True)
                     vlist.append(item)
         else:
             vlist = tmp2

@@ -1,6 +1,5 @@
 #! /bin/sh
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
@@ -19,7 +18,7 @@ import sys
 from typing import NoReturn
 
 PROGRAMNAME = "mdtable.py"
-PROGRAMVERSION = "v0.0.2"
+PROGRAMVERSION = "v0.0.3"
 
 PROGRAMDESCRIPTION = "Reformat tabulated data to Markdown"
 PROGRAMAUTHORS = "Written by David Weinehall."
@@ -30,11 +29,20 @@ LICENSE = "This is free software; see the source for copying conditions.  There 
 LICENSE += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
 
 
+# pylint: disable-next=too-many-branches
 def format_table(file: str, separator: str, headers: list[str]) -> None:
+    """
+    Format field-separated data as a Markdown table.
+
+        Parameters:
+            file (str): The name of the file to read data from
+            separator (str): The separator that separates te field
+            headers ([str]): The field headers
+    """
     lines: str = ""
 
     try:
-        with open(file, "r") as f:
+        with open(file, "r", encoding="utf-8") as f:
             lines = f.read()
     except FileNotFoundError:
         print(f"{PROGRAMNAME}: \"{file}\": File not found.")
@@ -99,6 +107,9 @@ def format_table(file: str, separator: str, headers: list[str]) -> None:
 
 
 def usage() -> NoReturn:
+    """
+    Display usage information.
+    """
     print(f"{PROGRAMNAME} [OPTIONS] FILE HEADER...")
     print()
     print(PROGRAMDESCRIPTION)
@@ -109,6 +120,9 @@ def usage() -> NoReturn:
 
 
 def version() -> NoReturn:
+    """
+    Display version information.
+    """
     print(f"{PROGRAMNAME} {PROGRAMVERSION}")
     print()
     print(COPYRIGHT)

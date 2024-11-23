@@ -2,7 +2,7 @@
 
 The installer, `cmt-install` has only been tested on Debian, Ubuntu, and openSUSE/SLES.
 Any up to date Debian-derivative is likely work, but openSUSE 15/SLES 15 should work too,
-as long as python38 or later is installed.
+as long as python39 or later is installed.
 
 If the dependencies are installed manually, any distro or self-compiled
 system that provides recent enough versions of all pre-requisites should be expected to work.

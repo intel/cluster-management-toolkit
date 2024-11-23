@@ -30,7 +30,7 @@ import socket
 from subprocess import CalledProcessError  # nosec
 import sys
 import tempfile
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Union
 from collections.abc import Callable
 
 try:
@@ -2958,7 +2958,7 @@ def __task_run_postpurge_playbooks(installation_info: dict, verbose: bool = Fals
 
 
 def __validate_task_index(tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]],
-                          phase: str | int) -> int:
+                          phase: Union[str, int]) -> int:
     """
     Helper that validates the installer task index.
 
@@ -3330,7 +3330,7 @@ def prepare_installation(options: list[tuple[str, Any]], args: list[str]) -> Non
     os_distro = identify_distro()
     requested_version = installation_info[cluster_name]["requested_version"]
     state = installation_info[cluster_name]["state"]
-    phase: str | int = installation_info[cluster_name]["phase"]
+    phase: Union[str, int] = installation_info[cluster_name]["phase"]
     phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
     verbose = False
     hide_next_step = False
@@ -5330,7 +5330,7 @@ def setup_control_planes(options: list[tuple[str, Any]], args: list[str]) -> Non
 
     requested_version = installation_info[cluster_name]["requested_version"]
     state = installation_info[cluster_name]["state"]
-    phase: str | int = installation_info[cluster_name]["phase"]
+    phase: Union[str, int] = installation_info[cluster_name]["phase"]
     phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
     cni = installation_info[cluster_name]["cni"]
     pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
@@ -5837,7 +5837,7 @@ def teardown_control_plane(options: list[tuple[str, str]], args: list[str]) -> N
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
     k8s_distro = deep_get(installation_info, DictPath(f"{cluster_name}#distro"))
     state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
-    phase: str | int = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
+    phase: Union[str, int] = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
     phase_skiplist = set(deep_get(installation_info, DictPath(f"{cluster_name}#phase_skiplist")))
     verbose = False
 
@@ -5939,7 +5939,7 @@ def purge_control_plane(options: list[tuple[str, str]], args: list[str]) -> None
     installation_info = get_installation_info()
     cluster_name = installation_info["installation_target"]
     state = installation_info[cluster_name]["state"]
-    phase: str | int = installation_info[cluster_name]["phase"]
+    phase: Union[str, int] = installation_info[cluster_name]["phase"]
     phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
     verbose = False
 
@@ -6075,7 +6075,7 @@ def upgrade_control_plane(options: list[tuple[str, str]], args: list[str]) -> No
     version = deep_get(installation_info, DictPath(f"{cluster_name}#version"))
     requested_version = deep_get(installation_info, DictPath(f"{cluster_name}#requested_version"))
     state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
-    phase: str | int = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
+    phase: Union[str, int] = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
     phase_skiplist = set(deep_get(installation_info, DictPath(f"{cluster_name}#phase_skiplist")))
     verbose = False
     ignore_feature_gates = False

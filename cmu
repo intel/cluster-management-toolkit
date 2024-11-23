@@ -47,7 +47,7 @@ import socket
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, cast, Optional, Type
+from typing import Any, cast, Optional, Type, Union
 from collections.abc import Callable, Sequence
 try:
     import yaml
@@ -621,7 +621,7 @@ def __process_string(value: str, replace_quotes: str) -> str:
     return value
 
 
-def __process_sum_numerical(value: Sequence[int | float]) -> float | int:
+def __process_sum_numerical(value: Sequence[Union[int, float]]) -> Union[float, int]:
     return sum(value)
 
 
@@ -646,8 +646,8 @@ def __process_sum_mem_usage(values: list[str]) -> str:
     return normalise_mem_bytes_to_str(mem_usage_sum)
 
 
-def __process_timestamp(value: Sequence[int | str] | str,
-                        action: str, formatter: str) -> datetime | int:
+def __process_timestamp(value: Union[Sequence[Union[int, str]], str],
+                        action: str, formatter: str) -> Union[datetime, int]:
     new_value: Any = None
 
     if action in ("earliest", "latest") and isinstance(value, (list, tuple)):
@@ -682,7 +682,7 @@ def __process_timestamp(value: Sequence[int | str] | str,
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def process_value(value: Any, vtype: str, **kwargs: Any) -> \
-        int | float | str | list[str] | list[tuple[str]] | datetime | None:
+        Union[int, float, str, list[str], list[tuple[str]], datetime, None]:
     """
     Reformat values; returns data in a format suitable for further processing.
 
@@ -713,7 +713,7 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
                                 DictPath(f"Global#kind_format_{field_index}"),
                                 DictPath("Global#kind_format")], "mixed")
 
-    new_value: int | float | str | list[str] | datetime | None = None
+    new_value: Union[int, float, str, list[str], datetime, None] = None
 
     if vtype == "str":
         new_value = __process_string(value, replace_quotes)
@@ -745,7 +745,7 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
         if value is None:
             new_value = "0"
         else:
-            new_value = str(len(cast(str | Sequence, value)))
+            new_value = str(len(cast(Union[str, Sequence], value)))
     elif vtype == "unix_timestamp":
         new_value = datetime.fromtimestamp(value)
     elif vtype == "timestamp":
@@ -952,7 +952,7 @@ def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: A
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def transform_list(vlist: list | dict, transform: dict) -> list[Any]:
+def transform_list(vlist: Union[list, dict], transform: dict) -> list[Any]:
     """
     Given data as a list or dict, modify the data according the rules
     in a transformation ruleset.
@@ -2415,7 +2415,7 @@ def generate_list_header(uip: UIProps, field_dict: dict, is_taggable: bool = Fal
     uip.tabstops = tabstops
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-positional-arguments
 def generate_list_row(uip: UIProps, data: Type, field_list: dict,
                       ypos: int, is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
@@ -3137,7 +3137,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
             all_ns = "<All>"
             if selected_namespace == "":
-                preselection: str | set = all_ns
+                preselection: Union[str, set] = all_ns
             else:
                 preselection = selected_namespace
             namespace_list = [{
@@ -5139,7 +5139,7 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def generate_helptext(view: str | tuple[str, str], viewtype: str,
+def generate_helptext(view: Union[str, tuple[str, str]], viewtype: str,
                       additional_helptexts: list[tuple[str, str]],
                       shortcuts: dict[str, dict[str, Any]]) -> list[dict]:
     """
@@ -5981,7 +5981,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                                   DictPath("listpad#on_activation#formatter_path"))
                         on_activation_args["formatter"] = formatter
                         on_activation_args["formatter_path"] = formatter_path
-                    retval: Retval | None = None
+                    retval: Union[Retval, None] = None
                     if view == ("ConfigMap", "") and callable(uip.activatedfun):
                         retval = uip.activatedfun(uip.stdscr,
                                                   obj=deep_get(obj, DictPath(f"data#{match}"), ""),
@@ -6433,7 +6433,7 @@ def eventdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
     return resourceinfodispatch(stdscr, obj=ref, kind=kind)
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def log_add_line(timestamps: list[datetime], facilities: list[str],
                  severities: list[LogLevel], messages: list[list[ThemeRef | ThemeStr] | str],
                  timestamp: Optional[datetime], facility: str,
@@ -7700,7 +7700,7 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
     stdscr.refresh()
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches
+# noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
 def executecommand(stdscr: curses.window,
                    obj: dict, container: str, msg: list[ANSIThemeStr],
                    command: list[str], waitforkeypress: bool) -> None:
@@ -7892,7 +7892,7 @@ def resourceinfodispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
             (Retval): Retval.NOMATCH if no match was found or a container had invalid status,
                       otherwise Retval from the involved object whenever that returns.
     """
-    kind: str | tuple[str, str] = deep_get(kwargs, DictPath("kind"), ("", ""))
+    kind: Union[str, tuple[str, str]] = deep_get(kwargs, DictPath("kind"), ("", ""))
     obj: dict = deep_get(kwargs, DictPath("obj"))
     info = deep_get(kwargs, DictPath("info"))
 
@@ -10315,6 +10315,9 @@ def map_key(view_file: str, shortcut: str, activatedfun: Optional[Callable],
             num = int(key[1:]) + 12
             shortcut_key = deep_get(key_mappings, DictPath(key_))
             help_key = f"[Shift] + [{key.upper()}] / [{key[0].upper()}{num}]"
+        else:
+            sys.exit(f"View-file {view_file} is invalid: "
+                     f"the modifier {modifier}; cannot be combined with {shortcut_key}; aborting")
     elif key in ("f13", "f14", "f15", "f16", "f17", "f18",
                  "f19", "f20", "f21", "f22", "f23", "f24") and not modifier:
         num = int(key[1:]) - 12
@@ -11278,7 +11281,7 @@ def list_views(options: list[tuple[str, str]], args: list[str]) -> None:
                                  "of the field names.", "default")])
 
 
-def checkforview(arg: str | tuple[str, str]) -> Optional[str]:
+def checkforview(arg: Union[str, tuple[str, str]]) -> Optional[str]:
     """
     Check whether a view exists.
 

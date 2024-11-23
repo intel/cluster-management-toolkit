@@ -37,7 +37,7 @@ commandline: dict[str, Any] = {}
 # pylint: disable-next=unused-argument
 def __version(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Display version information
+    Display version information.
 
         Parameters:
             options ([(str, str)]): Unused
@@ -61,7 +61,7 @@ def __version(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=too-many-locals,too-many-branches
 def __sub_usage(command: str) -> int:
     """
-    Display usage information for a single command
+    Display usage information for a single command.
 
         Parameters:
             command (str): The command to show help for
@@ -152,7 +152,7 @@ def __sub_usage(command: str) -> int:
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Display usage information
+    Display usage information.
 
         Parameters:
             options ([(str, str)]): Options to use when executing this action
@@ -421,7 +421,7 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
 
 def __command_usage(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Display usage information for a single command
+    Display usage information for a single command.
 
         Parameters:
             options ([(str, str)]): Unused
@@ -546,7 +546,7 @@ def parse_commandline(__programname: str, __programversion: str,
                                                                  list[tuple[str, str]],
                                                                  list[str]]:
     """
-    Parse the command line
+    Parse the command line.
 
         Parameters:
             __programname (str): The name of the program

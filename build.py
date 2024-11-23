@@ -1,6 +1,5 @@
 #! /bin/sh
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
@@ -14,7 +13,6 @@
 import os
 from pathlib import Path, PosixPath
 import sys
-import yaml
 
 try:  # pragma: no cover
     from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -34,8 +32,8 @@ def main() -> None:
 
     # This program should be called with the path to the directory to process .j2 files in
     # as well as a path to the directory that holds the variables to use in substitutions.
-    if not (2 < len(sys.argv) < 5):
-        sys.exit(f"Usage: build.py TEMPLATE_DIRECTORY VARIABLE_DIRECTORY [OUTPUT_DIRECTORY]")
+    if not 2 < len(sys.argv) < 5:
+        sys.exit("Usage: build.py TEMPLATE_DIRECTORY VARIABLE_DIRECTORY [OUTPUT_DIRECTORY]")
     template_path = sys.argv[1]
     variable_path = sys.argv[2]
     if len(sys.argv) > 3:
@@ -43,7 +41,7 @@ def main() -> None:
     else:
         output_path = template_path
     if template_path == variable_path:
-        sys.exit(f"TEMPLATE_DIRECTORY cannot be same as VARIABLE_DIRECTORY; aborting.")
+        sys.exit("TEMPLATE_DIRECTORY cannot be same as VARIABLE_DIRECTORY; aborting.")
     template_entry = Path(template_path)
     variable_entry = Path(variable_path)
     output_entry = Path(output_path)
@@ -60,7 +58,6 @@ def main() -> None:
     for filepath in variable_entry.iterdir():
         if not filepath.is_file() or not filepath.name.endswith(".var"):
             continue
-        string: str = ""
         with open(filepath, "r", encoding="utf-8", errors="replace") as f:
             tmp = f.read()
         context[filepath.name.removesuffix(".var")] = tmp[:-1]

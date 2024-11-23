@@ -69,9 +69,15 @@ test_libs_symlink = clustermanagementtoolkit
 # Hence we we need to ignore one of those warnings.
 FLAKE8_IGNORE := F841,W503
 
+# Used by ruff to check for future and/or deprecated features
+RUFF_PYTHON_VERSION := py39
+
+# Used by pylint to check for future and/or deprecated features
+PYLINT_PYTHON_VERSION := 3.9
+
 # W0511 is TODO/XXX/FIXME; we know that these are things that we should fix eventually.
 # Hence we do not need warnings about them.
-PYLINT_IGNORE := W0511
+PYLINT_DISABLE := W0511
 
 # Warn about useless disable
 PYLINT_ENABLE := useless-suppression
@@ -220,7 +226,7 @@ ruff:
 			continue;; \
 		esac ;\
 		printf -- "File: $$file\n" ;\
-		$$cmd $$file ;\
+		$$cmd check --target-version $(RUFF_PYTHON_VERSION) $$file ;\
 	done
 
 pylint:
@@ -236,7 +242,7 @@ pylint:
 			continue;; \
 		esac ;\
 		printf -- "File: $$file\n" ;\
-		$$cmd --disable $(PYLINT_IGNORE) --enable $(PYLINT_ENABLE) $$file ;\
+		$$cmd --py-version $(PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file ;\
 	done
 
 pylint-markdown:
@@ -251,7 +257,7 @@ pylint-markdown:
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
-		result=$$($$cmd --disable $(PYLINT_IGNORE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
+		result=$$($$cmd --py-version $(PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
 		row="$$file | $$result\n" ;\
 		printf -- "$$row" >> $${tmpfile} ;\
 	done && \

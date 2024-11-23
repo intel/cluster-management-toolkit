@@ -22,7 +22,7 @@ import re
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any
+from typing import Any, Union
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
 
@@ -292,7 +292,7 @@ def copy_files(files: list[tuple[FilePath, FilePath, int]], verbose: bool = Fals
 
 
 # pylint: disable-next=unused-argument
-def install_software_suse(packages: dict | set, verbose: bool = False) -> None:
+def install_software_suse(packages: Union[dict, set], verbose: bool = False) -> None:
     """
     Batch install SUSE packages
 
@@ -363,7 +363,7 @@ def install_software_suse(packages: dict | set, verbose: bool = False) -> None:
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def install_software_fedora(packages: dict | set, verbose: bool = False) -> None:
+def install_software_fedora(packages: Union[dict, set], verbose: bool = False) -> None:
     """
     Batch install Red Hat (Fedora) packages
 

@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Union
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -93,7 +93,7 @@ def set_host_vars(options: list[tuple[str, str]], args: list[str]) -> int:
         Returns:
             (int): 0
     """
-    hostvars: list[tuple[str, str | int]] = []
+    hostvars: list[tuple[str, Union[str, int]]] = []
     keyvals: list[str] = args[0].split(",")
     hosts: list[str] = args[1].split(",")
 
