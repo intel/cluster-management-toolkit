@@ -7,6 +7,8 @@
 This module contains helptexts for cmu
 """
 
+from typing import Union
+
 from clustermanagementtoolkit.about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION
 from clustermanagementtoolkit.about import UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
@@ -15,7 +17,7 @@ from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
 # Improve to handle embedded color codes; probably through storing the log messages
 # as a list of lines
 
-about: list[list[ThemeRef | ThemeStr]] = [
+about: list[list[Union[ThemeRef, ThemeStr]]] = [
     [ThemeStr("", ThemeAttr("main", "about_text"))],
     [ThemeStr("    ◢███ ██████  ████ ◣  ◢█████  ████ █████████    ", ThemeAttr("main", "logo_dark"))],  # noqa: E501 pylint: disable=line-too-long
     [ThemeStr("    ████         ████ █◣◢██████       ████         ", ThemeAttr("main", "logo_medium"))],  # noqa: E501 pylint: disable=line-too-long

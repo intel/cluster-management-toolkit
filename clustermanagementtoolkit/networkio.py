@@ -162,8 +162,8 @@ def scan_and_add_ssh_keys(hosts: list[str]) -> None:
 
 checksum_functions: dict[str, Callable] = {
     "md5": hashlib.md5,  # nosec
-    "sha": hashlib.sha1,  # nosec nosem
-    "sha1": hashlib.sha1,  # nosec nosem
+    "sha": hashlib.sha1,  # nosec
+    "sha1": hashlib.sha1,  # nosec
     "sha224": hashlib.sha224,
     "sha256": hashlib.sha256,
     "sha384": hashlib.sha384,

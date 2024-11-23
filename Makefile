@@ -190,8 +190,11 @@ unhack_sources:
 # is needed since it flags the risk of cross-site scripting in a file that is:
 # a.) Not used to template HTML (it's templating YAML)
 # b.) Not accepting external input (it's used by the build-system)
+#
+# We validate YAML by other means, so skip *.yaml
 semgrep_flags := --exclude-rule "generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980"
 semgrep_flags += --exclude-rule "python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2"
+semgrep_flags += --exclude "*.yaml" --exclude "*.j2" --exclude "*.json"
 semgrep: unhack_sources
 	@cmd=semgrep ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
@@ -242,7 +245,7 @@ pylint:
 			continue;; \
 		esac ;\
 		printf -- "File: $$file\n" ;\
-		$$cmd --py-version $(PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file ;\
+		$$cmd --py-version $(PYLINT_PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file ;\
 	done
 
 pylint-markdown:
@@ -257,7 +260,7 @@ pylint-markdown:
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
-		result=$$($$cmd --py-version $(PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
+		result=$$($$cmd --py-version $(PYLINT_PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
 		row="$$file | $$result\n" ;\
 		printf -- "$$row" >> $${tmpfile} ;\
 	done && \
@@ -317,7 +320,7 @@ mypy:
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
-		$$cmd $(MYPY_FLAGS) $$file || true; \
+		$$cmd --follow-imports silent $(MYPY_FLAGS) $$file || true; \
 	done
 
 # Note: we know that the code does not have complete type-hinting,
@@ -334,7 +337,7 @@ mypy-markdown:
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
-		result=$$($$cmd $(MYPY_FLAGS) $$file | grep -E "^Found|^Success") ;\
+		result=$$($$cmd --follow-imports silent $(MYPY_FLAGS) $$file | grep -E "^Found|^Success") ;\
 		row="$$file | $$result\n" ;\
 		printf -- "$$row" >> $${tmpfile} ;\
 	done && \

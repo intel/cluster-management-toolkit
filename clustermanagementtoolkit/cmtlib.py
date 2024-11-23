@@ -18,7 +18,7 @@ import errno
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Union
 from collections.abc import Generator
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
@@ -38,9 +38,9 @@ from clustermanagementtoolkit import kubernetes_helper
 cmtconfig = {}
 
 
-def decode_value(value: str | bytes) -> tuple[str, str | bytes]:
+def decode_value(value: Union[str, bytes]) -> tuple[str, Union[str, bytes]]:
     """
-    Given a value attempt to decode it from base64
+    Given a value attempt to decode it from base64.
 
         Parameters:
             value (str|bytes): The value to decode
@@ -87,7 +87,7 @@ def decode_value(value: str | bytes) -> tuple[str, str | bytes]:
 
 def substitute_string(string: str, substitutions: dict) -> str:
     """
-    Substitutes substrings in a string
+    Substitutes substrings in a string.
 
         Parameters:
             string (str): The string to perform substitutions on
@@ -105,7 +105,7 @@ def substitute_string(string: str, substitutions: dict) -> str:
 
 def substitute_list(strlist: list[str], substitutions: dict) -> list[str]:
     """
-    Substitutes substrings in all strings in a list
+    Substitutes substrings in all strings in a list.
 
         Parameters:
             string ([str]): A list with the strings to perform substitutions on
@@ -124,7 +124,8 @@ def substitute_list(strlist: list[str], substitutions: dict) -> list[str]:
 
 def lstrip_count(string: str, prefix: str) -> tuple[str, int]:
     """
-    Given a string remove prefix and return the stripped string and the count of stripped characters
+    Given a string remove prefix
+    and return the stripped string and the count of stripped characters.
 
         Parameters:
             string (str): The string to strip
@@ -138,7 +139,8 @@ def lstrip_count(string: str, prefix: str) -> tuple[str, int]:
 
 def rstrip_count(string: str, suffix: str) -> tuple[str, int]:
     """
-    Given a string remove suffix and return the stripped string and the count of stripped characters
+    Given a string remove suffix and return the stripped string
+    and the count of stripped characters.
 
         Parameters:
             string (str): The string to strip
@@ -153,7 +155,7 @@ def rstrip_count(string: str, suffix: str) -> tuple[str, int]:
 
 def chunk_list(items: list[Any], chunksize: int) -> Generator[list, None, None]:
     """
-    Split a list into sublists, each up to chunksize elements long
+    Split a list into sublists, each up to chunksize elements long.
 
         Parameters:
             items ([Any]): The list to split
@@ -174,9 +176,10 @@ def chunk_list(items: list[Any], chunksize: int) -> Generator[list, None, None]:
         yield items[i:i + chunksize]
 
 
-def clamp(value: int | float, minval: int | float, maxval: int | float) -> int | float:
+def clamp(value: Union[int, float],
+          minval: Union[int, float], maxval: Union[int, float]) -> Union[int, float]:
     """
-    Clamp value inside the range minval, maxval
+    Clamp value inside the range minval, maxval.
 
         Parameters:
             value (int | float): The value to clamp
@@ -196,7 +199,7 @@ def clamp(value: int | float, minval: int | float, maxval: int | float) -> int |
 
 def none_timestamp() -> datetime:
     """
-    Return the timestamp used to represent None
+    Return the timestamp used to represent None.
 
         Returns:
             timestamp (datetime): A "None" timestamp
@@ -206,7 +209,7 @@ def none_timestamp() -> datetime:
 
 def normalise_cpu_usage_to_millicores(cpu_usage: str) -> float:
     """
-    Given CPU usage information, convert it to CPU usage in millicores
+    Given CPU usage information, convert it to CPU usage in millicores.
 
         Parameters:
             cpu_usage(union(int, str)): The CPU usage
@@ -235,7 +238,7 @@ def normalise_cpu_usage_to_millicores(cpu_usage: str) -> float:
 
 def normalise_mem_to_bytes(mem_usage: str) -> int:
     """
-    Given a memory usage string, normalise it to bytes
+    Given a memory usage string, normalise it to bytes.
 
         Parameters:
             mem_usage (str): The amount of memory used
@@ -273,7 +276,7 @@ def normalise_mem_to_bytes(mem_usage: str) -> int:
 
 def normalise_mem_bytes_to_str(mem_usage_bytes: int, fmt: str = "float") -> str:
     """
-    Given memory usage in bytes, convert it to a normalised string
+    Given memory usage in bytes, convert it to a normalised string.
 
         Parameters:
             mem_usage_bytes (int): The memory size in bytes
@@ -319,7 +322,7 @@ def normalise_mem_bytes_to_str(mem_usage_bytes: int, fmt: str = "float") -> str:
 
 def disksize_to_human(size: int) -> str:
     """
-    Given a disksize in bytes, convert it to a more readable format with size suffix
+    Given a disksize in bytes, convert it to a more readable format with size suffix.
 
         Parameters:
             size (int): The disksize in bytes
@@ -337,7 +340,7 @@ def disksize_to_human(size: int) -> str:
 
 def split_msg(rawmsg: str) -> list[str]:
     """
-    Split a string into a list of strings, strip NUL-bytes, and convert newlines
+    Split a string into a list of strings, strip NUL-bytes, and convert newlines.
 
         Parameters:
             rawmsg (str): The string to split
@@ -360,7 +363,7 @@ def split_msg(rawmsg: str) -> list[str]:
 
 def strip_ansicodes(message: str) -> str:
     """
-    Strip all ANSI-formatting from a string
+    Strip all ANSI-formatting from a string.
 
         Parameters:
             message (str): The string to strip
@@ -385,7 +388,7 @@ def strip_ansicodes(message: str) -> str:
 
 def read_cmtconfig() -> dict:
     """
-    Read cmt.yaml and cmt.yaml.d/*.yaml and update the global cmtconfig dict
+    Read cmt.yaml and cmt.yaml.d/*.yaml and update the global cmtconfig dict.
 
         Returns:
             (dict): A reference to the global cmtconfig dict
@@ -452,7 +455,7 @@ def read_cmtconfig() -> dict:
 # Helper functions
 def versiontuple(ver: str) -> tuple[str, ...]:
     """
-    Split a version string into a tuple
+    Split a version string into a tuple.
 
         Parameters:
             ver (str): The version string to split
@@ -473,7 +476,7 @@ def versiontuple(ver: str) -> tuple[str, ...]:
 
 def age_to_seconds(age: str) -> int:
     """
-    Given a time in X1dX2hX3mX4s, convert it to seconds
+    Given a time in X1dX2hX3mX4s, convert it to seconds.
 
         Parameters:
             age (str): A string in age format
@@ -483,8 +486,7 @@ def age_to_seconds(age: str) -> int:
             TypeError: The input was not a string
             ValueError: The input could not be parsed as an age string
     """
-
-    seconds = 0
+    seconds: int = 0
 
     if not isinstance(age, str):
         raise TypeError(f"age {age} is type {type(age)}, expected str")
@@ -506,7 +508,7 @@ def age_to_seconds(age: str) -> int:
 
 def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
     """
-    Given a time in seconds, convert it to X1dX2hX3mX4s
+    Given a time in seconds, convert it to X1dX2hX3mX4s.
 
         Parameters:
             seconds (int): The number of seconds
@@ -560,10 +562,10 @@ def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
     return f"{sign}{age}"
 
 
-def get_since(timestamp: Optional[int | datetime]) -> int:
+def get_since(timestamp: Optional[Union[int, datetime]]) -> int:
     """
     Given either a datetime, or an integer, returns how old that
-    timestamp is in seconds
+    timestamp is in seconds.
 
         Parameters:
             timestamp ([int | datetime]): A time in the past
@@ -593,7 +595,7 @@ def get_since(timestamp: Optional[int | datetime]) -> int:
 def datetime_to_timestamp(timestamp: datetime) -> str:
     """
     Given a timestamp in datetime format,
-    convert it to a string
+    convert it to a string.
 
         Parameters:
             timestamp (datetime): The timestamp in datetime
@@ -634,7 +636,7 @@ def datetime_to_timestamp(timestamp: datetime) -> str:
 
 def reformat_timestamp(timestamp: str) -> str:
     """
-    Takes a timestamp in various formats and formats it the proper(tm) way; ISO-8601
+    Takes a timestamp in various formats and formats it the proper(tm) way; ISO-8601.
 
         Parameters:
             timestamp (str): A timestamp str
@@ -658,7 +660,7 @@ def reformat_timestamp(timestamp: str) -> str:
 # Will take a timestamp and convert it to datetime
 def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) -> datetime:
     """
-    Takes a timestamp and converts it to datetime
+    Takes a timestamp and converts it to datetime.
 
         Parameters:
             timestamp (str): The timestamp string to convert
@@ -712,7 +714,7 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 def make_set_expression_list(expression_list: list[dict],
                              key: str = "") -> list[tuple[str, str, str]]:
     """
-    Create a list of set expressions (key, operator, values)
+    Create a list of set expressions (key, operator, values).
 
         Parameters:
             expression_list ([dict]): A list of dicts to extract extract the data from
@@ -779,7 +781,7 @@ def make_set_expression_list(expression_list: list[dict],
 
 def make_set_expression(expression_list: list[dict]) -> str:
     """
-    Join set expressions data into one single string
+    Join set expressions data into one single string.
 
         Parameters:
             expression_list (dict): The dict to extract the data from
@@ -795,7 +797,7 @@ def make_set_expression(expression_list: list[dict]) -> str:
 
 def make_label_selector(selector_dict: dict) -> str:
     """
-    Given a label selector dict entry, create a selector list string
+    Given a label selector dict entry, create a selector list string.
 
         Parameters:
             selector_dict (dict): The dict with selectors
@@ -813,7 +815,7 @@ def make_label_selector(selector_dict: dict) -> str:
 
 def get_package_versions(hostname: str) -> list[tuple[str, str]]:
     """
-    Returns a list of predefined packages for a host
+    Returns a list of predefined packages for a host.
 
         Parameters:
             hostname (str): The host to get package versions for
@@ -863,7 +865,7 @@ def get_package_versions(hostname: str) -> list[tuple[str, str]]:
 
 def __extract_version(line: str) -> str:
     """
-    Extract a version from an apt-cache madison entry
+    Extract a version from an apt-cache madison entry.
 
         Parameters:
             line (str): A package info line from apt-cache madison
@@ -883,7 +885,7 @@ def __extract_version(line: str) -> str:
 # pylint: disable-next=too-many-locals,too-many-branches
 def check_versions_apt(packages: list[str]) -> list[tuple[str, str, str, list[str]]]:
     """
-    Given a list of packages, return installed, candidate, and all available versions
+    Given a list of packages, return installed, candidate, and all available versions.
 
         Parameters:
             packages ([str]): A list of packages to get versions for
@@ -956,7 +958,7 @@ def check_versions_apt(packages: list[str]) -> list[tuple[str, str, str, list[st
 
 def check_versions_yum(packages: list[str]) -> list[tuple[str, str, str, list[str]]]:
     """
-    Given a list of packages, return installed, candidate, and all available versions
+    Given a list of packages, return installed, candidate, and all available versions.
 
         Parameters:
             packages ([str]): A list of packages to get versions for
@@ -1016,7 +1018,7 @@ def check_versions_yum(packages: list[str]) -> list[tuple[str, str, str, list[st
 # pylint: disable-next=too-many-locals
 def check_versions_zypper(packages: list[str]) -> list[tuple[str, str, str, list[str]]]:
     """
-    Given a list of packages, return installed, candidate, and all available versions
+    Given a list of packages, return installed, candidate, and all available versions.
 
         Parameters:
             packages ([str]): A list of packages to get versions for
@@ -1070,7 +1072,7 @@ def check_versions_zypper(packages: list[str]) -> list[tuple[str, str, str, list
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def identify_k8s_distro(**kwargs: Any) -> tuple[str, int]:
     """
-    Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use
+    Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use.
 
         Parameters:
             kwargs (dict): Additional parameters
@@ -1192,7 +1194,7 @@ def identify_k8s_distro(**kwargs: Any) -> tuple[str, int]:
 
 def identify_distro(**kwargs: Any) -> str:
     """
-    Identify what distro (Debian, Red Hat, SUSE, etc.) is in use
+    Identify what distro (Debian, Red Hat, SUSE, etc.) is in use.
 
         Parameters:
             kwargs (dict): Additional parameters
@@ -1259,7 +1261,7 @@ def identify_distro(**kwargs: Any) -> str:
 
 def get_latest_upstream_version(component: str) -> str:
     """
-    Fetch the upstream version for Kubernetes
+    Fetch the upstream version for Kubernetes.
 
         Parameters:
             component (str): The component to return the latest version for
@@ -1292,7 +1294,7 @@ def get_latest_upstream_version(component: str) -> str:
 
 def get_cluster_name() -> Optional[str]:
     """
-    Return the name of the cluster
+    Return the name of the cluster.
 
         Returns:
             (str): The name of the cluster
@@ -1417,7 +1419,7 @@ def check_allowlist(allowlist: dict, allowlist_name: str, value: Optional[Any],
                     allow_none: bool = False) -> Optional[Any]:
     """
     Check whether the provided value is in the allowlist,
-    and either return a default, or exit if it's not in the allowlist
+    and either return a default, or exit if it's not in the allowlist.
 
         Parameters:
             allowlist (Dict): A list of allowed values and the corresponding return value

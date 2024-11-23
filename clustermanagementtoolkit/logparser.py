@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Union
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -161,7 +161,7 @@ else:
 
 def get_loglevel_names() -> list[str]:
     """
-    Ugly way of removing duplicate values from dict
+    Ugly way of removing duplicate values from dict.
 
         Returns:
             ([str]): The unique severities
@@ -171,7 +171,7 @@ def get_loglevel_names() -> list[str]:
 
 def name_to_loglevel(severity: str) -> LogLevel:
     """
-    Given a severity string, return its numerical number
+    Given a severity string, return its numerical number.
 
         Parameters:
             name  (int): The corresponding numerical loglevel
@@ -197,7 +197,7 @@ def name_to_loglevel(severity: str) -> LogLevel:
 
 def month_to_numerical(month: str) -> str:
     """
-    Convert a 3-letter month string to a numerical month string
+    Convert a 3-letter month string to a numerical month string.
 
         Parameters:
             month (str): The month string
@@ -211,7 +211,7 @@ def month_to_numerical(month: str) -> str:
 # Mainly used by glog
 def letter_to_severity(letter: str, **kwargs: Any) -> LogLevel:
     """
-    Convert a 1-letter severity string to a LogLevel
+    Convert a 1-letter severity string to a LogLevel.
 
         Parameters:
             letter (str): A 1-letter severity string
@@ -236,7 +236,7 @@ def letter_to_severity(letter: str, **kwargs: Any) -> LogLevel:
 # Used by Kiali and kubeshark
 def str_3letter_to_severity(string: str, **kwargs: Any) -> LogLevel:
     """
-    Convert a 3-letter severity string to a LogLevel
+    Convert a 3-letter severity string to a LogLevel.
 
         Parameters:
             letter (str): A 3-letter severity string
@@ -256,7 +256,7 @@ def str_3letter_to_severity(string: str, **kwargs: Any) -> LogLevel:
 
 def str_4letter_to_severity(string: str, **kwargs: Any) -> LogLevel:
     """
-    Convert a 4-letter severity string to a LogLevel
+    Convert a 4-letter severity string to a LogLevel.
 
         Parameters:
             letter (str): A 4-letter severity string
@@ -281,7 +281,7 @@ def str_4letter_to_severity(string: str, **kwargs: Any) -> LogLevel:
 
 def str_to_severity(string: str, **kwargs: Any) -> LogLevel:
     """
-    Convert a severity string to a LogLevel
+    Convert a severity string to a LogLevel.
 
         Parameters:
             letter (str): A severity string
@@ -313,7 +313,7 @@ def str_to_severity(string: str, **kwargs: Any) -> LogLevel:
 
 def lvl_to_letter_severity(lvl: LogLevel) -> str:
     """
-    Convert a LogLevel to a 1-letter severity string
+    Convert a LogLevel to a 1-letter severity string.
 
         Parameters:
             lvl (LogLevel): A LogLevel
@@ -333,7 +333,7 @@ def lvl_to_letter_severity(lvl: LogLevel) -> str:
 
 def lvl_to_4letter_severity(lvl: LogLevel) -> str:
     """
-    Convert a LogLevel to a 4-letter severity string
+    Convert a LogLevel to a 4-letter severity string.
 
         Parameters:
             lvl (LogLevel): A LogLevel
@@ -353,7 +353,7 @@ def lvl_to_4letter_severity(lvl: LogLevel) -> str:
 
 def lvl_to_word_severity(lvl: LogLevel) -> str:
     """
-    Convert a LogLevel to a severity string
+    Convert a LogLevel to a severity string.
 
         Parameters:
             lvl (LogLevel): A LogLevel
@@ -373,7 +373,7 @@ def lvl_to_word_severity(lvl: LogLevel) -> str:
 
 def split_bracketed_severity(message: str, **kwargs: Any) -> tuple[str, LogLevel]:
     """
-    Remove a bracketed severity prefix from a string
+    Remove a bracketed severity prefix from a string.
 
         Parameters:
             message: A string to strip a severity prefix from
@@ -415,7 +415,7 @@ def split_bracketed_severity(message: str, **kwargs: Any) -> tuple[str, LogLevel
 
 def split_colon_severity(message: str, **kwargs: Any) -> tuple[str, LogLevel]:
     """
-    Remove a colon severity prefix from a string
+    Remove a colon severity prefix from a string.
 
         Parameters:
             message (str): A string to strip a severity prefix from
@@ -449,7 +449,7 @@ def split_colon_severity(message: str, **kwargs: Any) -> tuple[str, LogLevel]:
 
 def is_timestamp(message: str) -> bool:
     """
-    Tries to check whether the field is a timestamp
+    Tries to check whether the field is a timestamp.
 
         Parameters:
             message (str): The string to check
@@ -481,7 +481,7 @@ def is_timestamp(message: str) -> bool:
 # pylint: disable-next=too-many-statements
 def split_iso_timestamp(message: str, timestamp: datetime) -> tuple[str, datetime]:
     """
-    Split a message into timestamp and remaining message
+    Split a message into timestamp and remaining message.
 
         Parameters:
             message (str): The message to strip the timestamp from
@@ -596,7 +596,7 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> tuple[str, datetim
 
 def strip_iso_timestamp(message: str) -> str:
     """
-    Given a string with a timestamp, return that string without the timestamp
+    Given a string with a timestamp, return that string without the timestamp.
 
         Parameters:
             message (str): The message to strip
@@ -610,7 +610,7 @@ def strip_iso_timestamp(message: str) -> str:
 # 2020-02-20 13:47:01.531 GMT
 def strip_iso_timestamp_with_tz(message: str) -> str:
     """
-    Given a string with a timestamp and timezone, return that string without the timestamp
+    Given a string with a timestamp and timezone, return that string without the timestamp.
 
         Parameters:
             message (str): The message to strip
@@ -625,11 +625,11 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def iptables(message: str,
-             remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]], **kwargs: Any) \
-        -> tuple[list[ThemeRef | ThemeStr], LogLevel, str,
-                 list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+             remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]], **kwargs: Any) \
+        -> tuple[list[Union[ThemeRef, ThemeStr]], LogLevel, str,
+                 list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Format output from iptables-save
+    Format output from iptables-save.
 
         Parameters:
             message (str): The message part of the msg to format
@@ -652,8 +652,8 @@ def iptables(message: str,
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
 
-    new_message: list[ThemeRef | ThemeStr] = []
-    new_remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    new_message: list[Union[ThemeRef, ThemeStr]] = []
+    new_remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     old_messages: list[str] = []
     if fold_msg and "\\n" in message:
@@ -666,7 +666,7 @@ def iptables(message: str,
 
     variable_regex = re.compile(r"^[A-Z][A-Z0-9_]*=.*")
     for i, items in enumerate(old_messages):
-        tmp_message: list[ThemeRef | ThemeStr] = []
+        tmp_message: list[Union[ThemeRef, ThemeStr]] = []
         for j, item in enumerate(items.split(" ")):
             # Variables consume the entire line
             if variable_regex.match(items) is not None:
@@ -723,9 +723,9 @@ def iptables(message: str,
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def http(message: str,
-         **kwargs: Any) -> tuple[Sequence[ThemeRef | ThemeStr], LogLevel, str]:
+         **kwargs: Any) -> tuple[Sequence[Union[ThemeRef, ThemeStr]], LogLevel, str]:
     """
-    Format various http log style messages
+    Format various http log style messages.
 
         Parameters:
             message (str): The message to format
@@ -806,7 +806,7 @@ def http(message: str,
             else:
                 severity = LogLevel.ERR
             separator6 = tmp[14]
-            new_message: Sequence[ThemeRef | ThemeStr] = [
+            new_message: Sequence[Union[ThemeRef, ThemeStr]] = [
                 ThemeStr(address1, ThemeAttr("logview", "hostname")),
                 ThemeStr(separator1, ThemeAttr("logview", "severity_info")),
                 ThemeStr(f"{separator2}{ts}{separator3}", ThemeAttr("logview", "timestamp")),
@@ -1045,9 +1045,9 @@ def http(message: str,
 
 def split_glog(message: str, **kwargs: Any) \
     -> tuple[str, LogLevel, str,
-             list[tuple[list[ThemeRef | ThemeStr], LogLevel]], bool]:
+             list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]], bool]:
     """
-    Extract messages in glog format
+    Extract messages in glog format.
 
         Parameters:
             message (str): The message to reformat
@@ -1062,7 +1062,7 @@ def split_glog(message: str, **kwargs: Any) \
 
     matched: bool = False
     loggingerror = None
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     # Workaround a bug in use of glog; to make the logged message useful
     # we separate it from the warning about glog use; this way we can get the proper severity
@@ -1108,9 +1108,9 @@ def split_glog(message: str, **kwargs: Any) \
 # pylint: disable-next=too-many-locals
 def tab_separated(message: str, **kwargs: Any) \
     -> tuple[str, LogLevel, str,
-             list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+             list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Extract messages of the format datetime\tSEVERITY\t[facility\t]message[\tjson]
+    Extract messages of the format datetime\tSEVERITY\t[facility\t]message[\tjson].
 
         Parameters:
             message (str): The message to reformat
@@ -1127,7 +1127,7 @@ def tab_separated(message: str, **kwargs: Any) \
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     messages: list[str] = deep_get(options, DictPath("messages"), ["msg", "message"])
     errors: list[str] = deep_get(options, DictPath("errors"), ["err", "error"])
@@ -1195,10 +1195,10 @@ def __split_severity_facility_style(message: str, **kwargs: Any) -> tuple[str, L
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def split_json_style(message: str, **kwargs: Any) \
-    -> tuple[str | Sequence[ThemeRef | ThemeStr], LogLevel, str,
-             list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+    -> tuple[Union[str, Sequence[Union[ThemeRef, ThemeStr]]], LogLevel, str,
+             list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Split JSON style messages
+    Split JSON style messages.
 
         Parameters:
             message (str): The message to format
@@ -1369,7 +1369,7 @@ def split_json_style(message: str, **kwargs: Any) \
 
             override_formatting: dict[str, Any] = {}
             formatted_message = None
-            remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+            remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
             if logentry:
                 tagseverity = None
@@ -1446,10 +1446,10 @@ def split_json_style(message: str, **kwargs: Any) \
     return message, severity, facility, []
 
 
-def merge_message(message: str | list[ThemeRef | ThemeStr], **kwargs: Any) \
-        -> tuple[str, list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+def merge_message(message: Union[str, list[Union[ThemeRef, ThemeStr]]], **kwargs: Any) \
+        -> tuple[str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Given message + remnants, merge the message into the remnants and return an empty message
+    Given message + remnants, merge the message into the remnants and return an empty message.
 
         Parameters:
             message (str|themearray): The string to merge into remnants
@@ -1461,7 +1461,7 @@ def merge_message(message: str | list[ThemeRef | ThemeStr], **kwargs: Any) \
                 message (str): The newly emptied message
                 remnants (list[(themearray, LogLevel)]): Remnants with message preprended
     """
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = \
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = \
         deep_get(kwargs, DictPath("remnants"))
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
 
@@ -1485,9 +1485,9 @@ def merge_message(message: str | list[ThemeRef | ThemeStr], **kwargs: Any) \
 
 # pylint: disable-next=too-many-locals
 def split_json_style_raw(message: str, **kwargs: Any) \
-        -> tuple[str, LogLevel, str, list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+        -> tuple[str, LogLevel, str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Split JSON style messages
+    Split JSON style messages.
 
         Parameters:
             message (str): The message to format
@@ -1552,11 +1552,11 @@ def split_json_style_raw(message: str, **kwargs: Any) \
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def json_event(message: str,
-               **kwargs: Any) -> tuple[str | list[ThemeRef | ThemeStr],
+               **kwargs: Any) -> tuple[Union[str, list[Union[ThemeRef, ThemeStr]]],
                                        LogLevel, str,
-                                       list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+                                       list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Given a string, extract any events in JSON format
+    Given a string, extract any events in JSON format.
 
         Parameters:
             message (str): The message to format
@@ -1579,7 +1579,7 @@ def json_event(message: str,
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     tmp = message.split(" ", 2)
 
     if not message.startswith("EVENT ") or len(tmp) < 3:
@@ -1653,7 +1653,7 @@ def json_event(message: str,
 
 def split_angle_bracketed_facility(message: str, facility: str = "") -> tuple[str, str]:
     """
-    Split a message in "<facility> message" format into message, facility
+    Split a message in "<facility> message" format into message, facility.
 
         Parameters:
             message (str): The message part of the msg to format
@@ -1672,7 +1672,7 @@ def split_angle_bracketed_facility(message: str, facility: str = "") -> tuple[st
 
 def split_colon_facility(message: str, facility: str = "") -> tuple[str, str]:
     """
-    Split a message in "facility: message" format into message, facility
+    Split a message in "facility: message" format into message, facility.
 
         Parameters:
             message (str): The message part of the msg to format
@@ -1692,7 +1692,7 @@ def split_colon_facility(message: str, facility: str = "") -> tuple[str, str]:
 def split_bracketed_timestamp_severity_facility(message: str,
                                                 **kwargs: Any) -> tuple[str, LogLevel, str]:
     """
-    Split a message in "[timestamp severity facility] message" format into message, facility
+    Split a message in "[timestamp severity facility] message" format into message, facility.
 
         Parameters:
             message (str): The message part of the msg to format
@@ -1718,11 +1718,11 @@ def split_bracketed_timestamp_severity_facility(message: str,
 
 
 # pylint: disable-next=too-many-branches
-def custom_override_severity(message: str | list,
+def custom_override_severity(message: Union[str, list],
                              severity: LogLevel,
-                             overrides: dict) -> tuple[str | list, LogLevel]:
+                             overrides: dict) -> tuple[Union[str, list], LogLevel]:
     """
-    Override the message severity if the message matches the provided ruleset
+    Override the message severity if the message matches the provided ruleset.
 
         Parameters:
             message (str|ThemeArray): The string to override severity for
@@ -1785,9 +1785,9 @@ def custom_override_severity(message: str | list,
 
 # pylint: disable-next=too-many-branches
 def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
-        -> tuple[LogLevel, str, list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+        -> tuple[LogLevel, str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Given a log message, expand and format objectmeta event messages
+    Given a log message, expand and format objectmeta event messages.
 
         Parameters:
             message (str): The log message
@@ -1800,7 +1800,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
                 (str): The processed message
                 ([(ThemeArray, LogLevel)]): The formatted remnants
     """
-    remnants: Optional[list[tuple[list[ThemeRef | ThemeStr],
+    remnants: Optional[list[tuple[list[Union[ThemeRef, ThemeStr]],
                                   LogLevel]]] = deep_get(kwargs, DictPath("remnants"))
 
     raw_message = message
@@ -1875,9 +1875,9 @@ def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
-        -> tuple[LogLevel, str, list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+        -> tuple[LogLevel, str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Given a log message, expand and format event messages
+    Given a log message, expand and format event messages.
 
         Parameters:
             message (str): The log message
@@ -1891,7 +1891,7 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
                 (str): The processed message
                 ([(ThemeArray, LogLevel)]): The formatted remnants
     """
-    remnants: Optional[list[tuple[list[ThemeRef | ThemeStr],
+    remnants: Optional[list[tuple[list[Union[ThemeRef, ThemeStr]],
                                   LogLevel]]] = deep_get(kwargs, DictPath("remnants"))
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
 
@@ -1964,9 +1964,9 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
 
 
 def format_key_value(key: str, value: str,
-                     severity: LogLevel, **kwargs: Any) -> list[ThemeRef | ThemeStr]:
+                     severity: LogLevel, **kwargs: Any) -> list[Union[ThemeRef, ThemeStr]]:
     """
-    Given a key, value, and severity, return a formatted ThemeArray
+    Given a key, value, and severity, return a formatted ThemeArray.
 
         Parameters:
             key (str): The key to format
@@ -1982,7 +1982,7 @@ def format_key_value(key: str, value: str,
     force_severity = deep_get(kwargs, DictPath("force_severity"), False)
     error_keys = deep_get(kwargs, DictPath("error_keys"), ("error", "err"))
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-    tmp: list[ThemeRef | ThemeStr]
+    tmp: list[Union[ThemeRef, ThemeStr]]
 
     separator = [ThemeRef("separators", "keyvalue_log")]
     if key in error_keys:
@@ -2002,10 +2002,10 @@ def format_key_value(key: str, value: str,
 
 
 def sysctl(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
-                                                 list[tuple[list[ThemeRef | ThemeStr],
+                                                 list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                             LogLevel]]]:
     """
-    Format output from sysctl
+    Format output from sysctl.
 
         Parameters:
             message (str): The string to format
@@ -2017,8 +2017,8 @@ def sysctl(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
-    new_message: list[ThemeRef | ThemeStr] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
+    new_message: list[Union[ThemeRef, ThemeStr]] = []
 
     kv = message.split(" = ")
     if len(kv) == 2:
@@ -2035,7 +2035,7 @@ def sysctl(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def key_value(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
-                                                    list[tuple[list[ThemeRef | ThemeStr],
+                                                    list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
     """
     Format a key=value message
@@ -2061,7 +2061,7 @@ def key_value(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     messages = deep_get(options, DictPath("messages"), ["msg"])
     errors = deep_get(options, DictPath("errors"), ["err", "error"])
@@ -2328,12 +2328,10 @@ def key_value(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
 
 
 # pylint: disable-next=too-many-locals
-def key_value_with_leading_message(message: str,
-                                   **kwargs: Any) -> tuple[str, LogLevel, str,
-                                                           list[tuple[list[ThemeRef | ThemeStr],
-                                                                      LogLevel]]]:
+def key_value_with_leading_message(message: str, **kwargs: Any) -> \
+        tuple[str, LogLevel, str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Format a "message key=value" message
+    Format a "message key=value" message.
 
         Parameters:
             message (str): The string to format
@@ -2360,7 +2358,7 @@ def key_value_with_leading_message(message: str,
     # This warning seems incorrect
     # pylint: disable-next=global-variable-not-assigned
     global LogparserConfiguration
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     is_event: bool = False
 
     if fold_msg:
@@ -2418,8 +2416,8 @@ def key_value_with_leading_message(message: str,
 
 # pylint: disable-next=unused-argument
 def modinfo(message: str, **kwargs: Any) \
-        -> tuple[str, LogLevel, str | list[ThemeRef | ThemeStr],
-                 list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+        -> tuple[str, LogLevel, Union[str, list[Union[ThemeRef, ThemeStr]]],
+                 list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Format the output from the Linux modinfo command
 
@@ -2437,14 +2435,14 @@ def modinfo(message: str, **kwargs: Any) \
     """
     facility = ""
     severity = LogLevel.INFO
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     tmp = re.match(r"^([a-z][\S]*?):(\s+)(.+)", message)
     if tmp is not None:
         key = tmp[1]
         whitespace = tmp[2]
         value = tmp[3]
-        new_message: list[ThemeRef | ThemeStr] = [
+        new_message: list[Union[ThemeRef, ThemeStr]] = [
             ThemeStr(key, ThemeAttr("types", "key")),
             ThemeRef("separators", "keyvalue"),
             ThemeStr(whitespace, ThemeAttr("types", "generic")),
@@ -2456,7 +2454,7 @@ def modinfo(message: str, **kwargs: Any) \
 
 # pylint: disable-next=unused-argument
 def bracketed_timestamp_severity(message: str, **kwargs: Any) \
-        -> tuple[str, LogLevel, str, list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+        -> tuple[str, LogLevel, str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Split a message of the type [timestamp] [severity] message
 
@@ -2471,7 +2469,7 @@ def bracketed_timestamp_severity(message: str, **kwargs: Any) \
     """
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     # Some messages have double timestamps...
     message, _timestamp = split_iso_timestamp(message, none_timestamp())
@@ -2486,8 +2484,8 @@ def bracketed_timestamp_severity(message: str, **kwargs: Any) \
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def directory(message: str,
               **kwargs: Any) -> tuple[str, LogLevel,
-                                      str | list[ThemeRef | ThemeStr],
-                                      list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+                                      Union[str, list[Union[ThemeRef, ThemeStr]]],
+                                      list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Format the output from "ls -alF --color" command
 
@@ -2505,7 +2503,7 @@ def directory(message: str,
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     tmp = re.match(r"^(total)\s+(\d+)$", message)
     if tmp is not None:
@@ -2557,7 +2555,7 @@ def directory(message: str,
     name = tmp[20]
     suffix = tmp[21]
 
-    _message: list[ThemeRef | ThemeStr] = [
+    _message: list[Union[ThemeRef, ThemeStr]] = [
         ThemeStr(f"{etype}", ThemeAttr("types", "dir_type")),
         ThemeStr(f"{permissions}", ThemeAttr("types", "dir_permissions")),
         ThemeStr(f"{acl}", ThemeAttr("types", "dir_permissions")),
@@ -2668,8 +2666,8 @@ def directory(message: str,
 #   remnants: []
 # pylint: disable-next=unused-argument
 def seconds_severity_facility(message: str, **kwargs: Any) \
-        -> tuple[str, LogLevel, str | list[ThemeRef | ThemeStr],
-                 list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+        -> tuple[str, LogLevel, Union[str, list[Union[ThemeRef, ThemeStr]]],
+                 list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Convert messages in [seconds] SEVERITY facility message format
 
@@ -2686,14 +2684,14 @@ def seconds_severity_facility(message: str, **kwargs: Any) \
     """
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+([A-Z]+?)\s+(\S+?)\s(.*)", message)
     if tmp is not None:
         severity = str_to_severity(tmp[2], default=severity)
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         facility = tmp[3]
-        new_message: list[ThemeRef | ThemeStr] = \
+        new_message: list[Union[ThemeRef, ThemeStr]] = \
             [ThemeStr(f"{tmp[1]} ", ThemeAttr("logview", "timestamp")),
              ThemeStr(f"{tmp[4]}", ThemeAttr("logview", severity_name))]
         return facility, severity, new_message, remnants
@@ -2721,7 +2719,7 @@ def substitute_bullets(message: str, prefix: str) -> str:
 # pylint: disable-next=unused-argument
 def python_traceback_scanner_nested_exception(message: str, **kwargs: Any) \
         -> tuple[tuple[str, Optional[Callable], dict],
-                 tuple[datetime, str, LogLevel, list[ThemeRef | ThemeStr]]]:
+                 tuple[datetime, str, LogLevel, list[Union[ThemeRef, ThemeStr]]]]:
     timestamp: datetime = none_timestamp()
     facility: str = ""
     severity: LogLevel = LogLevel.ERR
@@ -2730,7 +2728,7 @@ def python_traceback_scanner_nested_exception(message: str, **kwargs: Any) \
         ("block", python_traceback_scanner_nested_exception, {})
 
     # Default case
-    remnants: list[ThemeRef | ThemeStr] = [
+    remnants: list[Union[ThemeRef, ThemeStr]] = [
         ThemeStr(message, ThemeAttr("logview", "severity_info"))
     ]
 
@@ -2800,7 +2798,7 @@ def python_traceback_scanner_nested_exception(message: str, **kwargs: Any) \
 # pylint: disable-next=unused-argument
 def python_traceback_scanner(message: str, **kwargs: Any) \
         -> tuple[tuple[str, Optional[Callable], dict],
-                 tuple[datetime, str, LogLevel, list[ThemeRef | ThemeStr]]]:
+                 tuple[datetime, str, LogLevel, list[Union[ThemeRef, ThemeStr]]]]:
     timestamp: datetime = none_timestamp()
     facility: str = ""
     severity: LogLevel = LogLevel.ERR
@@ -2808,7 +2806,7 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
     processor: tuple[str, Optional[Callable], dict] = ("block", python_traceback_scanner, {})
 
     # Default case
-    remnants: list[ThemeRef | ThemeStr] = [
+    remnants: list[Union[ThemeRef, ThemeStr]] = [
         ThemeStr(message, ThemeAttr("logview", "severity_info"))
     ]
 
@@ -2856,9 +2854,9 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
 
 # pylint: disable-next=unused-argument
 def python_traceback(message: str, **kwargs: Any) \
-        -> tuple[str | tuple[str, Optional[Callable], dict],
-                 list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+        -> tuple[Union[str, tuple[str, Optional[Callable], dict]],
+                 list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     if message.startswith(("Traceback (most recent call last):",
                            "Exception in thread ")):
@@ -2881,7 +2879,7 @@ def python_traceback(message: str, **kwargs: Any) \
 def json_line_scanner(message: str, **kwargs: Any) \
         -> tuple[tuple[str, Optional[Callable], dict],
                  tuple[datetime, str, LogLevel,
-                       Optional[list[tuple[list[ThemeRef | ThemeStr],
+                       Optional[list[tuple[list[Union[ThemeRef, ThemeStr]],
                                            LogLevel]]]]]:
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -2935,15 +2933,15 @@ def json_line_scanner(message: str, **kwargs: Any) \
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def json_line(message: str,
-              **kwargs: Any) -> tuple[str | tuple[str, Optional[Callable], dict],
-                                      list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+              **kwargs: Any) -> tuple[Union[str, tuple[str, Optional[Callable], dict]],
+                                      list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     if options is None:
         options = {}
 
-    remnants: str | list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: Union[str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]] = []
     matched = False
 
     block_start = deep_get(options, DictPath("block_start"), [{
@@ -2991,7 +2989,7 @@ def json_line(message: str,
 def yaml_line_scanner(message: str,
                       **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
                                               tuple[datetime, str, LogLevel,
-                                                    list[tuple[list[ThemeRef | ThemeStr],
+                                                    list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]]:
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -2999,7 +2997,7 @@ def yaml_line_scanner(message: str,
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
     message, _timestamp = split_iso_timestamp(message, none_timestamp())
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = True
 
     # If no block end is defined we continue until EOF
@@ -3045,16 +3043,16 @@ def yaml_line_scanner(message: str,
 
 
 # pylint: disable-next=too-many-locals,too-many-branches
-def yaml_line(message: str,
-              **kwargs: Any) -> tuple[str | tuple[str, Optional[Callable], dict],
-                                      str | list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+def yaml_line(message: str, **kwargs: Any) -> \
+        tuple[Union[str, tuple[str, Optional[Callable], dict]],
+              Union[str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]]:
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     if options is None:
         options = {}
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = False
 
     block_start = deep_get(options, DictPath("block_start"), [{
@@ -3104,7 +3102,7 @@ def yaml_line(message: str,
 def diff_line_scanner(message: str,
                       **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
                                               tuple[datetime, str, LogLevel,
-                                                    list[tuple[list[ThemeRef | ThemeStr],
+                                                    list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]]:
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -3112,7 +3110,7 @@ def diff_line_scanner(message: str,
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
     message, _timestamp = split_iso_timestamp(message, none_timestamp())
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = True
 
     # If no block end is defined we continue until EOF
@@ -3162,7 +3160,7 @@ def diff_line_scanner(message: str,
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def diff_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
-                                                    list[tuple[list[ThemeRef | ThemeStr],
+                                                    list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
@@ -3170,7 +3168,7 @@ def diff_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callable
     if options is None:
         options = {}
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = False
 
     block_start = deep_get(options, DictPath("block_start"), [{
@@ -3221,14 +3219,14 @@ def diff_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callable
 def ansible_line_scanner(message: str,
                          **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
                                                  tuple[datetime, str, LogLevel,
-                                                       list[tuple[list[ThemeRef | ThemeStr],
+                                                       list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                   LogLevel]]]]:
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     timestamp: datetime = none_timestamp()
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     final_block: bool = deep_get(options, DictPath("final_block"), False)
 
     message = strip_iso_timestamp(message)
@@ -3295,11 +3293,11 @@ def ansible_line_scanner(message: str,
 
 def ansible_line(message: str,
                  **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
-                                         list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+                                         list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     if message.startswith("PLAY [") and message.endswith("***"):
         if severity is None:
@@ -3317,7 +3315,7 @@ def ansible_line(message: str,
 # pylint: disable-next=too-many-locals,too-many-branches
 def custom_line_scanner(message: str, **kwargs: Any) \
         -> tuple[tuple[str, Optional[Callable], dict],
-                 tuple[datetime, str, LogLevel, list[ThemeRef | ThemeStr]]]:
+                 tuple[datetime, str, LogLevel, list[Union[ThemeRef, ThemeStr]]]]:
     options: dict = deep_get(kwargs, DictPath("options"), {})
     loglevel_name: str = deep_get(options, DictPath("loglevel"), "info")
 
@@ -3325,7 +3323,7 @@ def custom_line_scanner(message: str, **kwargs: Any) \
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
     message, _timestamp = split_iso_timestamp(message, none_timestamp())
-    remnants: list[ThemeRef | ThemeStr] = []
+    remnants: list[Union[ThemeRef, ThemeStr]] = []
     matched = True
 
     # If no block end is defined we continue until EOF
@@ -3372,7 +3370,7 @@ def custom_line_scanner(message: str, **kwargs: Any) \
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def custom_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
-                                                      list[tuple[list[ThemeRef | ThemeStr],
+                                                      list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                  LogLevel]]]:
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
@@ -3380,7 +3378,7 @@ def custom_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callab
     block_start: list[dict] = deep_get(options, DictPath("block_start"), [])
     loglevel_name: str = deep_get(options, DictPath("loglevel"), "info")
 
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = False
 
     line = deep_get(options, DictPath("__line"), 0)
@@ -3422,7 +3420,7 @@ def custom_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callab
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def custom_splitter(message: str, **kwargs: Any) -> \
-        tuple[str | list[ThemeRef | ThemeStr], LogLevel, str]:
+        tuple[Union[str, list[Union[ThemeRef, ThemeStr]]], LogLevel, str]:
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.DEFAULT)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     options: dict = deep_get(kwargs, DictPath("options"), {})
@@ -3494,15 +3492,16 @@ def custom_splitter(message: str, **kwargs: Any) -> \
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def custom_parser(message: str, filters: list[str | tuple], **kwargs: Any) \
-        -> tuple[str, LogLevel, list[ThemeRef | ThemeStr] | tuple[str, Optional[Callable], dict],
-                 list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+def custom_parser(message: str, filters: list[Union[str, tuple]], **kwargs: Any) \
+        -> tuple[str, LogLevel,
+                 Union[list[Union[ThemeRef, ThemeStr]], tuple[str, Optional[Callable], dict]],
+                 list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     facility: str = ""
     severity: LogLevel = LogLevel.DEFAULT
-    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
+    remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     # pylint: disable-next=too-many-nested-blocks
     for _filter in filters:
@@ -3902,8 +3901,8 @@ def get_parser_list() -> set[Parser]:
 # We've already defined the parser, so no need to do it again
 def logparser_initialised(**kwargs: Any) \
         -> tuple[datetime, str, LogLevel,
-                 list[ThemeRef | ThemeStr] | tuple[str, Optional[Callable], dict],
-                 list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+                 Union[list[Union[ThemeRef, ThemeStr]], tuple[str, Optional[Callable], dict]],
+                 list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     This is used when the parser is already initialised.
 
@@ -3956,8 +3955,8 @@ def logparser_initialised(**kwargs: Any) \
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def logparser(pod_name: str, container_name: str, image_name: str, message: str, **kwargs: Any) \
         -> tuple[datetime, str, LogLevel,
-                 list[ThemeRef | ThemeStr] | tuple[str, Optional[Callable], dict],
-                 list[tuple[list[ThemeRef | ThemeStr], LogLevel]],
+                 Union[list[Union[ThemeRef, ThemeStr]], tuple[str, Optional[Callable], dict]],
+                 list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]],
                  tuple[Optional[str], str], Parser]:
     """
     This (re-)initialises the parser; it will identify what parser rules to use

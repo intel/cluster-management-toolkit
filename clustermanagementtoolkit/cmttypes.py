@@ -952,7 +952,7 @@ def deep_set(dictionary: dict, path: DictPath, value: Any, create_path: bool = F
 
 def __deep_get_recursive(dictionary: dict,
                          path_fragments: list[str],
-                         result: list | None = None) -> Optional[list[Any]]:
+                         result: Union[list, None] = None) -> Optional[list[Any]]:
     if result is None:
         result = []
 
@@ -1037,7 +1037,7 @@ def deep_get_with_fallback(obj: dict,
 
 
 def deep_get_str_tuple_paths(obj: dict,
-                             paths: list[str | list[DictPath]],
+                             paths: list[Union[str, list[DictPath]]],
                              default: str = "", fallback_on_empty: bool = False) -> str:
     """
     Given a dictionary and a list of strings or paths into that dictionary,
@@ -1053,7 +1053,7 @@ def deep_get_str_tuple_paths(obj: dict,
             (str): The joined string
     """
     string: str = ""
-    prev: list | str = ""
+    prev: Union[list, str] = ""
 
     for fragment in paths:
         # This isn't a path, it's a verbatim string

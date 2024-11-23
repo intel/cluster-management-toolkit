@@ -16,7 +16,7 @@ import errno
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Union
 from collections.abc import Sequence
 try:
     import yaml
@@ -60,7 +60,7 @@ except ModuleNotFoundError:  # pragma: no cover
              "you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
 
 
-def get_playbook_path(playbook: FilePath | str) -> FilePath:
+def get_playbook_path(playbook: Union[FilePath, str]) -> FilePath:
     """
     Pass in the name of a playbook that exists in either
     {SYSTEM_PLAYBOOK_DIR} or {ANSIBLE_PLAYBOOK_DIR};
@@ -292,7 +292,7 @@ def ansible_get_inventory_dict() -> dict:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def ansible_get_inventory_pretty(**kwargs: Any) -> list[list[ANSIThemeStr] | str]:
+def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr], str]]:
     """
         Get the Ansible inventory and return it neatly formatted
 
@@ -360,8 +360,8 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[list[ANSIThemeStr] | str
 
     tmp_dump = yaml.safe_dump(tmp, default_flow_style=False)
     tmp_dump = tmp_dump.replace(r"''", "").replace("null", "").replace("{}", "")
-    dump: list[list[ANSIThemeStr] | str] = []
-    cast(list[list[ANSIThemeStr] | str], tmp_dump.splitlines())
+    dump: list[Union[list[ANSIThemeStr], str]] = []
+    cast(list[Union[list[ANSIThemeStr], str]], tmp_dump.splitlines())
 
     if highlight and tmp_dump:
         list_regex = re.compile(r"^(\s*)((- )+)(.*)")
@@ -622,7 +622,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values: dict, **kwargs: An
 
 def ansible_set_groupvars(inventory: FilePath,
                           groups: list[str],
-                          groupvars: Sequence[tuple[str, str | int]], **kwargs: Any) -> bool:
+                          groupvars: Sequence[tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
     """
     Set one or several vars for the specified groups
 
@@ -679,7 +679,7 @@ def ansible_set_groupvars(inventory: FilePath,
 # Set one or several vars for hosts in the group all
 def ansible_set_hostvars(inventory: FilePath,
                          hosts: list[str],
-                         hostvars: Sequence[tuple[str, str | int]], **kwargs: Any) -> bool:
+                         hostvars: Sequence[tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
     """
     Set one or several vars for the specified hosts
 
@@ -1589,7 +1589,7 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> tuple[int, dict]:
 
     ansible_results: dict = {}
 
-    inventories: dict | list[FilePath] = []
+    inventories: Union[dict, list[FilePath]] = []
 
     if inventory is None:
         inventories = [ANSIBLE_INVENTORY]

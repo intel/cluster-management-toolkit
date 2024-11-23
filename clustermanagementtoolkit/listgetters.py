@@ -29,7 +29,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Union
 from collections.abc import Callable
 
 try:
@@ -260,7 +260,7 @@ def filter_list_entry(obj: dict[str, Any], caller_obj: dict[str, Any], filters: 
 
 # listview, listpad
 def generic_listgetter(kind: tuple[str, str], namespace: str,
-                       **kwargs: Any) -> tuple[list[dict[str, Any]], int | str]:
+                       **kwargs: Any) -> tuple[list[dict[str, Any]], Union[int, str]]:
     """
     Fetch data from Kubernetes.
 
@@ -360,7 +360,7 @@ def get_metrics_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
 
 
 # pylint: disable-next=too-many-locals
-def get_pod_containers_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int | str]:
+def get_pod_containers_list(**kwargs: Any) -> tuple[list[dict[str, Any]], Union[int, str]]:
     """
     Get a list of all pods with a separate entry for every container.
 
@@ -434,7 +434,7 @@ def __recurse_data(path: dict, obj: Any) -> Any:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def listgetter_files(**kwargs: Any) -> tuple[list[dict[str, Any]], None | int | str]:
+def listgetter_files(**kwargs: Any) -> tuple[list[dict[str, Any]], Union[int, str, None]]:
     paths = \
         deep_get_with_fallback(kwargs,
                                [DictPath("paths"),
@@ -2087,14 +2087,14 @@ def listgetter_matchrules(obj: dict, **kwargs: Any) -> tuple[list[dict], str]:
     return match_list, status
 
 
-def listgetter_namespaced_resources(obj: dict,
-                                    **kwargs: Any) -> tuple[list, str | int | list[StatusGroup]]:
+def listgetter_namespaced_resources(obj: dict, **kwargs: Any) -> \
+        tuple[list, Union[str, int, list[StatusGroup]]]:
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     vlist = []
-    status: str | int | list[StatusGroup] = 200
+    status: Union[str, int, list[StatusGroup]] = 200
 
     namespaced_resources = deep_get(kwargs, DictPath("resources"),
                                     kh.get_list_of_namespaced_resources())
@@ -2145,7 +2145,7 @@ def listgetter_noop(obj: dict, **kwargs: Any) -> tuple[list, str]:
     return [], "OK"
 
 
-def listgetter_feature_gates(obj: dict, **kwargs: Any) -> tuple[dict | list[dict], int]:
+def listgetter_feature_gates(obj: dict, **kwargs: Any) -> tuple[Union[dict, list[dict]], int]:
     """
     Listgetter for FeatureGate.config.openshift.io.
 
@@ -2182,7 +2182,7 @@ def listgetter_feature_gates(obj: dict, **kwargs: Any) -> tuple[dict | list[dict
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def listgetter_path(obj: dict, **kwargs: Any) -> tuple[dict | list[dict], int]:
+def listgetter_path(obj: dict, **kwargs: Any) -> tuple[Union[dict, list[dict]], int]:
     """
     Listgetter for paths.
 

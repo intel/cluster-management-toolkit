@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast
+from typing import Any, cast, Union
 from collections.abc import Generator
 
 from clustermanagementtoolkit.ansible_helper import ansible_configuration
@@ -1292,7 +1292,7 @@ def __check_permissions(recommended_permissions: list[dict], pathtype: str,
         if path_entry.exists():
             # If this is a directory, but we operate on files we should apply these tests
             # for every matching file in this directory
-            paths: list[Path] | Generator[Path, None, None] = []
+            paths: Union[list[Path], Generator[Path, None, None]] = []
 
             if pathtype == "file" and path_entry.is_dir():
                 paths = path_entry.iterdir()

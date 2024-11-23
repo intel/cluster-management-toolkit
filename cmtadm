@@ -638,7 +638,7 @@ def update_installation_info(**kwargs: Any) -> dict:
     version: Optional[str] = deep_get(kwargs, DictPath("version"))
     requested_version: Optional[str] = deep_get(kwargs, DictPath("requested_version"))
     state: Optional[str] = deep_get(kwargs, DictPath("state"))
-    phase: Optional[int | str] = deep_get(kwargs, DictPath("phase"))
+    phase: Optional[Union[int, str]] = deep_get(kwargs, DictPath("phase"))
     phase_skiplist: Optional[list[str]] = deep_get(kwargs, DictPath("phase_skiplist"))
     cni: Optional[str] = deep_get(kwargs, DictPath("cni"))
     pod_network_cidr: Optional[str] = deep_get(kwargs, DictPath("pod_network_cidr"))

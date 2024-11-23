@@ -9,10 +9,12 @@
 List of Kubernetes resources known by CMT.
 """
 
+from typing import Union
+
 # pylint: disable=too-many-lines
 
 # A list of all K8s resources we have some knowledge about
-kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] = {
+kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool]]] = {
     # core API
     # ComponentStatus is deprecated
     ("ComponentStatus", ""): {

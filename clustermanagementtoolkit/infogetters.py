@@ -13,7 +13,7 @@ Get information
 
 import base64
 from datetime import datetime
-from typing import Any, Type
+from typing import Any, Type, Union
 
 from clustermanagementtoolkit import cmtlib
 
@@ -970,7 +970,8 @@ def get_themearrays(obj: dict, **kwargs: Any) -> dict:
 
 # pylint: disable-next=unused-argument,too-many-locals
 def get_traceflow(obj: dict, **kwargs: Any) -> \
-        tuple[list[datetime], list[str], list[LogLevel], list[list[ThemeRef | ThemeStr] | str]]:
+        tuple[list[datetime], list[str], list[LogLevel],
+              list[Union[list[Union[ThemeRef, ThemeStr]], str]]]:
     """
     Extract log entries from a traceflow.
 
@@ -987,7 +988,7 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
     timestamps: list[datetime] = []
     facilities: list[str] = []
     severities: list[LogLevel] = []
-    messages: list[list[ThemeRef | ThemeStr] | str] = []
+    messages: list[Union[list[Union[ThemeRef, ThemeStr]], str]] = []
 
     for result in deep_get(obj, DictPath("status#results"), []):
         node = deep_get(result, DictPath("node"), "<unset>")
@@ -999,7 +1000,7 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
             saved_timestamp = datetime.fromtimestamp(tmp_timestamp)
         else:
             saved_timestamp = cmtlib.none_timestamp()
-        message: list[ThemeRef | ThemeStr] = []
+        message: list[Union[ThemeRef, ThemeStr]] = []
         for observation in deep_get(result, DictPath("observations"), []):
             facility = node
             timestamp = saved_timestamp

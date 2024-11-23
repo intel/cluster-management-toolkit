@@ -10,7 +10,7 @@ YAML I/O helpers
 """
 
 import sys
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from collections.abc import Iterator
 try:
     import yaml
@@ -23,7 +23,7 @@ from clustermanagementtoolkit import cmtio
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityChecks
 
 
-def secure_write_yaml(path: FilePath, data: dict | list[dict], **kwargs: Any) -> None:
+def secure_write_yaml(path: FilePath, data: Union[dict, list[dict]], **kwargs: Any) -> None:
     """
     Dump a dict to a file in YAML-format in a safe manner
 

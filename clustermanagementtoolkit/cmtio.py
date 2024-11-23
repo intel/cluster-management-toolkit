@@ -19,7 +19,7 @@ from pathlib import Path, PurePath
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Union
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
@@ -540,7 +540,7 @@ def secure_write_string(path: FilePath, string: str, **kwargs: Any) -> None:
 def secure_read(path: FilePath,
                 checks: Optional[list[SecurityChecks]] = None,
                 directory_is_symlink: bool = False,
-                read_mode: str = "r", temporary: bool = False) -> str | bytes:
+                read_mode: str = "r", temporary: bool = False) -> Union[str, bytes]:
     """
     Read the content of a file in a safe manner
 
@@ -552,7 +552,7 @@ def secure_read(path: FilePath,
             temporary (bool): Is the file a tempfile?
                               If so we need to disable the check for parent permissions
         Returns:
-            (union[str, bytes]): The read string
+            (str | bytes): The read string
         Raises:
             cmttypes.FilePathAuditError
     """
@@ -624,7 +624,7 @@ def secure_read(path: FilePath,
     # they have to capture the exception
     if read_mode == "r":
         with open(path, "r", encoding="utf-8", errors="replace") as f:
-            string: str | bytes = f.read()
+            string: Union[str, bytes] = f.read()
     else:
         with open(path, "rb") as bf:
             string = bf.read()
@@ -1059,7 +1059,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False,
 
 
 # This executes a command without capturing the output
-def execute_command(args: list[FilePath | str],
+def execute_command(args: list[Union[FilePath, str]],
                     env: Optional[dict] = None, comparison: int = 0) -> bool:
     """
     Executes a command

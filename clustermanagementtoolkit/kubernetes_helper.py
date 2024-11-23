@@ -31,7 +31,7 @@ import ssl
 import sys
 import tempfile
 import threading
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Union
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -79,10 +79,10 @@ CIPHERS = [
 renew_lock = threading.Lock()
 
 
-def get_pod_restarts_total(pod: dict[str, Any]) -> tuple[int, int | datetime]:
+def get_pod_restarts_total(pod: dict[str, Any]) -> tuple[int, Union[int, datetime]]:
     """
     Given a Pod object, return the total number of restarts for all containers
-    as well as the timestamp of the latest restart
+    as well as the timestamp of the latest restart.
 
         Parameters:
             pod (dict): The pod to return information about
@@ -92,8 +92,8 @@ def get_pod_restarts_total(pod: dict[str, Any]) -> tuple[int, int | datetime]:
                 (int|datetime): The timestamp for the last restart
                         or -1 if number of restarts = 0
     """
-    restarts = 0
-    restarted_at: int | datetime = -1
+    restarts: int = 0
+    restarted_at: Union[int, datetime] = -1
 
     # for status in deep_get(pod, DictPath("status#initContainerStatuses"), []) \
     #               + deep_get(pod, DictPath("status#containerStatuses"), []):
@@ -118,7 +118,7 @@ def get_containers(containers: list[dict[str, Any]],
                    container_statuses: list[dict[str, Any]]) -> list[tuple[str, str]]:
     """
     Given a list of containers and a list of container statuses,
-    create a joined list with both pieces of information
+    create a joined list with both pieces of information.
 
         Parameters:
             containers ([dict]): The list of container info
@@ -150,7 +150,7 @@ def get_containers(containers: list[dict[str, Any]],
 def get_controller_from_owner_references(owner_references: list[dict]) \
         -> tuple[tuple[str, str], str]:
     """
-    Given an owner reference list, extract the controller (if any)
+    Given an owner reference list, extract the controller (if any).
 
         Parameters:
             owner_references ([dict]): The list of owner references
@@ -179,7 +179,7 @@ def get_controller_from_owner_references(owner_references: list[dict]) \
 
 def get_node_roles(node: dict) -> list[str]:
     """
-    Get a list of the roles that the node belongs to
+    Get a list of the roles that the node belongs to.
 
         Parameters:
             node (dict): The node object
@@ -377,14 +377,14 @@ class PoolManagerContext:
     def __init__(self, cert_file: Optional[str] = None, key_file: Optional[str] = None,
                  ca_certs_file: Optional[str] = None, token: Optional[str] = None,
                  insecuretlsskipverify: bool = False) -> None:
-        self.pool_manager: Optional[urllib3.ProxyManager | urllib3.PoolManager] = None
+        self.pool_manager: Optional[Union[urllib3.ProxyManager, urllib3.PoolManager]] = None
         self.cert_file = cert_file
         self.key_file = key_file
         self.ca_certs_file = ca_certs_file
         self.token = token
         self.insecuretlsskipverify = insecuretlsskipverify
 
-    def __enter__(self) -> urllib3.ProxyManager | urllib3.PoolManager:
+    def __enter__(self) -> Union[urllib3.ProxyManager, urllib3.PoolManager]:
         # Only permit a limited set of acceptable ciphers
         ssl_context = urllib3.util.ssl_.create_urllib3_context(ciphers=":".join(CIPHERS))
         # Disable anything older than TLSv1.2
@@ -443,7 +443,7 @@ class PoolManagerContext:
 
 def kind_tuple_to_name(kind: tuple[str, str]) -> str:
     """
-    Given a kind tuple, return a string representation
+    Given a kind tuple, return a string representation.
 
         Parameters:
             kind ((kind, api_group)): The kind tuple
@@ -462,10 +462,10 @@ def kind_tuple_to_name(kind: tuple[str, str]) -> str:
 
 
 # pylint: disable-next=too-many-branches
-def guess_kind(kind: str | tuple[str, str]) -> tuple[str, str]:
+def guess_kind(kind: Union[str, tuple[str, str]]) -> tuple[str, str]:
     """
     Given a Kind without API-group, or (API-name, API-group)
-    return the (Kind, API-group) tuple
+    return the (Kind, API-group) tuple.
 
         Parameters:
             kind (str):
@@ -547,7 +547,7 @@ def update_api_status(kind: tuple[str, str], listview: bool = False,
                       infoview: bool = False, local: bool = False) -> None:
     """
     Update kubernetes_resources for a kind to indicate
-    whether or not there are list and infoviews for them
+    whether or not there are list and infoviews for them.
 
         Parameters:
             kind ((kind, api_group)): The kind tuple
@@ -576,7 +576,7 @@ def update_api_status(kind: tuple[str, str], listview: bool = False,
 def kubectl_get_version() -> tuple[Optional[int], Optional[int], str,
                                    Optional[int], Optional[int], str]:
     """
-    Get kubectl & API-server version
+    Get kubectl & API-server version.
 
         Returns:
             (int, int, str, int, int, str):
@@ -632,7 +632,7 @@ def kubectl_get_version() -> tuple[Optional[int], Optional[int], str,
 
 def get_node_status(node: dict) -> tuple[str, StatusGroup, list[tuple[str, str]], list[dict]]:
     """
-    Given a node dict, extract the node status
+    Given a node dict, extract the node status.
 
         Parameters:
             node (dict): A dict with node information
@@ -693,7 +693,7 @@ def get_node_status(node: dict) -> tuple[str, StatusGroup, list[tuple[str, str]]
 
 def get_image_version(image: str, default: str = "<undefined>") -> str:
     """
-    Given the version of a container image, return its version
+    Given the version of a container image, return its version.
 
         Parameters:
             image (str): The name of the image
@@ -715,7 +715,7 @@ def get_image_version(image: str, default: str = "<undefined>") -> str:
 def list_contexts(config_path: Optional[FilePath] = None) \
         -> list[tuple[bool, str, str, str, str, str]]:
     """
-    Given the path to a kubeconfig file, returns the available contexts
+    Given the path to a kubeconfig file, returns the available contexts.
 
         Parameters:
             config_path (FilePath): The path to the kubeconfig file
@@ -768,7 +768,7 @@ def list_contexts(config_path: Optional[FilePath] = None) \
 def set_context(config_path: Optional[FilePath] = None,
                 name: Optional[str] = None) -> Optional[str]:
     """
-    Change context
+    Change context.
 
         Parameters:
             config_path (FilePath): The path to the kubeconfig file
@@ -1996,8 +1996,8 @@ class KubernetesHelper:
 
     # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
     def __rest_helper_generic_json(self, *,
-                                   pool_manager: urllib3.PoolManager | urllib3.ProxyManager,
-                                   **kwargs: Any) -> tuple[str | bytes | None, str, int]:
+                                   pool_manager: Union[urllib3.PoolManager, urllib3.ProxyManager],
+                                   **kwargs: Any) -> tuple[Union[str, bytes, None], str, int]:
         method: Optional[str] = deep_get(kwargs, DictPath("method"))
         url: Optional[str] = deep_get(kwargs, DictPath("url"))
         header_params: Optional[dict] = deep_get(kwargs, DictPath("header_params"))
@@ -2405,7 +2405,8 @@ class KubernetesHelper:
     # unconditionally in for loops
 
     # pylint: disable-next=too-many-locals,too-many-branches
-    def __rest_helper_get(self, **kwargs: Any) -> tuple[Optional[dict] | list[Optional[dict]], int]:
+    def __rest_helper_get(self, **kwargs: Any) -> \
+            tuple[Union[Optional[dict], list[Optional[dict]]], int]:
         kind: Optional[tuple[str, str]] = deep_get(kwargs, DictPath("kind"))
         raw_path: Optional[str] = deep_get(kwargs, DictPath("raw_path"))
         name: str = deep_get(kwargs, DictPath("name"), "")

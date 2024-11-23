@@ -15,7 +15,7 @@ import copy
 from pathlib import Path, PurePath
 import subprocess  # nosec
 import sys
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from collections.abc import Sequence
 
 try:
@@ -330,7 +330,7 @@ FALLBACK_THEME = {
 
 def clear_screen() -> int:
     """
-    Clear the screen
+    Clear the screen.
 
         Returns:
             retval (int): 0 on success, errno on failure
@@ -346,7 +346,7 @@ def clear_screen() -> int:
 
 def __themearray_to_raw_string(themearray: list[ANSIThemeStr]) -> str:
     """
-    Strip the formatting from an ANSIThemeArray (list[ANSIThemeStr])
+    Strip the formatting from an ANSIThemeArray (list[ANSIThemeStr]).
 
         Parameters:
             themearray ([ANSIThemeStr]): The array to strip formatting from
@@ -368,7 +368,7 @@ def __themearray_to_raw_string(themearray: list[ANSIThemeStr]) -> str:
 def ansithemearray_to_str(themearray: list[ANSIThemeStr], **kwargs: Any) -> str:
     """
     Convert an ANSIThemeArray (list[ANSIThemeStr]) to a string,
-    conditionally with ANSI-formatting
+    conditionally with ANSI-formatting.
 
         Parameters:
             themearray ([ANSIThemeStr]): The array to strip formatting from
@@ -413,7 +413,7 @@ def ansithemearray_to_str(themearray: list[ANSIThemeStr], **kwargs: Any) -> str:
 def themearray_override_formatting(themearray: list[ANSIThemeStr],
                                    formatting: Optional[str]) -> list[ANSIThemeStr]:
     """
-    Override the formatting of an ANSIThemeArray (list[ANSIThemeStr])
+    Override the formatting of an ANSIThemeArray (list[ANSIThemeStr]).
 
         Parameters:
             themearray ([ANSIThemeStr]): The themearray to reformat
@@ -434,7 +434,7 @@ def themearray_override_formatting(themearray: list[ANSIThemeStr],
 
 def themearray_len(themearray: list[ANSIThemeStr]) -> int:
     """
-    Return the length of a themearray
+    Return the length of a themearray.
 
         Parameters:
             themearray ([ANSIThemeStr]): The themearray to return the length of
@@ -446,7 +446,7 @@ def themearray_len(themearray: list[ANSIThemeStr]) -> int:
 
 def themearray_ljust(themearray: list[ANSIThemeStr], width: int) -> list[ANSIThemeStr]:
     """
-    Return a ljust:ed themearray (will always pad with ANSIThemeStr("", "default"))
+    Return a ljust:ed themearray (will always pad with ANSIThemeStr("", "default")).
 
         Parameters:
             themearray ([ANSIThemeStr]): The themearray to ljust
@@ -459,10 +459,10 @@ def themearray_ljust(themearray: list[ANSIThemeStr], width: int) -> list[ANSIThe
     return themearray
 
 
-def ansithemestr_join_list(items: Sequence[str | ANSIThemeStr],
+def ansithemestr_join_list(items: Sequence[Union[str, ANSIThemeStr]],
                            **kwargs: Any) -> list[ANSIThemeStr]:
     """
-    Given a list of ANSIThemeStrs or strings + formatting, join them separated by a separator
+    Given a list of ANSIThemeStrs or strings + formatting, join them separated by a separator.
 
         Parameters:
             items ([str | ANSIThemeStr]): The items to join into an ANSIThemeStr list
@@ -501,7 +501,7 @@ def ansithemeinput(themearray: list[ANSIThemeStr], **kwargs: Any) -> str:
     """
     Print a themearray and input a string;
     a themearray is a list of format strings of the format:
-    (string, theme_attr_ref); context is implicitly understood to be term
+    (string, theme_attr_ref); context is implicitly understood to be term.
 
         Parameters:
             themearray ([(str, str)]): The themearray to print
@@ -550,7 +550,7 @@ def ansithemeinput_password(themearray: list[ANSIThemeStr], **kwargs: Any) -> st
     """
     Print a themearray and input a password;
     a themearray is a list of format strings of the format:
-    (string, theme_attr_ref); context is implicitly understood to be term
+    (string, theme_attr_ref); context is implicitly understood to be term.
 
         Parameters:
             themearray ([(str, str)]): The themearray to print
@@ -599,7 +599,7 @@ def ansithemeprint(themearray: list[ANSIThemeStr], **kwargs: Any) -> None:
     """
     Print a themearray;
     a themearray is a list of format strings of the format:
-    (string, theme_attr_ref); context is implicitly understood to be term
+    (string, theme_attr_ref); context is implicitly understood to be term.
 
         Parameters:
             themearray ([ANSIThemeStr]): The themearray to print
@@ -647,7 +647,7 @@ def ansithemeprint(themearray: list[ANSIThemeStr], **kwargs: Any) -> None:
 
 def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
     """
-    Initialise ansithemeprint
+    Initialise ansithemeprint.
 
         Parameters:
             themefile (str): Path to the theme to use
