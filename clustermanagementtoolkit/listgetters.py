@@ -1970,6 +1970,19 @@ def listgetter_dict_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[
 
 
 def listgetter_field(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
+    """
+    A listgetter that returns a list from a dict.
+    Note: Shouldn't this be merged with listgetter_path() ?!
+
+        Parameters:
+            obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments
+                path (str): The path to the list
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list representation of the dict
+                (int): The status.
+    """
     path = deep_get(kwargs, DictPath("path"))
     vlist = deep_get(obj, DictPath(path))
     return vlist, 200
@@ -2050,7 +2063,7 @@ def listgetter_matchrules(obj: dict, **kwargs: Any) -> tuple[list[dict], str]:
 
         Parameters:
             obj (Dict): The object to extract a list of matchrules from
-            kwargs (Dict): Additional parameters
+            **kwargs (dict[str, Any]): Keyword arguments
         Returns:
             ([dict], str):
                 ([dict]): The list of data
@@ -2136,7 +2149,7 @@ def listgetter_noop(obj: dict, **kwargs: Any) -> tuple[list, str]:
 
         Parameters:
             obj (Dict): Unused
-            kwargs (Dict): Unused
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
             ([], str):
                 ([]): An empty list
@@ -2151,7 +2164,7 @@ def listgetter_feature_gates(obj: dict, **kwargs: Any) -> tuple[Union[dict, list
 
         Parameters:
             obj (Dict): The object to extract a list of data from
-            kwargs (Dict): Additional parameters
+            **kwargs (dict[str, Any]): Keyword arguments
         Returns:
             (vlist, retval):
                 vlist (list[dict]): The list of data
@@ -2188,7 +2201,7 @@ def listgetter_path(obj: dict, **kwargs: Any) -> tuple[Union[dict, list[dict]], 
 
         Parameters:
             obj (Dict): The object to extract a list of data from
-            kwargs (Dict): Additional parameters
+            **kwargs (dict[str, Any]): Keyword arguments
         Returns:
             (vlist, retval):
                 vlist (list[dict]): The list of data
