@@ -13,6 +13,7 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from pathlib import PurePath
 import sys
 from typing import Any, Dict, List, Tuple
@@ -26,6 +27,8 @@ from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath, File
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import curses_helper
 
 from clustermanagementtoolkit import infogetters
 
@@ -42,10 +45,154 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
-    return ("callback", len(args))
+def test_process_value(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    curses_helper.read_theme(configthemefile=DEFAULT_THEME_FILE,
+                             defaultthemefile=DEFAULT_THEME_FILE)
+
+    fun = infogetters.process_value
+
+    if result:
+        # Indata format:
+        # (value, vtype, kwargs, expected_result, expected_exception)
+        testdata: Tuple = (
+            (None, "str", {}, "", None),
+            ("foo\nbar", "str", {}, "foo\\nbar", None),
+            ("\\\"foo\\\"", "str", {"replace_quotes": "pretty"}, "“foo“", None),
+            ("\\\"foo\\\"", "str", {"replace_quotes": "same"}, "\"foo\"", None),
+            (1, "str", {}, 1, None),
+            (1.0, "float", {}, "1.0", None),
+            (1, "int", {}, "1", None),
+            (True, "bool", {}, "True", None),
+            ((1, 2, 3), "int", {"action": "sum"}, 6, None),
+            ([1, 2, 3], "int", {"action": "sum"}, 6, None),
+            ((1, 2, 3), "int", {}, ["1", "2", "3"], None),
+            ("3", "cpu_usage", {}, "3000.0", None),
+            (["3", "5"], "cpu_usage", {"action": "sum"}, "8000.0", None),
+            ("3", "cpu_usage_round", {}, "3", None),
+            ("15985472Ki", "mem_usage", {}, "15.2GiB", None),
+            (["15985472Ki", "15909864Ki"], "mem_usage", {"action": "sum"}, "30.4GiB", None),
+            (358255783, "disk_usage", {}, "341MiB", None),
+            (None, "len", {}, "0", None),
+            ("foobar", "len", {}, "6", None),
+            ([1, 2], "len", {}, "2", None),
+            (0, "unix_timestamp", {}, datetime.fromtimestamp(0), None),
+            ("1970-01-01 02:00:00", "timestamp", {},
+             datetime.strptime("1970-01-01 02:00:00+00:00", "%Y-%m-%d %H:%M:%S%z"), None),
+            (["answer", 42], ["raw", "raw"], {}, ["answer", 42], None),
+            (["answer", 42], [], {}, ["answer", 42], None),
+            (["answer", "fortytwo"], ["name", "name"], {}, ["answer", "fortytwo"], None),
+            (("Pod", ""), ["kind", "api_group"], {}, ("Pod", ""), None),
+            (("Pod", "v1"), ["kind", "api_group"], {}, ("Pod", ""), None),
+            (("DaemonSet", "apps"), ["kind", "api_group"], {}, ("DaemonSet", ""), None),
+            (("DaemonSet", "apps/v1"), ["kind", "api_group"], {}, ("DaemonSet", ""), None),
+            (("Tensorboard", "tensorboard.kubeflow.org/v1"), ["kind", "api_group"], {}, ("Tensorboard", "tensorboard.kubeflow.org"), None),
+            (["answer", "unknown"], ["name", "skip"], {}, ["answer", ""], None),
+            (["answer", "unknown"], ["unknown", "skip"], {}, None, ValueError),
+            ("foo", "raw", {}, "foo", None),
+            (42, "raw", {}, 42, None),
+            (":", "separator", {}, ":", None),
+            (":", "unknown", {}, None, ValueError),
+        )
+
+        for value, vtype, kwargs, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(value, vtype, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            value: {value}\n" \
+                              f"            vtype: {vtype}\n" \
+                              f"           result: {tmp} (type: {type(tmp)})\n" \
+                              f"  expected result: {expected_result} (type: {type(expected_result)})\n" \
+                              "           kwargs:\n" \
+                              f"{yaml_dump(kwargs, base_indent=17)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"            value: {value}\n" \
+                                  f"            vtype: {vtype}\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}\n" \
+                                  "           kwargs:\n" \
+                                  f"{yaml_dump(kwargs, base_indent=17)}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            value: {value}\n" \
+                              f"            vtype: {vtype}\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}\n" \
+                              "           kwargs:\n" \
+                              f"{yaml_dump(kwargs, base_indent=17)}"
+                    result = False
+                    break
+    return message, result
 
 
+def test_transform_filter(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = infogetters.transform_filter
+
+    if result:
+        # Indata format:
+        # (transformations, value, expected_result, expected_exception)
+        testdata: Tuple = (
+            ("foo", {}, "foo", None),
+            ("foo", {"foo": "bar"}, "bar", None),
+            ("foo", {"baz": "bar"}, "foo", None),
+        )
+
+        for value, transformations, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(value, transformations)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            value: {value}\n" \
+                              f"           result: {tmp} (type: {type(tmp)})\n" \
+                              f"  expected result: {expected_result} (type: {type(expected_result)})\n" \
+                              "  transformations:\n" \
+                              f"{yaml_dump(transformations, base_indent=17)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"            value: {value}\n" \
+                                  f"            vtype: {vtype}\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}\n" \
+                                  "  transformations:\n" \
+                                  f"{yaml_dump(transformations, base_indent=17)}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            value: {value}\n" \
+                              f"            vtype: {vtype}\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}\n" \
+                              "  transformations:\n" \
+                              f"{yaml_dump(transformations, base_indent=17)}"
+                    result = False
+                    break
+    return message, result
 def test_format_controller(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
@@ -1173,6 +1320,14 @@ def test_get_themearrays(verbose: bool = False) -> Tuple[str, bool]:
 
 
 tests: Dict = {
+    ("process_value()",): {
+        "callable": test_process_value,
+        "result": None,
+    },
+    ("transform_filter()",): {
+        "callable": test_transform_filter,
+        "result": None,
+    },
     ("format_controller()",): {
         "callable": test_format_controller,
         "result": None,
