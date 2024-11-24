@@ -39,6 +39,9 @@
     - name: "override_severity"
       overrides:
         - matchtype: "startswith"
+          matchkey: "cluster-olm-operator version"
+          loglevel: "notice"
+        - matchtype: "startswith"
           matchkey: "http: \"TLS\" handshake error"
           loglevel: "error"
         - matchtype: "startswith"
