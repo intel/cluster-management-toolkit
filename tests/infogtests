@@ -16,7 +16,7 @@
 from datetime import datetime
 from pathlib import PurePath
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 import yaml
 
 from clustermanagementtoolkit import cmtlib
@@ -45,7 +45,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_process_value(verbose: bool = False) -> Tuple[str, bool]:
+def test_process_value(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -57,7 +57,7 @@ def test_process_value(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (value, vtype, kwargs, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (None, "str", {}, "", None),
             ("foo\nbar", "str", {}, "foo\\nbar", None),
             ("\\\"foo\\\"", "str", {"replace_quotes": "pretty"}, "“foo“", None),
@@ -88,7 +88,8 @@ def test_process_value(verbose: bool = False) -> Tuple[str, bool]:
             (("Pod", "v1"), ["kind", "api_group"], {}, ("Pod", ""), None),
             (("DaemonSet", "apps"), ["kind", "api_group"], {}, ("DaemonSet", ""), None),
             (("DaemonSet", "apps/v1"), ["kind", "api_group"], {}, ("DaemonSet", ""), None),
-            (("Tensorboard", "tensorboard.kubeflow.org/v1"), ["kind", "api_group"], {}, ("Tensorboard", "tensorboard.kubeflow.org"), None),
+            (("Tensorboard", "tensorboard.kubeflow.org/v1"), ["kind", "api_group"], {},
+             ("Tensorboard", "tensorboard.kubeflow.org"), None),
             (["answer", "unknown"], ["name", "skip"], {}, ["answer", ""], None),
             (["answer", "unknown"], ["unknown", "skip"], {}, None, ValueError),
             ("foo", "raw", {}, "foo", None),
@@ -105,7 +106,8 @@ def test_process_value(verbose: bool = False) -> Tuple[str, bool]:
                               f"            value: {value}\n" \
                               f"            vtype: {vtype}\n" \
                               f"           result: {tmp} (type: {type(tmp)})\n" \
-                              f"  expected result: {expected_result} (type: {type(expected_result)})\n" \
+                              f"  expected result: {expected_result} " \
+                              f"(type: {type(expected_result)})\n" \
                               "           kwargs:\n" \
                               f"{yaml_dump(kwargs, base_indent=17)}"
                     result = False
@@ -139,7 +141,7 @@ def test_process_value(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_transform_filter(verbose: bool = False) -> Tuple[str, bool]:
+def test_transform_filter(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -148,7 +150,7 @@ def test_transform_filter(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (transformations, value, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             ("foo", {}, "foo", None),
             ("foo", {"foo": "bar"}, "bar", None),
             ("foo", {"baz": "bar"}, "foo", None),
@@ -161,7 +163,8 @@ def test_transform_filter(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"            value: {value}\n" \
                               f"           result: {tmp} (type: {type(tmp)})\n" \
-                              f"  expected result: {expected_result} (type: {type(expected_result)})\n" \
+                              f"  expected result: {expected_result} " \
+                              f"(type: {type(expected_result)})\n" \
                               "  transformations:\n" \
                               f"{yaml_dump(transformations, base_indent=17)}"
                     result = False
@@ -173,7 +176,6 @@ def test_transform_filter(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"            value: {value}\n" \
-                                  f"            vtype: {vtype}\n" \
                                   f"        exception: {type(e)}\n" \
                                   f"          message: {str(e)}\n" \
                                   f"         expected: {expected_exception}\n" \
@@ -184,7 +186,6 @@ def test_transform_filter(verbose: bool = False) -> Tuple[str, bool]:
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"            value: {value}\n" \
-                              f"            vtype: {vtype}\n" \
                               f"        exception: {type(e)}\n" \
                               f"          message: {str(e)}\n" \
                               f"  expected result: {expected_result}\n" \
@@ -193,7 +194,9 @@ def test_transform_filter(verbose: bool = False) -> Tuple[str, bool]:
                     result = False
                     break
     return message, result
-def test_format_controller(verbose: bool = False) -> Tuple[str, bool]:
+
+
+def test_format_controller(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -202,7 +205,7 @@ def test_format_controller(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (field, formatting, default, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 (("DaemonSet", "apps"), "coredns-76f75df574-fbjjx"),
                 "full",
@@ -316,7 +319,7 @@ def test_format_controller(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_key_value_info(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_key_value_info(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -325,7 +328,7 @@ def test_get_key_value_info(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 {
                     "auth-extra-groups":
@@ -461,7 +464,7 @@ def test_get_key_value_info(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_promrules_info(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_promrules_info(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -470,7 +473,7 @@ def test_get_promrules_info(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 {
                     "spec": {
@@ -677,7 +680,7 @@ def test_get_promrules_info(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_subsets_info(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_subsets_info(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -744,7 +747,7 @@ def test_get_subsets_info(verbose: bool = False) -> Tuple[str, bool]:
 
         # Indata format:
         # (obj, expand_subsets, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 test_obj,
                 "None",
@@ -1292,7 +1295,7 @@ def test_get_subsets_info(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_themearrays(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_themearrays(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 

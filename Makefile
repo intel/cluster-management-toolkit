@@ -82,7 +82,7 @@ PYLINT_DISABLE := W0511
 # Warn about useless disable
 PYLINT_ENABLE := useless-suppression
 
-MYPY_FLAGS := --explicit-package-bases --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators --warn-redundant-casts --warn-unused-ignores
+MYPY_FLAGS := --follow-imports silent --explicit-package-bases --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators --warn-redundant-casts --warn-unused-ignores
 code-checks-weak: flake8 ruff
 code-checks: mypy pylint
 
@@ -320,7 +320,7 @@ mypy:
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
-		$$cmd --follow-imports silent $(MYPY_FLAGS) $$file || true; \
+		$$cmd $(MYPY_FLAGS) $$file || true; \
 	done
 
 # Note: we know that the code does not have complete type-hinting,
@@ -337,7 +337,7 @@ mypy-markdown:
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
-		result=$$($$cmd --follow-imports silent $(MYPY_FLAGS) $$file | grep -E "^Found|^Success") ;\
+		result=$$($$cmd $(MYPY_FLAGS) $$file | grep -E "^Found|^Success") ;\
 		row="$$file | $$result\n" ;\
 		printf -- "$$row" >> $${tmpfile} ;\
 	done && \
