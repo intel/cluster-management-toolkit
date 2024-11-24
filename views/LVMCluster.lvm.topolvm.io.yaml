@@ -1,0 +1,95 @@
+---
+kind: "LVMCluster"
+api_family: "lvm.topolvm.io"
+default_command: "lvmclusters"
+command:
+- "lvmclrs"
+- "lvmclr"
+listview:
+  name: "LVM Clusters"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "ready", "state", "age"]
+  fields:
+    ready:
+      header: "Ready:"
+      path: "status#ready"
+      type: "bool"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            "<unset>":
+              field_colors:
+                - context: "types"
+                  type: "unset"
+    state:
+      header: "State:"
+      path: "status#state"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Ready:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            "<unset>":
+              field_colors:
+                - context: "types"
+                  type: "unset"
+infoview:
+  name: "LVM Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ready", "state"]
+    rows:
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        path: "status#ready"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+              "False":
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              "<unset>":
+                field_colors:
+                  - context: "types"
+                    type: "unset"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Ready:
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+              "<unset>":
+                field_colors:
+                  - context: "types"
+                    type: "unset"

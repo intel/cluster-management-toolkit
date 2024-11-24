@@ -1,0 +1,10 @@
+---
+- name: "lvms-operator"
+  show_in_selector: false
+  matchkeys:
+    - pod_name: "lvms-operator"
+      container_name: "manager"
+    - pod_name: "vg-manager"
+      container_name: "vg-manager"
+  parser_rules:
+    - name: "json"
