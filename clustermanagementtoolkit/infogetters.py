@@ -277,14 +277,14 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
     return new_value
 
 
-def transform_filter(transformations: dict, value: DictPath) -> Any:
+def transform_filter(value: DictPath, transformations: dict) -> Any:
     """
     Given a transformation dictionary,
     look up and return the corresponding value.
 
         Parameters:
-            transformations (dict[str, Any]): The transformation dictionary
             value (DictPath): The value to look up
+            transformations (dict[str, Any]): The transformation dictionary
         Returns:
             (Any): The transformed value
     """
@@ -772,10 +772,10 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                             _regexes_key = [_regexes_key]
                         if isinstance(_regexes_value, str):
                             _regexes_value = [_regexes_value]
-                        _key = transform_filter(deep_get(_path,
-                                                         DictPath("key#transform"), {}), _key)
-                        _value = transform_filter(deep_get(_path,
-                                                           DictPath("value#transform"), {}), _value)
+                        _key = transform_filter(_key,
+                                                deep_get(_path, DictPath("key#transform"), {}))
+                        _value = transform_filter(_value,
+                                                  deep_get(_path, DictPath("value#transform"), {}))
                         # A regex for key/value is required to capture only one group;
                         # (though conceivably there might be scenario for joining),
                         # thus the first non-None capture group will exit the match;
@@ -1113,8 +1113,9 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                                     if isinstance(_regexes, str):
                                         _regexes = [_regexes]
                                     _raw = deep_get_with_fallback(item, _subpath, _default)
-                                    _raw = transform_filter(deep_get(subpath,
-                                                            DictPath("transform"), {}), _raw)
+                                    _raw = transform_filter(_raw,
+                                                            deep_get(subpath,
+                                                                     DictPath("transform"), {}))
                                     for _regex in _regexes:
                                         _tmp = re.match(_regex, _raw)
                                         if _tmp is not None:
