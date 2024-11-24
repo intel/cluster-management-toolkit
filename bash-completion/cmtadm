@@ -186,7 +186,7 @@ _cmtadm() {
 	esac
 
 	case "${COMP_WORDS[1]}" in
-	prepare|purge-control-plane|setup-control-plane|teardown-control-plane|upgrade-control-plane)
+	import-cluster|prepare|purge-control-plane|setup-control-plane|teardown-control-plane|upgrade-control-plane)
 		commands=$(add_option_if_not_in_list "--list-tasks" ${commands})
 		commands=$(add_option_if_not_in_list "--resume" ${commands})
 		commands=$(add_option_if_not_in_list "--save-ansible-logs" ${commands})

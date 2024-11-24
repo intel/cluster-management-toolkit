@@ -39,6 +39,12 @@ If _CLUSTER_NAME_,_..._ is not specified all clusters in _~/.kube/config_ will b
   Use this if the hosts you are importing
 
   are already configured for login using an SSH key
+  __--save-ansible-logs__
+  Save logs from Ansible runs  
+
+  The logs can be viewed using “cmu logs“
+  __--verbose__
+  Be more verbose  
 ### prepare __CLUSTER_NAME_ [[_KUBERNETES_DISTRO_=]_KUBERNETES_VERSION_]_
 #### Install and configure pre-requisites
   
