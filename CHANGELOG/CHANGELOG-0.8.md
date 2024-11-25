@@ -233,7 +233,7 @@ clustermanagementtoolkit/listgetters_async.py           119    103     54      0
 clustermanagementtoolkit/networkio.py                   349    282    173      3  16.9%
 clustermanagementtoolkit/infogetters.py                1676   1270   1008     68  21.9%
 clustermanagementtoolkit/itemgetters.py                 506    372    290     14  22.6%
-clustermanagementtoolkit/listgetters.py                1213    844    662     73  26.5%
+clustermanagementtoolkit/listgetters.py                1213    836    662     73  27.1%
 clustermanagementtoolkit/fieldgetters.py                 81     54     46      0  27.6%
 clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     62  27.9%
 clustermanagementtoolkit/curses_helper.py              2388   1544   1124    125  29.0%
@@ -260,7 +260,7 @@ clustermanagementtoolkit/objgetters.py                   56      0     12      0
 clustermanagementtoolkit/pvtypes.py                       1      0      0      0 100.0%
 clustermanagementtoolkit/recommended_permissions.py      11      0      0      0 100.0%
 ---------------------------------------------------------------------------------------
-TOTAL                                                 15949   8386   8340    530  43.5%
+TOTAL                                                 15949   8378   8340    530  43.5%
 ```
 
 
@@ -279,7 +279,7 @@ Commandline: `mypy --follow-imports silent --explicit-package-bases --ignore-mis
 Execute with `make mypy-markdown`.
 
 | Source file                                         | Score                                                 |
-| --------------------------------------------------- | ----------------------------------------------------- |
+| --------------------------------------------------- | -------------------------------------------------     |
 | cmt                                                 | Success: no issues found in 1 source file             |
 | cmtadm                                              | Success: no issues found in 1 source file             |
 | cmt-install                                         | Success: no issues found in 1 source file             |
@@ -353,7 +353,7 @@ Currently all complaints are due to missing function or method docstrings.
 | clustermanagementtoolkit/itemgetters.py             | 10.00/10     |
 | clustermanagementtoolkit/kubernetes_helper.py       | 10.00/10     |
 | clustermanagementtoolkit/kubernetes_resources.py    | 10.00/10     |
-| clustermanagementtoolkit/listgetters.py             | **9.90/10**  |
+| clustermanagementtoolkit/listgetters.py             | **9.92/10**  |
 | clustermanagementtoolkit/listgetters_async.py       | 10.00/10     |
 | clustermanagementtoolkit/logparser.py               | **9.93/10**  |
 | clustermanagementtoolkit/networkio.py               | 10.00/10     |
