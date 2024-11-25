@@ -765,8 +765,7 @@ def list_contexts(config_path: Optional[FilePath] = None) \
     return contexts
 
 
-def set_context(config_path: Optional[FilePath] = None,
-                name: Optional[str] = None) -> Optional[str]:
+def set_context(config_path: Optional[FilePath] = None, name: str = "") -> str:
     """
     Change context.
 
@@ -774,11 +773,11 @@ def set_context(config_path: Optional[FilePath] = None,
             config_path (FilePath): The path to the kubeconfig file
             name (str): The context to change to
         Returns:
-            context (str): The name of the new current-context, or None on failure
+            context (str): The name of the new current-context, or empty on failure
     """
     # We need a context name
-    if name is None or not name:
-        return None
+    if not name:
+        return ""
 
     if config_path is None:
         # Read kubeconfig
@@ -787,7 +786,7 @@ def set_context(config_path: Optional[FilePath] = None,
     config_path = FilePath(config_path)
 
     # We are semi-OK with the file not existing
-    checks = [
+    checks: list[SecurityChecks] = [
         SecurityChecks.PARENT_RESOLVES_TO_SELF,
         SecurityChecks.OWNER_IN_ALLOWLIST,
         SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
@@ -800,15 +799,15 @@ def set_context(config_path: Optional[FilePath] = None,
     try:
         kubeconfig = secure_read_yaml(config_path, checks=checks)
     except FileNotFoundError:
-        return None
+        return ""
     except FilePathAuditError as e:
         if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
-            return None
+            return ""
         if "SecurityStatus.PERMISSIONS" in str(e):
-            return None
+            return ""
         raise
 
-    new_context = None
+    new_context = ""
 
     # Find out whether the new context exists
     for context in deep_get(kubeconfig, DictPath("contexts"), []):
@@ -816,7 +815,7 @@ def set_context(config_path: Optional[FilePath] = None,
             new_context = name
             break
 
-    if new_context is not None:
+    if new_context:
         kubeconfig["current-context"] = new_context
         secure_write_yaml(config_path, kubeconfig, permissions=0o600, sort_keys=False)
 

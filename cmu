@@ -278,7 +278,7 @@ def format_timestamp(timestamp: datetime,
 
         Parameters:
             timestamp (datetime): The timestamp
-            localtimezone (bool): IS the timestamp in local time
+            localtimezone (bool): Is the timestamp in local time?
         Returns:
             ([ThemeRef|ThemeStr]): A formatted timestamp
     """
@@ -391,6 +391,17 @@ def get_image_tuple(image: str) -> tuple[str, str]:
 
 
 def get_name_by_kind_from_owner_references(owner_references: list[dict], kind: str) -> str:
+    """
+    Given a kind, and a list of owner-reference dicts, return the name of the referenced object.
+    FIXME: This should probably be modified to match kind as a tuple rather than only str,
+           or possibly removed completely.
+
+        Parameters:
+            owner_references ([dict[str, Any]]): A list of OWR dicts.
+            kind (str): The kind to search for.
+        Returns:
+            (str): The name of the object.
+    """
     for owr in owner_references:
         if deep_get(owr, DictPath("kind"), "") == kind:
             name = deep_get(owr, DictPath("name"))
@@ -399,6 +410,18 @@ def get_name_by_kind_from_owner_references(owner_references: list[dict], kind: s
 
 
 def get_holder_kind_from_owner_references(owner_references: list[dict], holder_name: str) -> str:
+    """
+    Given a holder-name, and a list of owner-reference dicts, return the kind matches the name.
+    FIXME: Multiple owner-references may match the name; this returns the first one.
+           It should also be modified to return a tuple rather than only str,
+           or possibly removed completely.
+
+        Parameters:
+            owner_references ([dict[str, Any]]): A list of OWR dicts.
+            name (str): The name to search for.
+        Returns:
+            (str): The kind of the object.
+    """
     holder_kind: str = ""
 
     for owr in owner_references:
@@ -412,6 +435,20 @@ def get_holder_kind_from_owner_references(owner_references: list[dict], holder_n
 def get_pod_log_by_name_namespace_container(name: str, namespace: str, container: str,
                                             tail_lines: int = DEFAULT_TAIL_LINES) \
         -> tuple[str, bool]:
+    """
+    Given name, namespace, and container, returns pod logs.
+    FIXME: This should be moved to kubernetes_helper.py.
+
+        Parameters:
+            name (str): The name of the object to get logs for
+            namespace (str): The namespace of the object to get logs for
+            container (str): The container to get logs for
+            tail_lines (int): The maximum number of log lines to fetch
+        Returns:
+            ((str, bool)):
+                (str): The raw log message (with embedded newlines)
+                (bool): True if everything went OK, False if there was an error
+    """
     internal_error: bool = False
 
     rawmsg, status = \
@@ -440,15 +477,24 @@ def get_pod_log_by_name_namespace_container(name: str, namespace: str, container
 
 
 # To make the failure case easier, return both the ref and the name of the control plane
-def get_control_plane() -> tuple[Optional[dict], str]:
+def get_control_plane() -> tuple[dict[str, Any], str]:
+    """
+    Return the name and object reference to the control plane.
+    FIXME: This does not support multiple control planes.
+
+        Returns:
+            ((dict[str, Any], str)):
+                (dict[str, Any]): The object reference of the control plane
+                (str): The name of the control plane
+    """
     if not kubernetes_support:
-        return None, ""
+        return {}, ""
 
     vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "", resource_cache=kh_cache)
     control_planes = []
 
     if vlist is None or not vlist or status != 200:
-        return None, ""
+        return {}, ""
 
     # Find control planes; but for now only return the first match
     for obj in vlist:
@@ -492,14 +538,13 @@ def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     global force_refresh_apis  # pylint: disable=global-statement
 
-    selected = deep_get(kwargs, DictPath("selected"))
-    name = getattr(selected, "name")
+    selected: Type = deep_get(kwargs, DictPath("selected"))
+    name: str = getattr(selected, "name")
 
-    retval = kh.set_context(name=name)
     # If we actually changed context we need to force an API reload,
-    # since we might have changed between different clusters (or switched
-    # to a role that does not have access to a particular API)
-    if retval:
+    # since we might have changed between different clusters
+    # (or switched to a role that does not have access to a particular API).
+    if kh.set_context(name=name):
         force_refresh_apis = True
     return Retval.RETURNDONE
 
@@ -591,6 +636,19 @@ def generate_list_header(uip: UIProps, field_dict: dict, is_taggable: bool = Fal
 def generate_list_row(uip: UIProps, data: Type, field_list: dict,
                       ypos: int, is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
+    """
+    Generate a list for the listpad.
+
+        Parameters:
+            uip (UIProps): A reference to the UI Properties object
+            data (Type): The data to generate a list row from
+            field_dict (dict[str, Any]): The dict containing the description of the field
+            ypos (int): The list index
+            is_selected (bool): Is the list item selected?
+            is_taggable (bool): Is the list taggable?
+            is_tagged (bool): Is the list item tagged?
+            is_deleted (bool): Is the list item deleted?
+    """
     first: bool = True
     i: int = 0
 
@@ -3193,6 +3251,13 @@ def cniloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Decode and view data.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+    """
     if "selected" in kwargs:
         bvalue = kwargs["selected"].value
         title = kwargs["selected"].key
@@ -3912,7 +3977,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 infogetter_args["kh_cache"] = kh_cache
                 info = infogetter(**infogetter_args)
 
-                _listlen = uip.update_info(info)
+                uip.update_info(info)
                 linelen = update_field_widths(field_dict, field_names, uip.info)
                 uip.resize_listpad(linelen)
             elif uip.logpad is not None:

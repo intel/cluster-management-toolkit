@@ -2632,7 +2632,7 @@ class UIProps:
 
         # Function handler for <enter> / <double-click>
         self.activatedfun: Optional[Callable] = None
-        self.on_activation: dict = {}
+        self.on_activation: dict[str, Any] = {}
         self.extraref: Optional[str] = None
         self.data: Optional[bool] = None
 
@@ -2702,20 +2702,16 @@ class UIProps:
                 if uid == self.selected_uid:
                     self.move_cur_with_offset(y - pos)
 
-    def update_info(self, info: list[Type]) -> int:
+    def update_info(self, info: list[Type]) -> None:
         """
         Update the information for the processed list.
 
             Parameters:
                 ([Info]): The new information
-            Returns:
-                (int): The new list of the length
         """
         self.info = info
         self.listlen = len(self.info)
         self.sort_triggered = True
-
-        return self.listlen
 
     def update_log_info(self,
                         timestamps: list[datetime],
@@ -2785,7 +2781,7 @@ class UIProps:
         if self.update_triggered: either forcibly
         or through the update timeout.
 
-            Parameters:
+            Returns:
                 (bool): True if an update has been triggered
         """
         if self.update_triggered:
@@ -2900,7 +2896,7 @@ class UIProps:
         reversible: bool = deep_get(kwargs, DictPath("reversible"), True)
         helptext: Optional[list[dict[str, Any]]] = deep_get(kwargs, DictPath("helptext"))
         activatedfun: Optional[Callable] = deep_get(kwargs, DictPath("activatedfun"))
-        on_activation: Optional[dict[str, Any]] = deep_get(kwargs, DictPath("on_activation"))
+        on_activation: Optional[dict[str, Any]] = deep_get(kwargs, DictPath("on_activation"), {})
         extraref: Optional[str] = deep_get(kwargs, DictPath("extraref"))
         data: Optional[bool] = deep_get(kwargs, DictPath("data"))
 
@@ -2923,9 +2919,6 @@ class UIProps:
         self.borders = True
         self.logpad = None
         self.helptext = helptext
-
-        if on_activation is None:
-            on_activation = {}
 
         self.activatedfun = activatedfun
         self.on_activation = on_activation
