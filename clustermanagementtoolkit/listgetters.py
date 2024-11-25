@@ -29,7 +29,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Optional, Union
+from typing import Any, cast, Union
 from collections.abc import Callable
 
 try:
@@ -320,7 +320,7 @@ def get_metrics_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
 
     filters: list[str] = deep_get(kwargs, DictPath("filter"), [])
 
-    vlist = []
+    vlist: list[dict[str, Any]] = []
 
     metrics, status = kh.get_metrics()
 
@@ -379,7 +379,7 @@ def get_pod_containers_list(**kwargs: Any) -> tuple[list[dict[str, Any]], Union[
         raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
-    vlist = []
+    vlist: list[dict[str, Any]] = []
     _vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "", resource_cache=kh_cache)
 
     if status == 200:
@@ -606,8 +606,8 @@ def get_hpa_metrics(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int
                 ([dict[str, Any]]): The metrics
                 (int): The status for the request
     """
-    vlist = []
-    status = 200
+    vlist: list[dict[str, Any]] = []
+    status: int = 200
 
     for metric in deep_get(obj, DictPath("spec#metrics"), []):
         if "type" not in metric:
@@ -664,14 +664,14 @@ def get_ingress_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]
 
         Parameters:
             obj (Dict): The object to extract ingress rule information from
-            kwargs (Dict): Additional parameters
+            **kwargs (dict[str, Any]): Keyword arguments
         Returns:
             (([dict], int)):
                 ([dict[str, Any]]): The ingress rules
                 (int): The status for the request
     """
-    vlist = []
-    status = 200
+    vlist: list[dict[str, Any]] = []
+    status: int = 200
 
     for item in deep_get(obj, DictPath("spec#rules"), []):
         host = deep_get(item, DictPath("host"), "*")
@@ -715,12 +715,13 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
 
         Parameters:
             obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             (([dict[str, Any]], int)):
                 ([dict[str, Any]]): The network policy rules
                 (int): The status for the request
     """
-    vlist: list = []
+    vlist: list[dict[str, Any]] = []
     status: int = 200
 
     for item in deep_get(obj, DictPath("spec#ingress"), []):
@@ -792,8 +793,7 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
     return vlist, status
 
 
-def get_pv_from_pvc_name(pvc_name: str,
-                         **kwargs: Any) -> tuple[Optional[dict[str, Any]], Optional[str]]:
+def get_pv_from_pvc_name(pvc_name: str, **kwargs: Any) -> tuple[dict[str, Any], str]:
     """
     Given the name of a Persistent Volume Claim,
     return the corresponding PersistentVolume.
@@ -814,8 +814,8 @@ def get_pv_from_pvc_name(pvc_name: str,
         raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
-    pv = None
-    pv_name = None
+    pv: dict[str, Any] = {}
+    pv_name: str = ""
     field_selector = f"metadata.name={pvc_name}"
 
     vlist, status = kh.get_list_by_kind_namespace(("PersistentVolumeClaim", ""), "",
@@ -824,8 +824,8 @@ def get_pv_from_pvc_name(pvc_name: str,
     if status == 200:
         for pvc in vlist:
             if deep_get(pvc, DictPath("metadata#name")) == pvc_name:
-                volume_name = deep_get(pvc, DictPath("spec#volumeName"))
-                if volume_name is not None:
+                volume_name = deep_get(pvc, DictPath("spec#volumeName"), "")
+                if volume_name:
                     pv_name = volume_name
                     pv = kh.get_ref_by_kind_name_namespace(("PersistentVolume", ""),
                                                            pv_name, None, resource_cache=kh_cache)
@@ -845,7 +845,7 @@ def get_pv_status(obj: dict[str, Any]) -> tuple[str, StatusGroup]:
                 (str): The status of the Persistent Volume
                 (StatusGroup): The StatusGroup of the status
     """
-    phase = deep_get(obj, DictPath("status#phase"), "")
+    phase: str = deep_get(obj, DictPath("status#phase"), "")
 
     if phase in ("Bound", "Available"):
         reason = phase
@@ -1107,7 +1107,7 @@ def get_pod_resource_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict
             claim_name = deep_get(volume, DictPath("persistentVolumeClaim#claimName"))
             pv, pv_name = get_pv_from_pvc_name(claim_name, kubernetes_helper=kh)
 
-            if pv is not None:
+            if pv:
                 status, _status_group = get_pv_status(pv)
             else:
                 pv_name = "<INVALID PV>"
@@ -1798,7 +1798,7 @@ def get_info_by_last_applied_configuration(obj: dict, **kwargs: Any) -> tuple[li
 
 
 # pylint: disable-next=unused-argument
-def get_sidecar_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict], int]:
+def get_sidecar_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
     vlist: list[dict[str, Any]] = []
 
     for traffic_type, items in (("Ingress", deep_get(obj, DictPath("spec#ingress"), [])),
@@ -1829,7 +1829,7 @@ def get_sidecar_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict], int]:
 
 
 # pylint: disable-next=unused-argument
-def get_virtsvc_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict], int]:
+def get_virtsvc_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
     vlist = []
 
     for rule_path, rule_type in [("spec#http", "HTTP"), ("spec#tls", "TLS"), ("spec#tcp", "TCP")]:
@@ -1854,7 +1854,7 @@ def get_virtsvc_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict], int]:
 
 
 # pylint: disable-next=unused-argument
-def listgetter_ansible_volumes(obj: dict, **kwargs: Any) -> tuple[list[dict], str]:
+def listgetter_ansible_volumes(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], str]:
     info = []
 
     # Find all mounts
@@ -1918,7 +1918,7 @@ def listgetter_ansible_volumes(obj: dict, **kwargs: Any) -> tuple[list[dict], st
 
 
 # pylint: disable-next=unused-argument
-def listgetter_configmap_data(obj: dict, **kwargs: Any) -> tuple[list[dict], int]:
+def listgetter_configmap_data(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
     vlist = []
 
     cm_name = deep_get(obj, DictPath("metadata#name"))
@@ -2040,6 +2040,17 @@ def listgetter_join_dicts_to_list(obj: dict[str, Any],
 
 
 def listgetter_join_lists(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
+    """
+    A listgetter that takes two or more lists and joins them into one list.
+
+        Parameters:
+            obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of objects
+                (int): The status for the request
+    """
     paths = deep_get(kwargs, DictPath("paths"))
     vlist = []
 
@@ -2062,10 +2073,10 @@ def listgetter_matchrules(obj: dict, **kwargs: Any) -> tuple[list[dict], str]:
     Extract match rules from an object.
 
         Parameters:
-            obj (Dict): The object to extract a list of matchrules from
-            **kwargs (dict[str, Any]): Keyword arguments
+            obj (dict[str, Any]): The object to extract a list of matchrules from
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
-            ([dict], str):
+            ([dict[str, Any]], str):
                 ([dict]): The list of data
                 (str): Always "OK"
     """
@@ -2102,6 +2113,19 @@ def listgetter_matchrules(obj: dict, **kwargs: Any) -> tuple[list[dict], str]:
 
 def listgetter_namespaced_resources(obj: dict, **kwargs: Any) -> \
         tuple[list, Union[str, int, list[StatusGroup]]]:
+    """
+    Given a Namespace object, find all objects that belong to that Namespace.
+
+        Parameters:
+            obj (Dict): The object to extract a list of data from
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+                resources ([(str, str)]): A list of Kinds; if resources is not provided
+                                          all namespaced resources will be searched
+        Returns:
+            (([dict[str, Any]], int)): A list of Kubernetes objects of various Kinds
+    """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -2148,8 +2172,8 @@ def listgetter_noop(obj: dict, **kwargs: Any) -> tuple[list, str]:
     A noop listgetter that returns an empty list.
 
         Parameters:
-            obj (Dict): Unused
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            obj (dict): The object to extract data from [unused]
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             ([], str):
                 ([]): An empty list
@@ -2158,17 +2182,17 @@ def listgetter_noop(obj: dict, **kwargs: Any) -> tuple[list, str]:
     return [], "OK"
 
 
-def listgetter_feature_gates(obj: dict, **kwargs: Any) -> tuple[Union[dict, list[dict]], int]:
+def listgetter_feature_gates(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
     """
     Listgetter for FeatureGate.config.openshift.io.
 
         Parameters:
-            obj (Dict): The object to extract a list of data from
+            obj (dict): The object to extract data from
             **kwargs (dict[str, Any]): Keyword arguments
         Returns:
-            (vlist, retval):
-                vlist (list[dict]): The list of data
-                retval (int): The return value
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of data
+                (int): The status for the request
     """
     vlist = []
     path = deep_get(kwargs, DictPath("path"))
@@ -2207,7 +2231,6 @@ def listgetter_path(obj: dict, **kwargs: Any) -> tuple[Union[dict, list[dict]], 
                 vlist (list[dict]): The list of data
                 retval (int): The return value
     """
-
     vlists = []
     vlist = []
 
