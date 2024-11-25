@@ -2309,7 +2309,7 @@ def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[S
             **kwargs (dict[str, Any]): Keyword arguments
                 playbook (FilePath): The playbook to run
                 selection ([str]): The hosts to run the play on
-                verbose (bool): Output status updates for every new Ansible event
+                verbose (bool): Output status updates for every new Ansible event?
         Returns:
             ((int, dict)):
                 (int): The result from ansible_run_playbook();
@@ -2332,7 +2332,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         Parameters:
             stdscr (curses.window): The curses window to operate on
             **kwargs (dict[str, Any]): Keyword arguments
-                kind (tuple[str, str]): The view to show [unused]
+                kind ((str, str)): The view to show [unused]
         Returns:
             (Retval): The return value
         Raises:
@@ -3107,7 +3107,7 @@ def cniloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         Parameters:
             stdscr (curses.window): The curses window to operate on
             **kwargs (dict[str, Any]): Keyword arguments
-                kind (tuple[str, str]): The view to show [unused]
+                kind ((str, str)): The view to show [unused]
         Returns:
             (Retval): The return value
         Raises:
@@ -3353,6 +3353,19 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retv
 
 # pylint: disable-next=unused-argument
 def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Export data to a file.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                selected (dict): The selected obj from a listpad
+                obj (dict[str, Any]): An object to extract data from
+                extra_args (dict[str, Any]):
+                    base_path (str): The path to the value to export
+                    name_attr (str): The attribute containing the file name
+                    raw_export (bool): Export without decoding data?
+    """
     selected = deep_get(kwargs, DictPath("selected"))
     obj = deep_get(kwargs, DictPath("obj"))
 
@@ -3489,7 +3502,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             stdscr (curses.window): The curses window to operate on
             **kwargs (dict[str, Any]): Keyword arguments
                 obj (dict): The object to operate on
-                kind (tuple[str, str]): The view to show
+                kind ((str, str)): The view to show
         Returns:
             (Retval): The return value
         Raises:
@@ -4748,7 +4761,7 @@ def containerinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             **kwargs (dict[str, Any]): Keyword arguments
                 container (dict[str, Any]): The container object
                 obj (dict): The object to operate on
-                kind (tuple[str, str]): The view to show
+                kind ((str, str)): The view to show
         Returns:
             (Retval): The return value
         Raises:
@@ -6063,6 +6076,19 @@ def executecommand(stdscr: curses.window,
 
 # pylint: disable-next=too-many-branches
 def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Dispatch from an object to listview of a Kind
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to get information from
+                kind_path (DictPath): The path to get the kind from
+                api_version_path (DictPath): The path to get the API-version from
+        Returns:
+            (Retval): Retval.NOMATCH if no match was found
+                      otherwise Retval from the involved object whenever that returns.
+    """
     global defaultview  # pylint: disable=global-statement
 
     root: bool = deep_get(kwargs, DictPath("root"), False)
@@ -6125,6 +6151,21 @@ def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 # pylint: disable-next=unused-argument
 def patch_object(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Patch an object.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                kind ((str, str)): The kind of the object to patch
+                name (str): The name of the object to patch
+                namespace (str): The namespace of the object to patch
+                subresource (str): The name of the subresource to patch (optional)
+                strategic_merge (bool): Perform a strategic merge?
+                patch (dict): The patch to apply
+        Returns:
+            (Retval): The return value
+    """
     kind = deep_get(kwargs, DictPath("kind"))
     name = deep_get(kwargs, DictPath("name"))
     namespace = deep_get(kwargs, DictPath("namespace"))
@@ -6526,13 +6567,38 @@ def __run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> i
     return retval
 
 
-def run_playbook(playbook: dict, nodes: list[str], values: Optional[dict] = None) -> int:
+def run_playbook(playbook: dict, hosts: list[str], values: Optional[dict] = None) -> int:
+    """
+    Run a playbook.
+
+        Parameters:
+            playbook (dict): The playbook to run.
+            hosts ([str]): The hosts to run the playbook on.
+            values (dict): A dict of parameters to pass to __run_playbook()
+        Returns:
+            (int): The return value from __run_playbook()
+    """
     verbose: bool = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
-    return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes,
+    return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), hosts,
                           extra_values=values, verbose=verbose)
 
 
 def view_obj(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    View an object using the resource view.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict[str, Any]): An object to extract data from
+                selection (Any): The selection data
+                named_title (str): The title to use for the window
+                title (str): The title to use for the window
+                title_path (str): The path to fetch the title from
+                path (str): The path to the data to view
+                include_root (bool): Include the object root (currently necessary for list objects)
+                formatter (Callable|str): The formatter to use to format the data
+    """
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
@@ -6648,6 +6714,15 @@ def view_json(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 def view_pod_logs(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    View pod logs.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                selected (dict): The selected obj from a listpad
+                _tagged_items (list): A list of tagged items
+    """
     containers: list[tuple[str, str, str]] = []
     containers_full: list[tuple[str, str, str, str]] = []
     items = deep_get(kwargs, DictPath("_tagged_items"), [])
@@ -6912,6 +6987,22 @@ def __edit_resource(kind: tuple[str, str], namespace: str, name: str) -> tuple[i
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def perform_action_on_configuration(uip: UIProps, **kwargs: Any) -> Retval:
+    """
+    Perform an action on a Kubernetes configuration file or Kustomization.
+
+        Parameters:
+            uip (UIProps): A reference to the UI Properties object
+            **kwargs (dict[str, Any]): Keyword arguments
+                values (dict[str, Any]):
+                    resource_path (str): The path to the file to act on
+                    resource_url (str): A URL to act on
+                action (dict[str, Any]):
+                    extravars (dict[str, Any]):
+                        action (str): The action to perform (delete, create, apply)
+                        rtype (str): The resource type ("Configuration File" or "Kustomization")
+        Returns:
+            (int): The return value from subprocess.run()
+    """
     values: dict[str, Any] = deep_get(kwargs, DictPath("values"))
     action: dict[str, Any] = deep_get(kwargs, DictPath("action"))
 
@@ -6987,6 +7078,22 @@ def perform_action_on_configuration(uip: UIProps, **kwargs: Any) -> Retval:
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def diff_resource_configuration(uip: UIProps, **kwargs: Any) -> Retval:
+    """
+    Show the changes that applying a configuration file or Kustomization would result in.
+
+        Parameters:
+            uip (UIProps): A reference to the UI Properties object
+            **kwargs (dict[str, Any]): Keyword arguments
+                values (dict[str, Any]):
+                    resource_path (str): The path to the file to act on
+                    resource_url (str): A URL to act on
+                action (dict[str, Any]):
+                    extravars (dict[str, Any]):
+                        action (str): The action to perform (delete, create, apply)
+                        rtype (str): The resource type ("Configuration File" or "Kustomization")
+        Returns:
+            (Retval): Retval.MATCH
+    """
     values: dict[str, Any] = deep_get(kwargs, DictPath("values"))
 
     if (resource_url := deep_get(values, DictPath("resource_url"))) is not None:
@@ -7088,6 +7195,17 @@ def format_commandline(args: list[str], implicit_command: bool = True) -> list[A
 
 
 def edit_resource(stdscr: curses.window, **kwargs: Any) -> None:
+    """
+    Edit a Kubernetes object.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict[str, Any]): An object to extract data from
+                kind ((str, str)): The Kind of the object to operate on
+                name (str): The path to the name of the object to edit
+                namespace (str): The path to the namespace of the object to edit
+    """
     obj = deep_get(kwargs, DictPath("obj"))
     kind = deep_get(kwargs, DictPath("kind"))
     name = deep_get(obj, DictPath("metadata#name"))
@@ -7423,6 +7541,18 @@ def action_execute_command(uip: UIProps, **kwargs: Any) -> None:
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def command_hosts(uip: UIProps, **kwargs: Any) -> None:
+    """
+    Execute a playbook on multiple hosts, including pre- and post-hooks.
+    TODO: This should be renamed.
+
+        Parameters:
+            uip (UIProps): A reference to the UI Properties object
+            **kwargs (dict[str, Any]): Keyword arguments
+            values (dict[str, Any]): Values to pass to __run_playbook()
+            actions (dict[str, Any]): The action data
+            items ([str]): The hosts to execute the playbook(s) on
+            verbose (bool): Output status updates for every new Ansible event?
+    """
     values: dict[str, Any] = deep_get(kwargs, DictPath("values"))
     action: dict[str, Any] = deep_get(kwargs, DictPath("action"))
     items: list[str] = deep_get(kwargs, DictPath("items"), [])
@@ -8138,6 +8268,9 @@ def selectwindow(uip: UIProps, **kwargs: Any) -> Retval:
             uip (UIProps): A reference to the UI Properties object
             **kwargs (dict[str, Any]): Keyword arguments
                 refresh_apis (bool): Should the list of available APIs be refreshed?
+        Returns:
+            (Retval): Retval.RETURNFULL when switching to a new view,
+                      Retval.NOMATCH if [ESC] was pressed
     """
     # Ideally we want to return to the same selection
     global defaultview  # pylint: disable=global-statement
