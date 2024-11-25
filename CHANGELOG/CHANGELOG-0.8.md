@@ -99,7 +99,7 @@ No changes.
   originating view; this difference is significant when arriving to the info-view
   via a shortcut from another infoview.  Note that `^` is a "dead" key on many
   keyboards, so you may need to press the key twice.
-* 141 view-files were added.
+* 143 view-files were added.
 * The Pod info-view can now has shortcuts to show resources used by the Pod, volume mounts, volumes,
   and topology constraints. It also shows the preemption policy.
 * View-files for the new DRA API has been added.
@@ -233,10 +233,10 @@ clustermanagementtoolkit/listgetters_async.py           119    103     54      0
 clustermanagementtoolkit/networkio.py                   349    282    173      3  16.9%
 clustermanagementtoolkit/infogetters.py                1676   1270   1008     68  21.9%
 clustermanagementtoolkit/itemgetters.py                 506    372    290     14  22.6%
-clustermanagementtoolkit/kubernetes_helper.py          1494   1031    760     65  26.4%
 clustermanagementtoolkit/listgetters.py                1213    844    662     73  26.5%
-clustermanagementtoolkit/curses_helper.py              2402   1598   1126    106  27.5%
 clustermanagementtoolkit/fieldgetters.py                 81     54     46      0  27.6%
+clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     62  27.9%
+clustermanagementtoolkit/curses_helper.py              2388   1544   1124    125  29.0%
 clustermanagementtoolkit/logparser.py                  2008   1275   1125     45  31.1%
 clustermanagementtoolkit/datagetters.py                 277    181    142      5  32.2%
 clustermanagementtoolkit/generators.py                  744    473    388     11  33.0%
@@ -260,7 +260,7 @@ clustermanagementtoolkit/objgetters.py                   56      0     12      0
 clustermanagementtoolkit/pvtypes.py                       1      0      0      0 100.0%
 clustermanagementtoolkit/recommended_permissions.py      11      0      0      0 100.0%
 ---------------------------------------------------------------------------------------
-TOTAL                                                 15963   8467   8342    514  43.1%
+TOTAL                                                 15949   8386   8340    530  43.5%
 ```
 
 
@@ -329,7 +329,7 @@ Currently all complaints are due to missing function or method docstrings.
 | cmtadm                                              | 10.00/10     |
 | cmt-install                                         | 10.00/10     |
 | cmtinv                                              | 10.00/10     |
-| cmu                                                 | **9.97/10**  |
+| cmu                                                 | 10.00/10     |
 | clustermanagementtoolkit/about.py                   | 10.00/10     |
 | clustermanagementtoolkit/ansible_helper.py          | 10.00/10     |
 | clustermanagementtoolkit/ansithemeprint.py          | 10.00/10     |
@@ -343,7 +343,7 @@ Currently all complaints are due to missing function or method docstrings.
 | clustermanagementtoolkit/cmtvalidators.py           | 10.00/10     |
 | clustermanagementtoolkit/cni_data.py                | 10.00/10     |
 | clustermanagementtoolkit/commandparser.py           | 10.00/10     |
-| clustermanagementtoolkit/curses_helper.py           | **9.84/10**  |
+| clustermanagementtoolkit/curses_helper.py           | **9.85/10**  |
 | clustermanagementtoolkit/datagetters.py             | 10.00/10     |
 | clustermanagementtoolkit/fieldgetters.py            | 10.00/10     |
 | clustermanagementtoolkit/formatters.py              | 10.00/10     |
