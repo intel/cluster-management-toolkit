@@ -633,7 +633,7 @@ def generate_list_header(uip: UIProps, field_dict: dict, is_taggable: bool = Fal
 
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-positional-arguments
-def generate_list_row(uip: UIProps, data: Type, field_list: dict,
+def generate_list_row(uip: UIProps, data: Type, field_dict: dict,
                       ypos: int, is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
     """
@@ -652,7 +652,7 @@ def generate_list_row(uip: UIProps, data: Type, field_list: dict,
     first: bool = True
     i: int = 0
 
-    for field in field_list:
+    for field in field_dict:
         i += 1
 
         if is_taggable:
@@ -666,37 +666,37 @@ def generate_list_row(uip: UIProps, data: Type, field_list: dict,
             tagprefix = []
             tagprefixlen = 0
 
-        generator = field_list[field].get("generator")
+        generator = field_dict[field].get("generator")
         if generator is None:
             continue
         if isinstance(generator, str):
             generator = \
                 deep_get(generator_allowlist, DictPath(generator), generators.generator_basic)
 
-        fieldlen = field_list[field]["fieldlen"]
-        if i < len(field_list):
+        fieldlen = field_dict[field]["fieldlen"]
+        if i < len(field_dict):
             fpad = len(ThemeRef("separators", "pad"))
         else:
             fpad = 0
 
-        ralign = field_list[field].get("ralign", False)
+        ralign = field_dict[field].get("ralign", False)
 
         formatting = {
             "item_separator":
-                field_list[field].get("item_separator", ThemeRef("separators", "list")),
+                field_dict[field].get("item_separator", ThemeRef("separators", "list")),
             "field_separators":
-                field_list[field].get("field_separators", [ThemeRef("separators", "field")]),
-            "field_colors": field_list[field].get("field_colors", [ThemeAttr("types", "field")]),
-            "ellipsise": field_list[field].get("ellipsise", -1),
-            "ellipsis": field_list[field].get("ellipsis", ThemeRef("separators", "ellipsis")),
-            "field_prefixes": field_list[field].get("field_prefixes", []),
-            "field_suffixes": field_list[field].get("field_suffixes", []),
-            "mapping": field_list[field].get("mapping", {}),
+                field_dict[field].get("field_separators", [ThemeRef("separators", "field")]),
+            "field_colors": field_dict[field].get("field_colors", [ThemeAttr("types", "field")]),
+            "ellipsise": field_dict[field].get("ellipsise", -1),
+            "ellipsis": field_dict[field].get("ellipsis", ThemeRef("separators", "ellipsis")),
+            "field_prefixes": field_dict[field].get("field_prefixes", []),
+            "field_suffixes": field_dict[field].get("field_suffixes", []),
+            "mapping": field_dict[field].get("mapping", {}),
         }
 
         tmp = generator(data, field, fieldlen, fpad, ralign, is_selected, **formatting)
 
-        pos = field_list[field]["pos"]
+        pos = field_dict[field]["pos"]
 
         if first and is_taggable:
             uip.addthemearray(uip.listpad, tagprefix, y=ypos, x=pos, deleted=is_deleted)
@@ -815,7 +815,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                    and deep_get(views, DictPath(f"{view}#actions")) is not None)
     extra_vars = deep_get(views, DictPath(f"{view}#extra_vars"), {})
 
-    uip.init_window(field_list=field_dict, view=kind, windowheader=windowheader,
+    uip.init_window(field_dict=field_dict, view=kind, windowheader=windowheader,
                     update_delay=update_delay, sortcolumn=sortcolumn,
                     sortorder_reverse=sortorder_reverse, helptext=helptext,
                     activatedfun=activatedfun, on_activation=on_activation)
@@ -1206,7 +1206,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             vinfo = infogetter(**infogetter_extra_args)
             uip.update_info(vinfo)
             update_field_widths(field_dict, field_names, uip.info)
-            uip.reinit_window(field_list=field_dict, sortcolumn=sortcolumn)
+            uip.reinit_window(field_dict=field_dict, sortcolumn=sortcolumn)
             uip.resize_listpad(width=-1)
             uip.refresh_all()
             uip.force_update()
@@ -1414,7 +1414,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
             update_field_widths(field_dict, field_names, uip.info)
             tagged_items.clear()
-            uip.reinit_window(field_list=field_dict, sortcolumn=sortcolumn)
+            uip.reinit_window(field_dict=field_dict, sortcolumn=sortcolumn)
             uip.resize_listpad(width=-1)
             uip.refresh_all()
             uip.update_info([])
@@ -2346,7 +2346,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     view: str = deep_get(kwargs, DictPath("kind"))
 
-    field_list: dict[str, Any] = {}
+    field_dict: dict[str, Any] = {}
     sortcolumn: str = ""
     uip = UIProps(stdscr)
 
@@ -2357,7 +2357,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     sortorder_reverse = views[view].get("sortorder_reverse", False)
 
-    uip.init_window(field_list=field_list, windowheader=windowheader, update_delay=update_delay,
+    uip.init_window(field_dict=field_dict, windowheader=windowheader, update_delay=update_delay,
                     sortcolumn=sortcolumn, sortorder_reverse=sortorder_reverse,
                     activatedfun=activatedfun, on_activation=on_activation)
 
@@ -3257,6 +3257,12 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
         Parameters:
             stdscr (curses.window): The curses window to operate on
             **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict[str, Any]): An object to extract data from
+                selected (Info): An InfoClass object to extract data from
+                path (str): The path into the obj
+                title (str): The title to use for the window
+        Returns:
+            (Retval): The return value
     """
     if "selected" in kwargs:
         bvalue = kwargs["selected"].value
@@ -3297,6 +3303,19 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Decode and view file templates.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict[str, Any]): An object to extract data from
+                selection (Any): The selection data
+                name_path (str): The path to the name
+                file_path (str): The path to the filename
+        Returns:
+            (Retval): The return value
+    """
     selection = deep_get(kwargs, DictPath("selection"), {})
     if not selection:
         return Retval.RETURNDONE
@@ -3667,7 +3686,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     helptext = generate_helptext(view, "infoview", additional_helptexts, shortcuts=shortcuts)
 
-    uip.init_window(field_list=field_dict, windowheader=windowheader, helptext=helptext,
+    uip.init_window(field_dict=field_dict, windowheader=windowheader, helptext=helptext,
                     view=viewoverride, sortcolumn=sortcolumn, sortorder_reverse=sortorder_reverse,
                     reversible=reversible, activatedfun=activatedfun, on_activation=on_activation,
                     extraref=extraref, data=obj)
@@ -4154,9 +4173,8 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         curses.doupdate()
         uip.refresh = False
 
-        # XXX: Handle initial containers and configmaps
-        #      This should be done by the same code path as a regular activation;
-        #      this solution is too ugly for words
+        # XXX: This should be done by the same code path as a regular activation;
+        #      this solution is too ugly for words.
         if initial_container is not None:
             match = None
 
@@ -4167,7 +4185,8 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 for item in uip.info:
                     # If we are dealing with a config map we are interested in non-binary types
                     # If we are dealing with a pod we are interested in containers
-                    if hasattr(item, "type") and item.type in ("[container]", "[init_container]"):
+                    if hasattr(item, "type") \
+                            and item.type in ("[container]", "[init_container]", "[configmap]"):
                         name = item.ref["name"]
                         ikind = item.type
                     elif view == ("ConfigMap", "") \
@@ -4233,8 +4252,9 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                                   **on_activation_args)
                     if retval == Retval.RETURNFULL:
                         return retval
-                    uip.force_update()
+                    uip.update_forced = True
                     uip.refresh_all()
+                    uip.force_update()
                     continue
 
         uip.stdscr.timeout(100)
@@ -4283,7 +4303,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                           selected_namespace=selected_namespace,
                                           **fieldgenerator_args)
 
-            uip.reinit_window(field_list=field_dict, sortcolumn=sortcolumn)
+            uip.reinit_window(field_dict=field_dict, sortcolumn=sortcolumn)
             uip.resize_listpad(width=-1)
             uip.refresh_all()
             uip.force_update()
@@ -6241,7 +6261,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
                 selected (dict): The selected obj from a listpad
                 selected_obj (dict): The selected obj from a widget list
                 _selected_obj (dict): The selected obj from a widget list
-                selection (FIXME): FIXME
+                selection (Any): The selection data
                 kind (str | (str, str)): The kind
                 kind_path (DictPath): The path to get the kind from
                 api_group (str): The API-group
@@ -8177,13 +8197,13 @@ def selectorloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     view: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
 
-    field_list: dict = {}
+    field_dict: dict = {}
     sortcolumn: str = ""
     uip = UIProps(stdscr)
 
     windowheader = deep_get(views, DictPath(f"{view}#windowheader"), view)
 
-    uip.init_window(field_list=field_list, windowheader=windowheader, sortcolumn=sortcolumn)
+    uip.init_window(field_dict=field_dict, windowheader=windowheader, sortcolumn=sortcolumn)
 
     while True:
         retval = selectwindow(uip)

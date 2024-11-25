@@ -2563,7 +2563,7 @@ class UIProps:
         self.sortcolumn: str = ""
         self.sortkey1: str = ""
         self.sortkey2: str = ""
-        self.field_list: dict = {}
+        self.field_dict: dict = {}
 
         self.helpstring: str = "[F1] / [Shift] + H: Help"
         # Should there be a timestamp in the upper right corner?
@@ -2887,46 +2887,40 @@ class UIProps:
     # Default behaviour:
     # timestamps enabled, no automatic updates, default sortcolumn = "status"
     def init_window(self, **kwargs: Any) -> None:
-        field_list: dict = deep_get(kwargs, DictPath("field_list"), {})
-        view: Union[Optional[tuple[str, str]], str] = deep_get(kwargs, DictPath("view"))
-        windowheader: str = deep_get(kwargs, DictPath("windowheader"), "")
-        update_delay: int = deep_get(kwargs, DictPath("update_delay"), -1)
-        sortcolumn: str = deep_get(kwargs, DictPath("sortcolumn"), "status")
-        sortorder_reverse: bool = deep_get(kwargs, DictPath("sortorder_reverse"), False)
-        reversible: bool = deep_get(kwargs, DictPath("reversible"), True)
-        helptext: Optional[list[dict[str, Any]]] = deep_get(kwargs, DictPath("helptext"))
-        activatedfun: Optional[Callable] = deep_get(kwargs, DictPath("activatedfun"))
-        on_activation: Optional[dict[str, Any]] = deep_get(kwargs, DictPath("on_activation"), {})
-        extraref: Optional[str] = deep_get(kwargs, DictPath("extraref"))
-        data: Optional[bool] = deep_get(kwargs, DictPath("data"))
+        """
+        Initialise the main curses-window.
 
-        self.field_list = field_list
+            Parameters:
+                TODO
+        """
+        self.field_dict = deep_get(kwargs, DictPath("field_dict"), {})
         self.searchkey = ""
-        self.sortcolumn = sortcolumn
-        self.sortorder_reverse = sortorder_reverse
-        self.reversible = reversible
+        self.sortcolumn = deep_get(kwargs, DictPath("sortcolumn"), "status")
+        self.sortorder_reverse = deep_get(kwargs, DictPath("sortorder_reverse"), False)
+        self.reversible = deep_get(kwargs, DictPath("reversible"), True)
         self.sortkey1, self.sortkey2 = self.get_sortkeys()
+        update_delay: int = deep_get(kwargs, DictPath("update_delay"), -1)
         self.set_update_delay(update_delay)
-        self.view = view
+        self.view = deep_get(kwargs, DictPath("view"))
 
         self.resize_window()
 
-        self.windowheader = windowheader
+        self.windowheader = deep_get(kwargs, DictPath("windowheader"), "")
         self.headerpad = None
         self.listpad = None
         self.infopad = None
         self.tspad = None
         self.borders = True
         self.logpad = None
-        self.helptext = helptext
+        self.helptext = deep_get(kwargs, DictPath("helptext"))
 
-        self.activatedfun = activatedfun
-        self.on_activation = on_activation
-        self.extraref = extraref
-        self.data = data
+        self.activatedfun = deep_get(kwargs, DictPath("activatedfun"))
+        self.on_activation = deep_get(kwargs, DictPath("on_activation"), {})
+        self.extraref = deep_get(kwargs, DictPath("extraref"))
+        self.data = deep_get(kwargs, DictPath("data"))
 
-    def reinit_window(self, field_list: dict, sortcolumn: str) -> None:
-        self.field_list = field_list
+    def reinit_window(self, field_dict: dict, sortcolumn: str) -> None:
+        self.field_dict = field_dict
         self.searchkey = ""
         self.sortcolumn = sortcolumn
         self.sortkey1, self.sortkey2 = self.get_sortkeys()
@@ -3927,8 +3921,8 @@ class UIProps:
             return
 
         match = 0
-        for field in self.field_list:
-            if self.field_list[field].get("skip", False):
+        for field in self.field_dict:
+            if self.field_dict[field].get("skip", False):
                 continue
             if match == 1:
                 self.sortcolumn = field
@@ -3944,7 +3938,7 @@ class UIProps:
             return
 
         match = 0
-        for field in reversed(self.field_list):
+        for field in reversed(self.field_dict):
             if match == 1:
                 self.sortcolumn = field
                 break
@@ -3958,23 +3952,23 @@ class UIProps:
         return self.sortcolumn
 
     def get_sortkeys(self) -> tuple[str, str]:
-        if not self.field_list:
+        if not self.field_dict:
             # We do not really care about what the sortkeys are; we do not have a list to sort
             # but if we return valid strings we can at least pacify the type checker
             return "", ""
 
-        field = self.field_list.get(self.sortcolumn)
+        field = self.field_dict.get(self.sortcolumn)
 
         if field is None:
             valid_fields = []
-            for f in self.field_list:
+            for f in self.field_dict:
                 valid_fields.append(f)
             raise ValueError(f"Invalid sortcolumn: {self.sortcolumn} does not exist "
-                             "in field_list:\n"
+                             "in field_dict:\n"
                              f"    Valid fields are: {valid_fields}")
 
-        sortkey1 = self.field_list[self.sortcolumn]["sortkey1"]
-        sortkey2 = self.field_list[self.sortcolumn]["sortkey2"]
+        sortkey1 = self.field_dict[self.sortcolumn]["sortkey1"]
+        sortkey2 = self.field_dict[self.sortcolumn]["sortkey2"]
         return sortkey1, sortkey2
 
     # noqa: E501 pylint: disable-next=too-many-return-statements,too-many-locals,too-many-statements,too-many-branches
