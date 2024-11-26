@@ -1,0 +1,195 @@
+---
+kind: "VirtualMachineClusterPreference"
+api_family: "instancetype.kubevirt.io"
+default_command: "virtualmachineclusterpreferences"
+command:
+  - "vmclrprefs"
+  - "vmclrpref"
+listview:
+  name: "Virtual Machine Cluster Preferences"
+  group: "Virtualization"
+  field_indexes:
+    Normal:
+      fields: ["name", "display_name", "tags", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "metadata#annotations#openshift.io/display-name"
+      type: "str"
+    tags:
+      header: "Tags:"
+      paths:
+      - path: "metadata#annotations#tags"
+        pathtype: "split"
+      formatter: "list"
+infoview:
+  name: "Virtual Machine Cluster Preference Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "documentation_url", "provider", "tags",
+                 "operating_system",
+                 "cpu_header", "cpu_guest", "cpu_topology",
+                 "cpu_spread_options_header",
+                 "cpu_spread_options_across",
+                 "cpu_spread_options_ratio",
+                 "mem_header", "mem_guest",
+                 "devices_header",
+                 "devices_autoattach_graphics_device",
+                 "devices_autoattach_input_device",
+                 "devices_autoattach_mem_balloon",
+                 "devices_autoattach_serial_console",
+                 "devices_disk_bus",
+                 "devices_disk_dedicated_io_thread",
+                 "devices_input_bus",
+                 "devices_input_type",
+                 "devices_interface_model",
+                 "devices_network_interface_multiqueue",
+                 "devices_tpm_header",
+                 "devices_tpm_persistent",
+                 "firmware_header",
+                 "firmware_efi_header",
+                 "firmware_efi_persistent",
+                 "firmware_efi_secure_boot"]
+    rows:
+      cpu_guest:
+        header: [["  Guest:", ["main", "infoheader"]]]
+        path: "spec#requirements#cpu#guest"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical_with_units"
+      cpu_header:
+        header: [["CPU:", ["main", "infoheader"]]]
+      cpu_spread_options_across:
+        header: [["    Across:", ["main", "infoheader"]]]
+        path: "spec#cpu#spreadOptions#across"
+        default: "<unset>"
+        type: "str"
+      cpu_spread_options_header:
+        header: [["  Spread Options:", ["main", "infoheader"]]]
+      cpu_spread_options_ratio:
+        header: [["    Ratio:", ["main", "infoheader"]]]
+        path: "spec#cpu#spreadOptions#ratio"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical_with_units"
+      cpu_topology:
+        header: [["  Topology:", ["main", "infoheader"]]]
+        path: "spec#cpu#preferredCPUTopology"
+        default: "<unset>"
+        type: "str"
+      devices_autoattach_graphics_device:
+        header: [["  Autoattach Graphics Device:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredAutoattachGraphicsDevice"
+        default: "<unset>"
+        type: "bool"
+      devices_autoattach_input_device:
+        header: [["  Autoattach Input Device:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredAutoattachInputDevice"
+        default: "<unset>"
+        type: "bool"
+      devices_autoattach_mem_balloon:
+        header: [["  Autoattach Memory Ballon:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredAutoattachMemBalloon"
+        default: "<unset>"
+        type: "bool"
+      devices_autoattach_serial_console:
+        header: [["  Autoattach Serial Console:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredAutoattachSerialConsole"
+        default: "<unset>"
+        type: "bool"
+      devices_header:
+        header: [["Devices:", ["main", "infoheader"]]]
+      devices_disk_bus:
+        header: [["  Disk Bus:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredDiskBus"
+        default: "<unset>"
+        type: "str"
+      devices_disk_dedicated_io_thread:
+        header: [["  Disk Dedicated I/O Thread:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredDiskDedicatedIoThread"
+        default: "<unset>"
+        type: "bool"
+      devices_input_bus:
+        header: [["  Input Bus:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredInputBus"
+        default: "<unset>"
+        type: "str"
+      devices_input_type:
+        header: [["  Input Type:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredInputType"
+        default: "<unset>"
+        type: "str"
+      devices_interface_model:
+        header: [["  Interface Model:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredInterfaceModel"
+        default: "<unset>"
+        type: "str"
+      devices_network_interface_multiqueue:
+        header: [["  Network Interface Multiqueue:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredNetworkInterfaceMultiQueue"
+        default: "<unset>"
+        type: "bool"
+      devices_tpm_header:
+        header: [["  TPM:", ["main", "infoheader"]]]
+      devices_tpm_persistent:
+        header: [["    Persistent:", ["main", "infoheader"]]]
+        path: "spec#devices#preferredTPM#persistent"
+        default: "<unset>"
+        type: "bool"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "metadata#annotations#openshift.io/display-name"
+        type: "str"
+      documentation_url:
+        header: [["Documentation ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["RL:", ["main", "infoheader"]]]
+        path: "metadata#annotations#openshift.io/documentation-url"
+        type: "str"
+      firmware_header:
+        header: [["Firmware:", ["main", "infoheader"]]]
+      firmware_efi_header:
+        header: [["  EFI:", ["main", "infoheader"]]]
+      firmware_efi_persistent:
+        header: [["    Persistent:", ["main", "infoheader"]]]
+        path: "spec#firmware#preferredEfi#persistent"
+        default: "<unset>"
+        type: "bool"
+      firmware_efi_secure_boot:
+        header: [["    Secure Boot:", ["main", "infoheader"]]]
+        path: "spec#firmware#preferredEfi#secureBoot"
+        default: "<unset>"
+        type: "bool"
+      mem_guest:
+        header: [["  Guest:", ["main", "infoheader"]]]
+        path: "spec#requirements#memory#guest"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical_with_units"
+      mem_header:
+        header: [["Memory:", ["main", "infoheader"]]]
+      operating_system:
+        header: [["Operating System:", ["main", "infoheader"]]]
+        path: "spec#annotations#vm.kubevirt.io/os"
+        type: "str"
+      provider:
+        header: [["Provider:", ["main", "infoheader"]]]
+        path: "metadata#annotations#openshift.io/provider-display-name"
+        type: "str"
+      tags:
+        header: [["Tags:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#annotations#tags"
+          pathtype: "split"
+        formatter: "list"
+  shortcuts:
+    "Open URL":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open URL in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open",
+                  ["metadata#annotations#openshift.io/documentation-url"]]
