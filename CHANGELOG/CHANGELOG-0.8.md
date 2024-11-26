@@ -104,7 +104,7 @@ No changes.
   and topology constraints. It also shows the preemption policy.
 * View-files for the new DRA API has been added.
 * Other notable view-file changes include _kueue_, _kruise_, _kubeflow_, _volcano_, and _longhorn_.
-* 33 parser-files were added.
+* 37 parser-files were added.
 
 ### Changes to other files in v0.8.5
 
