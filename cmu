@@ -1120,9 +1120,9 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                                    obj=unique_match,
                                                    kind=kind)) == Retval.RETURNFULL:
                         return retval
-                uip.force_update()
-                uip.refresh_all()
-                continue
+                    uip.force_update()
+                    uip.force_refresh()
+                    continue
 
         uip.refresh_selected()
         if not uip.is_list_regenerated():
