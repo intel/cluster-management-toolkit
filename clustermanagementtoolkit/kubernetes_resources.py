@@ -4014,6 +4014,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "services",
     },
     # serving.kserve.io
+    ("ClusterLocalModel", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "clusterlocalmodels",
+        "namespaced": False,
+    },
     ("ClusterServingRuntime", "serving.kserve.io"): {
         "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
         "api": "clusterservingruntimes",
@@ -4031,6 +4036,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("InferenceService", "serving.kserve.io"): {
         "api_paths": ["apis/serving.kserve.io/v1beta1/"],
         "api": "inferenceservices",
+    },
+    ("LocalModelNodeGroup", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "localmodelnodegroups",
+        "namespaced": False,
     },
     ("ServingRuntime", "serving.kserve.io"): {
         "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
