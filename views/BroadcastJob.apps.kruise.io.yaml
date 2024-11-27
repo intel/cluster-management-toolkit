@@ -20,9 +20,7 @@ listview:
       path: "status#active"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     controller:
       header: "Controller:"
@@ -52,9 +50,7 @@ listview:
       path: "status#desired"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     failed_replicas:
       header: "Failed:"
@@ -140,9 +136,7 @@ infoview:
         path: "spec#completionPolicy#activeDeadlineSeconds"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       completion_policy_header:
         header: [["Completion Policy:", ["main", "infoheader"]]]
       completion_policy_ttl_seconds_after_finished:
@@ -150,9 +144,7 @@ infoview:
         path: "spec#completionPolicy#ttlSecondsAfterFinished"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       completion_policy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#type"
@@ -188,9 +180,7 @@ infoview:
         path: "spec#failurePolicy#restartLimit"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       failure_policy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#failurePolicy#type"
@@ -200,9 +190,7 @@ infoview:
         path: "spec#parallelism"
         default: 1
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"

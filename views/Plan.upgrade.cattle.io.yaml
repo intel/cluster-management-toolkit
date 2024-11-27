@@ -53,11 +53,9 @@ infoview:
       concurrency:
         header: [["Concurrency:", ["main", "infoheader"]]]
         path: "spec#concurrency"
-        type: "str"
         default: "<unset>"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        type: "str"
+        formatter: "numerical"
       cordon:
         header: [["Cordon:", ["main", "infoheader"]]]
         path: "spec#cordon"
@@ -68,31 +66,29 @@ infoview:
       drain_delete_local_data:
         header: [["  Delete Local Data:", ["main", "infoheader"]]]
         path: "spec#drain#deleteLocalData"
-        type: "bool"
         default: "<unset>"
+        type: "bool"
       drain_disable_eviction:
         header: [["  Disable Eviction:", ["main", "infoheader"]]]
         path: "spec#drain#disableEviction"
-        type: "bool"
         default: "<unset>"
+        type: "bool"
       drain_force:
         header: [["  Force:", ["main", "infoheader"]]]
         path: "spec#drain#force"
-        type: "bool"
         default: "<unset>"
+        type: "bool"
       drain_ignore_daemon_sets:
         header: [["  Ignore Daemon Sets:", ["main", "infoheader"]]]
         path: "spec#drain#ignoreDaemonSets"
-        type: "bool"
         default: "<unset>"
+        type: "bool"
       drain_skip_wait_for_delete_timeout:
         header: [["  Skip Wait for Delete Timeout:", ["main", "infoheader"]]]
         path: "spec#drain#skipWaitForDeleteTimeout"
-        type: "numerical"
         default: "<unset>"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        type: "numerical"
+        formatter: "numerical"
       node_selector:
         header: [["Node Selector:", ["main", "infoheader"]]]
         paths:

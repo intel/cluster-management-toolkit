@@ -323,7 +323,22 @@ def format_numerical_with_units(string: str, ftype: str,
                                 selected: bool, non_units: Optional[set] = None,
                                 separator_lookup: Optional[dict] = None) \
         -> list[Union[ThemeRef, ThemeStr]]:
-    substring = ""
+    """
+    Given a string, return it formatted formatted with the numerical parts
+    highlighted with the formatting for numerical values, and the remaining
+    characters formatted as units.
+    Note that decimal points will also be formatted as units.
+
+        Parameters:
+            string (str): The string to format
+            ftype (str): The formatting type for the non-units
+            selected (bool): Should the string be treated as selected?
+            non_units (set[str]): The characters to treat as non-units (default: 0-9)
+            separator_lookup (dict): The formatting to use for units
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
+    substring: str = ""
     array: list[Union[ThemeRef, ThemeStr]] = []
     numeric = None
     # This is necessary to be able to use pop
@@ -336,7 +351,7 @@ def format_numerical_with_units(string: str, ftype: str,
         separator_lookup["default"] = ThemeAttr("types", "unit")
 
     if non_units is None:
-        non_units = set("0123456789")
+        non_units = set("0123456789₀₁₂₃₄₅₆₇₈₉⁰¹²³⁴⁵⁶⁷⁸⁹")
     else:
         non_units = set(non_units)
 
@@ -689,41 +704,6 @@ def generator_mem(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
-# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
-def generator_mem_single(obj: dict, field: str, fieldlen: int, pad: int,
-                         ralign: bool, selected: bool,
-                         **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
-    array: list[Union[ThemeRef, ThemeStr]] = []
-    value = getattr(obj, field)
-    string = str(value)
-
-    array = format_numerical_with_units(string, "numerical", selected)
-
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
-
-
-# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
-def generator_numerical(obj: dict, field: str, fieldlen: int, pad: int,
-                        ralign: bool, selected: bool,
-                        **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
-    array: list[Union[ThemeRef, ThemeStr]] = []
-
-    value = getattr(obj, field)
-
-    if value == -1:
-        string = ""
-    else:
-        string = str(value)
-
-    fmt = ThemeAttr("types", "numerical")
-
-    array = [
-        ThemeStr(string, fmt, selected)
-    ]
-
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
-
-
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: int,
                                    ralign: bool, selected: bool,
@@ -737,6 +717,7 @@ def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: in
         array = [ThemeStr(value, fmt, selected)]
         return align_and_pad(array, pad, fieldlen, ralign, selected)
 
+    # Currently allow_signed seems to be unused
     if value == -1 and not deep_get(formatting, DictPath("allow_signed")):
         string = ""
     else:
@@ -1254,15 +1235,6 @@ def get_formatting(field: dict[str, Any],
 
 
 formatter_to_generator_and_processor: dict[str, dict[str, Any]] = {
-    "mem": {
-        "generator": generator_mem_single,
-        "processor": None,
-    },
-    "float": {
-        # The generator is the same, but the name is unfortunate
-        "generator": generator_mem_single,
-        "processor": None,
-    },
     "list": {
         "generator": generator_list,
         "processor": processor_list,
@@ -1276,10 +1248,6 @@ formatter_to_generator_and_processor: dict[str, dict[str, Any]] = {
         "processor": None,
     },
     "numerical": {
-        "generator": generator_numerical,
-        "processor": None,
-    },
-    "numerical_with_units": {
         "generator": generator_numerical_with_units,
         "processor": None,
     },

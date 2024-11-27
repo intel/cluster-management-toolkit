@@ -38,10 +38,8 @@ listview:
       path: "spec#replicas"
       default: 0
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
     ready_replicas:
       header: "Ready:"
       paths:
@@ -257,11 +255,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Open controller":
       key: "c"

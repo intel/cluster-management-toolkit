@@ -18,31 +18,25 @@ listview:
       paths:
         - path: "status#disruptionsAllowed"
           type: "int"
-      align: "right"
       default: 0
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
+      align: "right"
     max_unavailable:
       header: "Max Unavailable:"
       paths:
         - path: "spec#maxUnavailable"
           type: "int"
-      align: "right"
       default: "<unset>"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
+      align: "right"
     min_available:
       header: "Min Available:"
       paths:
         - path: "spec#minAvailable"
           type: "int"
-      align: "right"
       default: "<unset>"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
+      align: "right"
 infoview:
   name: "Pod Disruption Budget Info"
   infopad:
@@ -70,46 +64,34 @@ infoview:
         header: [["  Current Healthy:", ["main", "infoheader"]]]
         path: "status#currentHealthy"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       desired_healthy:
         header: [["  Desired Healthy:", ["main", "infoheader"]]]
         path: "status#desiredHealthy"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       disruptions_allowed:
         header: [["  Disruptions Allowed:", ["main", "infoheader"]]]
         path: "status#disruptionsAllowed"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       expected_pods:
         header: [["  Expected Pods:", ["main", "infoheader"]]]
         path: "status#expectedPods"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       max_unavailable:
         header: [["Max Unavailable:", ["main", "infoheader"]]]
         path: "spec#maxUnavailable"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       min_available:
         header: [["Min Available:", ["main", "infoheader"]]]
         path: "spec#minAvailable"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:

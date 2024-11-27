@@ -20,9 +20,7 @@ listview:
         - path: "spec#allocatableGpus"
           pathtype: "count"
           type: "raw"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     claim_allocations:
       header: "Allocations:"
@@ -30,9 +28,7 @@ listview:
         - path: "spec#resourceClaimAllocations"
           pathtype: "count"
           type: "raw"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     status:
       header: "Status:"
@@ -119,25 +115,19 @@ infoview:
         header: "Max VFs:"
         path: "value#maxvfs"
         type: "numerical"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       memory:
         header: "Mem (MiB):"
         path: "value#memory"
         type: "numerical"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       millicores:
         header: "Millicores:"
         path: "value#millicores"
         type: "numerical"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       model:
         header: "Model:"

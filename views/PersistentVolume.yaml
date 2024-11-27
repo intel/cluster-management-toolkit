@@ -28,7 +28,7 @@ listview:
       header: "Capacity:"
       path: "spec#capacity#storage"
       type: "raw"
-      formatter: "numerical_with_units"
+      formatter: "numerical"
       align: "right"
     claim:
       header: "Claim:"
@@ -115,8 +115,7 @@ infoview:
         header: [["Capacity:", ["main", "infoheader"]]]
         path: "spec#capacity#storage"
         type: "raw"
-        formatter: "numerical_with_units"
-        align: "right"
+        formatter: "numerical"
       csi_driver:
         header: [["CSI ", ["main", "infoheader"]],
                  ["D", ["main", "infoheader_shortcut"]],
@@ -301,11 +300,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Open CSI Driver":
       key: "d"

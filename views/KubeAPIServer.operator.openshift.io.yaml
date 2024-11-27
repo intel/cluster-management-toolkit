@@ -13,10 +13,8 @@ listview:
       header: "Ready Replicas:"
       path: "status#readyReplicas"
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
 infoview:
   name: "Kube API Server Info"
   infopad:
@@ -54,9 +52,7 @@ infoview:
         header: [["Ready Replicas:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -81,9 +77,7 @@ infoview:
         header: "Current Revision:"
         path: "currentRevision"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       last_failure_reason:
         header: "Last Failure Reason:"

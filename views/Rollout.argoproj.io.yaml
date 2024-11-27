@@ -60,9 +60,7 @@ listview:
       path: "spec#replicas"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     phase:
       header: "Phase:"
@@ -298,11 +296,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Pod template":
       key: "t"

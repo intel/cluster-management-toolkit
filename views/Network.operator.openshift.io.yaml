@@ -16,10 +16,8 @@ listview:
       header: "Ready Replicas:"
       path: "status#readyReplicas"
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
 infoview:
   name: "Network Info"
   infopad:
@@ -78,9 +76,7 @@ infoview:
         header: [["Ready Replicas:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       cluster_network:
         header: [["Cluster Network:", ["main", "infoheader"]]]
         paths:
@@ -127,17 +123,13 @@ infoview:
         header: [["    MTU:", ["main", "infoheader"]]]
         path: "spec#defaultNetwork#openshiftSDNConfig#mtu"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       default_network_openshift_sdn_vxlan_port:
         header: [["    VXLAN Port:", ["main", "infoheader"]]]
         path: "spec#defaultNetwork#openshiftSDNConfig#vxlanPort"
-        type: "int"
         default: "4789"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        type: "int"
+        formatter: "numerical"
       default_network_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#defaultNetwork#type"

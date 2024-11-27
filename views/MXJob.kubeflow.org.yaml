@@ -147,9 +147,7 @@ infoview:
         path: "spec#mxReplicaSpecs#Scheduler#replicas"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       schedulers_restart_policy:
         header: [["  Restart Policy:", ["main", "infoheader"]]]
         path: "spec#mxReplicaSpecs#Scheduler#restartPolicy"
@@ -188,9 +186,7 @@ infoview:
         path: "spec#mxReplicaSpecs#Server#replicas"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       servers_restart_policy:
         header: [["  Restart Policy:", ["main", "infoheader"]]]
         path: "spec#mxReplicaSpecs#Server#restartPolicy"
@@ -393,11 +389,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Open controller":
       key: "c"

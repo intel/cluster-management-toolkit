@@ -20,9 +20,7 @@ listview:
       path: "status#activeReplicas"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     failed_replicas:
       header: "Failed:"
@@ -99,9 +97,7 @@ listview:
       path: "status#totalReplicas"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
   actions:
     actionlist:
@@ -131,9 +127,7 @@ infoview:
         path: "spec#completionPolicy#activeDeadlineSeconds"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       completion_policy_header:
         header: [["Completion Policy:", ["main", "infoheader"]]]
       completion_policy_ttl_seconds_after_finished:
@@ -141,9 +135,7 @@ infoview:
         path: "spec#completionPolicy#ttlSecondsAfterFinished"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       completion_policy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#type"
@@ -216,9 +208,7 @@ infoview:
         path: "spec#parallelism"
         default: 1
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       pod_selector_header:
         header: [["Pod Selector:", ["main", "infoheader"]]]
       pod_selector_label:
@@ -254,9 +244,7 @@ infoview:
         path: "spec#pullPolicy#backoffLimit"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       pull_policy_header:
         header: [["Pull Policy:", ["main", "infoheader"]]]
       pull_policy_policy:
@@ -269,9 +257,7 @@ infoview:
         path: "spec#pullPolicy#timeoutSeconds"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:

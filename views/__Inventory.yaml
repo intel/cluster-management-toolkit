@@ -124,7 +124,7 @@ infoview:
         header: [["BIOS date:", ["main", "infoheader"]]]
         path: "ansible_bios_date"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       bios_version:
         header: [["BIOS version:", ["main", "infoheader"]]]
         path: "ansible_bios_version"
@@ -136,9 +136,7 @@ infoview:
         header: [["Cores:", ["main", "infoheader"]]]
         path: "ansible_processor_cores"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       default_ipv4_address:
         header: [["Default IPv4 Address:", ["main", "infoheader"]]]
         path: "ansible_default_ipv4#address"
@@ -167,9 +165,7 @@ infoview:
         header: [["Processors:", ["main", "infoheader"]]]
         path: "ansible_processor_count"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       product_name:
         header: [["Product Name:", ["main", "infoheader"]]]
         paths:

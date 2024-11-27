@@ -123,9 +123,7 @@ listview:
       path: "spec#maxReplicaCount"
       default: "<unset>"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     triggers:
       header: "Triggers:"
@@ -224,25 +222,19 @@ infoview:
         header: [["Failed Jobs History Limit:", ["main", "infoheader"]]]
         path: "spec#failedJobsHistoryLimit"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       max_replica_count:
         header: [["Max Replica Count:", ["main", "infoheader"]]]
         path: "spec#maxReplicaCount"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       polling_interval:
         header: [["Polling Interval:", ["main", "infoheader"]]]
         path: "spec#pollingInterval"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       scaling_strategy_header:
         header: [["Scheduling Strategy:", ["main", "infoheader"]]]
       scaling_strategy_queue_length_deduction:
@@ -250,13 +242,13 @@ infoview:
         path: "spec#scalingStrategy#customScalingQueueLengthDeduction"
         default: "<unset>"
         type: "raw"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       scaling_strategy_running_job_percentage:
         header: [["  Running Job Percentage:", ["main", "infoheader"]]]
         path: "spec#scalingStrategy#customScalingRunningJobPercentage"
         default: "<unset>"
         type: "raw"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       scaling_strategy_strategy:
         header: [["  Strategy:", ["main", "infoheader"]]]
         path: "spec#scalingStrategy#strategy"

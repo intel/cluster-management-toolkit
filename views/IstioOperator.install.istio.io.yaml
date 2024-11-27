@@ -136,16 +136,12 @@ infoview:
         header: [["    Autoscale Max:", ["main", "infoheader"]]]
         path: "spec#values#pilot#autoscaleMax"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       pilot_autoscale_min:
         header: [["    Autoscale Min:", ["main", "infoheader"]]]
         path: "spec#values#pilot#autoscaleMin"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       pilot_configmap:
         header: [["    ConfigMap:", ["main", "infoheader"]]]
         path: "spec#values#pilot#configMap"
@@ -154,9 +150,7 @@ infoview:
         header: [["      Target Average Utilization:", ["main", "infoheader"]]]
         path: "spec#values#pilot#cpu#targetAverageUtilization"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       pilot_cpu_utilization_header:
         header: [["    CPU Utilization:", ["main", "infoheader"]]]
         type: "str"
@@ -193,7 +187,7 @@ infoview:
                   ["main", "infoheader"]]]
         path: "spec#values#pilot#keepaliveMaxServerConnectionAge"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       pilot_node_selector:
         header: [["    Node Selector:", ["main", "infoheader"]]]
         paths:
@@ -222,16 +216,12 @@ infoview:
         header: [["    Replica Count:", ["main", "infoheader"]]]
         path: "spec#values#pilot#replicaCount"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       pilot_trace_sampling:
         header: [["    Trace Sampling:", ["main", "infoheader"]]]
         path: "spec#values#pilot#traceSampling"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       profile:
         header: [["Profile:", ["main", "infoheader"]]]
         path: "spec#profile"

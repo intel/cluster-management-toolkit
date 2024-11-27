@@ -17,20 +17,20 @@ listview:
         - path: "usage#cpu"
           type: "cpu_usage"
       align: "right"
-      formatter: "float"
+      formatter: "numerical"
     memory_usage:
       header: "Memory:"
       paths:
         - path: "usage#memory"
           type: "mem_usage"
-      formatter: "mem"
+      formatter: "numerical"
       align: "right"
     window:
       header: "Window:"
       path: "window"
       align: "right"
       type: "str"
-      formatter: "float"
+      formatter: "numerical"
 infoview:
   name: "Node Metric Info"
   infopad:
@@ -43,18 +43,18 @@ infoview:
         paths:
           - path: "usage#cpu"
             type: "cpu_usage"
-        formatter: "float"
+        formatter: "numerical"
       memory_usage:
         header: [["Memory:", ["main", "infoheader"]]]
         paths:
           - path: "usage#memory"
             type: "mem_usage"
-        formatter: "mem"
+        formatter: "numerical"
       window:
         header: [["Window:", ["main", "infoheader"]]]
         path: "window"
         type: "str"
-        formatter: "float"
+        formatter: "numerical"
   shortcuts:
     "Open Node":
       key: "n"

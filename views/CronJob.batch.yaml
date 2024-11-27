@@ -19,9 +19,7 @@ listview:
       header: "Active:"
       path: "status#active"
       type: "len"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     concurrency_policy:
       header: "Concurrency:"
@@ -91,17 +89,13 @@ infoview:
         header: [["Active:", ["main", "infoheader"]]]
         path: "status#active"
         type: "len"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       completions:
         header: [["Completions:", ["main", "infoheader"]]]
         path: "spec#jobTemplate#spec#completions"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       concurrency_policy:
         header: [["Concurrency Policy:", ["main", "infoheader"]]]
         path: "spec#concurrencyPolicy"

@@ -32,9 +32,7 @@ listview:
       path: "accessTokenMaxAgeSeconds"
       type: "int"
       default: "<default>"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     www_challenge:
       header: "WWW Challenge:"
@@ -69,12 +67,9 @@ infoview:
       token_max_age:
         header: [["Token Max Age:", ["main", "infoheader"]]]
         path: "accessTokenMaxAgeSeconds"
-        type: "int"
         default: "<default>"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
+        type: "int"
+        formatter: "numerical"
       www_challenge:
         header: [["Respond with Challenge:", ["main", "infoheader"]]]
         path: "respondWithChallenges"

@@ -20,43 +20,35 @@ listview:
       path: "status#currentAvailable"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     max_unavailable:
       header: "Max Unavailable:"
       path: "spec#maxUnavailable"
       default: "<unset>"
       type: "str"
-      formatter: "numerical_with_units"
+      formatter: "numerical"
       align: "right"
     desired_replicas:
       header: "Desired:"
       path: "status#desiredAvailable"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     total_replicas:
       header: "Total:"
       path: "status#totalReplicas"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     unavailable_allowed_replicas:
       header: "Unavailable Allowed:"
       path: "status#unavailableAllowed"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
 infoview:
   name: "Pod Unavailable Budget Info"

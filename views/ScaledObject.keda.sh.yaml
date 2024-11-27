@@ -134,18 +134,14 @@ listview:
       path: "spec#maxReplicaCount"
       default: "<unset>"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     min_replica_count:
       header: "Min Replica Count:"
       path: "spec#minReplicaCount"
       default: "<unset>"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     scale_target_kind:
       header: "Scale Target Kind:"
@@ -252,9 +248,7 @@ infoview:
         path: "spec#maxReplicaCount"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
   listpad:
     on_activation:
       call: "resourceinfodispatch_with_lookup"

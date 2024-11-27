@@ -39,9 +39,7 @@ listview:
       path: "spec#replicas"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     ready_replicas:
       header: "Ready:"
@@ -223,11 +221,9 @@ infoview:
       replicas_starting_number:
         header: [["Replicas Starting Number:", ["main", "infoheader"]]]
         path: "spec#ordinals#start"
-        type: "int"
         default: "<unset>"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        type: "int"
+        formatter: "numerical"
       revision_history_limit:
         header: [["Revision History Limit:", ["main", "infoheader"]]]
         path: "spec#revisionHistoryLimit"
@@ -355,11 +351,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Open controller":
       key: "c"

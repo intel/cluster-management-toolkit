@@ -36,9 +36,7 @@ listview:
       header: "Instances:"
       path: "instances"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     pods:
       header: "Pods:"
@@ -153,11 +151,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     # Containers have no last applied configuration or events
     "Show Events": null

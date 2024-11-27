@@ -39,9 +39,7 @@ listview:
       header: "Admitted Workloads:"
       path: "status#admittedWorkloads"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     cluster_queue:
       header: "Cluster Queue:"
@@ -51,9 +49,7 @@ listview:
       header: "Pending Workloads:"
       path: "status#pendingWorkloads"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
 infoview:
   name: "Local Queue Info"
@@ -101,25 +97,19 @@ infoview:
         header: [["  Admitted:", ["main", "infoheader"]]]
         path: "status#admittedWorkloads"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       workloads_pending:
         header: [["  Pending:", ["main", "infoheader"]]]
         path: "status#pendingWorkloads"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       workloads_reserving:
         header: [["  Reserving:", ["main", "infoheader"]]]
         path: "status#reservingWorkloads"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
   listpad:
     listgetter: "generic_listgetter"
@@ -157,9 +147,7 @@ infoview:
         header: "Priority:"
         path: "spec#priority"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       queue:
         header: "Queue:"

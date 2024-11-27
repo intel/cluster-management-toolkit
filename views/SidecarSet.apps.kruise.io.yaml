@@ -76,37 +76,27 @@ infoview:
         header: [["  Collisions:", ["main", "infoheader"]]]
         path: "status#collisionCount"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       status_matched_pods:
         header: [["  Matched Pods:", ["main", "infoheader"]]]
         path: "status#matchedPods"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       status_observed_generation:
         header: [["  Observed Generation:", ["main", "infoheader"]]]
         path: "status#observedGeneration"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       status_ready_pods:
         header: [["  Ready Pods:", ["main", "infoheader"]]]
         path: "status#readyPods"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       status_updated_pods:
         header: [["  Updated Pods:", ["main", "infoheader"]]]
         path: "status#updatedPods"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       update_strategy:
         header: [["Update Strategy:", ["main", "infoheader"]]]
         paths:
@@ -222,11 +212,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "View Sidecar Containers":
       key: "c"

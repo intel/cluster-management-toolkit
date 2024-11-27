@@ -21,9 +21,7 @@ listview:
       header: "# of Containers:"
       path: "containers"
       type: "len"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     cpu_total:
       header: "CPU (millicores):"
@@ -33,7 +31,7 @@ listview:
           subpath: "usage#cpu"
           action: "sum"
           type: "cpu_usage"
-      formatter: "float"
+      formatter: "numerical"
       align: "right"
     cpu_total_short:
       header: "CPU:"
@@ -43,8 +41,8 @@ listview:
           subpath: "usage#cpu"
           action: "sum"
           type: "cpu_usage"
+      formatter: "numerical"
       align: "right"
-      formatter: "float"
     mem_total:
       header: "Memory:"
       paths:
@@ -53,8 +51,8 @@ listview:
           subpath: "usage#memory"
           action: "sum"
           type: "mem_usage"
+      formatter: "numerical"
       align: "right"
-      formatter: "mem"
     start_time:
       header: "Start Time:"
       path: "timestamp"
@@ -63,16 +61,34 @@ listview:
     window:
       header: "Window:"
       path: "window"
-      align: "right"
       type: "str"
-      formatter: "float"
+      formatter: "numerical"
+      align: "right"
 infoview:
   name: "Pod Metrics Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["pod", "window"]
+        fields: ["pod", "cpu_total", "mem_total", "window"]
     rows:
+      cpu_total:
+        header: [["CPU (millicores):", ["main", "infoheader"]]]
+        paths:
+          - path: "containers"
+            pathtype: "items"
+            subpath: "usage#cpu"
+            action: "sum"
+            type: "cpu_usage"
+        formatter: "numerical"
+      mem_total:
+        header: [["Memory:", ["main", "infoheader"]]]
+        paths:
+          - path: "containers"
+            pathtype: "items"
+            subpath: "usage#memory"
+            action: "sum"
+            type: "mem_usage"
+        formatter: "numerical"
       pod:
         header: [["P", ["main", "infoheader_shortcut"]],
                  ["od:", ["main", "infoheader"]]]
@@ -82,7 +98,7 @@ infoview:
         header: [["Window:", ["main", "infoheader"]]]
         path: "window"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -96,14 +112,14 @@ infoview:
         header: "CPU (Millicores):"
         path: "usage#cpu"
         type: "cpu_usage"
+        formatter: "numerical"
         align: "right"
-        formatter: "numerical_with_units"
       mem_bytes:
         header: "Memory:"
         path: "usage#memory"
         type: "mem_usage"
+        formatter: "numerical"
         align: "right"
-        formatter: "numerical_with_units"
       name:
         header: "Name:"
         path: "name"

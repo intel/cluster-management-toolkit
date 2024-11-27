@@ -114,7 +114,7 @@ No changes.
 * A new tool, `mdtable.py` has been added, that creates simple Markdown tables from CSV data.
   It's now used by the `mypy-markdown` and `pylint-markdown` Make targets.
 * A lot of code has been refactored, documented, or otherwise improved.
-  In total `976 files changed, 65493 insertions(+), 26622 deletions(-)`.
+  In total `986 files changed, 66401 insertions(+), 27598 deletions(-)`.
 
 ## Fixed Issues in v0.8.5
 
@@ -191,24 +191,26 @@ Execute with `make bandit`.
 Output:
 
 ```
+Run started:2024-11-27 20:08:37.944568
+
 Test results:
-        No issues identified.
+	No issues identified.
 
 Code scanned:
-        Total lines of code: 77021
-        Total lines skipped (#nosec): 8
+	Total lines of code: 77227
+	Total lines skipped (#nosec): 8
 
 Run metrics:
-        Total issues (by severity):
-                Undefined: 0
-                Low: 0
-                Medium: 0
-                High: 0
-        Total issues (by confidence):
-                Undefined: 0
-                Low: 0
-                Medium: 0
-                High: 0
+	Total issues (by severity):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 0
 Files skipped (0):
 ```
 
@@ -347,7 +349,7 @@ Currently all complaints are due to missing function or method docstrings.
 | clustermanagementtoolkit/datagetters.py             | 10.00/10     |
 | clustermanagementtoolkit/fieldgetters.py            | 10.00/10     |
 | clustermanagementtoolkit/formatters.py              | 10.00/10     |
-| clustermanagementtoolkit/generators.py              | **9.74/10**  |
+| clustermanagementtoolkit/generators.py              | **9.78/10**  |
 | clustermanagementtoolkit/helptexts.py               | 10.00/10     |
 | clustermanagementtoolkit/infogetters.py             | 10.00/10     |
 | clustermanagementtoolkit/itemgetters.py             | 10.00/10     |
@@ -401,7 +403,7 @@ Output:
 └─────────────┘
 
 
-Scanning 1092 files with:
+Scanning 1102 files with:
 
 ✔ Semgrep OSS
   ✔ Basic security coverage for first-party code vulnerabilities.
@@ -412,7 +414,7 @@ Scanning 1092 files with:
 ✘ Semgrep Supply Chain (SCA)
   ✘ Find and fix the reachable vulnerabilities in your OSS dependencies.
 
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:03:19
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:03:16
 
 
 ┌──────────────┐
@@ -420,7 +422,7 @@ Scanning 1092 files with:
 └──────────────┘
 Some files were skipped or only partially analyzed.
   Partially scanned: 2 files only partially analyzed due to parsing or internal Semgrep errors
-  Scan skipped: 935 files matching --exclude patterns, 62 files matching .semgrepignore patterns
+  Scan skipped: 945 files matching --exclude patterns, 62 files matching .semgrepignore patterns
   For a full list of skipped files, run semgrep with the --verbose flag.
 
 Ran 600 rules on 95 files: 0 findings.
@@ -449,8 +451,8 @@ Output:
 Summary:
      fail: 0
      skip: 3
-  success: 812
-    total: 815
+  success: 821
+    total: 824
 ```
 
 ### YAMLlint Results for v0.8.5

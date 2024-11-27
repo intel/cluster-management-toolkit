@@ -19,23 +19,19 @@ listview:
       path: "status#currentHealthy"
       default: "0"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     expected_machines:
       header: "Expected Machines:"
       path: "status#expectedMachines"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     max_unhealthy:
       header: "Max Unhealthy:"
       path: "spec#maxUnhealthy"
       type: "raw"
-      formatter: "numerical_with_units"
+      formatter: "numerical"
       align: "right"
 infoview:
   name: "Machine Health Check Info"
@@ -65,16 +61,12 @@ infoview:
         path: "status#currentHealthy"
         default: "0"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       expected_machines:
         header: [["Expected Machines:", ["main", "infoheader"]]]
         path: "status#expectedMachines"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
@@ -92,20 +84,18 @@ infoview:
         header: [["Max Unhealthy:", ["main", "infoheader"]]]
         path: "spec#maxUnhealthy"
         type: "raw"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       node_startup_timeout:
         header: [["Node Startup Timeout:", ["main", "infoheader"]]]
         path: "spec#nodeStartupTimeout"
         type: "raw"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       remediations_allowed:
         header: [["Remediations Allowed:", ["main", "infoheader"]]]
         path: "status#remediationsAllowed"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:

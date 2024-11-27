@@ -18,18 +18,14 @@ listview:
       paths:
         - path: "status#namespaces"
           pathtype: "count"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     subjects:
       header: "Subjects:"
       paths:
         - path: "spec#subjects"
           pathtype: "count"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
 infoview:
   name: "Account Info"
@@ -43,9 +39,7 @@ infoview:
         path: "spec#space#limit"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       spaces:
         header: [["S", ["main", "infoheader_shortcut"]],
                  ["paces:", ["main", "infoheader"]]]

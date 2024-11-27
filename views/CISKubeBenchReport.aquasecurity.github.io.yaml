@@ -64,9 +64,7 @@ listview:
       header: "Pass:"
       path: "report#summary#passCount"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     severity_warn:
       header: "Warn:"
@@ -171,9 +169,7 @@ infoview:
         header: [["  Pass:", ["main", "infoheader"]]]
         path: "report#summary#passCount"
         type: "raw"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       update_timestamp:
         header: [["Last Update:", ["main", "infoheader"]]]
         paths:
@@ -228,10 +224,8 @@ infoview:
         header: "ID#:"
         path: "section"
         type: "str"
+        formatter: "numerical"
         align: "right"
-        formatting:
-          field_colors:
-            - type: "numerical"
       fail:
         header: "Fail:"
         path: "fail"
@@ -272,10 +266,8 @@ infoview:
         header: "Pass:"
         path: "pass"
         type: "int"
+        formatter: "numerical"
         align: "right"
-        formatting:
-          field_colors:
-            - type: "numerical"
       test_set:
         header: "Test Set:"
         path: "desc"

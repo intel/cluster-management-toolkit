@@ -56,9 +56,7 @@ infoview:
         path: "spec#healthPort"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       log_severity_screen:
         header: [["Log Severity Screen:", ["main", "infoheader"]]]
         path: "spec#logSeverityScreen"
@@ -72,7 +70,7 @@ infoview:
         header: [["Reporting Interval:", ["main", "infoheader"]]]
         path: "spec#reportingInterval"
         type: "raw"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       vxlan_enabled:
         header: [["VXLAN Enabled:", ["main", "infoheader"]]]
         path: "spec#vxlanEnabled"
@@ -83,6 +81,4 @@ infoview:
         path: "spec#vxlanVNI"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"

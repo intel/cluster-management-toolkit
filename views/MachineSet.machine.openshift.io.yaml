@@ -22,42 +22,32 @@ listview:
       path: "status#availableReplicas"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     desired:
       header: "Desired:"
       path: "spec#replicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     fully_labelled:
       header: "Fully Labelled:"
       path: "spec#replicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     observed:
       header: "Observed:"
       path: "status#replicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     ready:
       header: "Ready:"
       path: "status#readyReplicas"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
 infoview:
   name: "Machine Set Info"
@@ -74,9 +64,7 @@ infoview:
         path: "status#availableReplicas"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       delete_policy:
         header: [["Delete Policy:", ["main", "infoheader"]]]
         path: "spec#deletePolicy"
@@ -86,16 +74,12 @@ infoview:
         header: [["  Desired:", ["main", "infoheader"]]]
         path: "spec#replicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       fully_labelled:
         header: [["  Fully Labelled:", ["main", "infoheader"]]]
         path: "spec#replicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
@@ -114,24 +98,18 @@ infoview:
         path: "spec#minReadySeconds"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       observed:
         header: [["  Observed:", ["main", "infoheader"]]]
         path: "status#replicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       ready:
         header: [["  Ready:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       replicas_header:
         header: [["Replicas:", ["main", "infoheader"]]]
       set_based_selector:

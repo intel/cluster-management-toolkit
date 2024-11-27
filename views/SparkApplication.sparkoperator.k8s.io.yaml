@@ -36,9 +36,7 @@ listview:
       path: "status#executionAttempts"
       default: "<unset>"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     state:
       header: "State:"
@@ -93,9 +91,7 @@ listview:
       path: "status#submissionAttempts"
       default: "<unset>"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
   actions:
     actionlist:
@@ -174,9 +170,7 @@ infoview:
         path: "spec#driver#cores"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       driver_labels:
         header: [["  Labels:", ["main", "infoheader"]]]
         paths:
@@ -195,7 +189,7 @@ infoview:
         path: "spec#driver#memory"
         default: "<unset>"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       driver_header:
         header: [["Driver:", ["main", "infoheader"]]]
       driver_pod_name:
@@ -236,18 +230,14 @@ infoview:
         path: "status#executionAttempts"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       executor_core:
         header: [["  Cores:", ["main", "infoheader"]]]
         path: "spec#executor#cores"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       executor_header:
         header: [["Executor:", ["main", "infoheader"]]]
       executor_instances:
@@ -255,9 +245,7 @@ infoview:
         path: "spec#executor#instances"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       executor_labels:
         header: [["  Labels:", ["main", "infoheader"]]]
         paths:
@@ -276,7 +264,7 @@ infoview:
         path: "spec#executor#memory"
         default: "<unset>"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
@@ -366,10 +354,7 @@ infoview:
         path: "status#submissionAttempts"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
+        formatter: "numerical"
       type:
         header: [["Type:", ["main", "infoheader"]]]
         path: "spec#type"

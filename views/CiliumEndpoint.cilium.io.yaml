@@ -26,9 +26,7 @@ listview:
       header: "Identity ID:"
       path: "status#identity#id"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     egress_enforcement:
       header: "Egress Enforcement:"
@@ -39,9 +37,7 @@ listview:
       header: "Endpoint ID:"
       path: "status#id"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     endpoint_state:
       header: "Endpoint State:"
@@ -143,10 +139,7 @@ infoview:
                  ["ilium Identity:", ["main", "infoheader"]]]
         path: "status#identity#id"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
+        formatter: "numerical"
       egress_enforcement:
         header: [["Egress Enforcement:", ["main", "infoheader"]]]
         paths:
@@ -156,10 +149,7 @@ infoview:
         header: [["Endpoint ID:", ["main", "infoheader"]]]
         path: "status#id"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
+        formatter: "numerical"
       endpoint_state:
         header: [["Endpoint State:", ["main", "infoheader"]]]
         paths:

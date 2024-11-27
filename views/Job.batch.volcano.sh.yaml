@@ -24,9 +24,7 @@ listview:
       header: "Min Available:"
       path: "spec#minAvailable"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     phase:
       header: "Phase:"
@@ -61,9 +59,7 @@ listview:
       path: "status#running"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     scheduler:
       header: "Scheduler:"
@@ -74,9 +70,7 @@ listview:
       path: "status#succeeded"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
   actions:
     actionlist:
@@ -98,17 +92,12 @@ infoview:
         header: [["Max Retries:", ["main", "infoheader"]]]
         path: "spec#maxRetry"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
+        formatter: "numerical"
       min_available:
         header: [["Min Available:", ["main", "infoheader"]]]
         path: "spec#minAvailable"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#state#phase"
@@ -159,14 +148,12 @@ infoview:
         path: "status#running"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       running_duration:
         header: [["Running Duration:", ["main", "infoheader"]]]
         path: "status#runningDuration"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       scheduler:
         header: [["Scheduler:", ["main", "infoheader"]]]
         path: "spec#schedulerName"
@@ -176,9 +163,7 @@ infoview:
         path: "status#succeeded"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
   shortcuts:
     "Open Queue":
       key: "q"

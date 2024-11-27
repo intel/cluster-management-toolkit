@@ -205,9 +205,7 @@ infoview:
         path: "spec#backoffLimit"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]],
                  ["ontroller:", ["main", "infoheader"]]]
@@ -290,9 +288,7 @@ infoview:
         path: "spec#parallelism"
         default: 1
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       pod_failure_policy:
         header: [["Pod Failure Policy:", ["main", "infoheader"]]]
         path: "spec#podFailurePolicy"
@@ -463,11 +459,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Open controller":
       key: "c"

@@ -50,9 +50,7 @@ infoview:
         header: [["Total Sample Count:", ["main", "infoheader"]]]
         path: "status#totalSamplesCount"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
@@ -108,7 +106,8 @@ infoview:
         header: "Total Weight:"
         path: "totalWeight"
         type: "float"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Open Vertical Pod Autoscaler":
       key: "v"

@@ -19,19 +19,15 @@ listview:
       path: "status#availableWorkerReplicas"
       default: 0
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
     desired_workers:
       header: "Desired Workers:"
       path: "status#desiredWorkerReplicas"
       default: 0
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
 infoview:
   name: "Ray Cluster Info"
   infopad:
@@ -49,9 +45,7 @@ infoview:
         path: "status#availableWorkerReplicas"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]],
                  ["ontroller:", ["main", "infoheader"]]]
@@ -81,23 +75,19 @@ infoview:
         path: "status#desiredCPU"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       desired_gpus:
         header: [["  GPUs:", ["main", "infoheader"]]]
         path: "status#desiredGPU"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       desired_mem:
         header: [["  Memory:", ["main", "infoheader"]]]
         path: "status#desiredMemory"
         default: "<unset>"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       desired_resources_header:
         header: [["Desired Resources:", ["main", "infoheader"]]]
       desired_tpus:
@@ -105,17 +95,13 @@ infoview:
         path: "status#desiredTPU"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       desired_workers:
         header: [["Desired Workers:", ["main", "infoheader"]]]
         path: "status#desiredWorkerReplicas"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       endpoint_client:
         header: [["  Client:", ["main", "infoheader"]]]
         path: "status#endpoints#client"

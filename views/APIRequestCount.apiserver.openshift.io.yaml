@@ -23,21 +23,17 @@ listview:
     requests_last_hour:
       header: "Requests (Last Hour):"
       path: "status#currentHour#requestCount"
-      type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
-      align: "right"
       default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
     requests_last_24h:
       header: "Requests (Last 24h):"
       path: "status#requestCount"
-      type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
-      align: "right"
       default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
 infoview:
   name: "API Request Info"
   infopad:
@@ -55,16 +51,12 @@ infoview:
       requests_last_hour:
         header: [["Requests (Last Hour):", ["main", "infoheader"]]]
         path: "status#currentHour#requestCount"
-        type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
         default: 0
+        type: "int"
+        formatter: "numerical"
       requests_last_24h:
         header: [["Requests (Last 24h):", ["main", "infoheader"]]]
         path: "status#requestCount"
-        type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
         default: 0
+        type: "int"
+        formatter: "numerical"

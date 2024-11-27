@@ -13,10 +13,8 @@ listview:
       header: "Ready Replicas:"
       path: "status#readyReplicas"
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
 infoview:
   name: "Kube Controller Manager Info"
   infopad:
@@ -55,9 +53,7 @@ infoview:
         header: [["Ready Replicas:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       use_more_secure_service_ca:
         header: [["Use More Secure Service CA:", ["main", "infoheader"]]]
         path: "spec#useMoreSecureServiceCA"
@@ -85,9 +81,7 @@ infoview:
         header: "Current Revision:"
         path: "currentRevision"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
   shortcuts:
     "Cluster Version":

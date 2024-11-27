@@ -187,9 +187,7 @@ infoview:
         header: [["Allocatable Pods:", ["main", "infoheader"]]]
         path: "status#allocatable#pods"
         type: "str"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       architecture:
         header: [["Architecture:", ["main", "infoheader"]]]
         path: "status#nodeInfo#architecture"
@@ -403,11 +401,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "CSI Node":
       key: "c"

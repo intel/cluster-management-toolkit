@@ -53,33 +53,25 @@ listview:
       header: "Ready:"
       path: "status#readyReplicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     replicas:
       header: "Replicas:"
       path: "status#replicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     unavailable:
       header: "Unavailable:"
       path: "status#unavailableReplicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     updated:
       header: "Updated:"
       path: "status#updatedReplicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     version:
       header: "Version:"
@@ -176,23 +168,17 @@ infoview:
         header: [["Ready:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       revision_history_limit:
         header: [["Revision History Limit:", ["main", "infoheader"]]]
         path: "spec#revisionHistoryLimit"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         path: "status#replicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       template_bootstrap:
         header: [["  B", ["main", "infoheader"]],
                  ["o", ["main", "infoheader_shortcut"]],
@@ -267,16 +253,12 @@ infoview:
         header: [["Unavailable:", ["main", "infoheader"]]]
         path: "status#unavailableReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       updated:
         header: [["Updated:", ["main", "infoheader"]]]
         path: "status#updatedReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       update_strategy:
         header: [["Update Strategy:", ["main", "infoheader"]]]
         paths:

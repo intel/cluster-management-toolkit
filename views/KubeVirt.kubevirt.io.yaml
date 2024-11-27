@@ -38,9 +38,7 @@ listview:
       header: "Replicas:"
       path: "spec#infra#replicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
 infoview:
   name: "KubeVirt Info"
@@ -119,9 +117,7 @@ infoview:
         header: [["Replicas:", ["main", "infoheader"]]]
         path: "spec#infra#replicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       target_kubevirt_registry:
         header: [["Target KubVirt Policy:", ["main", "infoheader"]]]
         path: "status#targetKubeVirtRegistry"

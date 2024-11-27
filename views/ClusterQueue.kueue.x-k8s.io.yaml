@@ -39,9 +39,7 @@ listview:
       header: "Admitted Workloads:"
       path: "status#admittedWorkloads"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     cohort:
       header: "Cohort:"
@@ -64,9 +62,7 @@ listview:
       header: "Pending Workloads:"
       path: "status#pendingWorkloads"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     strategy:
       header: "Strategy:"
@@ -163,9 +159,7 @@ infoview:
         path: "spec#preemption#borrowWithinCohort#maxPriorityThreshold"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       preemption_header:
         header: [["Preemption:", ["main", "infoheader"]]]
       preemption_reclaim_within_cohort:
@@ -190,23 +184,17 @@ infoview:
         header: [["  Admitted:", ["main", "infoheader"]]]
         path: "status#admittedWorkloads"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       workloads_pending:
         header: [["  Pending:", ["main", "infoheader"]]]
         path: "status#pendingWorkloads"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       workloads_reserving:
         header: [["  Reserving:", ["main", "infoheader"]]]
         path: "status#reservingWorkloads"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -235,9 +223,7 @@ infoview:
         header: "Admitted Workloads:"
         path: "status#admittedWorkloads"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       cluster_queue:
         header: "Cluster Queue:"
@@ -247,9 +233,7 @@ infoview:
         header: "Pending Workloads:"
         path: "status#pendingWorkloads"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
   shortcuts:
     "Admission Checks":

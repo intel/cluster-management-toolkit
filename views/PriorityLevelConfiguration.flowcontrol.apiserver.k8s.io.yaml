@@ -17,20 +17,16 @@ listview:
       header: "Hand Size:"
       path: "spec#limited#limitResponse#queuing#handSize"
       type: "raw"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
     nominal_concurrency_shares:
       header: "Nominal Concurrency Shares:"
       paths:
         - path: ["spec#limited#nominalConcurrencyShares",
                  "spec#limited#assuredConcurrencyShares"]
           pathtype: "value"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
     priority_type:
       header: "Priority Type:"
       path: "spec#type"
@@ -39,18 +35,14 @@ listview:
       header: "Queue Length List:"
       path: "spec#limited#limitResponse#queuing#queueLengthLimit"
       type: "raw"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
     queues:
       header: "Queues:"
       path: "spec#limited#limitResponse#queuing#queues"
       type: "raw"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
 infoview:
   name: "Priority Level Configuration Info"
   infopad:
@@ -77,17 +69,13 @@ infoview:
         header: [["Hand Size:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#handSize"
         type: "raw"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       nominal_concurrency_shares:
         header: [["Nominal Concurrency Shares:", ["main", "infoheader"]]]
         paths:
           - path: "spec#limited#assuredConcurrencyShares"
             pathtype: "value"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       priority_type:
         header: [["Priority Type:", ["main", "infoheader"]]]
         path: "spec#type"
@@ -96,16 +84,12 @@ infoview:
         header: [["Queue Length List:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#queueLengthLimit"
         type: "raw"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       queues:
         header: [["Queues:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#queues"
         type: "raw"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
   shortcuts:
     "Cluster Version":
       key: "v"

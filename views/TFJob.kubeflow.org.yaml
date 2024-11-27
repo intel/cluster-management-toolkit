@@ -127,9 +127,7 @@ infoview:
         path: "spec#tfReplicaSpecs#PS#replicas"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       parameter_servers_restart_policy:
         header: [["  Restart Policy:", ["main", "infoheader"]]]
         path: "spec#tfReplicaSpecs#PS#restartPolicy"
@@ -336,11 +334,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Open controller":
       key: "c"

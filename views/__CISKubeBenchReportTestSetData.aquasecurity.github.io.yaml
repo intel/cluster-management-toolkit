@@ -57,9 +57,7 @@ infoview:
         header: [["  Pass:", ["main", "infoheader"]]]
         path: "pass"
         type: "raw"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       severity_warn:
         header: [["  Warn:", ["main", "infoheader"]]]
         path: "warn"
@@ -93,9 +91,7 @@ infoview:
         header: [["Test Set ID#:", ["main", "infoheader"]]]
         path: "section"
         type: "str"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
   listpad:
     on_activation:
       call: "resourceinfodispatch"
@@ -138,7 +134,5 @@ infoview:
         header: "ID#:"
         path: "test_number"
         type: "str"
+        formatter: "numerical"
         align: "right"
-        formatting:
-          field_colors:
-            - type: "numerical"

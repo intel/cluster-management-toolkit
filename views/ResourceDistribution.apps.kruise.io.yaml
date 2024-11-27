@@ -17,27 +17,21 @@ listview:
       path: "status#desired"
       default: "<unset>"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     failed:
       header: "Failed:"
       path: "status#failed"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     succeeded:
       header: "Succeeded:"
       path: "status#succeeded"
       default: 0
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
 infoview:
   name: "Resource Distributions Info"
@@ -53,25 +47,19 @@ infoview:
         path: "status#desired"
         default: "<unset>"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       failed:
         header: [["Failed:", ["main", "infoheader"]]]
         path: "status#failed"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       succeeded:
         header: [["Succeeded:", ["main", "infoheader"]]]
         path: "status#succeeded"
         default: 0
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       targets_header:
         header: [["Targets:", ["main", "infoheader"]]]
       targets_excluded_namespaces:

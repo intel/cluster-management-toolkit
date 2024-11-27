@@ -22,9 +22,8 @@ listview:
       header: "Value:"
       path: "value"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
+      align: "right"
 infoview:
   name: "Priority Class Info"
   infopad:
@@ -59,9 +58,7 @@ infoview:
         header: [["Value:", ["main", "infoheader"]]]
         path: "value"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       description:
         header: [["Description:", ["main", "infoheader"]]]
       description2:
@@ -178,11 +175,9 @@ infoview:
             subpath: "restartCount"
             action: "sum"
             type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
         default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Cluster Version":
       key: "v"

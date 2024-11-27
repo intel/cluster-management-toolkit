@@ -16,17 +16,15 @@ listview:
     revision:
       header: "Revision:"
       path: "status#version"
-      type: "int"
       default: "<unset>"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      type: "int"
+      formatter: "numerical"
       align: "right"
     version:
       header: "Version:"
       path: "status#metadata#version"
-      type: "str"
       default: "<unset>"
+      type: "str"
       formatting:
         field_colors:
           - type: "version"
@@ -44,17 +42,14 @@ infoview:
       revision:
         header: [["Revision:", ["main", "infoheader"]]]
         path: "status#version"
-        type: "int"
         default: "<unset>"
-        formatting:
-          field_colors:
-            - type: "numerical"
-        align: "right"
+        type: "int"
+        formatter: "numerical"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "status#metadata#version"
-        type: "str"
         default: "<unset>"
+        type: "str"
         formatting:
           field_colors:
             - type: "version"

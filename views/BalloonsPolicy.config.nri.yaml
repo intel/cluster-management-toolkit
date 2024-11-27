@@ -46,7 +46,7 @@ infoview:
         header: [["  HTTP Endpoint:", ["main", "infoheader"]]]
         path: "spec#instrumentation#httpEndpoint"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       instrumentation_prometheus_export:
         header: [["  Prometheus Export:", ["main", "infoheader"]]]
         path: "spec#instrumentation#prometheusExport"
@@ -55,12 +55,12 @@ infoview:
         header: [["  Report Period:", ["main", "infoheader"]]]
         path: "spec#instrumentation#reportPeriod"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       instrumentation_sampling_rate_per_million:
         header: [["  Sampling Rate Per Million:", ["main", "infoheader"]]]
         path: "spec#instrumentation#samplingRatePerMillion"
         type: "str"
-        formatter: "numerical_with_units"
+        formatter: "numerical"
       log_debug:
         header: [["  Debug:", ["main", "infoheader"]]]
         path: "spec#log#debug"
@@ -131,19 +131,15 @@ infoview:
       min_balloons:
         header: "Min Balloons:"
         path: "minBalloons"
-        type: "str"
         default: "<unset>"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        type: "str"
+        formatter: "numerical"
         align: "right"
       min_cpus:
         header: "Min CPUs:"
         path: "minCPUs"
         type: "str"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
         align: "right"
       name:
         header: "Name:"

@@ -17,18 +17,14 @@ listview:
       header: "Max Pods:"
       path: "spec#maxReplicas"
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
     minpods:
       header: "Min Pods:"
       path: "spec#minReplicas"
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
     reference:
       header: "Reference:"
       paths:
@@ -50,10 +46,8 @@ listview:
       header: "Replicas:"
       path: "status#currentReplicas"
       type: "int"
+      formatter: "numerical"
       align: "right"
-      formatting:
-        field_colors:
-          - type: "numerical"
 infoview:
   name: "Horizontal Pod Autoscaler Info"
   infopad:
@@ -66,16 +60,12 @@ infoview:
         header: [["Max Replicas:", ["main", "infoheader"]]]
         path: "spec#maxReplicas"
         type: "raw"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       min_replicas:
         header: [["Min Replicas:", ["main", "infoheader"]]]
         path: "spec#minReplicas"
         type: "raw"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       scale_target_reference:
         header: [["S", ["main", "infoheader_shortcut"]],
                  ["cale Target Reference:", ["main", "infoheader"]]]
@@ -167,10 +157,8 @@ infoview:
         header: "Target Value:"
         path: "target_value"
         type: "raw"
+        formatter: "numerical"
         align: "right"
-        formatting:
-          field_colors:
-            - type: "numerical"
   shortcuts:
     "Scale Target Reference":
       key: "s"

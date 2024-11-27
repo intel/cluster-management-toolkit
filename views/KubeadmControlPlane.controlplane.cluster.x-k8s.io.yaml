@@ -74,33 +74,25 @@ listview:
       header: "Ready:"
       path: "status#readyReplicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     replicas:
       header: "Replicas:"
       path: "status#replicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     unavailable:
       header: "Unavailable:"
       path: "status#unavailableReplicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     updated:
       header: "Updated:"
       path: "status#updatedReplicas"
       type: "int"
-      formatting:
-        field_colors:
-          - type: "numerical"
+      formatter: "numerical"
       align: "right"
     version:
       header: "Version:"
@@ -178,16 +170,12 @@ infoview:
         header: [["Ready:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         path: "status#replicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       selector:
         header: [["Selector:", ["main", "infoheader"]]]
         path: "status#selector"
@@ -218,16 +206,12 @@ infoview:
         header: [["Unavailable:", ["main", "infoheader"]]]
         path: "status#unavailableReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       updated:
         header: [["Updated:", ["main", "infoheader"]]]
         path: "status#updatedReplicas"
         type: "int"
-        formatting:
-          field_colors:
-            - type: "numerical"
+        formatter: "numerical"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
