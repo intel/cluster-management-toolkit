@@ -2765,6 +2765,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "cachedimages",
         "namespaced": False,
     },
+    ("Repository", "kuik.enix.io"): {
+        "api_paths": ["apis/kuik.enix.io/v1alpha1/"],
+        "api": "repositories",
+        "namespaced": False,
+    },
     # kustomize.toolkit.fluxcd.io
     ("Kustomization", "kustomize.toolkit.fluxcd.io"): {
         "api_paths": ["apis/kustomize.toolkit.fluxcd.io/v1/"],
