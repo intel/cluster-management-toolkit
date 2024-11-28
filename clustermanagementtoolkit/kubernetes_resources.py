@@ -4420,6 +4420,12 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "logicalvolumes",
         "namespaced": False,
     },
+    # tracee.aquasec.com
+    ("Policy", "tracee.aquasec.com"): {
+        "api_paths": ["apis/tracee.aquasec.com/v1beta1/"],
+        "api": "policies",
+        "namespaced": False,
+    },
     # traefik.containo.us
     ("IngressRoute", "traefik.containo.us"): {
         "api_paths": ["apis/traefik.containo.us/v1alpha1/"],

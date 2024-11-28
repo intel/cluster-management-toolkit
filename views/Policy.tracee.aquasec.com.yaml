@@ -1,0 +1,67 @@
+---
+kind: "Policy"
+api_family: "tracee.aquasec.com"
+default_command: "policies.tracee.aquasec.com"
+command:
+  - "trpolicies"
+  - "trpolicy"
+  - "trpols"
+  - "trpol"
+listview:
+  name: "Policies"
+  group: "Security"
+  field_indexes:
+    Normal:
+      fields: ["name", "scope", "rule_count", "age"]
+  fields:
+    rule_count:
+      header: "Rules:"
+      path: "spec#rules"
+      type: "len"
+      formatter: "numerical"
+      align: "right"
+    scope:
+      header: "Scopes:"
+      path: "spec#scope"
+      type: "raw"
+      formatter: "list"
+infoview:
+  name: "Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["scopes"]
+    rows:
+      scopes:
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["copes:", ["main", "infoheader"]]]
+        path: "spec#scope"
+        type: "raw"
+        formatter: "list"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#rules"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["event"]
+        sortcolumn: "event"
+    fields:
+      event:
+        header: "Event:"
+        path: "event"
+        type: "str"
+  shortcuts:
+    "Show scopes":
+      key: "s"
+      modifier: "shift"
+      read_only: false
+      helptext: "Show scopes"
+      title: "Scopes:"
+      widget: "windowwidget"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#scope"
+      # This isn't supported for now
+      sortcolumn: "name"
