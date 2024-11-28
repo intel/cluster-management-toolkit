@@ -8,6 +8,7 @@
 2. _[Wait until cmt prepare completes]_
 
 ## Add worker nodes
+
 1. `cmt add-node [--kubernetes-distro KUBERNETES_DISTRO] HOSTNAME[,HOSTNAME...]`
 
    _(By default kubeadm will be used; if you use RKE2 you need to specify the `--kubernetes-distro` option)_

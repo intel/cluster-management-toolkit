@@ -2339,7 +2339,7 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
                 ([str]): A list of timestamps
                 ([str]): A list of facilities
                 ([str]): A list of severities
-                ([ThemeArray] | str): A list of ThemeArrays
+                ([ThemeArray]|str): A list of ThemeArrays
     """
     timestamps: list[datetime] = []
     facilities: list[str] = []
@@ -2382,7 +2382,7 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
 # pylint: disable-next=too-many-locals,too-many-branches
 def get_journalctl_log(obj: dict, **kwargs: Any) -> \
         tuple[list[datetime], list[str], list[LogLevel],
-              list[list[Union[ThemeRef, ThemeStr]] | str]]:
+              list[Union[list[Union[ThemeRef, ThemeStr]], str]]]:
     """
     Extract log entries from journalctl.
 
@@ -2476,7 +2476,7 @@ def get_task_log(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, ThemeStr
                 log#stderr_lines (list[str]): Output to stderr
                 log#msg_lines (list[str]): Merged output
         Returns:
-            ([[ThemeRef | ThemeStr]]): A list of messages
+            ([[ThemeRef|ThemeStr]]): A list of messages
     """
     field: list = []
 
@@ -2550,8 +2550,8 @@ def logpad_files(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, ThemeStr
         formatter_args = deep_get(kwargs, DictPath("formatter_args"), {})
 
     if not show_raw and formatter == "markdown":
-        return formatters.format_markdown(vlist[0], **formatter_args)
-    return formatters.format_none(vlist[0], **formatter_args)
+        return formatters.format_markdown(cast(str, vlist[0]), **formatter_args)
+    return formatters.format_none(cast(str, vlist[0]), **formatter_args)
 
 
 def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, ThemeStr]]]:
@@ -2564,7 +2564,7 @@ def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, Them
                 path (str): The path to get the data from
                 formatter (str): The formatter to use for formatting the message
         Returns:
-            ([[ThemeRef | ThemeStr]]): A list of messages
+            ([[ThemeRef|ThemeStr]]): A list of messages
     """
     path: DictPath = DictPath(deep_get(kwargs, DictPath("path"), ""))
     dump_formatter_tmp = deep_get(kwargs, DictPath("formatter"), "format_none")

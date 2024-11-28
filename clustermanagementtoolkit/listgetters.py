@@ -434,7 +434,18 @@ def __recurse_data(path: dict, obj: Any) -> Any:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def listgetter_files(**kwargs: Any) -> tuple[list[dict[str, Any]], Union[int, str, None]]:
+def listgetter_files(**kwargs: Any) -> tuple[list[Union[str, dict[str, Any]]],
+                                             Union[int, str, None]]:
+    """
+    Custom listgetter mainly for use with the version data checker.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            (([dict[str, Any]], int)):
+                ([str|dict[str, Any]]): The list of Kubernetes objects
+                (int): The status for the Kubernetes request
+    """
     paths = \
         deep_get_with_fallback(kwargs,
                                [DictPath("paths"),
@@ -446,7 +457,7 @@ def listgetter_files(**kwargs: Any) -> tuple[list[dict[str, Any]], Union[int, st
                                 DictPath("extra_values#_extra_data#file_not_found_status")],
                                "File not found", fallback_on_empty=True)
     skip_empty_paths = deep_get(kwargs, DictPath("skip_empty_paths"), False)
-    vlist: list[dict[str, Any]] = []
+    vlist: list[Union[str, dict[str, Any]]] = []
     status = None
 
     for path in paths:
@@ -1740,12 +1751,29 @@ def get_pod_resource_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict
 
 # pylint: disable-next=too-many-locals
 def get_info_by_last_applied_configuration(obj: dict, **kwargs: Any) -> tuple[list[dict], int]:
+    """
+    Given a kind tuple, get a list of all its resources, and check for a last applied
+    configuration, optionally matching by API-version.
+
+        Parameters:
+            obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+                kind ((str, str)): The kind tuple to get resources for
+                match_api_version (bool): Should the information be filtered by API-version?
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of pod resources.
+                (int): The status for the request
+        Raises:
+            ProgrammingError: Function called without kubernetes_helper
+    """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
-    kind = deep_get(kwargs, DictPath("kind"))
-    if kind is None:
+    if (kind := deep_get(kwargs, DictPath("kind"), ("", ""))) == ("", ""):
         return [], 404
 
     configuration: dict[str, str] = {
@@ -1855,11 +1883,22 @@ def get_virtsvc_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]
 
 # pylint: disable-next=unused-argument
 def listgetter_ansible_volumes(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], str]:
-    info = []
+    """
+    Given an Ansible facts dict for a host, return information about its volumes.
+
+        Parameters:
+            obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of data
+                (int): The status for the request
+    """
+    vlist: list[dict[str, Any]] = []
 
     # Find all mounts
     for item in deep_get(obj, DictPath("ansible_mounts"), []):
-        d = {}
+        d: dict[str, Any] = {}
         device = deep_get(item, DictPath("device"), "")
         if not device:
             continue
@@ -1883,7 +1922,7 @@ def listgetter_ansible_volumes(obj: dict, **kwargs: Any) -> tuple[list[dict[str,
                 "partition_size_used": partition_size_used,
                 "partition_size_total": partition_size_total,
             }
-            info.append(d)
+            vlist.append(d)
             continue
         device = os.path.basename(device)
 
@@ -1912,14 +1951,25 @@ def listgetter_ansible_volumes(obj: dict, **kwargs: Any) -> tuple[list[dict[str,
             "partition_size_total": partition_size_total,
             "model": model,
         }
-        info.append(d)
+        vlist.append(d)
 
-    return info, "OK"
+    return vlist, "OK"
 
 
 # pylint: disable-next=unused-argument
 def listgetter_configmap_data(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
-    vlist = []
+    """
+    Get a list of the data in a configmap.
+
+        Parameters:
+            obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of data
+                (int): The status for the request
+    """
+    vlist: list[dict[str, Any]] = []
 
     cm_name = deep_get(obj, DictPath("metadata#name"))
     cm_namespace = deep_get(obj, DictPath("metadata#namespace"), "")
@@ -1956,7 +2006,7 @@ def listgetter_dict_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[
     This is to ensure that we can get the key without knowing the name of the key.
 
         Parameters:
-            obj (Dict): The object to convert to a list
+            obj (dict): The object to convert to a list
         Returns:
             (([dict[str, Any]], int)):
                 ([dict[str, Any]]): The list representation of the dict
@@ -2117,7 +2167,7 @@ def listgetter_namespaced_resources(obj: dict, **kwargs: Any) -> \
     Given a Namespace object, find all objects that belong to that Namespace.
 
         Parameters:
-            obj (Dict): The object to extract a list of data from
+            obj (dict): The object to extract a list of data from
             **kwargs (dict[str, Any]): Keyword arguments
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
@@ -2189,6 +2239,7 @@ def listgetter_feature_gates(obj: dict, **kwargs: Any) -> tuple[list[dict[str, A
         Parameters:
             obj (dict): The object to extract data from
             **kwargs (dict[str, Any]): Keyword arguments
+                path (str): The path to the list of feature gates
         Returns:
             (([dict[str, Any]], int)):
                 ([dict[str, Any]]): The list of data

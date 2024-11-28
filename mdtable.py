@@ -14,11 +14,12 @@
 # SPDX-License-Identifier: MIT
 
 import errno
+import re
 import sys
-from typing import NoReturn
+from typing import Any, NoReturn
 
 PROGRAMNAME = "mdtable.py"
-PROGRAMVERSION = "v0.0.3"
+PROGRAMVERSION = "v0.0.4"
 
 PROGRAMDESCRIPTION = "Reformat tabulated data to Markdown"
 PROGRAMAUTHORS = "Written by David Weinehall."
@@ -30,7 +31,7 @@ LICENSE += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
 
 
 # pylint: disable-next=too-many-branches
-def format_table(file: str, separator: str, headers: list[str]) -> None:
+def format_table(file: str, separator: str, headers: list[str], **kwargs: Any) -> None:
     """
     Format field-separated data as a Markdown table.
 
@@ -38,8 +39,17 @@ def format_table(file: str, separator: str, headers: list[str]) -> None:
             file (str): The name of the file to read data from
             separator (str): The separator that separates te field
             headers ([str]): The field headers
+            **kwargs (dict[str, Any]): Keyword arguments
+                bold_regex (str): A regular expression to check for matches to apply bold to
+                italics_regex (str): A regular expression to check for matches to apply italics to
     """
     lines: str = ""
+    bold_regex: str = ""
+    italics_regex: str = ""
+    if "bold_regex" in kwargs:
+        bold_regex = kwargs["bold_regex"]
+    if "italics_regex" in kwargs:
+        italics_regex = kwargs["italics_regex"]
 
     try:
         with open(file, "r", encoding="utf-8") as f:
@@ -50,6 +60,7 @@ def format_table(file: str, separator: str, headers: list[str]) -> None:
 
     column_count: int = len(headers)
     widths: list[int] = [len(header.strip()) + 2 for header in headers]
+    adjusts: list[int] = [0 for header in headers]
     i: int = 0
 
     # First check for consistency and tabulate column widths
@@ -70,14 +81,23 @@ def format_table(file: str, separator: str, headers: list[str]) -> None:
                       f"while line {i} has {len(columns)} columns.")
             sys.exit(errno.EINVAL)
 
-        widths = [max(widths[i], len(column.strip())) for i, column in enumerate(columns)]
+        for i, column in enumerate(columns):
+            adjust = 0
+            if bold_regex:
+                if re.match(bold_regex, column) is not None:
+                    adjust = 2
+            if italics_regex and not adjust:
+                if re.match(italics_regex, column) is not None:
+                    adjust = 1
+            adjusts[i] = max(adjusts[i], adjust)
+            widths[i] = max(widths[i], len(column.strip()) + adjust)
 
     table: str = "|"
 
     for i, header in enumerate(headers):
         if widths[i] == 2:
             continue
-        table += " " + header.strip().ljust(widths[i])
+        table += " " + header.strip().strip("=").ljust(widths[i] + adjusts[i])
         table += " |"
 
     table += "\n|"
@@ -86,7 +106,17 @@ def format_table(file: str, separator: str, headers: list[str]) -> None:
         if widths[i] == 2:
             continue
         table += " "
-        table += "".ljust(widths[i], "-")
+        if header.startswith("="):
+            if header.endswith("="):
+                table += ":".ljust(widths[i] + adjusts[i] - 1, "-")
+                table += ":"
+            else:
+                table += ":".ljust(widths[i] + adjusts[i], "-")
+        elif header.endswith("="):
+            table += "".ljust(widths[i] + adjusts[i] - 1, "-")
+            table += ":"
+        else:
+            table += ":".ljust(widths[i] + adjusts[i], "-")
         table += " |"
 
     # Now format the data
@@ -100,7 +130,20 @@ def format_table(file: str, separator: str, headers: list[str]) -> None:
             if widths[i] == 2:
                 continue
 
-            table += " " + column.strip().ljust(widths[i])
+            before = ""
+            after = ""
+            if bold_regex:
+                if re.match(bold_regex, column) is not None:
+                    before = "**"
+                    after = "**"
+            if italics_regex and before == "":
+                if re.match(italics_regex, column) is not None:
+                    before = "*"
+                    after = "*"
+
+            column = column.strip()
+            column = f"{before}{column}{after}"
+            table += " " + column.ljust(widths[i] + adjusts[i])
             table += " |"
 
     print(table)
@@ -110,12 +153,18 @@ def usage() -> NoReturn:
     """
     Display usage information.
     """
-    print(f"{PROGRAMNAME} [OPTIONS] FILE HEADER...")
+    print(f"{PROGRAMNAME} [OPTIONS] FILE [=]HEADER[=]...")
     print()
     print(PROGRAMDESCRIPTION)
     print()
+    print("=HEADER  will left-align column (default behaviour)")
+    print(" HEADER= will right-align column")
+    print("=HEADER= will center-align column")
+    print()
     print("Options:")
     print("  --separator SEPARATOR    The separator used in FILE; default \"|\"")
+    print("  --bold-regex REGEX       A regular expression to apply bold formatting to")
+    print("  --italics-regex REGEX    A regular expression to apply italics formatting to")
     sys.exit(0)
 
 
@@ -144,6 +193,8 @@ def main() -> None:
         sys.exit(errno.EINVAL)
 
     separator: str = "|"
+    bold_regex: str = ""
+    italics_regex: str = ""
 
     i = 1
 
@@ -156,6 +207,20 @@ def main() -> None:
             usage()
         elif opt == "--version":
             version()
+        elif opt == "--bold-regex":
+            if len(sys.argv) < i + 1:
+                print(f"{PROGRAMNAME}: \"--bold-regex\" missing argument.")
+                print(f"Try \"{PROGRAMNAME} --help\" for more information.")
+                sys.exit(errno.EINVAL)
+            bold_regex = sys.argv[i]
+            i += 1
+        elif opt == "--italics-regex":
+            if len(sys.argv) < i + 1:
+                print(f"{PROGRAMNAME}: \"--italics-regex\" missing argument.")
+                print(f"Try \"{PROGRAMNAME} --help\" for more information.")
+                sys.exit(errno.EINVAL)
+            italics_regex = sys.argv[i]
+            i += 1
         elif opt == "--separator":
             if len(sys.argv) < i + 1:
                 print(f"{PROGRAMNAME}: \"--separator\" missing argument.")
@@ -178,7 +243,7 @@ def main() -> None:
 
     headers = sys.argv[i + 1:]
 
-    format_table(file, separator, headers)
+    format_table(file, separator, headers, bold_regex=bold_regex, italics_regex=italics_regex)
 
     return 0
 

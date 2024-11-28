@@ -763,6 +763,36 @@ def test_get_formatter(verbose: bool = False) -> Tuple[str, bool]:
             ),
             (
                 {
+                    "generator": generators.generator_numerical_with_units,
+                    "align": "right",
+                },
+                {
+                    "generator": generators.generator_numerical_with_units,
+                    "processor": None,
+                    "field_colors": [ThemeAttr('types', 'field')],
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "field_separators": [ThemeRef('separators', 'field')],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef('separators', 'ellipsis'),
+                    'item_separator': ThemeRef('separators', 'list'),
+                    'mapping': {},
+                    'ralign': True,
+                    'formatting': {
+                        'item_separator': ThemeRef('separators', 'list'),
+                        'field_separators': [ThemeRef('separators', 'field')],
+                        'field_colors': [ThemeAttr('types', 'field')],
+                        'ellipsise': -1,
+                        'ellipsis': ThemeRef('separators', 'ellipsis'),
+                        'field_prefixes': [],
+                        'field_suffixes': [],
+                        'mapping': {},
+                    }
+                },
+                None,
+            ),
+            (
+                {
                     "generator": generators.generator_status,
                 },
                 {

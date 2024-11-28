@@ -1,6 +1,7 @@
 # TODO
 
 ## curses_helper.py
+
 * We need to rewrite the UI to remove reliance on stdscr; stdscr should just be blank
   canvas. This solves all the rescaling issues, as well as limitations with what characters
   can go where, etc.
@@ -10,6 +11,7 @@
 * Scrollbars need their own windows.
 
 ## All
+
 * listgetters need to support passing both a label selector and a match selector
   in listgetter_args
 * When running either cmt or cmu, check whether .ssh/id_ecdsa.pub is in authorized_keys
@@ -23,6 +25,7 @@
   (named config-clustername) rather than merging the config-files
 
 ## cmu
+
 * Divide ping (inventory & context views) into 2 different categories;
   normal and slow; slow to use with hosts that responded with
   "NO ROUTE TO HOST", "CONNECTION TIMED OUT", or "COULD NOT RESOLVE";
@@ -55,9 +58,11 @@
   that way we don't have to duplicate functionality between cmu and cmt
 
 cmtinv:
+
 * Optionally limit rebuild-inventory to a subset of clusters.
 
 cmtadm:
+
 * Add command to import kube-config (requires cluster-name--unless unique) and a path.
 * prepare_passwordless_ansible won't work on localhost; we're not passing the password,
   and the password might not be the same on the remote system and the local system anyway.
@@ -78,6 +83,7 @@ cmtadm:
   * Add a security warning ansible_pass being used in cmtconfig.
 
 logparser:
+
 * All handling of message needs to be rewritten; as soon as a message gets formatted as a themearray
   it can no longer be processed further.
 * Rewrite key_value; the parser is overly complex at the moment; it needs to be simplified

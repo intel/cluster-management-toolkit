@@ -71,3 +71,6 @@
     3. [Q2 roadmap](roadmap/Project_roadmap.md#Q2-roadmap)
     4. [Q3 roadmap](roadmap/Project_roadmap.md#Q3-roadmap)
     5. [Q4 roadmap](roadmap/Project_roadmap.md#Q4-roadmap)
+    6. [Q1/2025 roadmap](roadmap/Project_roadmap.md#Q1-2025-roadmap)
+    7. [Q2/2025 roadmap](roadmap/Project_roadmap.md#Q2-2025-roadmap)
+    8. [Backlog](roadmap/Project_roadmap.md#Backlog)

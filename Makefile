@@ -83,9 +83,8 @@ PYLINT_DISABLE := W0511
 PYLINT_ENABLE := useless-suppression
 
 MYPY_FLAGS := --follow-imports silent --explicit-package-bases --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators --warn-redundant-casts --warn-unused-ignores
-code-checks-weak: flake8 ruff
-code-checks: mypy pylint
 
+code-checks: mypy pylint flake8 ruff
 checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml ruff
 
 tests: coverage
@@ -264,7 +263,7 @@ pylint-markdown:
 		row="$$file | $$result\n" ;\
 		printf -- "$$row" >> $${tmpfile} ;\
 	done && \
-	./mdtable.py $${tmpfile} "Source file" "Score" && rm $${tmpfile}
+	./mdtable.py --bold-regex "^\s*\d\.\d\d/10" $${tmpfile} "=Source file" "Score=" && rm $${tmpfile}
 
 pylint-tests:
 	@cmd=pylint ;\
@@ -341,7 +340,7 @@ mypy-markdown:
 		row="$$file | $$result\n" ;\
 		printf -- "$$row" >> $${tmpfile} ;\
 	done && \
-	./mdtable.py $${tmpfile} "Source file" "Score" && rm $${tmpfile}
+	./mdtable.py --bold-regex "^\s*Found.*errors" $${tmpfile} "=Source file" "=Score" && rm $${tmpfile}
 
 nox: create_test_symlinks
 	@cmd=nox ;\

@@ -1,6 +1,7 @@
 # Useful commands
 
 ## Control plane and cluster
+
 * `cmtadm untaint-control-plane` (Allow the control plane to be used as a worker node)
 * `cmtadm taint-control-plane` (Disallow the control plane to be used as a worker node)
 * `cmtadm troubleshoot` (Try to find potential problems in the cluster)
@@ -8,6 +9,7 @@
 * `cmtadm upgrade-cni` (Check if there's a newer version of the CNI available; if so, upgrade to it)
 
 ## Worker nodes and resources
+
 * `cmt cordon NODE[,...]` (Cordon specified nodes)
 * `cmt cordon ALL` (Cordon all nodes)
 * `cmt drain NODE[,...]` (Drain specified nodes)
@@ -28,6 +30,7 @@
 * `cmt api-resources` (List all available API-resources)
 
 ## Inventory
+
 * `cmtinv` (Show __CMT__'s Ansible inventory)
 * `cmtinv ping` (Ansible ping all hosts in the inventory)
 * `cmtinv ping GROUP[,...]` (Ansible ping all hosts in GROUP[,...])

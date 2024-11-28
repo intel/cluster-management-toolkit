@@ -3,8 +3,8 @@
 ## Contributing
 
 Contributions are warmly welcome!  All contributors MUST follow the guidelines in
-![CONTRIBUTING.md](../CONTRIBUTING.md) and ![CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md).
-All contributions must be made under license specified in ![LICENSE.md](../LICENSE.md).
+[CONTRIBUTING.md](../CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md).
+All contributions must be made under license specified in [LICENSE.md](../LICENSE.md).
 
 ## Roadmap
 
@@ -31,7 +31,7 @@ If the file you're modifying is not listed here you can either implement one on 
 or ask for help.
 
 | File:                 | Tests:                 | Notes:                               |
-| --------------------- | ---------------------- | ------------------------------------ |
+| :-------------------- | :--------------------- | :----------------------------------- |
 | `ansithemeprint.py`   | `tests/atptests`       | Optional manual tests                |
 | `ansible_helper.py`   | `tests/ansibletests`   | Ansible setup required               |
 | `checks.py`           | `tests/checkstests`    |                                      |

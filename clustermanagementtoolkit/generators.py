@@ -42,7 +42,7 @@ def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, Them
             string (str): The string to format
             selected (bool): Is the string selected?
         Returns:
-            union[ThemeRef, ThemeStr]: The ThemeStr
+            (ThemeRef | ThemeStr): A ThemeStr
     """
     formatted_string: Optional[Union[ThemeRef, ThemeStr]] = None
 
@@ -94,7 +94,7 @@ def format_list(items: Any, fieldlen: int, pad: int,
     ellipsis: Optional[ThemeRef] = deep_get(kwargs, DictPath("ellipsis"))
     field_prefixes: list[list[ThemeRef]] = deep_get(kwargs, DictPath("field_prefixes"))
     field_suffixes: list[list[ThemeRef]] = deep_get(kwargs, DictPath("field_suffixes"))
-    mapping: Optional[dict] = deep_get(kwargs, DictPath("mapping"))
+    mapping: dict = deep_get(kwargs, DictPath("mapping"), {})
 
     array: list[Union[ThemeRef, ThemeStr]] = []
 
@@ -120,9 +120,6 @@ def format_list(items: Any, fieldlen: int, pad: int,
 
     if not isinstance(items, list):
         items = [items]
-
-    if mapping is None:
-        mapping = {}
 
     elcount = 0
     skip_separator = True
@@ -179,14 +176,10 @@ def format_list(items: Any, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
-# references is unused for now, but will eventually be used to compare against
-# reference values (such as using other paths to get the range, instead of getting
-# it static from formatting#mapping)
-
-# pylint: disable-next=unused-argument,too-many-locals,too-many-statements,too-many-branches
-def map_value(value: Any, references: Any = None, selected: bool = False,
+# pylint: disable-next=too-many-locals,too-many-statements,too-many-branches
+def map_value(value: Any, selected: bool = False,
               default_field_color: ThemeAttr = ThemeAttr("types", "generic"),
-              mapping: Optional[dict] = None) -> tuple[Union[ThemeRef, ThemeStr], str]:
+              **kwargs: Any) -> tuple[Union[ThemeRef, ThemeStr], str]:
     """
     Perform value based mappings; either by doing numerical ranges,
     or by doing string comparisons (optionally case insensitive).
@@ -196,20 +189,21 @@ def map_value(value: Any, references: Any = None, selected: bool = False,
             references (Any): The references to map against (unsupported for now)
             selected (bool): Is the string selected?
             default_field_color (ThemeAttr): The default colour to use if no mapping occurs
-            mapping (dict): The mapping rules
+            **kwargs (dict[str, Any]): Keyword arguments
+                mapping (dict): The mapping rules
         Returns:
             (ThemeArray, str):
                 (ThemeArray): The formatted themearray
                 (str): The string-representation of the value
     """
     # If we lack a mapping, use the default color for this field
-    if mapping is None or not mapping:
+    if not deep_get(kwargs, DictPath("mapping"), {}):
         return ThemeStr(value, default_field_color, selected), value
 
-    substitutions = deep_get(mapping, DictPath("substitutions"), {})
-    ranges = deep_get(mapping, DictPath("ranges"), [])
-    match_case = deep_get(mapping, DictPath("match_case"), True)
-    _mapping = deep_get(mapping, DictPath("mappings"), {})
+    substitutions = deep_get(kwargs, DictPath("mapping#substitutions"), {})
+    ranges = deep_get(kwargs, DictPath("mapping#ranges"), [])
+    match_case = deep_get(kwargs, DictPath("mapping#match_case"), True)
+    mappings = deep_get(kwargs, DictPath("mapping#mappings"), {})
 
     field_colors = None
 
@@ -263,18 +257,18 @@ def map_value(value: Any, references: Any = None, selected: bool = False,
         _string = string
         if not match_case:
             matched = False
-            if string in _mapping and string.lower() in _mapping and string != string.lower():
+            if string in mappings and string.lower() in mappings and string != string.lower():
                 raise ValueError("When using match_case == False "
                                  "the mapping cannot contain keys that only differ in case")
-            for key in _mapping:
+            for key in mappings:
                 if key.lower() == string.lower():
                     _string = key
                 matched = True
-            if not matched and "__default" in _mapping:
+            if not matched and "__default" in mappings:
                 _string = "__default"
-        elif _string not in _mapping and "__default" in _mapping:
+        elif _string not in mappings and "__default" in mappings:
             _string = "__default"
-        field_colors = deep_get(_mapping, DictPath(f"{_string}#field_colors"))
+        field_colors = deep_get(mappings, DictPath(f"{_string}#field_colors"))
     else:
         raise TypeError(f"Unknown type {type(value)} for mapping/range")
 
@@ -409,6 +403,15 @@ def format_numerical_with_units(string: str, ftype: str,
 
 
 def generator_age_raw(value: Union[int, str], selected: bool) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    A generator for age that operates directly on a value instead of doing a lookup first.
+
+        Parameters:
+            value (Any): The value to convert to age
+            selected (bool): Is the string selected?
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     array: list[Union[ThemeRef, ThemeStr]] = []
 
     if value == -1:
@@ -435,8 +438,21 @@ def generator_age_raw(value: Union[int, str], selected: bool) -> list[Union[Them
 def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
                   **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
-    array: list[Union[ThemeRef, ThemeStr]] = []
+    """
+    A generator for age.
 
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
+    array: list[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
 
     array = generator_age_raw(value, selected)
@@ -448,6 +464,20 @@ def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
                       ralign: bool, selected: bool,
                       **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    A generator for IP-addresses and IP-masks.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     item_separator = deep_get(formatting, DictPath("item_separator"))
 
     items = getattr(obj, field, [])
@@ -469,8 +499,7 @@ def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
                       ThemeRef("separators", "ipmask", selected)]
 
     for separator in separators:
-        string = str(separator)
-        separator_lookup[string] = separator
+        separator_lookup[str(separator)] = separator
 
     array: list[Union[ThemeRef, ThemeStr]] = []
 
@@ -510,6 +539,21 @@ def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_basic(obj: dict, field: str, fieldlen: int, pad: int,
                     ralign: bool, selected: bool,
                     **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    The default generator; it knows about certain special strings,
+    but otherwise will use the provided formatting.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     array: list[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
     string = str(value)
@@ -541,6 +585,20 @@ def generator_basic(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_hex(obj: dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
                   **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    A generator for hexadecimal values.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     array: list[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
     string = str(value)
@@ -555,6 +613,21 @@ def generator_hex(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
                    ralign: bool, selected: bool,
                    **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    Generate a formatted list, with support for custom list separators,
+    grouped tuples, ellipsising after a certain length, etc.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     items = getattr(obj, field)
 
     item_separator = deep_get(formatting, DictPath("item_separator"))
@@ -597,6 +670,21 @@ def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: int,
                                ralign: bool, selected: bool,
                                **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    Generate a formatted list, mapping the items based on their status.
+    FIXME: This implementation is really ugly.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     items = getattr(obj, field)
     if isinstance(items, tuple):
         items = [items]
@@ -671,6 +759,20 @@ def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_mem(obj: dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
                   **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    Generate formatting for memory usage tuples (free / total).
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     array: list[Union[ThemeRef, ThemeStr]] = []
     tmp_free, tmp_total = getattr(obj, field)
     free = __remove_units(tmp_free)
@@ -708,8 +810,21 @@ def generator_mem(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: int,
                                    ralign: bool, selected: bool,
                                    **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
-    array: list[Union[ThemeRef, ThemeStr]] = []
+    """
+    Generate numerical values with units.
 
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
+    array: list[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
 
     if value in ("<none>", "<unset>", "<unknown>"):
@@ -732,8 +847,21 @@ def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: in
 def generator_status(obj: dict, field: str, fieldlen: int, pad: int,
                      ralign: bool, selected: bool,
                      **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
-    array: list[Union[ThemeRef, ThemeStr]] = []
+    """
+    Generate formatting for status messages.
 
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
+    array: list[Union[ThemeRef, ThemeStr]] = []
     status = getattr(obj, field)
     status_group = getattr(obj, "status_group")
     fmt = color_status_group(status_group)
@@ -766,7 +894,6 @@ def generator_timestamp(obj: dict, field: str, fieldlen: int, pad: int,
     """
     array: list[Union[ThemeRef, ThemeStr]] = []
     string: str = ""
-
     value = getattr(obj, field)
 
     if isinstance(value, str):
@@ -795,6 +922,21 @@ def generator_timestamp(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: int,
                                  ralign: bool, selected: bool,
                                  **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    Generate a formatted string either from a timestamp or a string;
+    with both timestamp *and* age. Typically used to represent timestamp + duration.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     array: list[Union[ThemeRef, ThemeStr]] = []
     values = getattr(obj, field)
 
@@ -850,6 +992,20 @@ def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: int,
 def generator_value_mapper(obj: dict, field: "str", fieldlen: int, pad: int,
                            ralign: bool, selected: bool,
                            **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+    """
+    Generate a formatted string with value mapping.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     array: list[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
 
@@ -867,7 +1023,19 @@ def generator_value_mapper(obj: dict, field: "str", fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# Processors should be possible to be replaced by using generator + str().
+
 def processor_timestamp(obj: dict, field: str) -> str:
+    """
+    A processor for timestamps; given a value,
+    return the processed string for that value.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+        Returns:
+            (str): The processed value
+    """
     if (value := getattr(obj, field)) is None:
         return ""
 
@@ -879,6 +1047,16 @@ def processor_timestamp(obj: dict, field: str) -> str:
 
 
 def processor_timestamp_with_age(obj: dict, field: str, formatting: dict) -> str:
+    """
+    A processor for timestamps with age; given a value,
+    return the processed string for that value.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+        Returns:
+            (str): The processed value
+    """
     values = getattr(obj, field)
 
     if len(deep_get(formatting, DictPath("field_colors"), [])) < 2 < len(values):
@@ -1123,6 +1301,16 @@ def processor_list_with_status(obj: Type, field: str, **kwargs: Any) -> str:
 
 
 def processor_age(obj: dict, field: str) -> str:
+    """
+    A processor for timestamps in age format; given a value,
+    return the processed string for that value.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+        Returns:
+            (str): The processed value
+    """
     seconds = getattr(obj, field)
     return cmtlib.seconds_to_age(seconds, negative_is_skew=True)
 
@@ -1134,6 +1322,16 @@ def __remove_units(numstr: str) -> str:
 
 
 def processor_mem(obj: dict, field: str) -> str:
+    """
+    A processor for memory usage tuples (free / total); given two values,
+    return the processed string for those values.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+        Returns:
+            (str): The processed value
+    """
     tmp_free, tmp_total = getattr(obj, field)
     free = __remove_units(tmp_free)
     total = __remove_units(tmp_total)
@@ -1183,7 +1381,7 @@ def get_formatting(field: dict[str, Any],
 
     if not isinstance(items, (dict, list)):
         raise TypeError("Formatting must be either "
-                        "list[union[dict, ThemeAttr, ThemeRef, ThemeStr]] or list[list[dict]]; "
+                        "list[dict | ThemeAttr | ThemeRef | ThemeStr] or list[list[dict]]; "
                         f"is type: {type(items)}")
 
     if default is None:

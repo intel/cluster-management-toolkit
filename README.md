@@ -22,4 +22,3 @@ _Python_ scripts, a _curses_-based user interface, as well as calls to _kubectl_
 or _kubeadm_ whenever necessary.
 
 Usage documentation for CMT is available [here](docs/README.md).
-

@@ -3,7 +3,7 @@
 ## Platform support (cluster installation)
 
 | Functionality: | Distribution:            | Version:        |
-| -------------- | ------------------------ | --------------- |
+| :------------- | :----------------------- | :-------------- |
 | kubeadm/RKE2   | Debian                   | 11+             |
 | kubeadm/RKE2   | Ubuntu                   | 22.04+          |
 | kubeadm/RKE2   | Ubuntu Server            | 22.04+          |

@@ -37,7 +37,7 @@ We aim for CMT v0.9.0 to be the first release with source code tarballs.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) | `fixme` |
 -->
 
@@ -48,7 +48,7 @@ We aim for CMT v0.9.0 to be the first release with distro packages.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) (Debian 11+ amd64 / Ubuntu 22.04+) | `fixme` |
 | [fixme](https://fixme) (RHEL 9+ amd64) | `fixme` |
 | [fixme](https://fixme) (SLES/openSUSE 15.4+ amd64) | `fixme` |
@@ -136,14 +136,14 @@ No changes.
 ### Python
 
 | PIP Name       | Minimum Version | Note                                    |
-| -------------- | --------------- | --------------------------------------- |
+| :------------- | :-------------- | :-------------------------------------- |
 | ansible-runner | 2.1.4           | openSUSE/SLES/RHEL, unsupported distros |
 | cryptography   |                 | openSUSE, unsupported distros           |
 | jinja2         | 3.1.4           | openSUSE/SLES/RHEL, unsupported distros |
 | natsort        | 8.0.2           | openSUSE/SLES/RHEL, unsupported distros |
 | paramiko       |                 | openSUSE/SLES/RHEL, unsupported distros |
 | PyYAML         | 6.0             | Unsupported distros                     |
-| setuptools wwww| 70.0.0          | openSUSE/SLES/RHEL, unsupported distros |
+| setuptools     | 70.0.0          | openSUSE/SLES/RHEL, unsupported distros |
 | ujson          | 5.4.0           | openSUSE/SLES/RHEL, unsupported distros |
 | urllib3        | 1.26.19         | openSUSE/SLES, unsupported distros      |
 | validators     | 0.22.0          | openSUSE/SLES/RHEL, unsupported distros |
@@ -151,7 +151,7 @@ No changes.
 ### Distro Packages
 
 | Package Name           | Distro             |
-| ---------------------- | ------------------ |
+| :--------------------- | :----------------- |
 | ansible                | Debian/Ubuntu/SUSE |
 | python3-ansible-runner | Debian/Ubuntu      |
 | python3-cryptography   | Debian/RHEL/Ubuntu |
@@ -169,7 +169,7 @@ No changes.
 ### Manual Installation or Unknown Distro Packages
 
 | Software | Distro              |
-| -------- | ------------------- |
+| :------- | :------------------ |
 | ansible  | Unsupported distros |
 | sshpass  | Unsupported distros |
 
@@ -191,13 +191,11 @@ Execute with `make bandit`.
 Output:
 
 ```
-Run started:2024-11-27 20:08:37.944568
-
 Test results:
 	No issues identified.
 
 Code scanned:
-	Total lines of code: 77227
+	Total lines of code: 77503
 	Total lines skipped (#nosec): 8
 
 Run metrics:
@@ -235,13 +233,13 @@ clustermanagementtoolkit/listgetters_async.py           119    103     54      0
 clustermanagementtoolkit/networkio.py                   349    282    173      3  16.9%
 clustermanagementtoolkit/infogetters.py                1676   1270   1008     68  21.9%
 clustermanagementtoolkit/itemgetters.py                 506    372    290     14  22.6%
-clustermanagementtoolkit/listgetters.py                1213    836    662     73  27.1%
 clustermanagementtoolkit/fieldgetters.py                 81     54     46      0  27.6%
 clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     62  27.9%
+clustermanagementtoolkit/listgetters.py                1212    808    662     90  28.7%
 clustermanagementtoolkit/curses_helper.py              2388   1544   1124    125  29.0%
 clustermanagementtoolkit/logparser.py                  2008   1275   1125     45  31.1%
 clustermanagementtoolkit/datagetters.py                 277    181    142      5  32.2%
-clustermanagementtoolkit/generators.py                  744    473    388     11  33.0%
+clustermanagementtoolkit/generators.py                  726    358    384     44  44.1%
 clustermanagementtoolkit/checks.py                      631    310    248     11  47.3%
 clustermanagementtoolkit/formatters.py                  807    310    424     25  57.8%
 clustermanagementtoolkit/ansible_helper.py              805    199    490     24  74.0%
@@ -262,7 +260,7 @@ clustermanagementtoolkit/objgetters.py                   56      0     12      0
 clustermanagementtoolkit/pvtypes.py                       1      0      0      0 100.0%
 clustermanagementtoolkit/recommended_permissions.py      11      0      0      0 100.0%
 ---------------------------------------------------------------------------------------
-TOTAL                                                 15949   8378   8340    530  43.5%
+TOTAL                                                 15930   8235   8336    580  44.2%
 ```
 
 
@@ -281,7 +279,7 @@ Commandline: `mypy --follow-imports silent --explicit-package-bases --ignore-mis
 Execute with `make mypy-markdown`.
 
 | Source file                                         | Score                                                 |
-| --------------------------------------------------- | -------------------------------------------------     |
+| :-------------------------------------------------- | :------------------------------------------------     |
 | cmt                                                 | Success: no issues found in 1 source file             |
 | cmtadm                                              | Success: no issues found in 1 source file             |
 | cmt-install                                         | Success: no issues found in 1 source file             |
@@ -306,7 +304,7 @@ Execute with `make mypy-markdown`.
 | clustermanagementtoolkit/formatters.py              | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/generators.py              | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/helptexts.py               | Success: no issues found in 1 source file             |
-| clustermanagementtoolkit/infogetters.py             | **Found 20 errors in 1 file (checked 1 source file)** |
+| clustermanagementtoolkit/infogetters.py             | **Found 18 errors in 1 file (checked 1 source file)** |
 | clustermanagementtoolkit/itemgetters.py             | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/kubernetes_helper.py       | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/kubernetes_resources.py    | Success: no issues found in 1 source file             |
@@ -326,7 +324,7 @@ Table generated with `make pylint-markdown`.
 Currently all complaints are due to missing function or method docstrings.
 
 | Source file                                         | Score        |
-| --------------------------------------------------- | ------------ |
+| :-------------------------------------------------- | -----------: |
 | cmt                                                 | 10.00/10     |
 | cmtadm                                              | 10.00/10     |
 | cmt-install                                         | 10.00/10     |
@@ -349,13 +347,13 @@ Currently all complaints are due to missing function or method docstrings.
 | clustermanagementtoolkit/datagetters.py             | 10.00/10     |
 | clustermanagementtoolkit/fieldgetters.py            | 10.00/10     |
 | clustermanagementtoolkit/formatters.py              | 10.00/10     |
-| clustermanagementtoolkit/generators.py              | **9.78/10**  |
+| clustermanagementtoolkit/generators.py              | 10.00/10     |
 | clustermanagementtoolkit/helptexts.py               | 10.00/10     |
 | clustermanagementtoolkit/infogetters.py             | 10.00/10     |
 | clustermanagementtoolkit/itemgetters.py             | 10.00/10     |
 | clustermanagementtoolkit/kubernetes_helper.py       | 10.00/10     |
 | clustermanagementtoolkit/kubernetes_resources.py    | 10.00/10     |
-| clustermanagementtoolkit/listgetters.py             | **9.92/10**  |
+| clustermanagementtoolkit/listgetters.py             | **9.95/10**  |
 | clustermanagementtoolkit/listgetters_async.py       | 10.00/10     |
 | clustermanagementtoolkit/logparser.py               | **9.93/10**  |
 | clustermanagementtoolkit/networkio.py               | 10.00/10     |
@@ -403,7 +401,7 @@ Output:
 └─────────────┘
 
 
-Scanning 1102 files with:
+Scanning 1105 files with:
 
 ✔ Semgrep OSS
   ✔ Basic security coverage for first-party code vulnerabilities.
@@ -414,7 +412,7 @@ Scanning 1102 files with:
 ✘ Semgrep Supply Chain (SCA)
   ✘ Find and fix the reachable vulnerabilities in your OSS dependencies.
 
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:03:16
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:03:30
 
 
 ┌──────────────┐
@@ -422,7 +420,7 @@ Scanning 1102 files with:
 └──────────────┘
 Some files were skipped or only partially analyzed.
   Partially scanned: 2 files only partially analyzed due to parsing or internal Semgrep errors
-  Scan skipped: 945 files matching --exclude patterns, 62 files matching .semgrepignore patterns
+  Scan skipped: 948 files matching --exclude patterns, 62 files matching .semgrepignore patterns
   For a full list of skipped files, run semgrep with the --verbose flag.
 
 Ran 600 rules on 95 files: 0 findings.
@@ -451,8 +449,8 @@ Output:
 Summary:
      fail: 0
      skip: 3
-  success: 821
-    total: 824
+  success: 824
+    total: 827
 ```
 
 ### YAMLlint Results for v0.8.5
@@ -504,7 +502,7 @@ We aim for CMT v0.9.0 to be the first release with source code tarballs.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) | `fixme` |
 -->
 
@@ -515,7 +513,7 @@ We aim for CMT v0.9.0 to be the first release with distro packages.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) (Debian 11+ amd64 / Ubuntu 22.04+) | `fixme` |
 | [fixme](https://fixme) (RHEL 9+ amd64) | `fixme` |
 | [fixme](https://fixme) (SLES/openSUSE 15.4+ amd64) | `fixme` |
@@ -583,7 +581,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Python
 
 | PIP Name       | Minimum Version | Note                                    |
-| -------------- | --------------- | --------------------------------------- |
+| :------------- | :-------------- | :-------------------------------------- |
 | ansible-runner | 2.1.3           | openSUSE/SLES/RHEL, unsupported distros |
 | cryptography   |                 | openSUSE, unsupported distros           |
 | natsort        | 8.0.2           | openSUSE/SLES/RHEL, unsupported distros |
@@ -596,7 +594,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Distro Packages
 
 | Package Name           | Distro             |
-| ---------------------- | ------------------ |
+| :--------------------- | :----------------- |
 | ansible                | Debian/Ubuntu/SUSE |
 | python3-ansible-runner | Debian/Ubuntu      |
 | python3-cryptographya  | Debian/RHEL/Ubuntu |
@@ -613,7 +611,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Manual Installation or Unknown Distro Packages
 
 | Software | Distro              |
-| -------- | ------------------- |
+| :------- | :------------------ |
 | ansible  | Unsupported distros |
 | sshpass  | Unsupported distros |
 
@@ -723,7 +721,7 @@ Commandline: `mypy --ignore-missing --disallow-untyped-calls --disallow-untyped-
 Execute with `make mypy-markdown`.
 
 | Source file             | Score                                                   |
-| ----------------------- | ------------------------------------------------------- |
+| :---------------------- | :------------------------------------------------------ |
 | cmt                     | Success: no issues found in 1 source file               |
 | cmtadm                  | Success: no issues found in 1 source file               |
 | cmt-install             | Success: no issues found in 1 source file               |
@@ -900,7 +898,7 @@ We aim for CMT v0.9.0 to be the first release with source code tarballs.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) | `fixme` |
 -->
 
@@ -911,7 +909,7 @@ We aim for CMT v0.9.0 to be the first release with distro packages.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) (Debian 11+ amd64 / Ubuntu 22.04+) | `fixme` |
 | [fixme](https://fixme) (RHEL 9+ amd64) | `fixme` |
 | [fixme](https://fixme) (SLES/openSUSE 15.4+ amd64) | `fixme` |
@@ -977,7 +975,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Python
 
 | PIP Name       | Minimum Version | Note                                    |
-| -------------- | --------------- | --------------------------------------- |
+| :------------- | :-------------- | :-------------------------------------- |
 | ansible-runner | 2.1.3           | openSUSE/SLES/RHEL, unsupported distros |
 | cryptography   |                 | openSUSE, unsupported distros           |
 | natsort        | 8.0.2           | openSUSE/SLES/RHEL, unsupported distros |
@@ -990,7 +988,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Distro Packages
 
 | Package Name           | Distro             |
-| ---------------------- | ------------------ |
+| :--------------------- | :----------------- |
 | ansible                | Debian/Ubuntu/SUSE |
 | python3-ansible-runner | Debian/Ubuntu      |
 | python3-cryptographya  | Debian/RHEL/Ubuntu |
@@ -1007,7 +1005,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Manual Installation or Unknown Distro Packages
 
 | Software | Distro              |
-| -------- | ------------------- |
+| :------- | :------------------ |
 | ansible  | Unsupported distros |
 | sshpass  | Unsupported distros |
 
@@ -1117,7 +1115,7 @@ Commandline: `mypy --ignore-missing --disallow-untyped-calls --disallow-untyped-
 Execute with `make mypy-markdown`.
 
 | Source file             | Score                                                   |
-| ----------------------- | ------------------------------------------------------- |
+| :---------------------- | :------------------------------------------------------ |
 | cmt                     | Success: no issues found in 1 source file               |
 | cmtadm                  | Success: no issues found in 1 source file               |
 | cmt-install             | Success: no issues found in 1 source file               |
@@ -1296,7 +1294,7 @@ We aim for CMT v0.9.0 to be the first release with source code tarballs.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) | `fixme` |
 -->
 
@@ -1307,7 +1305,7 @@ We aim for CMT v0.9.0 to be the first release with distro packages.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) (Debian 11+ amd64 / Ubuntu 22.04+) | `fixme` |
 | [fixme](https://fixme) (RHEL 9+ amd64) | `fixme` |
 | [fixme](https://fixme) (SLES/openSUSE 15.4+ amd64) | `fixme` |
@@ -1384,7 +1382,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Python
 
 | PIP Name       | Minimum Version | Note                                    |
-| -------------- | --------------- | --------------------------------------- |
+| :------------- | :-------------- | :-------------------------------------- |
 | ansible-runner | 2.1.3           | openSUSE/SLES/RHEL, unsupported distros |
 | cryptography   |                 | openSUSE, unsupported distros           |
 | natsort        | 8.0.2           | openSUSE/SLES/RHEL, unsupported distros |
@@ -1397,7 +1395,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Distro Packages
 
 | Package Name           | Distro             |
-| ---------------------- | ------------------ |
+| :--------------------- | :----------------- |
 | ansible                | Debian/Ubuntu/SUSE |
 | python3-ansible-runner | Debian/Ubuntu      |
 | python3-cryptographya  | Debian/RHEL/Ubuntu |
@@ -1414,7 +1412,7 @@ Pylint fails to test the executables; this is an issue in Pylint though, not in 
 ### Manual Installation or Unknown Distro Packages
 
 | Software | Distro              |
-| -------- | ------------------- |
+| :------- | :------------------ |
 | ansible  | Unsupported distros |
 | sshpass  | Unsupported distros |
 
@@ -1524,7 +1522,7 @@ Commandline: `mypy --ignore-missing --disallow-untyped-calls --disallow-untyped-
 Execute with `make mypy-markdown`.
 
 | Source file             | Score                                                   |
-| ----------------------- | ------------------------------------------------------- |
+| :---------------------- | :------------------------------------------------------ |
 | cmt                     | Success: no issues found in 1 source file               |
 | cmtadm                  | Success: no issues found in 1 source file               |
 | cmt-install             | Success: no issues found in 1 source file               |
@@ -1699,7 +1697,7 @@ We aim for CMT v0.9.0 to be the first release with source code tarballs.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) | `fixme` |
 -->
 
@@ -1710,7 +1708,7 @@ We aim for CMT v0.9.0 to be the first release with distro packages.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) (Debian 11+ amd64 / Ubuntu 22.04+) | `fixme` |
 | [fixme](https://fixme) (RHEL 9+ amd64) | `fixme` |
 | [fixme](https://fixme) (SLES/openSUSE 15.4+ amd64) | `fixme` |
@@ -1781,7 +1779,7 @@ N/A; this is the first release.
 ### Python
 
 | PIP Name       | Minimum Version | Note                                    |
-| -------------- | --------------- | --------------------------------------- |
+| :------------- | :-------------- | :-------------------------------------- |
 | ansible-runner | 2.1.3           | openSUSE/SLES/RHEL, unsupported distros |
 | cryptography   |                 | openSUSE, unsupported distros           |
 | natsort        | 8.0.2           | openSUSE/SLES/RHEL, unsupported distros |
@@ -1794,7 +1792,7 @@ N/A; this is the first release.
 ### Distro Packages
 
 | Package Name           | Distro             |
-| ---------------------- | ------------------ |
+| :--------------------- | :----------------- |
 | ansible                | Debian/Ubuntu/SUSE |
 | python3-ansible-runner | Debian/Ubuntu      |
 | python3-cryptographya  | Debian/RHEL/Ubuntu |
@@ -1811,7 +1809,7 @@ N/A; this is the first release.
 ### Manual Installation or Unknown Distro Packages
 
 | Software | Distro              |
-| -------- | ------------------- |
+| :------- | :------------------ |
 | ansible  | Unsupported distros |
 | sshpass  | Unsupported distros |
 
@@ -1868,7 +1866,7 @@ Commandline: `mypy --ignore-missing --disallow-untyped-calls --disallow-untyped-
 Execute with `make mypy-markdown`.
 
 | Source file             | Score                                                   |
-| ----------------------- | ------------------------------------------------------- |
+| :---------------------- | :------------------------------------------------------ |
 | cmt                     | Success: no issues found in 1 source file               |
 | cmtadm                  | Success: no issues found in 1 source file               |
 | cmt-install             | Success: no issues found in 1 source file               |
@@ -1913,7 +1911,7 @@ Currently all complaints are due to missing function, method, or class docstring
 Output:
 
 | Source file                  | Score       |
-| ---------------------------- | -----       |
+| :--------------------------- | :----       |
 | cmt                          | 10.00/10    |
 | cmtadm                       | 10.00/10    |
 | cmt-install                  | 10.00/10    |
@@ -2074,7 +2072,7 @@ We aim for CMT v0.9.0 to be the first release with source code tarballs.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) | `fixme` |
 -->
 
@@ -2085,7 +2083,7 @@ We aim for CMT v0.9.0 to be the first release with distro packages.
 
 <!--
 | Filename | sha512 hash |
-| -------- | ----------- |
+| :------- | :---------- |
 | [fixme](https://fixme) (Debian 11+ amd64 / Ubuntu 22.04+) | `fixme` |
 | [fixme](https://fixme) (RHEL 9+ amd64) | `fixme` |
 | [fixme](https://fixme) (SLES/openSUSE 15.4+ amd64) | `fixme` |
@@ -2147,7 +2145,7 @@ N/A; this is the first release.
 ### Python
 
 | PIP Name       | Minimum Version | Note                                    |
-| -------------- | --------------- | --------------------------------------- |
+| :------------- | :-------------- | :-------------------------------------- |
 | ansible-runner | 2.1.3           | openSUSE/SLES/RHEL, unsupported distros |
 | cryptography   |                 | openSUSE, unsupported distros           |
 | natsort        | 8.0.2           | openSUSE/SLES/RHEL, unsupported distros |
@@ -2160,7 +2158,7 @@ N/A; this is the first release.
 ### Distro Packages
 
 | Package Name           | Distro             |
-| ---------------------- | ------------------ |
+| :--------------------- | :----------------- |
 | ansible                | Debian/Ubuntu/SUSE |
 | python3-ansible-runner | Debian/Ubuntu      |
 | python3-cryptographya  | Debian/RHEL/Ubuntu |
@@ -2177,7 +2175,7 @@ N/A; this is the first release.
 ### Manual Installation or Unknown Distro Packages
 
 | Software | Distro              |
-| -------- | ------------------- |
+| :------- | :------------------ |
 | ansible  | Unsupported distros |
 | sshpass  | Unsupported distros |
 
@@ -2234,7 +2232,7 @@ Commandline: `mypy --ignore-missing --disallow-untyped-calls --disallow-untyped-
 Execute with `make mypy-markdown`.
 
 | Source file             | Score                                                   |
-| ----------------------- | ------------------------------------------------------- |
+| :---------------------- | :------------------------------------------------------ |
 | cmt                     | Success: no issues found in 1 source file               |
 | cmtadm                  | Success: no issues found in 1 source file               |
 | cmt-install             | Success: no issues found in 1 source file               |
@@ -2280,7 +2278,7 @@ Currently all complaints are due to missing function, method, or class docstring
 Output:
 
 | Source file                  | Score       |
-| ---------------------------- | -----       |
+| :--------------------------- | :----       |
 | cmt                          | 10.00/10    |
 | cmtadm                       | 10.00/10    |
 | cmt-install                  | 10.00/10    |

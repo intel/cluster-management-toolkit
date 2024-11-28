@@ -13,6 +13,7 @@ is moved from `cmt`, `cmtadm`, `cmu`, and `cmtinv` to `*.py`, until
 tests have been added for the moved code.
 
 ## Q1 roadmap
+
 * _General_:
     * [x] First release.
     * [x] OpenSSF Best Practice passing badge.
@@ -40,33 +41,37 @@ Due to severe re-prioritising the Q2 roadmap almost no base-work was done on the
 the roadmap has, for now, been pushed back one quarter, but further slips are likely.
 
 ## Q3 roadmap
+
+* _General_:
+    * [x] Refactor libraries in a way that makes a __CMT__ release possible. This includes:
+        * [x] No circular dependencies.
+    * [x] Use __python3-jinja2__ for view-file templating.
+
+## Q4 roadmap
+
+* _General_:
+    * [ ] tests: Achieve 45% test coverage for `*.py`.
+    * [ ] All functions, classes, and methods should have docstrings and type hints.
+    * [ ] Distribute as:
+        * [ ] Source code.
+
+## Q1/2025 roadmap
+
+* _General_:
+    * [ ] Refactor libraries in a way that makes a __CMT__ release possible. This includes:
+        * [ ] Rewrite all logging to use Python's builtin logging and register a MemoryHandler;
+          this way we get flushing whenever the severity is high enough.
+    * [ ] Register KeyboardInterrupt handlers in all executables to do proper shutdown
+      and print helpful messages.
+    * [ ] Distribute as:
+        * [ ] Source code.
+        * [ ] Debian package.
+        * [ ] Possibly via PIP?
 * _Accessibility_:
     * [ ] Ensure that the Colour Vision Deficiency theme covers all relevant data.
       Using colour coding in conjunction with CVD is acceptable, but only when important
       information (severity, etc.) is conveyed through other means.
     * [ ] Provide a high-contrast theme.
-* _General_:
-    * [ ] Refactor libraries in a way that makes a __CMT__ release possible. This includes:
-        * [ ] No circular dependencies.
-        * [ ] Rewrite all logging to use Python's builtin logging and register a MemoryHandler;
-              this way we get flushing whenever the severity is high enough.
-    * [ ] Register KeyboardInterrupt handlers in all executables to do proper shutdown
-          and print helpful messages.
-    * [ ] tests: Achieve 45% test coverage for `*.py`.
-* _cmu_:
-    * [ ] UI refactoring: data viewers (the logpad in genericinfoloop as well as
-      the containerinfoloop log viewer) should be merged. Having two implementation
-      that mostly do the same thing doesn't make any sense.
-    * [ ] Use __python3-pygments__ for syntax highlighting.
-    * [x] Use __python3-jinja2__ for view-file templating.
-
-## Q4 roadmap
-* _General_:
-    * [ ] Distribute as:
-        * [ ] Source code.
-        * [ ] Debian package.
-        * [ ] Possibly via PIP?
-    * [ ] tests: Achieve 55% test coverage for `*.py`.
 * _cmu_:
     * [ ] UI refactoring: Use the generic input handler from curses helper for all input.
     * [ ] UI refactoring: Unified helptext generation.
@@ -77,16 +82,12 @@ the roadmap has, for now, been pushed back one quarter, but further slips are li
       on that data, as well as information about what, if any, relationships the data
       has with data in other info views.
 
-## Q1/2025 roadmap
-* _Project_:
-    * [ ] Write all documentation needed to meet silver criteria for OpenSSF Best Practices.
-      Note that several of the requirements for silver and gold criteria makes meeting
-      all criteria unlikely, but we should still do our best.
+## Q2/2025 roadmap
+
 * _General_:
     * [ ] Go through all input helpers, formatters, etc., to see which, if any, we can
       merge.
-    * [ ] All functions, classes, and methods should have docstrings and type hints.
-    * [ ] tests: Achieve 65% test coverage for `*.py`.
+    * [ ] tests: Achieve 55% test coverage for `*.py`.
 * _cmu_:
     * [ ] Continue, hopefully conclude, the general refactoring, enabling new _cmt_ functionality.
 * _cmt_:
@@ -95,6 +96,11 @@ the roadmap has, for now, been pushed back one quarter, but further slips are li
       etc.
 
 ## Backlog
+
+* _Project_:
+    * [ ] Write all documentation needed to meet silver criteria for OpenSSF Best Practices.
+      Note that several of the requirements for silver and gold criteria makes meeting
+      all criteria unlikely, but we should still do our best.
 * _cmtadm_:
     * [ ] Support for clusters with virtualised control planes.
     * [ ] Support for having multiple different VM-hosts in the same cluster.
