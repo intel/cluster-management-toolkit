@@ -830,6 +830,24 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/cassandra.k8ssandra.io/v1alpha1/"],
         "api": "cassandrarestores",
     },
+    # catalog.cattle.io
+    ("App", "catalog.cattle.io"): {
+        "api_paths": ["apis/catalog.cattle.io/v1/"],
+        "api": "apps",
+    },
+    ("ClusterRepo", "catalog.cattle.io"): {
+        "api_paths": ["apis/catalog.cattle.io/v1/"],
+        "api": "clusterrepos",
+        "namespaced": False,
+    },
+    ("Operation", "catalog.cattle.io"): {
+        "api_paths": ["apis/catalog.cattle.io/v1/"],
+        "api": "operations",
+    },
+    ("UIPlugin", "catalog.cattle.io"): {
+        "api_paths": ["apis/catalog.cattle.io/v1/"],
+        "api": "uiplugins",
+    },
     # catalogd.operatorframework.io
     ("BundleMetadata", "catalogd.operatorframework.io"): {
         "api_paths": ["apis/catalogd.operatorframework.io/v1alpha1/"],
@@ -1785,6 +1803,52 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("VirtualMachineFlavor", "flavor.kubevirt.io"): {
         "api_paths": ["apis/flavor.kubevirt.io/v1alpha1/"],
         "api": "virtualmachineflavors",
+    },
+    # fleet.cattle.io
+    ("BundleDeployment", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "bundledeployments",
+    },
+    ("BundleNamespaceMapping", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "bundlenamespacemappings",
+    },
+    ("Bundle", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "bundles",
+    },
+    ("ClusterGroup", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "clustergroups",
+    },
+    ("ClusterRegistration", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "clusterregistrations",
+    },
+    ("ClusterRegistrationToken", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "clusterregistrationtokens",
+    },
+    ("Cluster", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "clusters",
+    },
+    ("Content", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "contents",
+        "namespaced": False,
+    },
+    ("GitRepoRestriction", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "gitreporestrictions",
+    },
+    ("GitRepo", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "gitrepos",
+    },
+    ("ImageScan", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "imagescans",
     },
     # flows.knative.dev
     ("Parallel", "flows.knative.dev"): {
@@ -3053,6 +3117,223 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
                       "apis/machinelearning.seldon.io/v1alpha2/"],
         "api": "seldondeployments",
     },
+    # management.cattle.io
+    ("APIService", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "apiservices",
+        "namespaced": False,
+    },
+    ("AuthConfig", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "authconfigs",
+        "namespaced": False,
+    },
+    ("Catalog", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "catalogs",
+        "namespaced": False,
+    },
+    ("CatalogTemplate", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "catalogtemplates",
+    },
+    ("CatalogTemplateVersion", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "catalogtemplateversions",
+    },
+    ("ClusterCatalog", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "clustercatalogs",
+    },
+    ("ClusterProxyConfig", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "clusterproxyconfigs",
+    },
+    ("ClusterRegistrationToken", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "clusterregistrationtokens",
+    },
+    ("ClusterRoleTemplateBinding", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "clusterroletemplatebindings",
+    },
+    ("Cluster", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "clusters",
+        "namespaced": False,
+    },
+    ("ClusterTemplateRevision", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "clustertemplaterevisions",
+    },
+    ("ClusterTemplate", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "clustertemplates",
+    },
+    ("ComposeConfig", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "composeconfigs",
+        "namespaced": False,
+    },
+    ("DynamicSchema", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "dynamicschemas",
+        "namespaced": False,
+    },
+    ("EtcdBackup", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "etcdbackups",
+    },
+    ("Feature", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "features",
+        "namespaced": False,
+    },
+    ("FleetWorkspace", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "fleetworkspaces",
+        "namespaced": False,
+    },
+    ("GlobalRoleBinding", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "globalrolebindings",
+        "namespaced": False,
+    },
+    ("GlobalRole", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "globalroles",
+        "namespaced": False,
+    },
+    ("GroupMember", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "groupmembers",
+        "namespaced": False,
+    },
+    ("Group", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "groups",
+        "namespaced": False,
+    },
+    ("KontainerDriver", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "kontainerdrivers",
+        "namespaced": False,
+    },
+    ("ManagedChart", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "managedcharts",
+    },
+    ("MultiClusterAppRevision", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "multiclusterapprevisions",
+    },
+    ("MultiClusterApp", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "multiclusterapps",
+    },
+    ("NodeDriver", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "nodedrivers",
+        "namespaced": False,
+    },
+    ("NodePool", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "nodepools",
+    },
+    ("Node", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "nodes",
+    },
+    ("NodeTemplate", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "nodetemplates",
+    },
+    ("PodSecurityAdmissionConfigurationTemplate", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "podsecurityadmissionconfigurationtemplates",
+        "namespaced": False,
+    },
+    ("Preference", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "preferences",
+    },
+    ("ProjectCatalog", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "projectcatalogs",
+    },
+    ("ProjectNetworkPolicy", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "projectnetworkpolicies",
+    },
+    ("ProjectRoleTemplateBinding", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "projectroletemplatebindings",
+    },
+    ("Project", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "projects",
+    },
+    ("RancherUserNotification", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "rancherusernotifications",
+        "namespaced": False,
+    },
+    ("RkeAddon", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "rkeaddons",
+    },
+    ("RkeK8sServiceOption", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "rkek8sserviceoptions",
+    },
+    ("RkeK8sSystemImage", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "rkek8ssystemimages",
+    },
+    ("RoleTemplate", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "roletemplates",
+        "namespaced": False,
+    },
+    ("SamlToken", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "samltokens",
+    },
+    ("Setting", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "settings",
+        "namespaced": False,
+    },
+    ("TemplateContent", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "templatecontents",
+        "namespaced": False,
+    },
+    ("Template", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "templates",
+        "namespaced": False,
+    },
+    ("TemplateVersion", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "templateversions",
+        "namespaced": False,
+    },
+    ("Token", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "tokens",
+        "namespaced": False,
+    },
+    ("UserAttribute", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "userattributes",
+        "namespaced": False,
+    },
+    ("User", "management.cattle.io"): {
+        "api_paths": ["apis/management.cattle.io/v3/"],
+        "api": "users",
+        "namespaced": False,
+    },
     # management.loft.sh
     ("Announcement", "management.loft.sh"): {
         "api_paths": ["apis/management.loft.sh/v1/"],
@@ -3828,6 +4109,15 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "profiles",
         "namespaced": False,
     },
+    # project.cattle.io
+    ("AppRevision", "project.cattle.io"): {
+        "api_paths": ["apis/project.cattle.io/v3/"],
+        "api": "apprevisions",
+    },
+    ("App", "project.cattle.io"): {
+        "api_paths": ["apis/project.cattle.io/v3/"],
+        "api": "apps",
+    },
     # project.openshift.io
     ("ProjectRequest", "project.openshift.io"): {
         "api_paths": ["apis/project.openshift.io/v1/"],
@@ -3838,6 +4128,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/project.openshift.io/v1/"],
         "api": "projects",
         "namespaced": False,
+    },
+    # provisioning.cattle.io
+    ("Cluster", "provisioning.cattle.io"): {
+        "api_paths": ["apis/provisioning.cattle.io/v1/"],
+        "api": "clusters",
     },
     # quota.openshift.io
     ("AppliedClusterResourceQuota", "quota.openshift.io"): {
@@ -3937,6 +4232,105 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
                       "apis/resource.k8s.io/v1alpha2/"],
         "api": "resourceslices",
         "namespaced": False,
+    },
+    # rke-machine-config.cattle.io
+    ("Amazonec2Config", "rke-machine-config.cattle.io"): {
+        "api_paths": ["apis/rke-machine-config.cattle.io/v1/"],
+        "api": "amazonec2configs",
+    },
+    ("AzureConfig", "rke-machine-config.cattle.io"): {
+        "api_paths": ["apis/rke-machine-config.cattle.io/v1/"],
+        "api": "azureconfigs",
+    },
+    ("DigitaloceanConfig", "rke-machine-config.cattle.io"): {
+        "api_paths": ["apis/rke-machine-config.cattle.io/v1/"],
+        "api": "digitaloceanconfigs",
+    },
+    ("HarvesterConfig", "rke-machine-config.cattle.io"): {
+        "api_paths": ["apis/rke-machine-config.cattle.io/v1/"],
+        "api": "harvesterconfigs",
+    },
+    ("LinodeConfig", "rke-machine-config.cattle.io"): {
+        "api_paths": ["apis/rke-machine-config.cattle.io/v1/"],
+        "api": "linodeconfigs",
+    },
+    ("VmwarevsphereConfig", "rke-machine-config.cattle.io"): {
+        "api_paths": ["apis/rke-machine-config.cattle.io/v1/"],
+        "api": "vmwarevsphereconfigs",
+    },
+    # rke-machine.cattle.io
+    ("Amazonec2Machine", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "amazonec2machines",
+    },
+    ("Amazonec2MachineTemplate", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "amazonec2machinetemplates",
+    },
+    ("AzureMachine", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "azuremachines",
+    },
+    ("AzureMachineTemplate", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "azuremachinetemplates",
+    },
+    ("DigitaloceanMachine", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "digitaloceanmachines",
+    },
+    ("DigitaloceanMachineTemplate", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "digitaloceanmachinetemplates",
+    },
+    ("HarvesterMachine", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "harvestermachines",
+    },
+    ("HarvesterMachineTemplate", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "harvestermachinetemplates",
+    },
+    ("LinodeMachine", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "linodemachines",
+    },
+    ("LinodeMachineTemplate", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "linodemachinetemplates",
+    },
+    ("VmwarevsphereMachine", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "vmwarevspheremachines",
+    },
+    ("VmwarevsphereMachineTemplate", "rke-machine.cattle.io"): {
+        "api_paths": ["apis/rke-machine.cattle.io/v1/"],
+        "api": "vmwarevspheremachinetemplates",
+    },
+    # rke.cattle.io
+    ("CustomMachine", "rke.cattle.io"): {
+        "api_paths": ["apis/rke.cattle.io/v1/"],
+        "api": "custommachines",
+    },
+    ("ETCDSnapshot", "rke.cattle.io"): {
+        "api_paths": ["apis/rke.cattle.io/v1/"],
+        "api": "etcdsnapshots",
+    },
+    ("RKEBootstrap", "rke.cattle.io"): {
+        "api_paths": ["apis/rke.cattle.io/v1/"],
+        "api": "rkebootstraps",
+    },
+    ("RKEBootstrapTemplate", "rke.cattle.io"): {
+        "api_paths": ["apis/rke.cattle.io/v1/"],
+        "api": "rkebootstraptemplates",
+    },
+    ("RKECluster", "rke.cattle.io"): {
+        "api_paths": ["apis/rke.cattle.io/v1/"],
+        "api": "rkeclusters",
+    },
+    ("RKEControlPlane", "rke.cattle.io"): {
+        "api_paths": ["apis/rke.cattle.io/v1/"],
+        "api": "rkecontrolplanes",
     },
     # route.openshift.io
     ("Route", "route.openshift.io"): {
@@ -4564,6 +4958,12 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("Tuned", "tuned.openshift.io"): {
         "api_paths": ["apis/tuned.openshift.io/v1/"],
         "api": "tuneds",
+    },
+    # ui.cattle.io
+    ("NavLink", "ui.cattle.io"): {
+        "api_paths": ["apis/ui.cattle.io/v1/"],
+        "api": "navlinks",
+        "namespaced": False,
     },
     # upgrade.cattle.io
     ("Plan", "upgrade.cattle.io"): {
