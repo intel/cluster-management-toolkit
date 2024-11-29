@@ -1,0 +1,37 @@
+---
+- name: "rancher"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/rancher/rancher-webhook"
+  parser_rules:
+    - name: "key_value"
+    - name: "ts_8601"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Rancher-webhook version"
+          loglevel: "notice"
+- name: "rancher"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/rancher/rancher"
+  parser_rules:
+    - name: "ts_8601"
+    - name: "bracketed_severity"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Rancher version "
+          loglevel: "notice"
+- name: "rancher"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/rancher/fleet"
+    - image_name: "/rancher/fleet-agent"
+    - image_name: "/rancher/fleet-agent"
+      container_type: "init_container"
+  parser_rules:
+    - name: "glog"
+    - name: "json"
+    - name: "key_value"

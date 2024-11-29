@@ -1,0 +1,118 @@
+---
+kind: "App"
+api_family: "catalog.cattle.io"
+default_command: "apps.catalog.cattle.io"
+command:
+- "apps.cattle"
+- "app.cattle"
+listview:
+  name: "Apps"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "chart", "version", "release_name", "release_version", "status", "age", "description"]
+      sortcolumn: "namespace"
+  fields:
+    chart:
+      header: "Chart:"
+      path: "spec#chart#metadata#name"
+      type: "str"
+    description:
+      header: "Description:"
+      path: "spec#info#description"
+      type: "str"
+    release_name:
+      header: "Release Name:"
+      path: "spec#name"
+      type: "str"
+    release_version:
+      header: "Release Version:"
+      path: "spec#version"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "version"
+    status:
+      header: "Status:"
+      path: "spec#info#status"
+      type: "str"
+    version:
+      header: "Version:"
+      path: "spec#chart#metadata#version"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "version"
+infoview:
+  name: "App Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "chart", "version", "release_name", "release_version", "status", "description"]
+    rows:
+      chart:
+        header: [["Chart:", ["main", "infoheader"]]]
+        path: "spec#chart#metadata#name"
+        type: "str"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
+        paths:
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#info#description"
+        type: "str"
+      release_name:
+        header: [["Release Name:", ["main", "infoheader"]]]
+        path: "spec#name"
+        type: "str"
+      release_version:
+        header: [["Release Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "spec#info#status"
+        type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#chart#metadata#version"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

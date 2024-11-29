@@ -1,0 +1,91 @@
+---
+kind: "UserAttribute"
+api_family: "management.cattle.io"
+default_command: "userattributes.management.cattle.io"
+command:
+- "userattrs.cattle"
+- "userattr.cattle"
+- "userattrs"
+- "userattr"
+listview:
+  name: "User Attributes"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "username", "last_refresh", "needs_refresh", "age"]
+  fields:
+    last_refresh:
+      header: "Last Refresh:"
+      path: "LastRefresh"
+      type: "str"
+      formatter: "timestamp"
+    needs_refresh:
+      header: "Needs Refresh:"
+      path: "NeedsRefresh"
+      type: "bool"
+    username:
+      header: "Username:"
+      path: "UserName"
+      fallback_on_empty: true
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "User Attribute Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["user", "username", "last_refresh", "needs_refresh"]
+    rows:
+      last_refresh:
+        header: [["Last Refresh:", ["main", "infoheader"]]]
+        path: "LastRefresh"
+        type: "str"
+        formatter: "timestamp"
+      needs_refresh:
+        header: [["Needs Refresh:", ["main", "infoheader"]]]
+        path: "NeedsRefresh"
+        type: "bool"
+      user:
+        header: [["U", ["main", "infoheader_shortcut"]],
+                 ["ser:", ["main", "infoheader"]]]
+        paths:
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "kind"
+                eq: "User"
+            type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+      username:
+        header: [["Username:", ["main", "infoheader"]]]
+        path: "UserName"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Open User":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for User"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "User"
+        api_family: "management.cattle.io"

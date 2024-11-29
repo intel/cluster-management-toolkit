@@ -1,0 +1,72 @@
+---
+kind: "User"
+api_family: "management.cattle.io"
+default_command: "users.management.cattle.io"
+command:
+- "users.cattle"
+- "user.cattle"
+listview:
+  name: "Users"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "username", "display_name", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "displayName"
+      default: "<unset>"
+      type: "str"
+    username:
+      header: "Username:"
+      path: "username"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "User Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description", "username", "password", "principal_ids"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "description"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "displayName"
+        default: "<unset>"
+        type: "str"
+      password:
+        header: [["Password:", ["main", "infoheader"]]]
+        path: "password"
+        default: "<unset>"
+        type: "str"
+      principal_ids:
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["rincipal IDs:", ["main", "infoheader"]]]
+        path: "principalIds"
+        type: "raw"
+        formatter: "list"
+      username:
+        header: [["Username:", ["main", "infoheader"]]]
+        path: "username"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "List principal IDs":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "List principal IDs"
+      widget: "windowwidget"
+      title: "Namespaces:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["principalIds"]
+      # Not supported for now
+      sortcolumn: "id"

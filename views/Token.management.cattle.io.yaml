@@ -1,0 +1,92 @@
+---
+kind: "Token"
+api_family: "management.cattle.io"
+default_command: "tokens.management.cattle.io"
+command:
+- "tokens.cattle"
+- "token.cattle"
+- "tokens"
+- "token"
+listview:
+  name: "Tokens"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "user", "ttl", "age"]
+  fields:
+    ttl:
+      header: "TTL:"
+      path: "ttl"
+      type: "raw"
+      formatter: "numerical"
+      align: "right"
+    user:
+      header: "User:"
+      path: "userId"
+      fallback_on_empty: true
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "Token Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["user", "auth_provider", "ttl", "current", "expired", "is_derived", "token", "expires_at", "last_used"]
+    rows:
+      auth_provider:
+        header: [["Auth Provider:", ["main", "infoheader"]]]
+        path: "authProvider"
+        type: "str"
+      current:
+        header: [["Current:", ["main", "infoheader"]]]
+        path: "current"
+        type: "bool"
+      expired:
+        header: [["Expired:", ["main", "infoheader"]]]
+        path: "expired"
+        type: "bool"
+      expires_at:
+        header: [["Expires At:", ["main", "infoheader"]]]
+        path: "expiresAt"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+        formatter: "timestamp"
+      is_derived:
+        header: [["Is Derived:", ["main", "infoheader"]]]
+        path: "isDerived"
+        type: "bool"
+      last_used:
+        header: [["Last Used:", ["main", "infoheader"]]]
+        path: "lastUsedAt"
+        type: "str"
+        formatter: "timestamp"
+      token:
+        header: [["Token:", ["main", "infoheader"]]]
+        path: "token"
+        type: "str"
+      ttl:
+        header: [["TTL:", ["main", "infoheader"]]]
+        path: "ttl"
+        type: "raw"
+        formatter: "numerical"
+      user:
+        header: [["U", ["main", "infoheader_shortcut"]],
+                 ["ser:", ["main", "infoheader"]]]
+        path: "userId"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Open User":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for User"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "userId"
+        kind: "User"
+        api_family: "management.cattle.io"

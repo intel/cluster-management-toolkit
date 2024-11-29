@@ -1,0 +1,54 @@
+---
+kind: "Operation"
+api_family: "catalog.cattle.io"
+default_command: "operations"
+listview:
+  name: "Operations"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "target_namespace", "command"]
+      sortcolumn: "namespace"
+  fields:
+    command:
+      header: "Command:"
+      path: "status#command"
+      type: "str"
+    target_namespace:
+      header: "Target Namespace:"
+      path: "status#targetNamespace"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "namespace"
+infoview:
+  name: "Operation Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["target_namespace", "command"]
+    rows:
+      command:
+        header: [["Command:", ["main", "infoheader"]]]
+        path: "status#command"
+        type: "str"
+      target_namespace:
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["arget Namespace:", ["main", "infoheader"]]]
+        path: "status#targetNamespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+  shortcuts:
+    "Open target Namespace":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for target Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "status#targetNamespace"
+        kind: "Namespace"

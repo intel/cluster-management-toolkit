@@ -1,0 +1,70 @@
+---
+kind: "ClusterRepo"
+api_family: "catalog.cattle.io"
+default_command: "clusterrepos"
+command:
+- "clrrepos"
+- "clrrepo"
+listview:
+  name: "Cluster Repos"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "repo", "branch", "download_time"]
+  fields:
+    branch:
+      header: "Branch:"
+      path: "spec#gitBranch"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "version"
+    download_time:
+      header: "Download Time:"
+      path: "status#downloadTime"
+      type: "str"
+      formatter: "timestamp"
+    repo:
+      header: "Repo:"
+      path: "spec#gitRepo"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "url"
+infoview:
+  name: "Cluster Repo Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["repo", "branch", "download_time"]
+    rows:
+      branch:
+        header: [["Branch:", ["main", "infoheader"]]]
+        path: "spec#gitBranch"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      download_time:
+        header: [["Download Time:", ["main", "infoheader"]]]
+        path: "status#downloadTime"
+        type: "str"
+        formatter: "timestamp"
+      repo:
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["epo:", ["main", "infoheader"]]]
+        path: "spec#gitRepo"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+  shortcuts:
+    "Open URL":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open URL in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open",
+                  ["spec#gitRepo"]]

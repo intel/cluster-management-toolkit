@@ -1,0 +1,84 @@
+---
+kind: "Cluster"
+api_family: "provisioning.cattle.io"
+default_command: "cluster.provisioning.cattle.io"
+command:
+- "clrprovs.cattle"
+- "clrprov.cattle"
+listview:
+  name: "Clusters"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "cluster_name", "ready", "age", "kubeconfig"]
+      sortcolumn: "namespace"
+  fields:
+    cluster_name:
+      header: "Cluster Name:"
+      path: "status#clusterName"
+      type: "str"
+    kubeconfig:
+      header: "Kubeconfig:"
+      path: "status#clientSecretName"
+      type: "str"
+    ready:
+      header: "Ready:"
+      path: "status#ready"
+      type: "bool"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+infoview:
+  name: "Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_name", "ready", "kubeconfig"]
+    rows:
+      cluster_name:
+        header: [["Cluster Name:", ["main", "infoheader"]]]
+        path: "status#clusterName"
+        type: "str"
+      kubeconfig:
+        header: [["K", ["main", "infoheader_shortcut"]],
+                 ["ubeconfig:", ["main", "infoheader"]]]
+        path: "status#clientSecretName"
+        type: "str"
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        path: "status#ready"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "False":
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+  shortcuts:
+    "Kubeconfig":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for kubeconfig Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "status#clientSecretName"
+        namespace_path: "metadata#namespace"
