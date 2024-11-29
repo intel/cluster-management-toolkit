@@ -3,8 +3,8 @@ kind: "User"
 api_family: "management.cattle.io"
 default_command: "users.management.cattle.io"
 command:
-- "users.cattle"
-- "user.cattle"
+  - "users.cattle"
+  - "user.cattle"
 listview:
   name: "Users"
   group: "Rancher"
@@ -27,7 +27,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["display_name", "description", "username", "password", "principal_ids"]
+        fields: ["display_name", "description",
+                 "username", "password", "principal_ids"]
     rows:
       description:
         header: [["Description:", ["main", "infoheader"]]]

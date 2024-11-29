@@ -3,14 +3,15 @@ kind: "Cluster"
 api_family: "provisioning.cattle.io"
 default_command: "cluster.provisioning.cattle.io"
 command:
-- "clrprovs.cattle"
-- "clrprov.cattle"
+  - "clrprovs.cattle"
+  - "clrprov.cattle"
 listview:
   name: "Clusters"
   group: "Rancher"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "cluster_name", "ready", "age", "kubeconfig"]
+      fields: ["namespace", "name", "cluster_name",
+               "ready", "age", "kubeconfig"]
       sortcolumn: "namespace"
   fields:
     cluster_name:

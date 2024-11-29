@@ -3,14 +3,15 @@ kind: "App"
 api_family: "catalog.cattle.io"
 default_command: "apps.catalog.cattle.io"
 command:
-- "apps.cattle"
-- "app.cattle"
+  - "apps.cattle"
+  - "app.cattle"
 listview:
   name: "Apps"
   group: "Rancher"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "chart", "version", "release_name", "release_version", "status", "age", "description"]
+      fields: ["namespace", "name", "chart", "version", "release_name",
+               "release_version", "status", "age", "description"]
       sortcolumn: "namespace"
   fields:
     chart:
@@ -48,7 +49,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "chart", "version", "release_name", "release_version", "status", "description"]
+        fields: ["controller", "chart", "version", "release_name",
+                 "release_version", "status", "description"]
     rows:
       chart:
         header: [["Chart:", ["main", "infoheader"]]]

@@ -3,10 +3,10 @@ kind: "Token"
 api_family: "management.cattle.io"
 default_command: "tokens.management.cattle.io"
 command:
-- "tokens.cattle"
-- "token.cattle"
-- "tokens"
-- "token"
+  - "tokens.cattle"
+  - "token.cattle"
+  - "tokens"
+  - "token"
 listview:
   name: "Tokens"
   group: "Rancher"
@@ -31,7 +31,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["user", "auth_provider", "ttl", "current", "expired", "is_derived", "token", "expires_at", "last_used"]
+        fields: ["user", "auth_provider", "ttl", "current", "expired",
+                 "is_derived", "token", "expires_at", "last_used"]
     rows:
       auth_provider:
         header: [["Auth Provider:", ["main", "infoheader"]]]
