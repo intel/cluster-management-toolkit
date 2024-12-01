@@ -1,0 +1,89 @@
+---
+kind: "ClusterGroup"
+api_family: "fleet.cattle.io"
+default_command: "clustergroups.fleet.cattle.io"
+command:
+  - "clustergroups.cattle"
+  - "clustergroup.cattle"
+  - "clrgroups.cattle"
+  - "clrgroup.cattle"
+  - "clrgrps.cattle"
+  - "clrgrp.cattle"
+listview:
+  name: "Cluster Groups"
+  group: "Rancher"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "ready_bundles", "ready_clusters", "age"]
+    Normal:
+      fields: ["namespace", "name", "ready_bundles_narrow",
+               "ready_clusters_narrow", "age"]
+  fields:
+    ready_bundles:
+      header: "Ready Bundles:"
+      path: "status#display#readyBundles"
+      type: "str"
+      formatter: "numerical"
+      align: "right"
+    ready_bundles_narrow:
+      header: "Bundles:"
+      path: "status#display#readyBundles"
+      type: "str"
+      formatter: "numerical"
+      align: "right"
+    ready_clusters:
+      header: "Ready Clusters:"
+      path: "status#display#readyClusters"
+      type: "str"
+      formatter: "numerical"
+      align: "right"
+    ready_clusters_narrow:
+      header: "Clusters:"
+      path: "status#display#readyClusters"
+      type: "str"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Cluster Group Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ready_bundles", "ready_clusters"]
+    rows:
+      ready_bundles:
+        header: [["Ready Bundles:", ["main", "infoheader"]]]
+        path: "status#display#readyBundles"
+        type: "str"
+        formatter: "numerical"
+      ready_clusters:
+        header: [["Ready Clusters:", ["main", "infoheader"]]]
+        path: "status#display#readyClusters"
+        type: "str"
+        formatter: "numerical"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Cluster"
+      _api_family: "fleet.cattle.io"
+      _label_selector_path: "spec#selector#matchLabels"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Cluster"
+      api_family: "fleet.cattle.io"
+    field_indexes:
+      Normal:
+        fields: ["namespace", "name", "ready_bundles", "last_seen", "age"]
+        sortcolumn: "namespace"
+    fields:
+      last_seen:
+        header: "Last Seen:"
+        path: "status#agent#lastSeen"
+        type: "str"
+        formatter: "timestamp"
+      ready_bundles:
+        header: "Ready Bundles:"
+        path: "status#display#readyBundles"
+        type: "str"
+        formatter: "numerical"
+        align: "right"

@@ -1,0 +1,157 @@
+---
+kind: "Cluster"
+api_family: "fleet.cattle.io"
+default_command: "clusters.fleet.cattle.io"
+command:
+  - "clusters.cattle"
+  - "clusters.cattle"
+  - "clrs.cattle"
+  - "clr.cattle"
+listview:
+  name: "Clusters"
+  group: "Rancher"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "ready_bundles", "last_seen", "age"]
+    Normal:
+      fields: ["namespace", "name", "ready_bundles_narrow", "last_seen", "age"]
+  fields:
+    last_seen:
+      header: "Last Seen:"
+      path: "status#agent#lastSeen"
+      type: "str"
+      formatter: "timestamp"
+    ready_bundles:
+      header: "Ready Bundles:"
+      path: "status#display#readyBundles"
+      type: "str"
+      formatter: "numerical"
+      align: "right"
+    ready_bundles_narrow:
+      header: "Bundles:"
+      path: "status#display#readyBundles"
+      type: "str"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Cluster Group Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_namespace", "kubeconfig",
+                 "agent_header", "agent_tls_mode", "agent_migrated",
+                 "agent_namespace", "agent_namespace_migrated",
+                 "api_server_url", "garbage_collection_interval",
+                 "ready_bundles", "last_seen"]
+    rows:
+      agent_header:
+        header: [["Agent:", ["main", "infoheader"]]]
+      agent_migrated:
+        header: [["  Migrated:", ["main", "infoheader"]]]
+        path: "status#agentMigrated"
+        type: "bool"
+      agent_namespace:
+        header: [["  Names", ["main", "infoheader"]],
+                 ["p", ["main", "infoheader_shortcut"]],
+                 ["ace:", ["main", "infoheader"]]]
+        path: "status#agent#namespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      agent_namespace_migrated:
+        header: [["  Namespace Migrated:", ["main", "infoheader"]]]
+        path: "status#agentNamespaceMigrated"
+        type: "bool"
+      agent_tls_mode:
+        header: [["  TLS Mode:", ["main", "infoheader"]]]
+        path: "status#agentTLSMode"
+        type: "bool"
+      api_server_url:
+        header: [["API-server URL:", ["main", "infoheader"]]]
+        path: "status#apiServerURL"
+        type: "str"
+      cluster_namespace:
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["luster Namespace:", ["main", "infoheader"]]]
+        path: "status#namespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      garbage_collection_interval:
+        header: [["Garbage Collection Interval:", ["main", "infoheader"]]]
+        path: "status#garbageCollectionInterval"
+        type: "str"
+        formatter: "numerical"
+      kubeconfig:
+        header: [["K", ["main", "infoheader_shortcut"]],
+                 ["ubeconfig:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#kubeConfigSecretNamespace"],
+                   ["spec#kubeConfigSecret"]]
+            pathtype: "tuple"
+            kind: ["name", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
+            - type: "generic"
+          field_separators:
+            - type: "namespace"
+      last_seen:
+        header: [["Last Seen:", ["main", "infoheader"]]]
+        path: "status#agent#lastSeen"
+        type: "str"
+        formatter: "timestamp"
+      ready_bundles:
+        header: [["Ready Bundles:", ["main", "infoheader"]]]
+        path: "status#display#readyBundles"
+        type: "str"
+        formatter: "numerical"
+  shortcuts:
+    "Agent Namespace":
+      key: "p"
+      read_only: true
+      helptext: "Open info page for agent Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "status#agent#namespace"
+    "Show affinities":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show affinities"
+      widget: "windowwidget"
+      headers: ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"]
+      itemgetter: "get_pod_affinity"
+      itemgetter_args:
+        path: "spec#agentAffinity"
+      # This isn't supported for now
+      sortcolumn: "type"
+    "Cluster Namespace":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for cluster Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "status#namespace"
+    "Kubeconfig":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for kubeconfig Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "spec#kubeConfigSecret"
+        namespace_path: "spec#kubeConfigSecretNamespace"

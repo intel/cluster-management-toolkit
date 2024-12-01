@@ -106,7 +106,23 @@ infoview:
         formatting:
           field_colors:
             - type: "version"
+  logpad:
+    infogetter: "logpad_formatted"
+    infogetter_args:
+      path: "spec#info#readme"
+      formatter: "format_markdown"
+    timestamps: false
   shortcuts:
+    "Notes":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show notes"
+      widget: "windowwidget"
+      title: "Notes:"
+      itemgetter: "get_strings_from_string"
+      itemgetter_args:
+        path: "spec#info#notes"
     "Open controller":
       key: "c"
       modifier: "shift"
