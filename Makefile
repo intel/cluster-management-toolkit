@@ -101,6 +101,14 @@ coverage_stats:
 
 coverage: setup_tests
 	@cmd=python3-coverage ;\
+	if command -v python3-coverage > /dev/null 2> /dev/null; then \
+		cmd=python3-coverage ;\
+	elif command -v coverage-3 > /dev/null 2> /dev/null; then \
+		cmd=coverage-3 ;\
+	else \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
 	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear --end-at 0 || exit 1 ;\
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
@@ -115,7 +123,11 @@ coverage: setup_tests
 # Run this to augment existing coverage data with tests that require manual interaction
 coverage-manual: setup_tests
 	@cmd=python3-coverage ;\
-	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+	if command -v python3-coverage > /dev/null 2> /dev/null; then \
+		cmd=python3-coverage ;\
+	elif command -v coverage-3 > /dev/null 2> /dev/null; then \
+		cmd=coverage-3 ;\
+	else \
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
@@ -129,7 +141,11 @@ coverage-manual: setup_tests
 # Run this to augment existing coverage data with tests that require an ansible inventory
 coverage-ansible: setup_tests
 	@cmd=python3-coverage ;\
-	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+	if command -v python3-coverage > /dev/null 2> /dev/null; then \
+		cmd=python3-coverage ;\
+	elif command -v coverage-3 > /dev/null 2> /dev/null; then \
+		cmd=coverage-3 ;\
+	else \
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
@@ -145,7 +161,11 @@ coverage-ansible: setup_tests
 # Run this to augment existing coverage data with tests that require a running cluster
 coverage-cluster: setup_tests
 	@cmd=python3-coverage ;\
-	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+	if command -v python3-coverage > /dev/null 2> /dev/null; then \
+		cmd=python3-coverage ;\
+	elif command -v coverage-3 > /dev/null 2> /dev/null; then \
+		cmd=coverage-3 ;\
+	else \
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \

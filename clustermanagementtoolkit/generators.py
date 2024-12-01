@@ -82,6 +82,7 @@ def format_list(items: Any, fieldlen: int, pad: int,
                 field_prefixes ([[ThemeRef]]): Prefixes for each element
                 field_suffixes ([[ThemeRef]]): Suffixes for each element
                 mapping (dict): Mappings passed to map_value()
+                field_formatters (list[Callable]): A list of field formatters
         Returns:
             (ThemeArray): The formatted themearray
     """
@@ -95,6 +96,8 @@ def format_list(items: Any, fieldlen: int, pad: int,
     field_prefixes: list[list[ThemeRef]] = deep_get(kwargs, DictPath("field_prefixes"))
     field_suffixes: list[list[ThemeRef]] = deep_get(kwargs, DictPath("field_suffixes"))
     mapping: dict = deep_get(kwargs, DictPath("mapping"), {})
+    field_formatters: list[Optional[Callable]] = \
+        deep_get(kwargs, DictPath("field_formatters"), [])
 
     array: list[Union[ThemeRef, ThemeStr]] = []
 
@@ -156,8 +159,13 @@ def format_list(items: Any, fieldlen: int, pad: int,
                 field_sep.selected = selected
                 array.append(field_sep)
 
+            field_formatter: Optional[Callable] = None
+            if field_formatters:
+                field_formatter = field_formatters[min(i, len(field_formatters) - 1)]
             if (tmp := format_special(string, selected)) is not None:
                 formatted_string = tmp
+            elif field_formatter:
+                formatted_string = field_formatter(string, "numerical", selected)
             else:
                 default_field_color = cast(ThemeAttr, field_colors[min(i, len(field_colors) - 1)])
                 formatted_string, __string = map_value(string, selected=selected,
@@ -167,7 +175,10 @@ def format_list(items: Any, fieldlen: int, pad: int,
             # OK, we know now that we will be appending the field, so do the prefix
             if field_prefixes is not None and i < len(field_prefixes):
                 array += themearray_select(field_prefixes[i], selected=selected, force=True)
-            array.append(formatted_string)
+            if isinstance(formatted_string, list):
+                array += formatted_string
+            else:
+                array.append(formatted_string)
             # And now the suffix
             if field_suffixes is not None and i < len(field_suffixes):
                 array += themearray_select(field_suffixes[i], selected=selected, force=True)
@@ -630,28 +641,26 @@ def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
     """
     items = getattr(obj, field)
 
-    item_separator = deep_get(formatting, DictPath("item_separator"))
-    if item_separator is None:
-        item_separator = ThemeRef("separators", "list", selected)
+    item_separator = deep_get(formatting, DictPath("item_separator"),
+                              ThemeRef("separators", "list", selected))
 
-    field_separators = deep_get(formatting, DictPath("field_separators"))
-    if field_separators is None:
-        field_separators = [ThemeRef("separators", "field", selected)]
+    field_separators = deep_get(formatting, DictPath("field_separators"),
+                                [ThemeRef("separators", "field", selected)])
 
-    field_colors = deep_get(formatting, DictPath("field_colors"))
-    if field_colors is None:
-        field_colors = [ThemeAttr("types", "field")]
+    field_colors = deep_get(formatting, DictPath("field_colors"),
+                            [ThemeAttr("types", "field")])
 
     ellipsise = deep_get(formatting, DictPath("ellipsise"), -1)
 
-    ellipsis = deep_get(formatting, DictPath("ellipsis"))
-    if ellipsis is None:
-        ellipsis = ThemeRef("separators", "ellipsis", selected)
+    ellipsis = deep_get(formatting, DictPath("ellipsis"),
+                        ThemeRef("separators", "ellipsis", selected))
 
     field_prefixes = deep_get(formatting, DictPath("field_prefixes"))
     field_suffixes = deep_get(formatting, DictPath("field_suffixes"))
 
     mapping = deep_get(formatting, DictPath("mapping"), {})
+
+    field_formatters = deep_get(formatting, DictPath("field_formatters"))
 
     return format_list(items, fieldlen, pad,
                        ralign=ralign,
@@ -663,7 +672,8 @@ def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
                        ellipsis=ellipsis,
                        field_prefixes=field_prefixes,
                        field_suffixes=field_suffixes,
-                       mapping=mapping)
+                       mapping=mapping,
+                       field_formatters=field_formatters)
 
 
 # noqa: E501 pylint: disable-next=too-many-branches,too-many-locals,too-many-arguments,too-many-positional-arguments
@@ -1544,6 +1554,9 @@ def get_formatter(field: dict) -> dict:
     item_separator = get_formatting(field, "item_separator",
                                     {"item_separator": ThemeRef("separators", "list")})
     mapping = deep_get(field, DictPath("formatting#mapping"), {})
+    field_formatters = []
+    for field_formatter in deep_get(field, DictPath("formatting#field_formatters"), []):
+        field_formatters.append(deep_get(field_formatter_allowlist, DictPath(field_formatter)))
 
     tmp_field["generator"] = generator
     tmp_field["processor"] = processor
@@ -1559,6 +1572,7 @@ def get_formatter(field: dict) -> dict:
     if "align" in field:
         align = deep_get(field, DictPath("align"), "left")
         tmp_field["ralign"] = align == "right"
+    tmp_field["field_formatters"] = field_formatters
 
     formatting = {
         "item_separator": item_separator,
@@ -1569,6 +1583,7 @@ def get_formatter(field: dict) -> dict:
         "field_prefixes": field_prefixes,
         "field_suffixes": field_suffixes,
         "mapping": mapping,
+        "field_formatters": field_formatters,
     }
 
     tmp_field["formatting"] = formatting
@@ -1727,6 +1742,12 @@ def fieldgenerator(view: str, selected_namespace: str = "",
         tmp_fields[field_name]["sortkey2"] = sortcolumn
 
     return tmp_fields, field_names, sortcolumn, sortorder_reverse
+
+
+# Formatters acceptable for use with list fields
+field_formatter_allowlist: dict[str, Callable] = {
+    "numerical_with_units": format_numerical_with_units,
+}
 
 
 # Generators acceptable for direct use in view files

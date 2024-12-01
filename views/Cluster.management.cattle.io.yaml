@@ -1,0 +1,193 @@
+---
+kind: "Cluster"
+api_family: "management.cattle.io"
+default_command: "clusters.management.cattle.io"
+command:
+  - "clusters.mgmnt.cattle"
+  - "cluster.mgmnt.cattle"
+  - "clrs.mgmnt.cattle"
+  - "clr.mgmnt.cattle"
+listview:
+  name: "Clusters"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "display_name", "provider", "version", "platform",
+               "node_count", "ready", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      default: "<unset>"
+      type: "str"
+    node_count:
+      header: "Node Count:"
+      path: "status#nodeCount"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    platform:
+      header: "Platform:"
+      path: "status#version#platform"
+      default: "<unset>"
+      type: "str"
+    provider:
+      header: "Provider:"
+      path: "status#provider"
+      default: "<unset>"
+      type: "str"
+    ready:
+      header: "Ready:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+    version:
+      header: "Version:"
+      path: "status#version#gitVersion"
+      default: "<unset>"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "version"
+infoview:
+  name: "Clusters Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "provider", "version", "platform",
+                 "node_count", "resources_header",
+                 "resources_capacity_header", "resources_capacity_cpu",
+                 "resources_capacity_memory", "resources_capacity_pods",
+                 "resources_requested_header", "resources_requested_cpu",
+                 "resources_requested_memory", "resources_requested_pods",
+                 "ready"]
+    rows:
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        default: "<unset>"
+        type: "str"
+      node_count:
+        header: [["Node Count:", ["main", "infoheader"]]]
+        path: "status#nodeCount"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      platform:
+        header: [["Platform:", ["main", "infoheader"]]]
+        path: "status#version#platform"
+        default: "<unset>"
+        type: "str"
+      provider:
+        header: [["Provider:", ["main", "infoheader"]]]
+        path: "status#provider"
+        default: "<unset>"
+        type: "str"
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "False":
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+      resources_capacity_cpu:
+        header: [["    CPU:", ["main", "infoheader"]]]
+        paths:
+          - path: [["status#allocatable#cpu"], ["status#capacity#cpu"]]
+            pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_formatters:
+            - "numerical_with_units"
+      resources_capacity_header:
+        header: [["  Allocatable / Capacity:", ["main", "infoheader"]]]
+      resources_capacity_memory:
+        header: [["    Memory:", ["main", "infoheader"]]]
+        paths:
+          - path: [["status#allocatable#memory"], ["status#capacity#memory"]]
+            pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_formatters:
+            - "numerical_with_units"
+      resources_capacity_pods:
+        header: [["    Pods:", ["main", "infoheader"]]]
+        paths:
+          - path: [["status#allocatable#pods"], ["status#capacity#pods"]]
+            pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_formatters:
+            - "numerical_with_units"
+      resources_requested_cpu:
+        header: [["    CPU:", ["main", "infoheader"]]]
+        paths:
+          - path: [["status#requested#cpu"], ["status#limits#cpu"]]
+            pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_formatters:
+            - "numerical_with_units"
+      resources_header:
+        header: [["Resources (Requested / Limits):", ["main", "infoheader"]]]
+      resources_requested_header:
+        header: [["  Requested / Limits:", ["main", "infoheader"]]]
+      resources_requested_memory:
+        header: [["    Memory:", ["main", "infoheader"]]]
+        paths:
+          - path: [["status#requested#memory"], ["status#limits#memory"]]
+            pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_formatters:
+            - "numerical_with_units"
+      resources_requested_pods:
+        header: [["    Pods:", ["main", "infoheader"]]]
+        paths:
+          - path: [["status#requested#pods"], ["status#limits#pods"]]
+            pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_formatters:
+            - "numerical_with_units"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "status#version#gitVersion"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"

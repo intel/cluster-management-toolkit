@@ -1,0 +1,49 @@
+---
+kind: "FleetWorkspace"
+api_family: "management.cattle.io"
+default_command: "fleetworkspaces.management.cattle.io"
+command:
+  - "fleetworkspaces.cattle"
+  - "fleetworkspace.cattle"
+  - "fleetworkspaces"
+  - "fleetworkspace"
+listview:
+  name: "Fleet Workspaces"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Fleet Workspace Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["namespace"]
+    rows:
+      namespace:
+        header: [["N", ["main", "infoheader_shortcut"]],
+                 ["amespace:", ["main", "infoheader"]]]
+        paths:
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Namespace"
+        default: "<none>"
+        formatting:
+          field_colors:
+            - type: "namespace"
+  shortcuts:
+    "Open Namespace":
+      key: "n"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "Namespace"

@@ -1,0 +1,68 @@
+---
+kind: "Feature"
+api_family: "management.cattle.io"
+default_command: "features.management.cattle.io"
+command:
+  - "features.cattle"
+  - "feature.cattle"
+listview:
+  name: "Features"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "custom_value", "default",
+               "dynamic", "age", "description"]
+  fields:
+    custom_value:
+      header: "Custom Value:"
+      path: "spec#value"
+      default: "<unset>"
+      type: "str"
+    default:
+      header: "Default:"
+      path: "status#default"
+      default: "<unset>"
+      type: "bool"
+    description:
+      header: "Description:"
+      path: "status#description"
+      default: "<unset>"
+      type: "str"
+    dynamic:
+      header: "Dynamic:"
+      path: "status#dynamic"
+      default: "<unset>"
+      type: "bool"
+infoview:
+  name: "Feature Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["description", "custom_value", "default",
+                 "locked_value", "dynamic"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "status#description"
+        default: "<unset>"
+        type: "str"
+      custom_value:
+        header: [["Custom Value:", ["main", "infoheader"]]]
+        path: "spec#value"
+        default: "<unset>"
+        type: "str"
+      default:
+        header: [["Default:", ["main", "infoheader"]]]
+        path: "status#default"
+        default: "<unset>"
+        type: "bool"
+      dynamic:
+        header: [["Dynamic:", ["main", "infoheader"]]]
+        path: "status#dynamic"
+        default: "<unset>"
+        type: "bool"
+      locked_value:
+        header: [["Locked Value:", ["main", "infoheader"]]]
+        path: "status#lockedValue"
+        default: "<unset>"
+        type: "str"

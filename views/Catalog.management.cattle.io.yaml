@@ -1,0 +1,73 @@
+---
+kind: "Catalog"
+api_family: "management.cattle.io"
+default_command: "catalogs.management.cattle.io"
+command:
+  - "catalogs.cattle"
+  - "catalog.cattle"
+listview:
+  name: "Catalogs"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "branch", "catalog_kind", "age", "url"]
+  fields:
+    branch:
+      header: "Branch:"
+      path: "spec#branch"
+      default: "<unset>"
+      type: "str"
+    catalog_kind:
+      header: "Catalog Kind:"
+      path: "spec#catalogKind"
+      default: "<unset>"
+      type: "str"
+    url:
+      header: "URL:"
+      path: "spec#url"
+      default: "<unset>"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "url"
+infoview:
+  name: "Catalog Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["description", "branch", "catalog_kind", "url"]
+    rows:
+      branch:
+        header: [["Branch:", ["main", "infoheader"]]]
+        path: "spec#branch"
+        default: "<unset>"
+        type: "str"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      catalog_kind:
+        header: [["Catalog Kind:", ["main", "infoheader"]]]
+        path: "spec#catalogKind"
+        default: "<unset>"
+        type: "str"
+      url:
+        header: [["U", ["main", "infoheader_shortcut"]],
+                 ["RL:", ["main", "infoheader"]]]
+        path: "spec#url"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+  shortcuts:
+    "Open URL":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open URL in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open",
+                  ["spec#url"]]

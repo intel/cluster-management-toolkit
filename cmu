@@ -326,6 +326,7 @@ def update_field_widths(field_dict: dict, field_names: list[str], objects: list[
         ellipsis = field_dict[field_name].get("ellipsis", ThemeRef("separators", "ellipsis"))
         field_prefixes = field_dict[field_name].get("field_prefixes", [])
         field_suffixes = field_dict[field_name].get("field_suffixes", [])
+        field_formatters = field_dict[field_name].get("field_formatters", [])
         formatting = deep_get(field_dict, DictPath(f"{field_name}#formatting"), {})
 
         tmplen = 0
@@ -344,7 +345,8 @@ def update_field_widths(field_dict: dict, field_names: list[str], objects: list[
                                     field_separators=field_separators,
                                     ellipsise=ellipsise, ellipsis=ellipsis,
                                     field_prefixes=field_prefixes,
-                                    field_suffixes=field_suffixes)
+                                    field_suffixes=field_suffixes,
+                                    field_formatters=field_formatters)
                 # pylint: disable-next=comparison-with-callable
                 elif processor == generators.processor_timestamp_with_age:
                     tmp = processor(obj, field_name, formatting)
@@ -692,6 +694,7 @@ def generate_list_row(uip: UIProps, data: Type, field_dict: dict,
             "field_prefixes": field_dict[field].get("field_prefixes", []),
             "field_suffixes": field_dict[field].get("field_suffixes", []),
             "mapping": field_dict[field].get("mapping", {}),
+            "field_formatters": field_dict[field].get("field_formatters", []),
         }
 
         tmp = generator(data, field, fieldlen, fpad, ralign, is_selected, **formatting)
@@ -3351,7 +3354,7 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retv
                                 title=title, formatter=formatter)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-branches
 def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Export data to a file.
@@ -3394,6 +3397,9 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     vtype, value = decode_value(value)
 
+    if not raw_export and vtype in ("string", "base64-utf-8"):
+        if not value.endswith("\n"):
+            value += "\n"
     if vtype.startswith("string") or raw_export:
         secure_write_string(filename, value)
     elif vtype.startswith("base64-utf-8"):
@@ -10165,7 +10171,7 @@ def main() -> None:
     try:
         read_theme(themefile, defaultthemefile)
     except ProgrammingError as e:
-        if e.subexception == FileNotFoundError:
+        if e.subexception is FileNotFoundError:
             print("Error: could not find a valid theme file; aborting.", file=sys.stderr)
             sys.exit(errno.ENOENT)
         raise

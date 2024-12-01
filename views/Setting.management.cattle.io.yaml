@@ -1,0 +1,58 @@
+---
+kind: "Setting"
+api_family: "management.cattle.io"
+default_command: "settings.management.cattle.io"
+command:
+  - "settings.cattle"
+  - "setting.cattle"
+listview:
+  name: "Settings"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "source", "age", "value"]
+  fields:
+    source:
+      header: "Source:"
+      path: "source"
+      type: "str"
+    value:
+      header: "Value:"
+      path: "value"
+      type: "str"
+infoview:
+  name: "Setting Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["source"]
+    rows:
+      source:
+        header: [["Source:", ["main", "infoheader"]]]
+        path: "source"
+        type: "str"
+  logpad:
+    infogetter: "logpad_msg_getter"
+    infogetter_args:
+      path: "value"
+    timestamps: false
+  shortcuts:
+    "Export":
+      key: "e"
+      modifier: "shift"
+      read_only: false
+      helptext: "Export value to a file"
+      widget: "inputbox"
+      inputtitle: "Export to file:"
+      confirm: "path_exists"
+      confirmtitle: "File already exists; overwrite?:"
+      action: "call"
+      action_call: "export_data"
+      action_args:
+        _pass_result: true
+        _pass_obj: true
+        _extra_args:
+          base_path: "value"
+          name_attr: "data"
+          raw_export: false
+          ensure_newline: true
