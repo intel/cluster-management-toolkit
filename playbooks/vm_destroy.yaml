@@ -22,8 +22,9 @@
         virsh --connect qemu:///system shutdown {{ item.0 }}
       loop: "{{ instances }}"
       changed_when: true
-    - name: "Wait for the VM instance shutdowns to complete and undefine the VM instances"  # noqa risky-shell-pipe
+    - name: "Wait for the VM instance shutdowns to complete and undefine the VM instances"
       ansible.builtin.shell: |
+        set -o pipefail
         # Wait for shutdown to complete
         until virsh --connect qemu:///system domstate {{ item.0 }} | grep shut; do
             sleep 1

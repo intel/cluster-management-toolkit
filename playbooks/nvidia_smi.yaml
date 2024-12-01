@@ -15,8 +15,9 @@
       read_only: true
   gather_facts: false
   tasks:
-    - name: "Showing NVidia information"  # noqa risky-shell-pipe
+    - name: "Showing NVidia information"
       ansible.builtin.shell: |
+        set -o pipefail
         if [ -x /usr/bin/nvidia-smi ]; then
           nvidia-smi | sed -e '/^\s*$/q'
         else

@@ -16,8 +16,9 @@
       read_only: true
   gather_facts: false
   tasks:
-    - name: "Listing Network Adapters"  # noqa risky-shell-pipe jinja[spacing]
+    - name: "Listing Network Adapters"  # noqa jinja[spacing]
       ansible.builtin.shell: |
+        set -o pipefail
         get_speeds()
         {
           duplex=${1}

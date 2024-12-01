@@ -39,8 +39,9 @@
         dest: "{{ cluster_config.path }}"
         src: "{{ configuration_path }}"
         mode: "0640"
-    - name: "Selecting kubelet version"  # noqa risky-shell-pipe command-instead-of-module
+    - name: "Selecting kubelet version"  # noqa command-instead-of-module
       ansible.builtin.shell: |
+        set -o pipefail
         sed -i -e 's,KUBELET_VER=.*,KUBELET_VER={{ kubernetes_major_minor_version }},' /etc/sysconfig/kubelet
         sed -i -e 's,--container-runtime=\(docker\|remote\),,' /etc/sysconfig/kubelet
       when: "ansible_os_family == 'Suse'"

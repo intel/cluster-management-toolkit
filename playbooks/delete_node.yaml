@@ -14,8 +14,9 @@
       category: "Administration"
   gather_facts: false
   tasks:
-    - name: "Deleting node from cluster"  # noqa risky-shell-pipe
+    - name: "Deleting node from cluster"
       ansible.builtin.shell: |
+        set -o pipefail
         nodes="{{ groups["selection"] | join(" ") }}"
         minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/;s/^Client Version: v[0-9]*\.\([0-9]*\)\..*$/\1/")"
         kubectl drain --disable-eviction=true --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}

@@ -37,8 +37,9 @@
   become: true
   become_user: "root"
   tasks:
-    - name: "Tearing down container network interfaces"  # noqa risky-shell-pipe
+    - name: "Tearing down container network interfaces"
       ansible.builtin.shell: |
+        set -o pipefail
         if [ -x /usr/sbin/ip ]; then
           for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do
             ip link set dev "${network}" down || true

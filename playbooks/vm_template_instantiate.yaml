@@ -52,8 +52,9 @@
         src: "templates/vmimages/net-cmt.xml.j2"
         dest: "{{ tempdir.path }}"
         mode: "0640"
-    - name: "Create and start the cmt network"  # noqa risky-shell-pipe
+    - name: "Create and start the cmt network"
       ansible.builtin.shell: |
+        set -o pipefail
         if ! $( virsh --connect qemu:///system net-list | grep cmt ); then
             virsh --connect qemu:///system net-define {{ tempdir.path }}/net-cmt.xml
             virsh --connect qemu:///system net-autostart cmt
