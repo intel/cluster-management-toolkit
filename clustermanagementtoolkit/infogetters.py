@@ -2573,7 +2573,7 @@ def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, Them
         raise ValueError(f"{dump_formatter_tmp} is not a valid formatter; "
                          "the view-file is probably incorrect.")
 
-    return dump_formatter(deep_get(obj, path))
+    return dump_formatter(deep_get(obj, path, ""))
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
