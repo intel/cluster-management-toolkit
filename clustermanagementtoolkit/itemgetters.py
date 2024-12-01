@@ -534,13 +534,14 @@ def get_pod_affinity(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str,
             ([dict]): A list of conditions
     """
     affinities: list[tuple[str, str, str, str, str]] = []
+    path: str = deep_get(kwargs, DictPath("path"), "spec#affinity")
 
-    for affinity in deep_get(obj, DictPath("spec#affinity"), []):
+    for affinity in deep_get(obj, DictPath(path), []):
         atype = affinity
         policy_regex = re.compile(r"^(ignored|preferred|required)DuringScheduling"
                                   r"(Ignored|Preferred|Required)DuringExecution$")
 
-        for policy in deep_get(obj, DictPath(f"spec#affinity#{atype}"), ""):
+        for policy in deep_get(obj, DictPath(f"{path}#{atype}"), ""):
             tmp = policy_regex.match(policy)
             if tmp is None:
                 scheduling = "Unknown"
@@ -550,7 +551,7 @@ def get_pod_affinity(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str,
                 execution = tmp[2]
 
             selectors = ""
-            for item in deep_get(obj, DictPath(f"spec#affinity#{atype}#{policy}"), []):
+            for item in deep_get(obj, DictPath(f"{path}#{atype}#{policy}"), []):
                 items = []
                 topology = ""
                 if isinstance(item, dict):
