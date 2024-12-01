@@ -232,15 +232,15 @@ Name                                                  Stmts   Miss Branch BrPart
 clustermanagementtoolkit/listgetters_async.py           119    103     54      0   9.2%
 clustermanagementtoolkit/networkio.py                   349    282    173      3  16.9%
 clustermanagementtoolkit/infogetters.py                1676   1270   1008     68  21.9%
-clustermanagementtoolkit/itemgetters.py                 506    372    290     14  22.6%
+clustermanagementtoolkit/itemgetters.py                 507    375    290      8  22.3%
 clustermanagementtoolkit/fieldgetters.py                 81     54     46      0  27.6%
 clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     62  27.9%
 clustermanagementtoolkit/listgetters.py                1212    808    662     90  28.7%
 clustermanagementtoolkit/curses_helper.py              2388   1544   1124    125  29.0%
 clustermanagementtoolkit/logparser.py                  2008   1275   1125     45  31.1%
 clustermanagementtoolkit/datagetters.py                 277    181    142      5  32.2%
-clustermanagementtoolkit/generators.py                  726    358    384     44  44.1%
 clustermanagementtoolkit/checks.py                      631    310    248     11  47.3%
+clustermanagementtoolkit/generators.py                  732    317    384     59  49.6%
 clustermanagementtoolkit/formatters.py                  807    310    424     25  57.8%
 clustermanagementtoolkit/ansible_helper.py              805    199    490     24  74.0%
 clustermanagementtoolkit/cmtlib.py                      659    125    388     34  77.2%
@@ -260,7 +260,7 @@ clustermanagementtoolkit/objgetters.py                   56      0     12      0
 clustermanagementtoolkit/pvtypes.py                       1      0      0      0 100.0%
 clustermanagementtoolkit/recommended_permissions.py      11      0      0      0 100.0%
 ---------------------------------------------------------------------------------------
-TOTAL                                                 15930   8235   8336    580  44.2%
+TOTAL                                                 15937   8197   8336    589  44.4%
 ```
 
 
@@ -279,12 +279,12 @@ Commandline: `mypy --follow-imports silent --explicit-package-bases --ignore-mis
 Execute with `make mypy-markdown`.
 
 | Source file                                         | Score                                                 |
-| :-------------------------------------------------- | :------------------------------------------------     |
+| :-------------------------------------------------- | :---------------------------------------------------- |
 | cmt                                                 | Success: no issues found in 1 source file             |
 | cmtadm                                              | Success: no issues found in 1 source file             |
 | cmt-install                                         | Success: no issues found in 1 source file             |
 | cmtinv                                              | Success: no issues found in 1 source file             |
-| cmu                                                 | **Found 94 errors in 1 file (checked 1 source file)** |
+| cmu                                                 | **Found 96 errors in 1 file (checked 1 source file)** |
 | clustermanagementtoolkit/about.py                   | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/ansible_helper.py          | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/ansithemeprint.py          | Success: no issues found in 1 source file             |
