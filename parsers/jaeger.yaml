@@ -31,6 +31,10 @@
 - name: "istio-tracing"
   show_in_selector: false
   matchkeys:
+    - pod_name: "jaeger-query"
+      container_type: "init_container"
+    - pod_name: "jaeger-collector"
+      container_type: "init_container"
     - pod_name: "istio-tracing"
       container_name: "jaeger"
     - pod_name: "jaeger"
@@ -38,5 +42,12 @@
     - container_name: "jaeger"
       image_name: "/jaegertracing"
   parser_rules:
+    - name: "strip_ansicodes"
     - name: "ts_8601"
     - name: "json"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "application version: "
+          loglevel: "notice"
+    - name: "python_traceback"
