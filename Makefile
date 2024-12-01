@@ -264,7 +264,7 @@ pylint:
 			continue;; \
 		esac ;\
 		printf -- "File: $$file\n" ;\
-		$$cmd --py-version $(PYLINT_PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file ;\
+		PYTHONPATH=. $$cmd --py-version $(PYLINT_PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file ;\
 	done
 
 pylint-markdown:
@@ -279,7 +279,7 @@ pylint-markdown:
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
-		result=$$($$cmd --py-version $(PYLINT_PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
+		result=$$(PYTHONPATH=. $$cmd --py-version $(PYLINT_PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
 		row="$$file | $$result\n" ;\
 		printf -- "$$row" >> $${tmpfile} ;\
 	done && \
@@ -292,7 +292,10 @@ pylint-tests:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning pylint to check Python code quality\n\n" ;\
-	$$cmd --rcfile .pylint $(python_test_executables) || /bin/true
+	for file in $(python_test_executables); do \
+		printf -- "File: $$file\n" ;\
+		PYTHONPATH=. $$cmd --py-version $(PYLINT_PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file ;\
+	done
 
 flake8:
 	@cmd=flake8 ;\
