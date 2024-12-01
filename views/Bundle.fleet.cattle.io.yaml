@@ -1,0 +1,71 @@
+---
+kind: "Bundle"
+api_family: "fleet.cattle.io"
+default_command: "bundles.fleet.cattle.io"
+command:
+  - "bundles.cattle"
+  - "bundle.cattle"
+listview:
+  name: "Bundles"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "default_namespace", "ready", "age"]
+  fields:
+    default_namespace:
+      header: "Default Namespace:"
+      path: "spec#defaultNamespace"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "namespace"
+    ready:
+      header: "Ready:"
+      paths:
+        - path: [["status#summary#ready"], ["status#summary#desiredReady"]]
+          pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "numerical"
+        field_separators:
+          - type: "fraction"
+      align: "right"
+infoview:
+  name: "Bundles Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["default_namespace", "ready"]
+    rows:
+      default_namespace:
+        header: [["D", ["main", "infoheader_shortcut"]],
+                 ["efault Namespace:", ["main", "infoheader"]]]
+        path: "spec#defaultNamespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+          - path: [["status#summary#ready"], ["status#summary#desiredReady"]]
+            pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "numerical"
+          field_separators:
+            - type: "fraction"
+  shortcuts:
+    "Open default Namespace":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for default Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#defaultNamespace"
+        kind: "Namespace"

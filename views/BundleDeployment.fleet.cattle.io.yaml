@@ -1,0 +1,88 @@
+---
+kind: "BundleDeployment"
+api_family: "fleet.cattle.io"
+default_command: "bundledeployments.fleet.cattle.io"
+command:
+  - "bundledeployments.cattle"
+  - "bundledeployment.cattle"
+  - "bundledeps.cattle"
+  - "bundledep.cattle"
+listview:
+  name: "Bundle Deployments"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "default_namespace",
+               "deployed", "monitored", "state", "age"]
+  fields:
+    default_namespace:
+      header: "Default Namespace:"
+      path: "spec#options#defaultNamespace"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "namespace"
+    deployed:
+      header: "Deployed:"
+      path: "status#display#deployed"
+      type: "bool"
+    monitored:
+      header: "Monitored:"
+      path: "status#display#monitored"
+      type: "bool"
+    state:
+      header: "State:"
+      path: "status#display#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Ready:
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+infoview:
+  name: "Bundle Deployment Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["release", "default_namespace",
+                 "deployed", "monitored", "state"]
+    rows:
+      default_namespace:
+        header: [["D", ["main", "infoheader_shortcut"]],
+                 ["efault Namespace:", ["main", "infoheader"]]]
+        path: "spec#options#defaultNamespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      deployed:
+        header: [["Deployed:", ["main", "infoheader"]]]
+        path: "status#display#deployed"
+        type: "bool"
+      monitored:
+        header: [["Monitored:", ["main", "infoheader"]]]
+        path: "status#display#monitored"
+        type: "bool"
+      release:
+        header: [["Release:", ["main", "infoheader"]]]
+        path: "status#release"
+        type: "str"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#display#state"
+        type: "str"
+  shortcuts:
+    "Open default Namespace":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for default Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#options#defaultNamespace"
+        kind: "Namespace"
