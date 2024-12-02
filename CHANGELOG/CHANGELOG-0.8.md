@@ -191,11 +191,13 @@ Execute with `make bandit`.
 Output:
 
 ```
+Run started:2024-12-02 22:57:06.810446
+
 Test results:
 	No issues identified.
 
 Code scanned:
-	Total lines of code: 77503
+	Total lines of code: 78139
 	Total lines skipped (#nosec): 8
 
 Run metrics:
@@ -230,13 +232,13 @@ Output:
 Name                                                  Stmts   Miss Branch BrPart  Cover
 ---------------------------------------------------------------------------------------
 clustermanagementtoolkit/listgetters_async.py           119    103     54      0   9.2%
-clustermanagementtoolkit/networkio.py                   349    282    173      3  16.9%
 clustermanagementtoolkit/infogetters.py                1676   1270   1008     68  21.9%
 clustermanagementtoolkit/itemgetters.py                 507    375    290      8  22.3%
 clustermanagementtoolkit/fieldgetters.py                 81     54     46      0  27.6%
 clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     62  27.9%
 clustermanagementtoolkit/listgetters.py                1212    808    662     90  28.7%
 clustermanagementtoolkit/curses_helper.py              2388   1544   1124    125  29.0%
+clustermanagementtoolkit/networkio.py                   342    237    171      2  29.2%
 clustermanagementtoolkit/logparser.py                  2008   1275   1125     45  31.1%
 clustermanagementtoolkit/datagetters.py                 277    181    142      5  32.2%
 clustermanagementtoolkit/checks.py                      631    310    248     11  47.3%
@@ -260,7 +262,7 @@ clustermanagementtoolkit/objgetters.py                   56      0     12      0
 clustermanagementtoolkit/pvtypes.py                       1      0      0      0 100.0%
 clustermanagementtoolkit/recommended_permissions.py      11      0      0      0 100.0%
 ---------------------------------------------------------------------------------------
-TOTAL                                                 15937   8197   8336    589  44.4%
+TOTAL                                                 15930   8152   8334    588  44.7%
 ```
 
 
@@ -373,10 +375,10 @@ Output:
 Running regexploit to check for ReDoS attacks
 
 Checking executables
-Processed 43 regexes
+Processed 49 regexes
 
 Checking libraries
-Processed 143 regexes
+Processed 142 regexes
 ```
 
 ### Ruff Results for v0.8.5
@@ -401,7 +403,7 @@ Output:
 └─────────────┘
 
 
-Scanning 1105 files with:
+Scanning 1123 files with:
 
 ✔ Semgrep OSS
   ✔ Basic security coverage for first-party code vulnerabilities.
@@ -412,7 +414,7 @@ Scanning 1105 files with:
 ✘ Semgrep Supply Chain (SCA)
   ✘ Find and fix the reachable vulnerabilities in your OSS dependencies.
 
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:03:30
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸ 100% 0:03:18
 
 
 ┌──────────────┐
@@ -420,7 +422,7 @@ Scanning 1105 files with:
 └──────────────┘
 Some files were skipped or only partially analyzed.
   Partially scanned: 2 files only partially analyzed due to parsing or internal Semgrep errors
-  Scan skipped: 948 files matching --exclude patterns, 62 files matching .semgrepignore patterns
+  Scan skipped: 966 files matching --exclude patterns, 62 files matching .semgrepignore patterns
   For a full list of skipped files, run semgrep with the --verbose flag.
 
 Ran 600 rules on 95 files: 0 findings.
@@ -449,8 +451,8 @@ Output:
 Summary:
      fail: 0
      skip: 3
-  success: 824
-    total: 827
+  success: 842
+    total: 845
 ```
 
 ### YAMLlint Results for v0.8.5

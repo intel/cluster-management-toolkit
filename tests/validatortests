@@ -1134,10 +1134,10 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
             # These tests behave differently depending on whether the test is called
             # directly or by python3-coverage; until this has been unraveled we rather
             # live with slightly worse coverage than fail completely.
-            #(f"fooåäöpad1{''.ljust(44, 'a')}", False,
-            # HostNameStatus.DNS_LABEL_TOO_LONG, None),
-            #(f"fooåäöpad1{''.ljust(44, 'a')}", True,
-            # HostNameStatus.DNS_LABEL_TOO_LONG, None),
+            # (f"fooåäöpad1{''.ljust(44, 'a')}", False,
+            #  HostNameStatus.DNS_LABEL_TOO_LONG, None),
+            # (f"fooåäöpad1{''.ljust(44, 'a')}", True,
+            #  HostNameStatus.DNS_LABEL_TOO_LONG, None),
             ("xn--", False, HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA, None),
             ("xn--", True, HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA, None),
             ("\x81", False, None, UnicodeError),

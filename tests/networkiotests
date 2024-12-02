@@ -1,0 +1,251 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 9 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+# Requires: python3 (>= 3.9)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+import builtins
+import sys
+from typing import Any, Tuple
+from unittest import mock
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import networkio
+
+# unit-tests for networkio.py
+
+
+def test_reformat_github_release_notes(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = networkio.reformat_github_release_notes
+    indata: Any = None
+
+    if result:
+        # Indata format:
+        # (indata, expected_result, expected_exception)
+        testdata = (
+            ("New release\n---\nFoo\nBar",
+             "## New release\nFoo\nBar", None),
+            ("New release\n---",
+             "## New release", None),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         indata: {indata.replace('\n', '\\n')}\n" \
+                              f"         result: {tmp.replace('\n', '\\n')}\n" \
+                              f"       expected: {expected_result.replace('\n', '\\n')}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"         indata: {indata.replace('\n', '\\n')}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         indata: {indata.replace('\n', '\\n')}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result.replace('\n', '\\n')}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_github_version(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = networkio.get_github_version
+    indata: Any = None
+
+    if result:
+        # Indata format:
+        # (url, version_regex, mock_data, expected_result, expected_exception)
+        testdata = (
+            # Pre-release; should be skipped
+            ("https://api.github.com/repos/kubernetes/kubernetes/releases",
+             r"v(\d+)(\.)(\d+)(\.)(\d+)$", True, [
+                 {
+                     "tag_name": "v1.32.0-rc.0",
+                     "target_commitish": "master",
+                     "name": "Kubernetes v1.32.0-rc.0",
+                     "draft": False,
+                     "prerelease": True,
+                     "created_at": "2024-11-26T15:56:25Z",
+                     "published_at": "2024-11-26T21:57:35Z",
+                     "body": "\nMESSAGE",
+                 },
+             ], ([], "", ""), None),
+            # Draft; should be skipped
+            ("https://api.github.com/repos/kubernetes/kubernetes/releases",
+             r"v(\d+)(\.)(\d+)(\.)(\d+)$", True, [
+                 {
+                     "tag_name": "v1.32.0-rc.0",
+                     "target_commitish": "master",
+                     "name": "Kubernetes v1.32.0-rc.0",
+                     "draft": True,
+                     "prerelease": False,
+                     "created_at": "2024-11-26T15:56:25Z",
+                     "published_at": "2024-11-26T21:57:35Z",
+                     "body": "\nMESSAGE",
+                 },
+             ], ([], "", ""), None),
+            # Proper release
+            ("https://api.github.com/repos/kubernetes/kubernetes/releases",
+             r"v(\d+)(\.)(\d+)(\.)(\d+)$", True, [
+                 {
+                     "tag_name": "v1.31.3",
+                     "target_commitish": "master",
+                     "name": "Kubernetes v1.31.3",
+                     "draft": False,
+                     "prerelease": False,
+                     "created_at": "2024-11-26T15:56:25Z",
+                     "published_at": "2024-11-26T21:57:35Z",
+                     "body": "\nMESSAGE",
+                 },
+             ], (["1", ".", "31", ".", "3"], "2024-11-26T21:57:35Z", "\nMESSAGE"), None),
+            # Missing tag_name; should be skipped
+            ("https://api.github.com/repos/kubernetes/kubernetes/releases",
+             r"v(\d+)(\.)(\d+)(\.)(\d+)$", True, [
+                 {
+                     "tag_name": "",
+                     "target_commitish": "master",
+                     "name": "Kubernetes v1.31.3",
+                     "draft": False,
+                     "prerelease": False,
+                     "created_at": "2024-11-26T15:56:25Z",
+                     "published_at": "2024-11-26T21:57:35Z",
+                     "body": "\nMESSAGE",
+                 },
+             ], ([], "", ""), None),
+            # Download failed; should return None
+            ("https://api.github.com/repos/kubernetes/kubernetes/releases",
+             r"v(\d+)(\.)(\d+)(\.)(\d+)$", False,
+             None, None, None),
+            # URL is None; should be skipped
+            (None,
+             r"v(\d+)(\.)(\d+)(\.)(\d+)$", True, [
+                 {},
+             ], ([], "", ""), None),
+        )
+        for url, version_regex, mock_retval, mock_data, \
+                expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.networkio.download_files",
+                                return_value=mock_retval), \
+                     mock.patch("clustermanagementtoolkit.networkio.secure_read_yaml",
+                                return_value=mock_data):
+                    tmp = fun(url, version_regex)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         indata: {indata}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                raise
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"         indata: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         indata: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: dict = {
+    ("reformat_github_release_notes()", ): {
+        "callable": test_reformat_github_release_notes,
+        "result": None,
+    },
+    ("get_github_version()", ): {
+        "callable": test_get_github_version,
+        "result": None,
+    },
+}
+
+
+def main() -> int:
+    global real_import
+    real_import = builtins.__import__
+
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
+
+    init_ansithemeprint(themefile=None)
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+
+    for i, test in enumerate(tests):
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose, **tests[test].get("kwargs", {}))
+        if len(message) > 0:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
+
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()

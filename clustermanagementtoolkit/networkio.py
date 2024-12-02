@@ -56,7 +56,7 @@ from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, File
 
 def reformat_github_release_notes(changelog: str = "") -> str:
     """
-    Given a release message from GitHub reformat it as rudimentary Markdown.
+    Given a release message from GitHub reformat it as (extremely) rudimentary Markdown.
 
         Parameters:
             changelog (str): The changelog to reformat
@@ -66,22 +66,12 @@ def reformat_github_release_notes(changelog: str = "") -> str:
     formatted_changelog = []
 
     previous_line = None
-    git_shortlog = False
-    githash = re.compile(r"^([0-9a-f]{8})( .+)$")
     for line in changelog.splitlines():
-        # We might possibly have an issue here if we get a new header where
-        # the first word is exactly 8 characters long and matches [0-9a-f].
-        # For now let's not overcomplicate things though.
-        if git_shortlog and (tmp := githash.match(line)) is not None:
-            formatted_changelog.append(f"`{tmp[1]}`{tmp[2]}")
-            previous_line = None
-            continue
         if previous_line is None:
             previous_line = line
             continue
         if line == "---":
             formatted_changelog.append(f"## {previous_line}")
-            git_shortlog = previous_line == "git shortlog"
             previous_line = None
             continue
         formatted_changelog.append(previous_line)

@@ -30,6 +30,7 @@ python_test_executables = \
 	tests/khtests \
 	tests/lgtests \
 	tests/logtests \
+	tests/networkiotests \
 	tests/ogtests \
 	tests/typetests \
 	tests/validate_yaml \
@@ -56,6 +57,7 @@ python_unit_tests = \
 	tests/khtests \
 	tests/lgtests \
 	tests/logtests \
+	tests/networkiotests \
 	tests/ogtests \
 	tests/typetests \
 	tests/validatortests
