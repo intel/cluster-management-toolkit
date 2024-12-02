@@ -732,6 +732,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     executor = reexecutor.ReExecutor()
 
     view = deep_get(kwargs, DictPath("kind"))
+    viewref = deep_get(views, DictPath(view), {})
+    kind = deep_get(viewref, DictPath("kind"))
 
     if not (isinstance(stdscr, curses.window) and isinstance(view, str)):
         msg = [
@@ -759,8 +761,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                severity=LogLevel.ERR,
                                formatted_msg=formatted_msg)
 
-    denylist = deep_get(views, DictPath(f"{view}#field_denylist"), [])
-    field_indexes = deep_get(views, DictPath(f"{view}#field_indexes"), {})
+    denylist = deep_get(viewref, DictPath("field_denylist"), [])
+    field_indexes = deep_get(viewref, DictPath("field_indexes"), {})
 
     if not (isinstance(field_indexes, dict) and field_indexes):
         msg = [
@@ -791,7 +793,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     fieldgenerator_args = {
         "field_index": field_index,
         "field_indexes": field_indexes,
-        "fields": deep_get(views, DictPath(f"{view}#fields")),
+        "fields": deep_get(viewref, DictPath("fields")),
         "denylist": denylist,
     }
     field_dict, field_names, sortcolumn, sortorder_reverse = \
@@ -800,8 +802,6 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     uip = UIProps(stdscr)
 
-    kind = deep_get(views, DictPath(f"{view}#kind"))
-
     windowheader = view
 
     if kind is None or kind[0].startswith("__"):
@@ -809,14 +809,14 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     else:
         is_namespaced = kh.is_kind_namespaced(kind)
 
-    helptext = generate_helptext(view, "listview", [], [])
-    activatedfun = deep_get(views, DictPath(f"{view}#activatedfun"), genericinfoloop)
-    on_activation = deep_get(views, DictPath(f"{view}#on_activation"), {})
-    update_delay = deep_get(views, DictPath(f"{view}#update_delay"), -1)
+    helptext = generate_helptext(view, "listview", [], {})
+    activatedfun = deep_get(viewref, DictPath("activatedfun"), genericinfoloop)
+    on_activation = deep_get(viewref, DictPath("on_activation"), {})
+    update_delay = deep_get(viewref, DictPath("update_delay"), -1)
 
-    is_taggable = (deep_get(views, DictPath(f"{view}#is_taggable"), True)
-                   and deep_get(views, DictPath(f"{view}#actions")) is not None)
-    extra_vars = deep_get(views, DictPath(f"{view}#extra_vars"), {})
+    is_taggable = (deep_get(viewref, DictPath("is_taggable"), True)
+                   and deep_get(viewref, DictPath("actions")) is not None)
+    extra_vars = deep_get(viewref, DictPath("extra_vars"), {})
 
     uip.init_window(field_dict=field_dict, view=kind, windowheader=windowheader,
                     update_delay=update_delay, sortcolumn=sortcolumn,
@@ -832,15 +832,15 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     label_selector = ""
 
     # These values can be toggled, so we need to read them first
-    listview_args = copy.deepcopy(deep_get(views, DictPath(f"{view}#listview_args"), {}))
+    listview_args = copy.deepcopy(deep_get(viewref, DictPath("listview_args"), {}))
 
-    listgetter = deep_get(views, DictPath(f"{view}#listgetter"))
-    listgetter_async = deep_get(views, DictPath(f"{view}#listgetter_async"))
-    listgetter_args = deep_get(views, DictPath(f"{view}#listgetter_args"), {})
+    listgetter = deep_get(viewref, DictPath("listgetter"))
+    listgetter_async = deep_get(viewref, DictPath("listgetter_async"))
+    listgetter_args = deep_get(viewref, DictPath("listgetter_args"), {})
     listgetter_args["label_selector"] = label_selector
 
-    infogetter = deep_get(views, DictPath(f"{view}#infogetter"), infogetters.generic_infogetter)
-    infogetter_extra_args = deep_get(views, DictPath(f"{view}#extra_vars#infogetter"),
+    infogetter = deep_get(viewref, DictPath("infogetter"), infogetters.generic_infogetter)
+    infogetter_extra_args = deep_get(viewref, DictPath("extra_vars#infogetter"),
                                      {"_view": view.strip("*")})
     infogetter_extra_args["_field_index"] = field_index.lower()
     infogetter_extra_args["_field_names"] = field_names
@@ -909,9 +909,12 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     if kind[0].startswith("__"):
                         vlist, status = listgetter(**listgetter_args)
                     else:
-                        vlist, status = \
-                            listgetter(deep_get(view, DictPath(f"{view}#kind")), selected_namespace,
-                                       label_selector=label_selector, **listgetter_args)
+                        raise ProgrammingError("We don't know how to handle this")
+                    # else:
+                    #     vlist, status = \
+                    #         listgetter(deep_get(view, DictPath(f"{view}#kind")),
+                    #                    selected_namespace,
+                    #                    label_selector=label_selector, **listgetter_args)
                     infogetter_extra_args["_vlist"] = vlist
                 new_data = "pending"
                 uip.update_timestamp(update=new_data)
@@ -931,9 +934,9 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         # Additional blockers:
         #   Items are tagged, menus are open, etc.
         if executor:
-            if (result := executor.get("hosts")) != ([], []):
-                data, _host_statuses = result
-                hosts = deep_get(data, DictPath("all#hosts"), {}).keys()
+            if (execution_result_dict := executor.get("hosts")) != ([], []):
+                data, _host_statuses = execution_result_dict
+                hosts = deep_get(cast(dict, data), DictPath("all#hosts"), {}).keys()
                 hosts_set = set(hosts)
                 async_data["hosts"] = list(hosts)
                 if vlist := deep_get(infogetter_extra_args, DictPath("_vlist"), []):
@@ -965,12 +968,13 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 new_data = "pending"
                 uip.update_timestamp(update=new_data)
                 first_fetch = False
-            elif (result := executor.get("pings")) != ([], []):
-                ansible_results, _ansible_status = result
+            elif (execution_result_dict := executor.get("pings")) != ([], []):
+                ansible_results, _ansible_status = execution_result_dict
                 vlist = deep_get(infogetter_extra_args, DictPath("_vlist"), [])
                 for i, item in enumerate(vlist):
                     host = deep_get(item, DictPath(infogetter_extra_args["_match_key"]))
-                    for result in deep_get(ansible_results, f"{host}", []):
+                    for result in deep_get(cast(dict[str, Any], ansible_results),
+                                           DictPath(f"{host}"), []):
                         if deep_get(result, DictPath("task")) == "Ping":
                             if not deep_get(vlist[i], DictPath("__deleted"), False):
                                 status = deep_get(result, DictPath("status"))
@@ -996,8 +1000,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 new_data = "pending"
                 uip.update_timestamp(update=new_data)
                 first_fetch = False
-            elif (result := executor.get(".".join(kind))) != ([], []):
-                vlist, status = result
+            elif (execution_result_list := executor.get(".".join(kind))) != ([], []):
+                vlist, status = cast(tuple[list[Any], Any], execution_result_list)
                 infogetter_extra_args["_vlist"] = copy.deepcopy(vlist)
 
                 if status == 42503:
@@ -1076,7 +1080,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 ThemeStr(f"{serverstatus}", ThemeAttr("statusbar", "default")),
             ]
 
-            for status_data in deep_get(views, DictPath(f"{view}#statusmsg"), []):
+            for status_data in deep_get(viewref, DictPath("statusmsg"), []):
                 if len(status_data) == 2:
                     key, path = status_data
                     default_status = "<unset>"
@@ -1196,7 +1200,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             fieldgenerator_args = {
                 "field_index": field_index,
                 "field_indexes": field_indexes,
-                "fields": deep_get(views, DictPath(f"{view}#fields")),
+                "fields": deep_get(viewref, DictPath("fields")),
                 "denylist": denylist,
             }
             field_dict, field_names, sortcolumn, sortorder_reverse = \
@@ -1407,7 +1411,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             fieldgenerator_args = {
                 "field_index": field_index,
                 "field_indexes": field_indexes,
-                "fields": deep_get(views, DictPath(f"{view}#fields")),
+                "fields": deep_get(viewref, DictPath("fields")),
                 "denylist": denylist,
             }
             field_dict, field_names, sortcolumn, sortorder_reverse = \
@@ -1504,7 +1508,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     if deep_get(obj, DictPath("metadata#name")) not in itemlist:
                         continue
 
-                labelpath = deep_get(views, DictPath(f"{view}#labels"), "metadata#labels")
+                labelpath = deep_get(viewref, DictPath("labels"), "metadata#labels")
                 labelref = deep_get(obj, DictPath(labelpath), {})
                 for key in labelref:
                     if (key, labelref[key]) not in labels:
@@ -1709,9 +1713,9 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 uip.list_needs_regeneration(True)
                 continue
 
-            action_title = deep_get(views, DictPath(f"{view}#actions#title"),
+            action_title = deep_get(viewref, DictPath("actions#title"),
                                     "Perform action on tagged items")
-            tmp_action_src_list = deep_get(views, DictPath(f"{view}#actions#actionlist"), {})
+            tmp_action_src_list = deep_get(viewref, DictPath("actions#actionlist"), {})
 
             action_src_list = {}
 
@@ -1730,9 +1734,9 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                     cluster_available=cluster_available)
 
             # If there are playbook actions, add those too
-            if deep_get(views, DictPath(f"{view}#actions#playbooklist"), {}):
+            if deep_get(viewref, DictPath("actions#playbooklist"), {}):
                 playbook_context = \
-                    deep_get(views, DictPath(f"{view}#actions#playbooklist#context"), None)
+                    deep_get(viewref, DictPath("actions#playbooklist#context"))
                 actions, actionlist = \
                     populate_playbooklist(context=playbook_context,
                                           actions=[],
@@ -1898,7 +1902,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             tagged_items.clear()
             uip.list_needs_regeneration(True)
 
-        shortcuts = deep_get(views, DictPath(f"{view}#shortcuts"), {})
+        shortcuts = deep_get(viewref, DictPath("shortcuts"), {})
 
         for key, value in shortcuts.items():
             read_only = deep_get(value, DictPath("read_only"), False)
@@ -2303,7 +2307,7 @@ def read_file_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGr
 
 
 # pylint: disable-next=unused-argument
-def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGroup]]:
+def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[dict[str, Any], list[StatusGroup]]:
     """
     Asynchronously run an Ansible playbook.
 
@@ -2314,10 +2318,10 @@ def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[S
                 selection ([str]): The hosts to run the play on
                 verbose (bool): Output status updates for every new Ansible event?
         Returns:
-            ((int, dict)):
-                (int): The result from ansible_run_playbook();
-                       -errno.ENOENT if the inventory is missing or empty
+            ((dict, int)):
                 (dict): The results of the run
+                (int): The status from ansible_run_playbook();
+                       -errno.ENOENT if the inventory is missing or empty
     """
     playbook = deep_get(kwargs, DictPath("playbook"))
     selection = deep_get(kwargs, DictPath("selection"))
@@ -3452,8 +3456,8 @@ def generate_helptext(view: Union[str, tuple[str, str]], viewtype: str,
             helptext += additional_helptexts
 
         if shortcuts:
-            for shortcut in shortcuts:
-                tmp = deep_get(shortcuts[shortcut], DictPath("helptext"))
+            for _shortcut, data in shortcuts.items():
+                tmp = deep_get(data, DictPath("helptext"))
                 if tmp is not None:
                     helptext.append(tmp)
 
