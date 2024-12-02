@@ -4302,6 +4302,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         elif c == ord("B"):
             uip.toggle_borders()
             uip.refresh_all()
+            uip.update_forced = True
             uip.force_update()
         elif c == ord("W") and uip.listpad is not None:
             if not field_indexes:
@@ -4325,6 +4326,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             uip.reinit_window(field_dict=field_dict, sortcolumn=sortcolumn)
             uip.resize_listpad(width=-1)
             uip.refresh_all()
+            uip.update_forced = True
             uip.force_update()
         elif c == ord("R") and uip.logpad is not None:
             raw_output = not raw_output
