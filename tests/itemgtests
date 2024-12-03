@@ -16,7 +16,7 @@
 from datetime import datetime, timezone
 from pathlib import PurePath
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 import yaml
 
 from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
@@ -41,11 +41,11 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
+def test_callback(options: list[tuple[str, str]], args: list[str]) -> tuple[str, int]:
     return ("callback", len(args))
 
 
-def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_conditions(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -57,7 +57,7 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
         now_str_fmt = f"{now.astimezone():%Y-%m-%d %H:%M:%S}"
         # Indata format:
         # (obj, path, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             # All fine
             (
                 {
@@ -354,7 +354,7 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_image_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_image_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -363,7 +363,7 @@ def test_get_image_list(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 {
                     "status": {
@@ -469,7 +469,7 @@ def test_get_image_list(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_key_value(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_key_value(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -478,7 +478,7 @@ def test_get_key_value(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (path, obj, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 DictPath("status#external-identifiers"),
                 {
@@ -589,7 +589,7 @@ def test_get_key_value(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_security_context(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_security_context(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -598,7 +598,7 @@ def test_get_security_context(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 # Valid data
                 {
@@ -657,7 +657,7 @@ def test_get_security_context(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_volume_properties(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_volume_properties(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -666,7 +666,7 @@ def test_get_volume_properties(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, pv_type, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 # Valid data
                 {
@@ -746,7 +746,7 @@ def test_get_volume_properties(verbose: bool = False) -> Tuple[str, bool]:
                 TypeError,
             ),
             (
-                # List
+                # list
                 {
                     'kind': 'PersistentVolume',
                     'apiVersion': 'v1',
@@ -768,7 +768,7 @@ def test_get_volume_properties(verbose: bool = False) -> Tuple[str, bool]:
                 None,
             ),
             (
-                # Dict
+                # dict
                 {
                     'kind': 'PersistentVolume',
                     'apiVersion': 'v1',
@@ -832,7 +832,7 @@ def test_get_volume_properties(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("get_conditions()",): {
         "callable": test_get_conditions,
         "result": None,

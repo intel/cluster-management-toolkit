@@ -18,7 +18,7 @@ import curses
 from pathlib import PurePath
 import os
 import sys
-from typing import Any, Dict, Tuple
+from typing import Any
 import yaml
 
 from clustermanagementtoolkit import cmtlib
@@ -48,7 +48,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
+def test_themestring(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -89,7 +89,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         # Indata format:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("A test string", ThemeAttr("types", "generic"),
              "ThemeStr('A test string', ThemeAttr('types', 'generic'), False)", None),
             (None, ThemeAttr("types", "generic"),
@@ -232,7 +232,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
+def test_themeref(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -240,7 +240,7 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         # Indata format:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (("strings", "none"),
              "ThemeRef('strings', 'none', False)", None),
             ((None, "none"),
@@ -448,7 +448,7 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
+def test_themearray(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -456,7 +456,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         # Indata format:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ([ThemeStr("Hello ", ThemeAttr("types", "generic")),
               ThemeStr("World", ThemeAttr("types", "emphasis"))], False,
              "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
@@ -510,7 +510,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         base = ThemeArray([ThemeStr("Hello World", ThemeAttr("types", "emphasis"))], False)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (ThemeRef("separators", "matchbullet", True),
              "ThemeArray([ThemeStr('Hello World', ThemeAttr('types', 'emphasis'), False), "
              "ThemeRef('separators', 'matchbullet', True)])", None),
@@ -561,7 +561,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         base = ThemeArray([ThemeStr("Hello ", ThemeAttr("types", "emphasis"))], False)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (ThemeArray([ThemeStr("World", ThemeAttr("types", "generic"))], False),
              "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'emphasis'), False), "
              "ThemeStr('World', ThemeAttr('types', 'generic'), False)])", None),
@@ -625,7 +625,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
             result = False
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (ThemeArray([ThemeStr("12345", ThemeAttr("types", "generic"))], False),
              5, None),
             (ThemeArray([ThemeStr("", ThemeAttr("types", "generic"), False)]),
@@ -672,7 +672,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
                     break
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
              ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
              True, None),
@@ -727,7 +727,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_helptext(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -736,7 +736,7 @@ def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (helptext, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ([("[F1] / [Shift] + H", "Show this helptext"), ("[Ctrl] + X", "Exit program")],
              [{"lineattrs": WidgetLineAttrs.NORMAL,
                "columns": [[ThemeStr("[F1] / [Shift] + H", ThemeAttr("windowwidget", "highlight"))],
@@ -779,7 +779,7 @@ def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_set_mousemask(verbose: bool = False) -> Tuple[str, bool]:
+def test_set_mousemask(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -789,7 +789,7 @@ def test_set_mousemask(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (mask, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (-1, None),
             (0, None),
         )
@@ -810,7 +810,7 @@ def test_set_mousemask(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_mousemask(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_mousemask(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -819,7 +819,7 @@ def test_get_mousemask(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (mask, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (-1, -1, None),
             (0, 0, None),
         )
@@ -854,7 +854,7 @@ def test_get_mousemask(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_read_theme(verbose: bool = False) -> Tuple[str, bool]:
+def test_read_theme(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -863,7 +863,7 @@ def test_read_theme(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (configthemefile, defaultthemefile, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (os.path.join(THEME_DIR, "cvd.yaml"), DEFAULT_THEME_FILE, None),
             (os.path.join(THEME_DIR, "cvd"), DEFAULT_THEME_FILE, None),
             (os.path.join(THEME_DIR, "NonExistingTheme"), DEFAULT_THEME_FILE, None),
@@ -898,7 +898,7 @@ def test_read_theme(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_theme_ref(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_theme_ref(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -916,7 +916,7 @@ def test_get_theme_ref(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_init_curses(verbose: bool = False) -> Tuple[str, bool]:
+def test_init_curses(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -925,7 +925,7 @@ def test_init_curses(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (configthemefile, defaultthemefile, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (os.path.join(TEST_DIR, "fg_equals_bg.yaml"), ValueError),
             (os.path.join(TEST_DIR, "colorremap.yaml"), None),
             (os.path.join(TEST_DIR, "attr_not_known.yaml"), None),
@@ -967,7 +967,7 @@ def test_init_curses(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_dump_themearray(verbose: bool = False) -> Tuple[str, bool]:
+def test_dump_themearray(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -976,7 +976,7 @@ def test_dump_themearray(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Valid
             (
                 [ThemeStr("This is valid", ThemeAttr("types", "generic")),
@@ -1040,7 +1040,7 @@ def test_dump_themearray(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_color_log_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_color_log_severity(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1049,7 +1049,7 @@ def test_color_log_severity(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Valid
             (
                 LogLevel.EMERG,
@@ -1113,7 +1113,7 @@ def test_color_log_severity(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_color_status_group(verbose: bool = False) -> Tuple[str, bool]:
+def test_color_status_group(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1122,7 +1122,7 @@ def test_color_status_group(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Valid
             (
                 StatusGroup.CRIT,
@@ -1186,7 +1186,7 @@ def test_color_status_group(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_window_tee_hline(verbose: bool = False) -> Tuple[str, bool]:
+def test_window_tee_hline(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1196,7 +1196,7 @@ def test_window_tee_hline(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (y-position, start, end, formatting, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Without custom formatting
             (
                 0, 0, 5, None,
@@ -1249,7 +1249,7 @@ def test_window_tee_hline(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_window_tee_vline(verbose: bool = False) -> Tuple[str, bool]:
+def test_window_tee_vline(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1259,7 +1259,7 @@ def test_window_tee_vline(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (x-position, start, end, formatting, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Without custom formatting
             (
                 0, 0, 5, None,
@@ -1312,7 +1312,7 @@ def test_window_tee_vline(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_scrollbar_vertical(verbose: bool = False) -> Tuple[str, bool]:
+def test_scrollbar_vertical(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1323,7 +1323,7 @@ def test_scrollbar_vertical(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (x-position, miny, maxy, height, yoffset, clear_color,
         #  expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Does not fit in visible area
             (
                 0, 0, 10, 30, 5, ThemeAttr("windowwidget", "boxdrawing"),
@@ -1377,7 +1377,7 @@ def test_scrollbar_vertical(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_scrollbar_horizontal(verbose: bool = False) -> Tuple[str, bool]:
+def test_scrollbar_horizontal(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1388,7 +1388,7 @@ def test_scrollbar_horizontal(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (y-position, minx, maxx, width, xoffset, clear_color,
         #  expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Does not fit in visible area
             (
                 0, 0, 10, 30, 5, ThemeAttr("windowwidget", "boxdrawing"),
@@ -1442,17 +1442,17 @@ def test_scrollbar_horizontal(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_generate_heatmap(verbose: bool = False) -> Tuple[str, bool]:
+def test_generate_heatmap(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = curses_helper.generate_heatmap
-    win = curses.initscr()
+    _win = curses.initscr()
 
     if result:
         # Indata format:
         # (maxwidth, stgroups, selected, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Repeat statusgroups, should be compacted
             (
                 20, [StatusGroup.OK, StatusGroup.OK, StatusGroup.OK, StatusGroup.OK,
@@ -1511,17 +1511,17 @@ def test_generate_heatmap(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_percentagebar(verbose: bool = False) -> Tuple[str, bool]:
+def test_percentagebar(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = curses_helper.percentagebar
-    win = curses.initscr()
+    _win = curses.initscr()
 
     if result:
         # Indata format:
         # (minx, maxx, total, subsets, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # A valid percentage bar with width
             (
                 0, 20, 100, [
@@ -1586,7 +1586,7 @@ def test_percentagebar(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_labels(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_labels(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1595,7 +1595,7 @@ def test_get_labels(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (labels, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # A valid set of labels
             (
                 {
@@ -1657,7 +1657,7 @@ def test_get_labels(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("ThemeStr()",): {
         "callable": test_themestring,
         "result": None,

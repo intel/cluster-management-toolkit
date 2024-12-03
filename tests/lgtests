@@ -16,31 +16,43 @@
 import builtins
 import importlib
 import sys
-from typing import Any
+from typing import Any, cast, Optional
+from collections.abc import Callable
 from unittest import mock
 import yaml
 
-from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cluster_actions import get_control_planes
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, ProgrammingError
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
 
+from clustermanagementtoolkit import kubernetes_helper
+
 from clustermanagementtoolkit import listgetters
+from clustermanagementtoolkit import listgetters_async
 
 # unit-tests for listgetters.py
 
 
-real_import = None  # pylint: disable=invalid-name
+real_import: Optional[Callable] = None  # pylint: disable=invalid-name
 
-import_override = {}
+import_override: dict = {}
+
+
+kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
+kh_cache: kubernetes_helper.KubernetesResourceCache = None  # type: ignore
 
 
 def override_import(name: str, *args: list[Any], **kwargs: Any):
+    global real_import
     retval, exception = import_override.get(name, (None, None))
     if exception:
         raise exception
     if retval:
         return retval
+    real_import = cast(Callable, real_import)
     return real_import(name, *args, **kwargs)
 
 
@@ -93,7 +105,7 @@ def test_check_matchlists(verbose: bool = False) -> tuple[str, bool]:
     if result:
         # Indata format:
         # (item, exacts, prefixes, suffixes, ins, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Shouldn't match
             (
                 "/home",
@@ -209,7 +221,7 @@ def test_check_matchlist(verbose: bool = False) -> tuple[str, bool]:
     if result:
         # Indata format:
         # (item, matchlist, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Shouldn't match
             (
                 "/home",
@@ -310,7 +322,7 @@ def test_get_device_model(verbose: bool = False) -> tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, device, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 # Very trimmed down Ansible facts
                 {
@@ -595,7 +607,7 @@ def test_filter_list_entry(verbose: bool = False) -> tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, caller_obj, filters, expected_result, expected_exception, expected_exception_msg)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Object as source, substitutions
             (
                 {
@@ -810,7 +822,7 @@ def test_listgetter_policy_rules(verbose: bool = False) -> tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "rules": [
@@ -1087,7 +1099,104 @@ def test_listgetter_policy_rules(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
-tests: dict = {
+def test_get_kubernetes_list(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = listgetters_async.get_kubernetes_list
+    indata: Any = None
+
+    control_plane_list = get_control_planes(kubernetes_helper=kh)
+    if not control_plane_list:
+        message = "get_control_planes() did not return a list of control planes;\n" \
+                  "is your cluster running?"
+        return False
+
+    control_plane_name = control_plane_list[0][0]
+
+    if result:
+        # Indata format:
+        # (kh, kh_cache, kind, namespace, label_selector, field_selector, fetch_args,
+        #  expected_result, expected_exception)
+        #  expected_result: one path and value that should be in the list
+        testdata: tuple[Any, ...] = (
+            # Namespace; should always exist in a standard cluster
+            (kh, kh_cache, ("Namespace", ""), "", "", "", {"sort_key": "metadata#name"},
+             ("metadata#name", "default", False), None),
+            # No kubernetes_helper; should raise
+            (None, kh_cache, ("Namespace", ""), "", "", "", {"sort_key": "metadata#name"},
+             None, ProgrammingError),
+            # kubernetes_helper, no kh_cache; should work normally
+            (kh, None, ("Namespace", ""), "", "", "", {"sort_key": "metadata#name"},
+             ("metadata#name", "default", False), None),
+            # Node; should always exist in a standard cluster
+            (kh, kh_cache, ("Node", ""), "", "", "", {},
+             ("metadata#name", control_plane_name, False), None),
+            # Node; should always exist in a standard cluster
+            (kh, kh_cache, ("Node", ""), "", "", "", {"postprocess": "node"},
+             ("name", control_plane_name, True), None),
+            # Pod; there's no standard name for any pod,
+            # nor is there any reliable namespace (most seem to have kube-system,
+            # but at least openshift wants to be different),
+            # but all pods hopefully have metadata#name itself
+            (kh, kh_cache, ("Pod", ""), "", "", "", {},
+             ("metadata", "name", False), None),
+            # Instead of checking for data we check if there's extra_data
+            (kh, kh_cache, ("Pod", ""), "", "", "", {"postprocess": "pod"},
+             ("", "", True), None),
+        )
+        for kh_, kh_cache_, kind, namespace, label_selector, field_selector, fetch_args, \
+                expected_result, expected_exception in testdata:
+            try:
+                tmp, status = fun(kubernetes_helper=kh_, kh_cache=kh_cache_,
+                                  kind=kind, namespace=namespace, label_selector=label_selector,
+                                  field_selector=field_selector, fetch_args=fetch_args)
+                expected_path, expected_value, extra_data = expected_result
+                found = False
+                for item in tmp:
+                    if isinstance(status, list) and status and extra_data:
+                        found = True
+                        break
+                    if isinstance(item, type):
+                        value = getattr(item, expected_path)
+                    else:
+                        value = deep_get(item, DictPath(expected_path), "")
+                    if expected_value in value:
+                        found = True
+                        break
+                if not found:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           kind: {kind}\n" \
+                              f"      namespace: {namespace}\n" \
+                              f" field_selector: {field_selector}\n" \
+                              f" label_selector: {label_selector}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"         indata: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    raise
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         indata: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("json_ujson",): {
         "callable": test_json_ujson,
         "result": None,
@@ -1115,7 +1224,19 @@ tests: dict = {
 }
 
 
+tests_with_cluster: dict[tuple[str, ...], dict[str, Any]] = {
+    ("get_kubernetes_list()",): {
+        "callable": test_get_kubernetes_list,
+        "result": None,
+    },
+}
+
+
 def main() -> int:
+    global kh
+    global kh_cache
+    global tests
+
     global real_import  # pylint: disable=global-statement
     real_import = builtins.__import__
 
@@ -1125,6 +1246,11 @@ def main() -> int:
     failed_testcases = []
 
     init_ansithemeprint(themefile=None)
+
+    if "--include-cluster" in sys.argv:
+        tests = {**tests, **tests_with_cluster}
+        kh = kubernetes_helper.KubernetesHelper("lgtests", "v0.1")
+        kh_cache = kubernetes_helper.KubernetesResourceCache()
 
     # How many non-prepare testcases do we have?
     testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
@@ -1149,6 +1275,8 @@ def main() -> int:
                 raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
             end_at_task = int(optarg)
             i += 1
+        elif opt == "--include-cluster":
+            pass
         else:
             sys.exit(f"Unknown argument: {opt}")
         i += 1

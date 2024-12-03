@@ -16,7 +16,7 @@
 import errno
 from pathlib import PurePath
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from unittest import mock
 import yaml
 
@@ -39,11 +39,11 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
+def test_callback(options: list[tuple[str, str]], args: list[str]) -> tuple[str, int]:
     return ("callback", len(args))
 
 
-def test___sub_usage(verbose: bool = False) -> Tuple[str, bool]:
+def test___sub_usage(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -53,7 +53,7 @@ def test___sub_usage(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (command, commandline, mock_exit, expected_result,
         #  expected_exception, expected_exception_msg)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 "foobar",
                 {},
@@ -113,7 +113,7 @@ def test___sub_usage(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
+def test_parse_commandline(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -124,7 +124,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
         # (programname, programversion, programdescription, programauthors,
         #  argv, commandline, default_command,
         #  expected_result, theme, expected_exception, expected_exception_msg)
-        testdata: Tuple = (
+        testdata: tuple = (
             # No args; no options; no commands
             (
                 "clptests",
@@ -1320,7 +1320,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test___find_command(verbose: bool = False) -> Tuple[str, bool]:
+def test___find_command(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1329,7 +1329,7 @@ def test___find_command(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (commandline, arg, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             # Valid commandline, existing command
             (
                 {
@@ -1414,7 +1414,7 @@ def test___find_command(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("__sub_usage()",): {
         "callable": test___sub_usage,
         "result": None,

@@ -231,16 +231,17 @@ Output:
 ```
 Name                                                  Stmts   Miss Branch BrPart  Cover
 ---------------------------------------------------------------------------------------
-clustermanagementtoolkit/listgetters_async.py           119    103     54      0   9.2%
-clustermanagementtoolkit/infogetters.py                1676   1270   1008     68  21.9%
+clustermanagementtoolkit/cluster_actions.py             223    175     72      3  19.3%
 clustermanagementtoolkit/itemgetters.py                 507    375    290      8  22.3%
+clustermanagementtoolkit/infogetters.py                1677   1208   1008     79  25.2%
 clustermanagementtoolkit/fieldgetters.py                 81     54     46      0  27.6%
-clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     62  27.9%
+clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     61  28.0%
 clustermanagementtoolkit/listgetters.py                1212    808    662     90  28.7%
 clustermanagementtoolkit/curses_helper.py              2388   1544   1124    125  29.0%
 clustermanagementtoolkit/networkio.py                   342    237    171      2  29.2%
 clustermanagementtoolkit/logparser.py                  2008   1275   1125     45  31.1%
-clustermanagementtoolkit/datagetters.py                 277    181    142      5  32.2%
+clustermanagementtoolkit/listgetters_async.py           119     76     54      2  31.8%
+clustermanagementtoolkit/datagetters.py                 277    145    142     11  45.1%
 clustermanagementtoolkit/checks.py                      631    310    248     11  47.3%
 clustermanagementtoolkit/generators.py                  732    317    384     59  49.6%
 clustermanagementtoolkit/formatters.py                  807    310    424     25  57.8%
@@ -262,7 +263,7 @@ clustermanagementtoolkit/objgetters.py                   56      0     12      0
 clustermanagementtoolkit/pvtypes.py                       1      0      0      0 100.0%
 clustermanagementtoolkit/recommended_permissions.py      11      0      0      0 100.0%
 ---------------------------------------------------------------------------------------
-TOTAL                                                 15930   8152   8334    588  44.7%
+TOTAL                                                 16154   8202   8406    609  45.1%
 ```
 
 

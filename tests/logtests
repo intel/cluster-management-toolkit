@@ -19,7 +19,8 @@ import builtins
 from datetime import datetime
 import importlib
 import sys
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, cast, Optional
+from collections.abc import Callable
 from unittest import mock
 import yaml
 
@@ -32,17 +33,19 @@ from clustermanagementtoolkit import logparser as logparsers
 
 from clustermanagementtoolkit.curses_helper import ThemeStr, ThemeAttr, ThemeRef
 
-real_import = None  # pylint: disable=invalid-name
+real_import: Optional[Callable] = None  # pylint: disable=invalid-name
 
-import_override = {}
+import_override: dict = {}
 
 
-def override_import(name: str, *args: List[Any], **kwargs: Any):
+def override_import(name: str, *args: list[Any], **kwargs: Any):
+    global real_import
     retval, exception = import_override.get(name, (None, None))
     if exception:
         raise exception
     if retval:
         return retval
+    real_import = cast(Callable, real_import)
     return real_import(name, *args, **kwargs)
 
 
@@ -55,7 +58,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
 
 
 # pylint: disable-next=unused-argument
-def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
+def test_json_ujson(verbose: bool = False) -> tuple[str, bool]:
     global import_override  # pylint: disable=global-statement
 
     message = ""
@@ -88,7 +91,7 @@ def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
+def test_import_validators(verbose: bool = False) -> tuple[str, bool]:
     global import_override  # pylint: disable=global-statement
 
     message = ""
@@ -117,10 +120,10 @@ def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
-    loglevels: List[str] = []
+    loglevels: list[str] = []
 
     fun = logparsers.get_loglevel_names
     tmp = fun()
@@ -164,7 +167,7 @@ def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple
 
 
 # pylint: disable-next=unused-argument
-def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
+def test_month_to_numerical(verbose: bool = False) -> tuple[str, bool]:
     verbose = False
     message = ""
     result = True
@@ -197,8 +200,8 @@ def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable,
-                            verbose: bool = False) -> Tuple[str, bool]:
+def generic_str_to_severity(valid_indata: tuple[str], fun: Callable,
+                            verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -246,34 +249,34 @@ def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable,
 
 
 # pylint: disable-next=unused-argument
-def test_letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_letter_to_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_str_to_severity(valid_indata=("F", "E", "W", "N", "C", "I", "D"),
                                    fun=logparsers.letter_to_severity)
 
 
 # pylint: disable-next=unused-argument
-def test_str_3letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_str_3letter_to_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_str_to_severity(valid_indata=("ERR", "WRN", "INF"),
                                    fun=logparsers.str_3letter_to_severity)
 
 
 # pylint: disable-next=unused-argument
-def test_str_4letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_str_4letter_to_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_str_to_severity(valid_indata=("CRIT", "FATA", "ERRO", "WARN",
                                                  "NOTI", "SUCC", "INFO", "DEBU"),
                                    fun=logparsers.str_4letter_to_severity)
 
 
 # pylint: disable-next=unused-argument
-def test_str_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_str_to_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_str_to_severity(valid_indata=("fatal", "error", "eror", "warning", "warn",
                                                  "notice", "noti", "info", "debug", "debu"),
                                    fun=logparsers.str_to_severity)
 
 
 # pylint: disable-next=unused-argument
-def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable,
-                            verbose: bool = False) -> Tuple[str, bool]:
+def generic_lvl_to_severity(valid_indata: tuple[LogLevel], fun: Callable,
+                            verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -306,29 +309,29 @@ def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable,
 
 
 # pylint: disable-next=unused-argument
-def test_lvl_to_letter_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_lvl_to_letter_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING,
                                                  LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG),
                                    fun=logparsers.lvl_to_letter_severity)
 
 
 # pylint: disable-next=unused-argument
-def test_lvl_to_4letter_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_lvl_to_4letter_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING,
                                                  LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG),
                                    fun=logparsers.lvl_to_4letter_severity)
 
 
 # pylint: disable-next=unused-argument
-def test_lvl_to_word_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_lvl_to_word_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING,
                                                  LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG),
                                    fun=logparsers.lvl_to_word_severity)
 
 
 # pylint: disable-next=unused-argument
-def generic_split_severity(valid_indata: Tuple[str], fun: Callable,
-                           verbose: bool = False) -> Tuple[str, bool]:
+def generic_split_severity(valid_indata: tuple[str], fun: Callable,
+                           verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
     default = LogLevel.INFO
@@ -384,7 +387,7 @@ def generic_split_severity(valid_indata: Tuple[str], fun: Callable,
 
 
 # pylint: disable-next=unused-argument
-def test_split_bracketed_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_split_bracketed_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_split_severity(valid_indata=("[fatal]", "[alert]", "[error]", "[err]",
                                                 "[warning]", "[warn]", "[notice]", "[info]",
                                                 "[system]", "[note]", "[debug]",
@@ -393,21 +396,21 @@ def test_split_bracketed_severity(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_split_colon_severity(verbose: bool = False) -> Tuple[str, bool]:
+def test_split_colon_severity(verbose: bool = False) -> tuple[str, bool]:
     return generic_split_severity(valid_indata=("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:",
                                                 "NOTE:", "INFO:", "DEBUG:", "NOTAVALIDSEVERITY:"),
                                   fun=logparsers.split_colon_severity, verbose=verbose)
 
 
 # pylint: disable-next=unused-argument
-def test_substitute_bullets(verbose: bool = False) -> Tuple[str, bool]:
+def test_substitute_bullets(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = logparsers.substitute_bullets
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Indata format:
             # (string, prefix, expected_result, expected_exception)
             ("*Bulleted message", "* ", "*Bulleted message", None),
@@ -453,7 +456,7 @@ def test_substitute_bullets(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+def test_is_timestamp(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -550,7 +553,7 @@ def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_split_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+def test_split_iso_timestamp(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -604,7 +607,7 @@ def test_split_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_strip_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+def test_strip_iso_timestamp(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -650,14 +653,14 @@ def test_strip_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
+def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = logparsers.strip_iso_timestamp_with_tz
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Indata format:
             # (string, expected_result, expected_exception)
             ("2020-02-20 13:47:01.531 GMT", "", None),
@@ -697,14 +700,14 @@ def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
+def test_iptables(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = logparsers.iptables
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Indata format:
             # (string, fold_msg, remnants, expected_result, expected_remnants, expected_exception)
             ("/sbin/iptables", [], False,
@@ -791,14 +794,14 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_http(verbose: bool = False) -> Tuple[str, bool]:
+def test_http(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = logparsers.http
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Indata format:
             # (string, fold_msg, expected_result, expected_remnants, expected_exception)
             ('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -',
@@ -1065,14 +1068,14 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
+def test_split_glog(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = logparsers.split_glog
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Indata format:
             # (string, severity, facility, expected_result, expected_remnants, expected_exception)
             ('E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
@@ -1134,7 +1137,7 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
+def test_tab_separated(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1147,7 +1150,7 @@ def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
         # Assumption: datetime\tSEVERITY\t{facility if lowercase, else message}[\tjson]
         # or
         #             secondssinceepoch\tSEVERITY\t{facility if lowercase, else message}[\tjson]
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Indata format:
             # (string, severity, facility, fold_msg, options, expected_result, expected_exception)
             ('2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\t'
@@ -1265,7 +1268,7 @@ def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test___split_severity_facility_style(verbose: bool = False) -> Tuple[str, bool]:
+def test___split_severity_facility_style(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1278,7 +1281,7 @@ def test___split_severity_facility_style(verbose: bool = False) -> Tuple[str, bo
 
 
 # pylint: disable-next=unused-argument
-def test_split_json_style(verbose: bool = False) -> Tuple[str, bool]:
+def test_split_json_style(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1290,7 +1293,7 @@ def test_split_json_style(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_merge_message(verbose: bool = False) -> Tuple[str, bool]:
+def test_merge_message(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1302,7 +1305,7 @@ def test_merge_message(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_split_json_style_raw(verbose: bool = False) -> Tuple[str, bool]:
+def test_split_json_style_raw(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1314,7 +1317,7 @@ def test_split_json_style_raw(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_json_event(verbose: bool = False) -> Tuple[str, bool]:
+def test_json_event(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1326,14 +1329,14 @@ def test_json_event(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
+def test_modinfo(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = logparsers.modinfo
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ('filename:       '
              '/lib/modules/6.7.9-amd64/kernel/drivers/net/ethernet/intel/igc/igc.ko.xz', [
                  ThemeStr('filename', ThemeAttr('types', 'key'), False),
@@ -1397,14 +1400,14 @@ def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_directory(verbose: bool = False) -> Tuple[str, bool]:
+def test_directory(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = logparsers.directory
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ('drwx------  13 root root        4096 Mar 13 02:22 ./',
              LogLevel.INFO, "",
              ("", LogLevel.INFO,
@@ -1714,7 +1717,7 @@ def test_directory(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_parser_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1748,7 +1751,7 @@ def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("json_ujson",): {
         "callable": test_json_ujson,
         "result": None,

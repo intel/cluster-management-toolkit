@@ -26,7 +26,8 @@ except ModuleNotFoundError:  # pragma: no cover
 import os
 import re
 import sys
-from typing import Any, Callable, cast, Optional, Sequence, Type, Union
+from typing import Any, cast, Optional, Type, Union
+from collections.abc import Callable, Sequence
 import yaml
 
 try:

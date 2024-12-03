@@ -16,7 +16,7 @@
 from pathlib import PurePath
 from getpass import getuser
 import sys
-from typing import Any, Dict, Tuple
+from typing import Any
 from unittest import mock
 import yaml
 
@@ -38,7 +38,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_disable_strict_host_key_checking(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -47,7 +47,7 @@ def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[
     if result:
         # Indata format:
         # (cmtconfig_dict, (abort, critical, error, warning, note), expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             # disablestricthostkeychecking = False
             (
                 {
@@ -112,7 +112,7 @@ def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[
     return message, result
 
 
-def test_check_sudo_configuration(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_sudo_configuration(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -122,7 +122,7 @@ def test_check_sudo_configuration(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kwargs, mock_response, expected_result)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # User can sudo without password; verbose
             (
                 {
@@ -238,7 +238,7 @@ def test_check_sudo_configuration(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_ansible_dir_permissions(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -248,7 +248,7 @@ def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool
     if result:
         # Indata format:
         # (kwargs, mock_response, mock_exit, expected_result, expected_exception, exception_message)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Existing directory with correct permissions is OK; verbose
             (
                 {
@@ -399,7 +399,7 @@ def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool
     return message, result
 
 
-def test_check_netrc_permissions(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_netrc_permissions(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -408,7 +408,7 @@ def test_check_netrc_permissions(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kwargs, mock_response, mock_exit, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Existing file with correct permissions is OK; verbose
             (
                 {
@@ -527,7 +527,7 @@ def test_check_netrc_permissions(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_check_insecure_kube_config_options(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_insecure_kube_config_options(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -536,7 +536,7 @@ def test_check_insecure_kube_config_options(verbose: bool = False) -> Tuple[str,
     if result:
         # Indata format:
         # (kwargs, expected_result)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Insecure skip TLS verify is False; verbose
             (
                 {
@@ -635,7 +635,7 @@ def test_check_insecure_kube_config_options(verbose: bool = False) -> Tuple[str,
     return message, result
 
 
-def test_check_known_hosts_hashing(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_known_hosts_hashing(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -644,7 +644,7 @@ def test_check_known_hosts_hashing(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kwargs, mock_response, expected_result)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Known hosts hashing disabled; verbose
             (
                 {
@@ -685,7 +685,7 @@ def test_check_known_hosts_hashing(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_check_client_server_version_match(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_client_server_version_match(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -694,7 +694,7 @@ def test_check_client_server_version_match(verbose: bool = False) -> Tuple[str, 
     if result:
         # Indata format:
         # (kwargs, mock_response, expected_result, expected_exception, exception_message)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Matching major/minor; verbose
             (
                 {
@@ -841,7 +841,7 @@ def test_check_client_server_version_match(verbose: bool = False) -> Tuple[str, 
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("check_disable_strict_host_key_checking()",): {
         "callable": test_check_disable_strict_host_key_checking,
         "result": None,

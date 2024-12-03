@@ -17,7 +17,7 @@ from pathlib import Path, PurePath
 import re
 import sys
 from types import GeneratorType
-from typing import cast, Dict, Tuple
+from typing import Any, cast
 import yaml
 
 from clustermanagementtoolkit.cmtio import check_path, expand_path, join_securitystatus_set
@@ -50,7 +50,7 @@ CHECKSUMS_DIR = FilePath(PurePath(__file__).parent).joinpath("checksums")
 TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
 
 
-def test_check_path(checkdata: Dict) -> Tuple[int, str]:
+def test_check_path(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.check_path() works correctly
 
@@ -92,7 +92,7 @@ def test_check_path(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_execute_command(checkdata: Dict) -> Tuple[int, str]:
+def test_execute_command(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_read_string() works correctly
 
@@ -123,7 +123,7 @@ def test_execute_command(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_execute_command_with_response(checkdata: Dict) -> Tuple[int, str]:
+def test_execute_command_with_response(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_read_string() works correctly
 
@@ -153,7 +153,7 @@ def test_execute_command_with_response(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_read(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_read(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_read() works correctly
 
@@ -191,7 +191,7 @@ def test_secure_read(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_read_string(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_read_string() works correctly
 
@@ -229,7 +229,7 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_read_yaml(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_read_yaml() works correctly
 
@@ -262,7 +262,7 @@ def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_read_yaml_all(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_read_yaml_all() works correctly
 
@@ -294,7 +294,7 @@ def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_which(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_which() works correctly
 
@@ -329,7 +329,7 @@ def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_rm(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_rm(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_rm() works correctly
 
@@ -366,7 +366,7 @@ def test_secure_rm(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_rmdir(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_rmdir() works correctly
 
@@ -403,7 +403,7 @@ def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_mkdir(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_mkdir() works correctly
 
@@ -438,7 +438,7 @@ def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_copy(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_copy() works correctly
 
@@ -476,7 +476,7 @@ def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_symlink(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_symlink() works correctly
 
@@ -509,7 +509,7 @@ def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_expand_path(checkdata: Dict) -> Tuple[int, str]:
+def test_expand_path(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.expand_path() works correctly
 
@@ -533,7 +533,7 @@ def test_expand_path(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_write_string(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio.secure_write_string() works correctly
 
@@ -577,7 +577,7 @@ def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
+def test_secure_write_yaml(checkdata: dict) -> tuple[int, str]:
     """
     Test whether cmtio_yaml.secure_write_yaml() works correctly
 
@@ -626,7 +626,7 @@ def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
+def test_verify_checksum(checkdata: dict) -> tuple[int, str]:
     """
     Test whether networkio.verify_checksum() works correctly
 
@@ -654,7 +654,7 @@ def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-def test_join_securitystatus_set(checkdata: Dict) -> Tuple[int, str]:
+def test_join_securitystatus_set(checkdata: dict) -> tuple[int, str]:
     """
     Test whether join_securitystatus_set() works correctly
 
@@ -675,7 +675,7 @@ def test_join_securitystatus_set(checkdata: Dict) -> Tuple[int, str]:
     return 0, ""
 
 
-testcases = {
+testcases: dict[str, dict[str, Any]] = {
     # Valid paths
     "Correct type (Expected file)": {
         "path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),

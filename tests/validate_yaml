@@ -17,7 +17,7 @@ import json
 from multiprocessing import Pool
 import os
 import sys
-from typing import cast, List, Optional, Tuple
+from typing import cast, Optional
 from collections.abc import Iterable
 import yaml
 
@@ -87,7 +87,7 @@ def version() -> None:
 
 # pylint: disable-next=too-many-branches
 def validate_file(yaml_path: str, schema_path: str,
-                  verbose: int, abort_on_fail: bool) -> Tuple[Optional[str], int, str]:
+                  verbose: int, abort_on_fail: bool) -> tuple[Optional[str], int, str]:
     """
     Validate a YAML file against a JSON schema
 
@@ -173,7 +173,7 @@ def main() -> int:
     i = 1
     schema = ""
     schema_path = ""
-    yaml_paths: List[Tuple[str, str]] = []
+    yaml_paths: list[tuple[str, str]] = []
     resume_from = None
 
     while i < len(sys.argv):

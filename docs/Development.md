@@ -30,44 +30,45 @@ get a perfect score.
 If the file you're modifying is not listed here you can either implement one on your own,
 or ask for help.
 
-| File:                 | Tests:                 | Notes:                                |
-| :-------------------- | :--------------------- | :------------------------------------ |
-| `ansithemeprint.py`   | `tests/atptests`       | Optional manual tests                 |
-| `ansible_helper.py`   | `tests/ansibletests`   | Ansible setup required                |
-| `checks.py`           | `tests/checkstests`    |                                       |
-| `cmtio.py`            | `tests/iotests`        |                                       |
-| `cmtio_yaml.py`       | `tests/iotests`        |                                       |
-| `cmtlib.py`           | `tests/cmtlibtests`    | Ansible & cluster setup optional      |
-| `cmtvalidators.py`    | `tests/validatortests` |                                       |
-| `cmttypes.py`         | `tests/typetests`      |                                       |
-| `cni_data.py`         | `tests/cnitests`       |                                       |
-| `commandparser.py`    | `tests/clptests`       |                                       |
-| `curses_helper.py`    | `tests/cursestests`    |                                       |
-| `datagetters.py`      | `tests/dgtests`        |                                       |
-| `fieldgetters.py`     | `tests/fgtests`        |                                       |
-| `generators.py`       | `tests/gentests`       |                                       |
-| `formatter.py`        | `tests/fmttests`       |                                       |
-| `infogetters.py`      | `tests/infogtests`     |                                       |
-| `itemgetters.py`      | `tests/itemgtests`     |                                       |
-| `kubernetes_helper.py`| `tests/khtests`        | Cluster setup optional                |
-| `listgetters.py`      | `tests/lgtests`        |                                       |
-| `logparser.py`        | `tests/logtests`       |                                       |
-| `objgetters.py`       | `tests/ogtests`        |                                       |
-| `networkio.py`        | `tests/iotests`        |                                       |
-| `networkio.py`        | `tests/networkiotests` | Tests in iotests should be moved here |
-| `reexecutor.py`       | `tests/async_fetch`    | Cluster setup mandatory               |
+| File:                  | Tests:                 | Notes:                                |
+| :--------------------- | :--------------------- | :------------------------------------ |
+| `ansithemeprint.py`    | `tests/atptests`       | Optional manual tests                 |
+| `ansible_helper.py`    | `tests/ansibletests`   | Ansible setup required                |
+| `checks.py`            | `tests/checkstests`    |                                       |
+| `cmtio.py`             | `tests/iotests`        |                                       |
+| `cmtio_yaml.py`        | `tests/iotests`        |                                       |
+| `cmtlib.py`            | `tests/cmtlibtests`    | Ansible & cluster setup optional      |
+| `cmtvalidators.py`     | `tests/validatortests` |                                       |
+| `cmttypes.py`          | `tests/typetests`      |                                       |
+| `cni_data.py`          | `tests/cnitests`       |                                       |
+| `commandparser.py`     | `tests/clptests`       |                                       |
+| `curses_helper.py`     | `tests/cursestests`    |                                       |
+| `datagetters.py`       | `tests/dgtests`        |                                       |
+| `fieldgetters.py`      | `tests/fgtests`        |                                       |
+| `generators.py`        | `tests/gentests`       |                                       |
+| `formatter.py`         | `tests/fmttests`       |                                       |
+| `infogetters.py`       | `tests/infogtests`     |                                       |
+| `itemgetters.py`       | `tests/itemgtests`     |                                       |
+| `kubernetes_helper.py` | `tests/khtests`        | Cluster setup optional                |
+| `listgetters.py`       | `tests/lgtests`        |                                       |
+| `listgetters_async.py` | `tests/lgtests`        | Cluster setup required                |
+| `logparser.py`         | `tests/logtests`       |                                       |
+| `objgetters.py`        | `tests/ogtests`        |                                       |
+| `networkio.py`         | `tests/iotests`        |                                       |
+| `networkio.py`         | `tests/networkiotests` | Tests in iotests should be moved here |
+| `reexecutor.py`        | `tests/async_fetch`    | Cluster setup required                |
 
 _Note_:
 
 * Optional manual tests mean that there are optional testcases that require manual input
 * Ansible setup optional means that there are optional testcases that require cmt to
-  be installed and configured with an inventory
+  be installed and configured with an inventory.
 * Ansible setup required means that all or almost all testcases require cmt to
-  be installed and configured with an inventory
+  be installed and configured with an inventory.
 * Cluster setup optional means that there are optional testcases that require access
-  to a cluster
+  to a cluster.
 * Cluster setup required means that all or almost all testcases require access
-  to a cluster
+  to a cluster; these tests may be hidden behind the `--include-cluster` flag.
 
 At some point this might be revisited; ideally most most functions that only rely
 indirectly on a working cluster or Ansible setup should be passed dummy data instead.

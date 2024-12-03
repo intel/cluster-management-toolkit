@@ -14,7 +14,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-from typing import Any, Dict, Tuple
+from typing import Any
 from unittest import mock
 import yaml
 
@@ -38,7 +38,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_get_container_status(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_container_status(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -47,7 +47,7 @@ def test_get_container_status(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (src_statuses, container_name, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 [
                     {
@@ -258,7 +258,7 @@ def test_get_container_status(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_datagetter_container_status(verbose: bool = False) -> Tuple[str, bool]:
+def test_datagetter_container_status(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -267,7 +267,7 @@ def test_datagetter_container_status(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "namespace": "cert-manager",
@@ -321,7 +321,7 @@ def test_datagetter_container_status(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_endpointslices_endpoints(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_endpointslices_endpoints(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -330,7 +330,7 @@ def test_get_endpointslices_endpoints(verbose: bool = False) -> Tuple[str, bool]
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "endpoints": [
@@ -442,7 +442,7 @@ def test_get_endpointslices_endpoints(verbose: bool = False) -> Tuple[str, bool]
     return message, result
 
 
-def test_datagetter_metrics(verbose: bool = False) -> Tuple[str, bool]:
+def test_datagetter_metrics(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -451,7 +451,7 @@ def test_datagetter_metrics(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, default, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "name": "apiserver_requested_deprecated_apis",
@@ -516,7 +516,7 @@ def test_datagetter_metrics(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_datagetter_deprecated_api(verbose: bool = False) -> Tuple[str, bool]:
+def test_datagetter_deprecated_api(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -525,7 +525,7 @@ def test_datagetter_deprecated_api(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, path, default, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "name": "apiserver_requested_deprecated_apis",
@@ -576,7 +576,7 @@ def test_datagetter_deprecated_api(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_datagetter_endpoint_ips(verbose: bool = False) -> Tuple[str, bool]:
+def test_datagetter_endpoint_ips(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -585,7 +585,7 @@ def test_datagetter_endpoint_ips(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, path, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "subsets": [
@@ -753,7 +753,7 @@ def test_datagetter_endpoint_ips(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_datagetter_eps_endpoints(verbose: bool = False) -> Tuple[str, bool]:
+def test_datagetter_eps_endpoints(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -762,7 +762,7 @@ def test_datagetter_eps_endpoints(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "endpoints": [
@@ -828,7 +828,7 @@ def test_datagetter_eps_endpoints(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_datagetter_api_support(verbose: bool = False) -> Tuple[str, bool]:
+def test_datagetter_api_support(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -837,7 +837,7 @@ def test_datagetter_api_support(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, mock_response, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 kh,
                 {
@@ -989,7 +989,7 @@ def test_datagetter_api_support(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("get_container_status()",): {
         "callable": test_get_container_status,
         "result": None,
@@ -1020,7 +1020,7 @@ tests: Dict = {
     },
 }
 
-tests_with_cluster = {
+tests_with_cluster: dict[tuple[str, ...], dict[str, Any]] = {
     ("datagetter_api_support()",): {
         "callable": test_datagetter_api_support,
         "result": None,

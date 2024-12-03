@@ -16,7 +16,7 @@
 from datetime import datetime
 import sys
 from pathlib import PurePath
-from typing import Any, Dict, Tuple
+from typing import Any
 from unittest import mock
 import yaml
 
@@ -45,7 +45,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_objgetter_ansible_facts(verbose: bool = False) -> Tuple[str, bool]:
+def test_objgetter_ansible_facts(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -54,7 +54,7 @@ def test_objgetter_ansible_facts(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (input, mockdata, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             # Should succeed
             (
                 {
@@ -213,7 +213,6 @@ def test_objgetter_ansible_facts(verbose: bool = False) -> Tuple[str, bool]:
                     result = False
                     break
             except Exception as e:
-                raise
                 if expected_exception is not None:
                     if isinstance(e, expected_exception):
                         pass
@@ -234,7 +233,7 @@ def test_objgetter_ansible_facts(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_objgetter_journalctl_log(verbose: bool = False) -> Tuple[str, bool]:
+def test_objgetter_journalctl_log(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -244,7 +243,7 @@ def test_objgetter_journalctl_log(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (journalctl_logs, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 [
                     {
@@ -343,7 +342,7 @@ def test_objgetter_journalctl_log(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_objgetter_ansible_log(verbose: bool = False) -> Tuple[str, bool]:
+def test_objgetter_ansible_log(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -352,7 +351,7 @@ def test_objgetter_ansible_log(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (logpath, metadata, logfile, mock_check_path, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Should succeed
             (
                 TEST_DIR.joinpath("2023-05-06_16:02:39.012047_uptime"),
@@ -541,7 +540,7 @@ def test_objgetter_ansible_log(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("objgetter_ansible_facts()",): {
         "callable": test_objgetter_ansible_facts,
         "result": None,

@@ -173,9 +173,11 @@ coverage-cluster: setup_tests
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	printf -- "\n\n  Running: tests/async_fetch\n\n" ;\
-	$$cmd run --branch --append tests/dgtests || exit 1 ;\
-	printf -- "\n\n  Running: tests/dgtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/async_fetch || exit 1 ;\
+	printf -- "\n\n  Running: tests/dgtests --include-cluster\n\n" ;\
+	$$cmd run --branch --append tests/dgtests --include-cluster || exit 1 ;\
+	printf -- "\n\n  Running: tests/lgtests --include-cluster\n\n" ;\
+	$$cmd run --branch --append tests/lgtests --include-cluster || exit 1 ;\
 	printf -- "\n\n  Running: tests/khtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/khtests --include-cluster || exit 1 ;\
 	printf -- "\n\n  Running: tests/cmtlibtests --include-cluster\n\n" ;\
@@ -249,6 +251,18 @@ ruff:
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
+		printf -- "File: $$file\n" ;\
+		$$cmd check --target-version $(RUFF_PYTHON_VERSION) $$file ;\
+	done
+
+ruff-tests:
+	@cmd=ruff ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+		exit 0 ;\
+	fi ;\
+	printf -- "\n\nRunning $$cmd to check Python code quality\n\n" ;\
+	for file in $(python_test_executables); do \
 		printf -- "File: $$file\n" ;\
 		$$cmd check --target-version $(RUFF_PYTHON_VERSION) $$file ;\
 	done
@@ -344,6 +358,19 @@ mypy:
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
+		$$cmd $(MYPY_FLAGS) $$file || true; \
+	done
+
+# Note: we know that the code does not have complete type-hinting,
+# hence we return 0 after each test to avoid it from stopping.
+mypy-tests:
+	@cmd=mypy ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
+	for file in $(python_test_executables); do \
 		$$cmd $(MYPY_FLAGS) $$file || true; \
 	done
 

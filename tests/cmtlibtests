@@ -16,7 +16,7 @@
 from datetime import datetime, timezone
 from pathlib import PurePath
 import sys
-from typing import Any, Dict, Tuple
+from typing import Any
 from unittest import mock
 import yaml
 
@@ -41,7 +41,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
+def test_substitute_string(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -50,7 +50,7 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (string, substitutions, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("Kubernetes <<<version>>>",
              {"<<<version>>>": "v1.29.2"}, "Kubernetes v1.29.2", None),
             # The extra substitution should be ignored since it doesn't have a match
@@ -97,7 +97,7 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_substitute_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -106,7 +106,7 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (strings, substitutions, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (["kubectl <<<version>>>", "kubeadm <<<version>>>"],
              {"<<<version>>>": "v1.29.2"}, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
             # The extra substitution should be ignored since it doesn't have a match
@@ -155,7 +155,7 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
+def test_lstrip_count(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -164,7 +164,7 @@ def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (string, prefix, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("   42", " ", ("42", 3), None),
             ("42", " ", ("42", 0), None),
             ("42   ", " ", ("42   ", 0), None),
@@ -204,7 +204,7 @@ def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
+def test_rstrip_count(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -213,7 +213,7 @@ def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (string, prefix, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("42   ", " ", ("42", 3), None),
             ("42", " ", ("42", 0), None),
             ("   42", " ", ("   42", 0), None),
@@ -253,7 +253,7 @@ def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_chunk_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_chunk_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -262,7 +262,7 @@ def test_chunk_list(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (items, chunksize, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # chunksize * n = len(items)
             ([1, 2, 3, 4, 5, 6, 7, 8], 2, [[1, 2], [3, 4], [5, 6], [7, 8]], None),
             # chunksize * n = len(items)
@@ -320,7 +320,7 @@ def test_chunk_list(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_clamp(verbose: bool = False) -> Tuple[str, bool]:
+def test_clamp(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -329,7 +329,7 @@ def test_clamp(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (value, minval, maxval, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (3, 0, 42, 3, None),
             (42, 0, 3, 3, None),
             (-1, 0, 3, 0, None),
@@ -379,7 +379,7 @@ def test_clamp(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_none_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+def test_none_timestamp(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -395,7 +395,7 @@ def test_none_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> Tuple[str, bool]:
+def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -404,7 +404,7 @@ def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> Tuple[str, 
     if result:
         # Indata format:
         # (cpu_usage, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("512", 512000, None),
             ("10m", 10.0, None),
             ("200u", 0.2, None),
@@ -444,7 +444,7 @@ def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> Tuple[str, 
     return message, result
 
 
-def test_normalise_mem_to_bytes(verbose: bool = False) -> Tuple[str, bool]:
+def test_normalise_mem_to_bytes(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -453,7 +453,7 @@ def test_normalise_mem_to_bytes(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (mem_usage, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (42, 42, None),
             ("42", 42, None),
             ("2Ki", 2048, None),
@@ -499,7 +499,7 @@ def test_normalise_mem_to_bytes(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_normalise_mem_bytes_to_str(verbose: bool = False) -> Tuple[str, bool]:
+def test_normalise_mem_bytes_to_str(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -508,7 +508,7 @@ def test_normalise_mem_bytes_to_str(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (mem_usage_bytes, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (42 * 1024 ** 0, f"{42:0.1f}B", None),
             (2 * 1024 ** 1, f"{2:0.1f}KiB", None),
             (3 * 1024 ** 2, f"{3:0.1f}MiB", None),
@@ -553,7 +553,7 @@ def test_normalise_mem_bytes_to_str(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
+def test_disksize_to_human(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -562,7 +562,7 @@ def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (size, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (42, "42 bytes", None),
             (1024 ** 1 - 1, "1023 bytes", None),
             (1024 ** 1, "1KiB", None),
@@ -611,7 +611,7 @@ def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_split_msg(verbose: bool = False) -> Tuple[str, bool]:
+def test_split_msg(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -620,7 +620,7 @@ def test_split_msg(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (string, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("foo\nbar", ["foo", "bar"], None),
             ("foobar", ["foobar"], None),
             ("foo\x00bar", ["foo<NUL>bar"], None),
@@ -663,7 +663,7 @@ def test_split_msg(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_strip_ansicodes(verbose: bool = False) -> Tuple[str, bool]:
+def test_strip_ansicodes(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -672,7 +672,7 @@ def test_strip_ansicodes(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (string, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("foobar", "foobar", None),
             ("\n\033[0;4;37mSummary:\033[0m", "Summary:", None),
             (None, None, TypeError),
@@ -708,7 +708,7 @@ def test_strip_ansicodes(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_versiontuple(verbose: bool = False) -> Tuple[str, bool]:
+def test_versiontuple(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -717,7 +717,7 @@ def test_versiontuple(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (string, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("1.29.2", ("00000001", "00000029", "00000002"), None),
             ("a.bc.d", ("0000000a", "000000bc", "0000000d"), None),
             ("", ("00000000",), None),
@@ -753,7 +753,7 @@ def test_versiontuple(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
+def test_read_cmtconfig(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -831,7 +831,7 @@ def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
+def test_age_to_seconds(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -840,7 +840,7 @@ def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (age, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("6d5h43m21s", int(f"{6 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 21}"), None),
             ("5h43m", int(f"{0 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 0}"), None),
             ("", -1, None),
@@ -877,7 +877,7 @@ def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
+def test_seconds_to_age(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -886,7 +886,7 @@ def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (age, negative_is_skew, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (int(f"{8 * 24 * 60 * 60 + 7 * 60 * 60 + 43 * 60 + 21}"), False, "8d", None),
             (int(f"{6 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 21}"), False, "6d5h", None),
             (int(f"{0 * 24 * 60 * 60 + 13 * 60 * 60 + 43 * 60 + 0}"), False, "13h", None),
@@ -932,7 +932,7 @@ def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_since(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -941,7 +941,7 @@ def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (timestamp, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (int(f"{6 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 21}"), None),
             (int(f"{0 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 0}"), None),
             (int(f"{0 * 24 * 60 * 60 + 0 * 60 * 60 + 43 * 60 + 1}"), None),
@@ -980,7 +980,7 @@ def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+def test_datetime_to_timestamp(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -989,7 +989,7 @@ def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (timestamp, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (datetime(2024, 1, 1, 0, 42, 42, 0), "2024-01-01 0:42:42", None),
             (datetime(1970, 1, 1, 2, 0).astimezone(), "                         ", None),
             (cmtlib.none_timestamp(), "", None),
@@ -1027,7 +1027,7 @@ def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+def test_reformat_timestamp(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1036,7 +1036,7 @@ def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (timestamp, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("2024-01-01 00:42:42.011345+0100", None, None),
             ("2020-02-13T12:06:18-0100", None, None),
             ("2024-01-01 00:42:42.011345+0100", None, None),
@@ -1075,7 +1075,7 @@ def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
+def test_timestamp_to_datetime(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1084,7 +1084,7 @@ def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (timestamp, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("2024-01-01 00:42:42Z", None, None),
             ("2024-01-01 00:42:42.011345+0100", None, None),
             ("2020-02-13T12:06:18-0100", None, None),
@@ -1126,7 +1126,7 @@ def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_make_label_selector(verbose: bool = False) -> Tuple[str, bool]:
+def test_make_label_selector(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1135,7 +1135,7 @@ def test_make_label_selector(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (indata, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ({"foo": "bar", "baz": "1", }, "foo=bar,baz=1", None),
             (None, "", None),
         )
@@ -1172,7 +1172,7 @@ def test_make_label_selector(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_make_set_expression_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1181,7 +1181,7 @@ def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (expression_list, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Valid
             ([{"operator": "Exists",
                "key": "node-role.kubernetes.io/control-plane",
@@ -1305,7 +1305,7 @@ def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
+def test_make_set_expression(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1314,7 +1314,7 @@ def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (expression_list, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Valid
             ([{"operator": "Exists",
                "key": "node-role.kubernetes.io/control-plane",
@@ -1436,7 +1436,7 @@ def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_package_versions(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1448,7 +1448,7 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
 
         # Indata format:
         # (hostname, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("localhost", None),
             ("NonExistingHostname", ValueError),
             (1, TypeError),
@@ -1515,7 +1515,7 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
+def test___extract_version(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1524,7 +1524,7 @@ def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (hostname, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("   kubectl |  1.28.2-00 | "
              "https://apt.kubernetes.io kubernetes-xenial/main amd64 Packages", "1.28.2-00", None),
             ("   kubectl ", None, ValueError),
@@ -1561,14 +1561,14 @@ def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
+def test_identify_distro(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = cmtlib.identify_distro
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("ID=debian", False, "debian", None),
             ("ID=ubuntu\nID_LIKE=debian", False, "debian", None),
             ("ID=\"suse opensuse\"", False, "suse", None),
@@ -1609,7 +1609,7 @@ def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_versions(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1630,7 +1630,7 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (package, checker, checker_str, expected_exception)
         # Output is distro-dependent
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # abiword was randomly picked as existing, but non-installed package;
             # there's no guarantee that it is, and there are no guaranteed packages
             # that can be used instead.
@@ -1707,7 +1707,7 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
+def test_identify_k8s_distro(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1759,7 +1759,7 @@ def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("substitute_string()",): {
         "callable": test_substitute_string,
         "result": None,
@@ -1875,14 +1875,14 @@ tests: Dict = {
     },
 }
 
-tests_with_ansible: Dict = {
+tests_with_ansible: dict[tuple[str, ...], dict[str, Any]] = {
     ("get_package_versions()",): {
         "callable": test_get_package_versions,
         "result": None,
     },
 }
 
-tests_with_cluster = {
+tests_with_cluster: dict[tuple[str, ...], dict[str, Any]] = {
     ("identify_k8s_distro()",): {
         "callable": test_identify_k8s_distro,
         "result": None,

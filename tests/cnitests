@@ -15,7 +15,7 @@
 
 from pathlib import PurePath
 import sys
-from typing import Any, Dict, Tuple
+from typing import Any
 from unittest import mock
 import yaml
 
@@ -39,7 +39,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test___patch_cni_calico(verbose: bool = False) -> Tuple[str, bool]:
+def test___patch_cni_calico(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -50,7 +50,7 @@ def test___patch_cni_calico(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (file_content, pod_network_cidr, mock_check_path,
         #  expected_retval, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 "cidr: 192.168.0.0/16\n",
                 "10.244.0.0/16",
@@ -117,7 +117,7 @@ def test___patch_cni_calico(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test___patch_cni_canal(verbose: bool = False) -> Tuple[str, bool]:
+def test___patch_cni_canal(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -128,7 +128,7 @@ def test___patch_cni_canal(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (file_content, pod_network_cidr, mock_check_path,
         #  expected_retval, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 '      "Network": "10.244.0.0/16",\n'
                 '            # - name: CALICO_IPV4POOL_CIDR\n'
@@ -205,7 +205,7 @@ def test___patch_cni_canal(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test___patch_cni_flannel(verbose: bool = False) -> Tuple[str, bool]:
+def test___patch_cni_flannel(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -216,7 +216,7 @@ def test___patch_cni_flannel(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (file_content, pod_network_cidr, mock_check_path,
         #  expected_retval, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 '      "Network": "10.244.0.0/16",\n',
                 "10.246.0.0/16",
@@ -283,7 +283,7 @@ def test___patch_cni_flannel(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test___patch_cni_weave(verbose: bool = False) -> Tuple[str, bool]:
+def test___patch_cni_weave(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -294,7 +294,7 @@ def test___patch_cni_weave(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (file_content, pod_network_cidr, mock_check_path,
         #  mock_execute_command, expected_retval, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 '                - name: IPALLOC_RANGE\n'
                 '                  value: 10.244.0.0/16\n'
@@ -374,7 +374,7 @@ def test___patch_cni_weave(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("__patch_cni_calico()",): {
         "callable": test___patch_cni_calico,
         "result": None,

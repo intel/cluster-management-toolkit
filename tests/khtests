@@ -16,7 +16,7 @@
 # pylint: disable=too-many-lines
 
 import sys
-from typing import Any, Dict, Tuple
+from typing import Any
 from unittest import mock
 import yaml
 
@@ -43,7 +43,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_kind_tuple_to_name(verbose: bool = False) -> Tuple[str, bool]:
+def test_kind_tuple_to_name(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -52,7 +52,7 @@ def test_kind_tuple_to_name(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kind, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (("Pod", ""), "pods", None),
             (("CronJob", "batch"), "cronjobs.batch", None),
             (("NonExistingAPI", ""), "", None),
@@ -87,7 +87,7 @@ def test_kind_tuple_to_name(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_guess_kind(verbose: bool = False) -> Tuple[str, bool]:
+def test_guess_kind(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -96,7 +96,7 @@ def test_guess_kind(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kind, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (("Pod", ""), ("Pod", ""), None),
             (("pods", ""), ("Pod", ""), None),
             ("pods", ("Pod", ""), None),
@@ -146,7 +146,7 @@ def test_guess_kind(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_update_api_status(verbose: bool = False) -> Tuple[str, bool]:
+def test_update_api_status(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -155,7 +155,7 @@ def test_update_api_status(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kind, listview, infoview, local, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (("Pod", ""), True, True, False, (True, True, False), None),
             (("Pod", ""), True, True, True, (True, True, True), None),
             ("Pod", True, True, True, None, TypeError),
@@ -212,7 +212,7 @@ def test_update_api_status(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_kubectl_get_version(verbose: bool = False) -> Tuple[str, bool]:
+def test_kubectl_get_version(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -275,7 +275,7 @@ def test_kubectl_get_version(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_node_status(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -284,7 +284,7 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kind, listview, infoview, local, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "metadata": {
@@ -640,7 +640,7 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_image_version(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_image_version(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -649,7 +649,7 @@ def test_get_image_version(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (indata, default, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("registry.k8s.io/etcd:3.5.9-0", None, "3.5.9-0", None),
             ("docker.io/intel/gpu-extender:latest", None, "latest", None),
             ("docker.io/intel/gpu-extender:", None, "", None),
@@ -689,7 +689,7 @@ def test_get_image_version(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -701,7 +701,7 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
     if result:
         # Indata format:
         # (indata, kind, name, namespace, **kwargs, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "apiVersion": "v1",
@@ -927,7 +927,7 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("kind_tuple_to_name()",): {
         "callable": test_kind_tuple_to_name,
         "result": None,
@@ -954,7 +954,7 @@ tests: Dict = {
     },
 }
 
-tests_with_cluster = {
+tests_with_cluster: dict[tuple[str], dict[str, Any]] = {
     ("get_ref_by_kind_name_namespace() (Developer mode)",): {
         "callable": test_get_ref_by_kind_name_namespace,
         "result": None,

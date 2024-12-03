@@ -18,7 +18,8 @@ import errno
 import importlib
 import os
 import sys
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, cast, Optional
+from collections.abc import Callable
 from unittest import mock
 
 from clustermanagementtoolkit import ansithemeprint
@@ -28,12 +29,13 @@ from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, ProgrammingError
 
-real_import = None
+real_import: Optional[Callable] = None  # pylint: disable=invalid-name
 
-import_override: Dict = {}
+import_override: dict = {}
 
 
-def override_import(name: str, *args: List[Any], **kwargs: Any) -> Any:
+def override_import(name: str, *args: list[Any], **kwargs: Any) -> Any:
+    global real_import
     retval, exception = import_override.get(name, (None, None))
     if exception:
         raise exception
@@ -41,11 +43,12 @@ def override_import(name: str, *args: List[Any], **kwargs: Any) -> Any:
         return retval
     if real_import is None:
         return None
+    real_import = cast(Callable, real_import)
     return real_import(name, *args, **kwargs)
 
 
 # pylint: disable-next=unused-argument
-def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[str, bool]:
+def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -74,7 +77,7 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[
 
 
 # pylint: disable-next=unused-argument
-def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[str, bool]:
+def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> tuple[str, bool]:
     global import_override
 
     message = ""
@@ -106,7 +109,7 @@ def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[
 
 
 # pylint: disable-next=unused-argument
-def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
+def test_init_ansithemeprint(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -156,14 +159,14 @@ def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_tuplelist_to_ansithemearray(verbose: bool = False) -> Tuple[str, bool]:
+def test_tuplelist_to_ansithemearray(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = ANSIThemeStr.tuplelist_to_ansithemearray
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Indata format:
             # (indata, expected_result, expected_exception)
             # Valid indata
@@ -221,14 +224,14 @@ def test_tuplelist_to_ansithemearray(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_error_msg(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
     fun = ANSIThemeStr.format_error_msg
 
     if result:
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Indata format:
             # (indata, expected_result, expected_exception)
             ([[("This", "error"), (" is ", "warning"), ("a", "note")], [("new line", "default")]],
@@ -276,7 +279,7 @@ def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemeprint(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -320,7 +323,7 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_ansithemestr_join_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemestr_join_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -359,7 +362,7 @@ def test_ansithemestr_join_list(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_ansithemestr_basic_operations(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemestr_basic_operations(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -459,7 +462,7 @@ def test_ansithemestr_basic_operations(verbose: bool = False) -> Tuple[str, bool
 
 
 # pylint: disable-next=unused-argument
-def test_themearray_ljust(verbose: bool = False) -> Tuple[str, bool]:
+def test_themearray_ljust(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -491,7 +494,7 @@ def test_themearray_ljust(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_themearray_len(verbose: bool = False) -> Tuple[str, bool]:
+def test_themearray_len(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -513,7 +516,7 @@ def test_themearray_len(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_themearray_override_formatting(verbose: bool = False) -> Tuple[str, bool]:
+def test_themearray_override_formatting(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -549,7 +552,7 @@ def test_themearray_override_formatting(verbose: bool = False) -> Tuple[str, boo
 
 
 # pylint: disable-next=unused-argument
-def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
+def test___themearray_to_raw_string(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -583,7 +586,7 @@ def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemearray_to_str(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -657,14 +660,14 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple[str, bool]:
+def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> tuple[str, bool]:
     message = ""
     result = True
 
     if result:
         # Indata format:
         # (fun, mocked_fun, prompt, mocked_input, color, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (ansithemeprint.ansithemeinput, "builtins.input",
              [ANSIThemeStr("  Please input the string \"test1\": ", "option")],
              "always", "test1", "test1", None),
@@ -749,7 +752,7 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
 
 
 # pylint: disable-next=unused-argument
-def test_clear_screen(verbose: bool = False) -> Tuple[str, bool]:
+def test_clear_screen(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -769,7 +772,7 @@ def test_clear_screen(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("uninitialized ansithemeprint functions",): {
         "callable": test_uninitialized_ansithemeprint_functions,
         "result": None,

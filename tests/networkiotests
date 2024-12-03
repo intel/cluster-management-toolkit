@@ -13,9 +13,8 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-import builtins
 import sys
-from typing import Any, Tuple
+from typing import Any
 from unittest import mock
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath
@@ -28,7 +27,7 @@ from clustermanagementtoolkit import networkio
 # unit-tests for networkio.py
 
 
-def test_reformat_github_release_notes(verbose: bool = False) -> Tuple[str, bool]:
+def test_reformat_github_release_notes(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -38,7 +37,7 @@ def test_reformat_github_release_notes(verbose: bool = False) -> Tuple[str, bool
     if result:
         # Indata format:
         # (indata, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("New release\n---\nFoo\nBar",
              "## New release\nFoo\nBar", None),
             ("New release\n---",
@@ -75,7 +74,7 @@ def test_reformat_github_release_notes(verbose: bool = False) -> Tuple[str, bool
     return message, result
 
 
-def test_get_github_version(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_github_version(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -85,7 +84,7 @@ def test_get_github_version(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (url, version_regex, mock_data, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Pre-release; should be skipped
             ("https://api.github.com/repos/kubernetes/kubernetes/releases",
              r"v(\d+)(\.)(\d+)(\.)(\d+)$", True, [
@@ -168,7 +167,6 @@ def test_get_github_version(verbose: bool = False) -> Tuple[str, bool]:
                     result = False
                     break
             except Exception as e:
-                raise
                 if expected_exception is not None:
                     if isinstance(e, expected_exception):
                         pass
@@ -189,7 +187,7 @@ def test_get_github_version(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("reformat_github_release_notes()", ): {
         "callable": test_reformat_github_release_notes,
         "result": None,
@@ -202,9 +200,6 @@ tests: dict = {
 
 
 def main() -> int:
-    global real_import
-    real_import = builtins.__import__
-
     fail = 0
     success = 0
     verbose = False

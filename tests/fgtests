@@ -14,7 +14,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 import yaml
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, ProgrammingError
@@ -34,14 +34,14 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
 
 
 class FakeKH():
-    def __init__(self, version: Tuple[int, int, str]) -> None:
+    def __init__(self, version: tuple[int, int, str]) -> None:
         self.version = version
 
-    def get_api_server_version(self) -> List:
+    def get_api_server_version(self) -> list:
         return list(self.version)
 
 
-def test_fieldgetter_api_server_version(verbose: bool = False) -> Tuple[str, bool]:
+def test_fieldgetter_api_server_version(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -50,7 +50,7 @@ def test_fieldgetter_api_server_version(verbose: bool = False) -> Tuple[str, boo
     if result:
         # Indata format:
         # (mock_return_value, fields, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (FakeKH((1, 29, "v1.29.1")), [0, 1, 2], [1, 29, "v1.29.1"], None),
             (FakeKH((1, 29, "v1.29.1")), [0], [1], None),
             (FakeKH((1, 29, "v1.29.1")), [1], [29], None),
@@ -92,7 +92,7 @@ def test_fieldgetter_api_server_version(verbose: bool = False) -> Tuple[str, boo
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("fieldgetter_api_server_version()",): {
         "callable": test_fieldgetter_api_server_version,
         "result": None,

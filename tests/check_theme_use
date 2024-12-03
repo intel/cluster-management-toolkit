@@ -16,7 +16,7 @@
 import ast
 import errno
 import sys
-from typing import Dict
+from typing import Any
 import yaml
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
@@ -33,7 +33,7 @@ For usage, see:
     ./tests/check_theme_use help
 """
 
-theme: Dict = {}
+theme: dict = {}
 themepath = ""
 path = ""
 verbose = False
@@ -45,8 +45,8 @@ class FindVisits(ast.NodeVisitor):
     """
 
     # pylint: disable-next=unused-argument
-    def __init__(self, *args) -> None:
-        self.result: Dict = {
+    def __init__(self, *args: Any) -> None:
+        self.result: dict = {
             "ANSIThemeStr": [],
             "ThemeAttr": [],
             "ThemeRef": [],

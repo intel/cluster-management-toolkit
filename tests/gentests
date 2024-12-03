@@ -15,7 +15,7 @@
 
 from pathlib import PurePath
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 import yaml
 
 from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
@@ -45,11 +45,11 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
+def test_callback(options: list[tuple[str, str]], args: list[str]) -> tuple[str, int]:
     return ("callback", len(args))
 
 
-def test_format_special(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_special(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -58,7 +58,7 @@ def test_format_special(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (string, selected, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 "<none>",
                 False,
@@ -145,7 +145,7 @@ def test_format_special(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_processor_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_processor_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -154,7 +154,7 @@ def test_processor_list(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, field, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             # api_support not None
             (
                 type("InfoClass", (), {
@@ -385,7 +385,7 @@ def test_processor_list(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_processor_list_with_status(verbose: bool = False) -> Tuple[str, bool]:
+def test_processor_list_with_status(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -394,7 +394,7 @@ def test_processor_list_with_status(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (obj, field, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             # endpoints not None
             (
                 type("InfoClass", (), {
@@ -588,7 +588,7 @@ def test_processor_list_with_status(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_formatting(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_formatting(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -597,7 +597,7 @@ def test_get_formatting(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (field, formatting, default, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 {"formatting": {"foo": {"context": "foo"}}},
                 "foo",
@@ -693,7 +693,7 @@ def test_get_formatting(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_formatter(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_formatter(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -702,7 +702,7 @@ def test_get_formatter(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (field, expected_result, expected_exception)
-        testdata: Tuple = (
+        testdata: tuple = (
             (
                 {
                     "formatting": {
@@ -926,7 +926,7 @@ def test_get_formatter(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str], dict[str, Any]] = {
     ("format_special()",): {
         "callable": test_format_special,
         "result": None,

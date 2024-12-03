@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, date
 from pathlib import Path, PurePath
 import os
 import sys
-from typing import Any, Dict, Tuple
+from typing import Any
 import yaml
 
 from clustermanagementtoolkit import cmttypes
@@ -45,7 +45,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_filepath(verbose: bool = False) -> Tuple[str, bool]:
+def test_filepath(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -63,7 +63,7 @@ def test_filepath(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (paths, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (".bashrc",
              os.path.join(f"{os.path.sep}home", "testuser", ".bashrc"), None),
             (FilePath(".inputrc"),
@@ -157,7 +157,7 @@ def test_filepath(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_deep_get(verbose: bool = False) -> Tuple[str, bool]:
+def test_deep_get(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -219,7 +219,7 @@ def test_deep_get(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_deep_get_with_fallback(verbose: bool = False) -> Tuple[str, bool]:
+def test_deep_get_with_fallback(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -320,7 +320,7 @@ def test_deep_get_with_fallback(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
+def test_deep_set(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -411,7 +411,7 @@ def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
+def test_unknownerror(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -485,7 +485,7 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
+def test_argumentvalidationerror(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -561,7 +561,7 @@ def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
+def test_programmingerror(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -636,7 +636,7 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
+def test_filepathauditerror(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -714,7 +714,7 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
+def test_validate_args(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -723,7 +723,7 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kwargs_spec, kwargs, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             # Empty data should pass
             ({}, {}, None),
             # Now try arguments that are invalid for validate_args() itself
@@ -878,7 +878,7 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_deep_get_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -902,7 +902,7 @@ def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
 
         # Indata format:
         # (paths, default, fallback_on_empty, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (["spec#ports"], [], False, [
                 {'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
                 {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}], None),
@@ -948,7 +948,7 @@ def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_deep_get_str_tuple_paths(verbose: bool = False) -> Tuple[str, bool]:
+def test_deep_get_str_tuple_paths(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -963,7 +963,7 @@ def test_deep_get_str_tuple_paths(verbose: bool = False) -> Tuple[str, bool]:
 
         # Indata format:
         # (paths, default, fallback_on_empty, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "kind": "DaemonSet",
@@ -1037,7 +1037,7 @@ def test_deep_get_str_tuple_paths(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_loglevel_to_name(verbose: bool = False) -> Tuple[str, bool]:
+def test_loglevel_to_name(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1056,7 +1056,7 @@ def test_loglevel_to_name(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("FilePath()", ): {
         "callable": test_filepath,
         "result": None,

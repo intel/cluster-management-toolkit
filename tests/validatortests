@@ -16,7 +16,8 @@
 import builtins
 import importlib
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, cast, Optional
+from collections.abc import Callable
 from unittest import mock
 import yaml
 
@@ -31,12 +32,13 @@ from clustermanagementtoolkit import cmtvalidators
 
 # unit-tests for cmtvalidators.py
 
-real_import = None
+real_import: Optional[Callable] = None  # pylint: disable=invalid-name
 
-import_override: Dict = {}
+import_override: dict = {}
 
 
-def override_import(name: str, *args: List[Any], **kwargs: Any) -> Any:
+def override_import(name: str, *args: list[Any], **kwargs: Any) -> Any:
+    global real_import
     retval, exception = import_override.get(name, (None, None))
     if exception:
         raise exception
@@ -44,6 +46,7 @@ def override_import(name: str, *args: List[Any], **kwargs: Any) -> Any:
         return retval
     if real_import is None:
         return None
+    real_import = cast(Callable, real_import)
     return real_import(name, *args, **kwargs)
 
 
@@ -55,7 +58,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
+def test_import_validators(verbose: bool = False) -> tuple[str, bool]:
     global import_override
 
     message = ""
@@ -83,7 +86,7 @@ def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
+def test_validator_bool(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -145,7 +148,7 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
+def test_validator_int(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -154,7 +157,7 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (indata, min, max, error_on_failure, expected_status, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (1, 3, 2, True, True, ProgrammingError),
             (1, 0, 2, True, True, None),
             (-1, -2, 2, True, True, None),
@@ -203,7 +206,7 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_validate_argument(verbose: bool = False, **kwargs: Any) -> Tuple[str, bool]:
+def test_validate_argument(verbose: bool = False, **kwargs: Any) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -216,7 +219,7 @@ def test_validate_argument(verbose: bool = False, **kwargs: Any) -> Tuple[str, b
         # ({arg, arg_string,
         #   options: {validator, list_separator, valid_range, allowlist, validator_regex}},
         #  expected_status, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             (
                 {
                     "arg": "ok",
@@ -1006,7 +1009,7 @@ def test_validate_argument(verbose: bool = False, **kwargs: Any) -> Tuple[str, b
     return message, result
 
 
-def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
+def test_validate_name(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1016,7 +1019,7 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (rtype, name, expected_status, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("dns-label", None, False, None),
             ("dns-label", f"{'1'.ljust(63, 'a')}", True, None),
             ("dns-label", f"{'2'.ljust(64, 'a')}", False, None),
@@ -1077,7 +1080,7 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
+def test_validate_fqdn(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1087,7 +1090,7 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (fqdn, message_on_error, expected_status, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("intel.com", False, HostNameStatus.OK, None),
             ("\x00intel.com", False, None, ArgumentValidationError),
             ("\x00intel.com", True, None, ArgumentValidationError),
@@ -1177,7 +1180,7 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("import_validators",): {
         "callable": test_import_validators,
         "result": None,

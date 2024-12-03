@@ -16,7 +16,7 @@
 from datetime import datetime
 from pathlib import PurePath
 import sys
-from typing import Any, Dict
+from typing import Any
 import yaml
 
 from clustermanagementtoolkit import cmtlib
@@ -1322,7 +1322,7 @@ def test_get_themearrays(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("process_value()",): {
         "callable": test_process_value,
         "result": None,

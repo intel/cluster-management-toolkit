@@ -18,7 +18,8 @@
 import builtins
 import importlib
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, cast, Optional
+from collections.abc import Callable
 from unittest import mock
 import yaml
 
@@ -34,17 +35,19 @@ from clustermanagementtoolkit import formatters
 from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
 from clustermanagementtoolkit.curses_helper import read_theme, themearray_to_string
 
-real_import = None
+real_import: Optional[Callable] = None  # pylint: disable=invalid-name
 
-import_override = {}
+import_override: dict = {}
 
 
-def override_import(name: str, *args: List[Any], **kwargs: Any):
+def override_import(name: str, *args: list[Any], **kwargs: Any):
+    global real_import
     retval, exception = import_override.get(name, (None, None))
     if exception:
         raise exception
     if retval:
         return retval
+    real_import = cast(Callable, real_import)
     return real_import(name, *args, **kwargs)
 
 
@@ -56,7 +59,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     return result
 
 
-def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
+def test_json_ujson(verbose: bool = False) -> tuple[str, bool]:
     global import_override
 
     message = ""
@@ -88,7 +91,7 @@ def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_json_dumps(verbose: bool = False) -> Tuple[str, bool]:
+def test_json_dumps(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -97,7 +100,7 @@ def test_json_dumps(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (dict, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ({"foo": "bar", "bar": 1}, "{\n  \"foo\": \"bar\",\n  \"bar\": 1\n}", None),
         )
         for indata, expected_result, expected_exception in testdata:
@@ -131,7 +134,7 @@ def test_json_dumps(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_markdown(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -140,7 +143,7 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("<!--- commented out\n"
              "lines -->"
              "# Header1\n"
@@ -253,7 +256,7 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_binary(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_binary(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -275,7 +278,7 @@ def test_format_binary(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_ansible_line(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -284,7 +287,7 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("Some random output from Ansible", {},
              [
                  ThemeStr("Some random output from Ansible", ThemeAttr("types", "generic"))],
@@ -308,7 +311,6 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
                     result = False
                     break
             except Exception as e:
-                raise
                 if expected_exception is not None:
                     if isinstance(e, expected_exception):
                         pass
@@ -333,7 +335,7 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_diff_line(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -342,7 +344,7 @@ def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("+++ a", {}, [
                 ThemeStr("+++ a",
                          ThemeAttr("logview", "severity_diffheader"))],
@@ -409,7 +411,7 @@ def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_yaml_line(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -418,7 +420,7 @@ def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("# A comment", {}, ([
                 ThemeStr("# A comment", ThemeAttr("types", "yaml_comment"))],
              []), None),
@@ -586,7 +588,7 @@ def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_crt(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -595,7 +597,7 @@ def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("-----BEGIN CERTIFICATE-----\n"
              "FOOBARBAZ\n"
              "-----END CERTIFICATE-----",
@@ -661,7 +663,7 @@ def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_ini(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -670,7 +672,7 @@ def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("# comment\n"
              "[main]\n"
              "setting1 = foo\n"
@@ -751,7 +753,7 @@ def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_caddyfile(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_caddyfile(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -760,7 +762,7 @@ def test_format_caddyfile(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ([".:53 {",
               "    # comment",
               "",
@@ -980,7 +982,7 @@ def test_format_caddyfile(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
+def test_format_python_traceback(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -989,7 +991,7 @@ def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("Traceback (most recent call last):\n"
              " File \"<stdin>\", line 1, in <module>\n"
              "ZeroDivisionError: division by zero",
@@ -1081,7 +1083,7 @@ def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_map_dataformat(verbose: bool = False) -> Tuple[str, bool]:
+def test_map_dataformat(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -1090,7 +1092,7 @@ def test_map_dataformat(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (kind, expected_result, expected_exception)
-        testdata = (
+        testdata: tuple[Any, ...] = (
             ("YAML", formatters.format_yaml, None),
             ("file.yaml", formatters.format_yaml, None),
             ("foo.notarecognisedformat", formatters.format_none, None),
@@ -1126,7 +1128,7 @@ def test_map_dataformat(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("json_ujson",): {
         "callable": test_json_ujson,
         "result": None,
