@@ -1,0 +1,54 @@
+---
+kind: "Content"
+api_family: "fleet.cattle.io"
+default_command: "contents.fleet.cattle.io"
+command:
+  - "contents.cattle"
+  - "content.cattle"
+listview:
+  name: "Contents"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "content_size", "age"]
+  fields:
+    content_size:
+      header: "Content Size:"
+      path: "content"
+      type: "len"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Content Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["sha256", "content_size"]
+    rows:
+      content_size:
+        header: [["Content Size:", ["main", "infoheader"]]]
+        path: "content"
+        type: "len"
+        formatter: "numerical"
+      sha256:
+        header: [["SHA256:", ["main", "infoheader"]]]
+        path: "sha256sum"
+        type: "raw"
+        formatter: "hex"
+  shortcuts:
+    "Decode and Export":
+      key: "x"
+      modifier: "shift"
+      read_only: false
+      helptext: "Decode and export content to a file"
+      widget: "inputbox"
+      inputtitle: "Decode and Export to file:"
+      confirm: "path_exists"
+      confirmtitle: "File already exists; overwrite?:"
+      action: "call"
+      action_call: "export_data"
+      action_args:
+        _pass_result: true
+        _pass_obj: true
+        _extra_args:
+          base_path: "content"

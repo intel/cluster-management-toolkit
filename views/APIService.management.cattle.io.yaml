@@ -1,0 +1,81 @@
+---
+kind: "APIService"
+api_family: "management.cattle.io"
+default_command: "apiservices.management.cattle.io"
+command:
+  - "apiservices.cattle"
+  - "apiservice.cattle"
+  - "apisvcs.cattle"
+  - "apisvc.cattle"
+listview:
+  name: "API Services"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "API Service Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["service_account", "secret", "path_prefixes", "paths"]
+    rows:
+      path_prefixes:
+        header: [["Path Prefixes:", ["main", "infoheader"]]]
+        path: "spec#pathPrefixes"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "path"
+      paths:
+        header: [["Paths:", ["main", "infoheader"]]]
+        path: "spec#paths"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "path"
+      secret:
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ecret:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#secretNamespace"], ["spec#secretName"]]
+            pathtype: "tuple"
+        formatter: "list"
+      service_account:
+        header: [["Service ", ["main", "infoheader"]],
+                 ["A", ["main", "infoheader_shortcut"]],
+                 ["ccount:", ["main", "infoheader"]]]
+        paths:
+          - path: [["status#serviceAccountNamespace"],
+                   ["status#serviceAccountName"]]
+            pathtype: "tuple"
+        formatter: "list"
+  shortcuts:
+    "Service Account":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "status#serviceAccountName"
+        namespace_path: "status#serviceAccountNamespace"
+    "Secret":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "spec#secretName"
+        namespace_path: "spec#secretNamespace"
