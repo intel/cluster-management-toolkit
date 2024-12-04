@@ -1,0 +1,40 @@
+---
+kind: "Tier"
+api_family: "crd.projectcalico.org"
+default_command: "tiers.crd.projectcalico.org"
+command:
+  - "tiers.calico"
+  - "tier.calico"
+listview:
+  name: "Tiers"
+  group: "Calico"
+  field_indexes:
+    Normal:
+      fields: ["name", "default_action", "order", "age"]
+  fields:
+    default_action:
+      header: "Default Action:"
+      path: "spec#defaultAction"
+      type: "str"
+    order:
+      header: "Order:"
+      path: "spec#order"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Tier Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["default_action", "order"]
+    rows:
+      default_action:
+        header: [["Default Action:", ["main", "infoheader"]]]
+        path: "spec#defaultAction"
+        type: "str"
+      order:
+        header: [["Order:", ["main", "infoheader"]]]
+        path: "spec#order"
+        type: "int"
+        formatter: "numerical"

@@ -1616,6 +1616,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/crd.projectcalico.org/v1/"],
         "api": "networksets",
     },
+    ("Tier", "crd.projectcalico.org"): {
+        "api_paths": ["apis/crd.projectcalico.org/v1/"],
+        "api": "tiers",
+        "namespaced": False,
+    },
     # dapr.io
     ("Component", "dapr.io"): {
         "api_paths": ["apis/dapr.io/v1alpha1/"],
