@@ -112,6 +112,13 @@ infoview:
         path: "status#admittedBy"
         default: "<unset>"
         type: "str"
+      cluster_queue:
+        header: [["Cluster Q", ["main", "infoheader"]],
+                 ["u", ["main", "infoheader_shortcut"]],
+                 ["eue:", ["main", "infoheader"]]]
+        path: "status#admission#clusterQueue"
+        default: "<unset>"
+        type: "str"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]],
                  ["ontroller:", ["main", "infoheader"]]]
@@ -142,13 +149,6 @@ infoview:
         default: "<unset>"
         type: "int"
         formatter: "numerical"
-      cluster_queue:
-        header: [["Cluster Q", ["main", "infoheader"]],
-                 ["u", ["main", "infoheader_shortcut"]],
-                 ["eue:", ["main", "infoheader"]]]
-        path: "status#admission#clusterQueue"
-        default: "<unset>"
-        type: "str"
       queue:
         header: [["Q", ["main", "infoheader_shortcut"]],
                  ["ueue:", ["main", "infoheader"]]]
