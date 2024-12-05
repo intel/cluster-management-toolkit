@@ -33,8 +33,16 @@ listview:
       type: "str"
   actions:
     actionlist:
-      "Delete resource":
-        description: "Delete resource"
+      "Delete resource (and controller)":
+        description: "Delete resource (and controller)"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+        actionfunc_args:
+          delete_owner: true
+          owner_reference_path: "metadata#ownerReferences"
+      "Requeue resource":
+        description: "Requeue resource"
         category: "Resource Level"
         confirm: true
         actionfunc: "delete_resource"

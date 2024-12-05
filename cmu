@@ -1263,6 +1263,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                             deep_get(actionlist, DictPath(f"{action}#actionfunc"), command_hosts)
                         if isinstance(actionfunc, str):
                             actionfunc = deep_get(actionfunc_allowlist, DictPath(actionfunc))
+                        actionfunc_args = \
+                            deep_get(actionlist, DictPath(f"{action}#actionfunc_args"), {})
                         # These are only relevant for node and inventory view
                         # allowoncontrolplane = \
                         #     deep_get(actionlist,
@@ -1361,8 +1363,9 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                                          default=False):
                         continue
 
-                retval = actionfunc(uip, items=[], action=actionlist[action],
-                                    values=selection_vars, kind=kind)
+                retval = actionfunc(uip=uip, items=[], action=actionlist[action],
+                                    values=selection_vars, kind=kind,
+                                    **actionfunc_args)
                 if retval is not None and retval == Retval.RETURNFULL:
                     return retval
 
@@ -1788,6 +1791,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                                   command_hosts)
                             if isinstance(actionfunc, str):
                                 actionfunc = deep_get(actionfunc_allowlist, DictPath(actionfunc))
+                            actionfunc_args = \
+                                deep_get(actionlist, DictPath(f"{action}#actionfunc_args"), {})
                         action_args = deep_get(actionlist, DictPath(f"{action}#action_args"), {})
                         # These are only relevant for node and inventory view
                         # allowoncontrolplane = \
@@ -1890,7 +1895,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 selection_vars["_tagged_items"] = list(tagged_items)
                 selection_vars["action_args"] = action_args
                 retval = actionfunc(uip=uip, items=items, action=actionlist[action],
-                                    values=selection_vars, kind=kind, title=title)
+                                    values=selection_vars, kind=kind, title=title,
+                                    **actionfunc_args)
                 if retval is not None and retval == Retval.RETURNFULL:
                     return retval
 
@@ -6809,6 +6815,7 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Ret
                                 title=title, formatter=formatter)
 
 
+# pylint: disable-next=too-many-locals
 def delete_resource(**kwargs: Any) -> Retval:
     """
     Delete resources.
@@ -6820,6 +6827,8 @@ def delete_resource(**kwargs: Any) -> Retval:
                 items ([str]): The list of resources to delete
                 force (bool): Force-delete the resources? True to force deletion,
                               False to delete gracefully
+                delete_owner (bool): Delete the owner too?
+                owner_reference_path (str): The path to the owner reference
         Returns:
             (Retval): The return value
     """
@@ -6828,6 +6837,8 @@ def delete_resource(**kwargs: Any) -> Retval:
     kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
     force: bool = deep_get(kwargs, DictPath("force"), False)
     items: list[str] = deep_get(kwargs, DictPath("items"), [])
+    delete_owner: bool = deep_get(kwargs, DictPath("delete_owner"), False)
+    owner_reference_path: str = deep_get(kwargs, DictPath("owner_reference_path"), "")
 
     for item in items:
         if isinstance(item, tuple):
@@ -6835,13 +6846,36 @@ def delete_resource(**kwargs: Any) -> Retval:
         else:
             namespace = ""
             name = item
+
+        # Should we delete the controller too? If so we first need to lookup the object
+        if delete_owner:
+            obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+            owner_reference: list[dict[str, Any]] = \
+                deep_get(obj, DictPath(owner_reference_path), [])
+            controller: tuple[tuple[str, str], str] = \
+                get_controller_from_owner_references(owner_reference)
+            if controller:
+                message, status = \
+                    kh.delete_obj_by_kind_name_namespace(controller[0], controller[1],
+                                                         namespace, force=force)
+                if status != 200:
+                    # Status messages can be very verbose; delete everything from URL and on
+                    tmp = re.match(r"^(.+?), URL:.*", message)
+                    if tmp is not None:
+                        message = tmp[1]
+                    win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
+                                              message=message)
+                    success = False
+                    break
+
         message, status = kh.delete_obj_by_kind_name_namespace(kind, name, namespace, force=force)
         if status != 200:
             # Status messages can be very verbose; delete everything from URL and on
             tmp = re.match(r"^(.+?), URL:.*", message)
             if tmp is not None:
                 message = tmp[1]
-            win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message=message)
+            win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
+                                      message=message)
             success = False
             break
 
