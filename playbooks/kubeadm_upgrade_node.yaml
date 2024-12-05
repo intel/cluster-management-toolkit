@@ -65,15 +65,17 @@
       when: "ansible_os_family == 'RedHat'"
       changed_when: true
     - name: "Remove deprecated config options"
-      ansible.builtin.shell: |
-        set -o pipefail
-        major_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
-        minor_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
-        if [ $major_version -gt 0 ] && [ $minor_version -gt 23 ]; then
-          if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
-            sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          major_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
+          minor_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
+          if [ $major_version -gt 0 ] && [ $minor_version -gt 23 ]; then
+            if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
+              sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+            fi
           fi
-        fi
+        executable: "/bin/bash"
       changed_when: false
     - name: "Removing deprecated config flags"
       ansible.builtin.shell: |

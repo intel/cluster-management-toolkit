@@ -40,10 +40,12 @@
         src: "{{ configuration_path }}"
         mode: "0640"
     - name: "Selecting kubelet version"  # noqa command-instead-of-module
-      ansible.builtin.shell: |
-        set -o pipefail
-        sed -i -e 's,KUBELET_VER=.*,KUBELET_VER={{ kubernetes_major_minor_version }},' /etc/sysconfig/kubelet
-        sed -i -e 's,--container-runtime=\(docker\|remote\),,' /etc/sysconfig/kubelet
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          sed -i -e 's,KUBELET_VER=.*,KUBELET_VER={{ kubernetes_major_minor_version }},' /etc/sysconfig/kubelet
+          sed -i -e 's,--container-runtime=\(docker\|remote\),,' /etc/sysconfig/kubelet
+        executable: "/bin/bash"
       when: "ansible_os_family == 'Suse'"
       changed_when: true
     - name: "Enabling kubelet"
