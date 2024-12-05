@@ -1,4 +1,4 @@
-yaml_dirs = parsers themes views playbooks docs/examples
+yaml_dirs = parsers themes views playbooks docs/examples sources
 python_executables = \
 	cmt \
 	cmtadm \
