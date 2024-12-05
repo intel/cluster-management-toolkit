@@ -1,3 +1,4 @@
+---
 kubernetes:
   description: "Kubernetes"
   candidate_version:
@@ -6,7 +7,9 @@ kubernetes:
       url: "https://api.github.com/repos/kubernetes/kubernetes/releases"
       version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)$'
   changelog:
+    # yamllint disable rule:line-length
     url: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-<<<version.0>>>.<<<version.2>>>.md"
+    # yamllint enable rule:line-length
     dest: "kubernetes_current_changelog.md"
 kustomize:
   description: "kustomize"
