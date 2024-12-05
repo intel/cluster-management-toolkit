@@ -440,18 +440,18 @@ nodes:
     #   macTemplate: "52:54:00:42:<<<item.0>>>:<<<item.1>>>"
     #
     #   # One or several ranges of hostnames/IP-addresses/MAC-addresses for
-    #   the VM instances. cmt creates its own network called cmt, which by
-    #   default reserves 192.168.124.0/22, with 192.168.124.2-39 being dynamic
-    #   DHCP-addresses. Thus the available ranges
+    #   # the VM instances. cmt creates its own network called cmt, which by
+    #   # default reserves 192.168.124.0/22, with 192.168.124.2-39 being dynamic
+    #   # DHCP-addresses. Thus the available ranges
     #   # here are:
     #   #   - [124, [40, 254]]
     #   #   - [125, [1, 254]]
     #   #   - [126, [1, 254]]
     #   #   - [127, [1, 254]]
     #   # In total this allows for 973 VMs.  If this isn't enough, and if CMT
-    #   seems to scale # past that, feel free to file a feature request and
-    #   we'll be happy to # make the maximum range larger.  The example below
-    #   just creates 2 VM nodes.
+    #   # seems to scale past that, feel free to file a feature request and
+    #   # we'll be happy to make the maximum range larger.  The example below
+    #   # just creates 2 VM nodes.
     #   # [mandatory]
     #   # ranges:
     #   # - [124, [40, 42]]
@@ -539,7 +539,7 @@ nodes:
     #           # To Enable Dynamic Resource Allocations use the following:
     #           # Note: also requires alpha APIs and the matching feature gates
     #           # to be enabled for apiServer and scheduler in
-    #           # cluster_configuration, # as well as in
+    #           # cluster_configuration, as well as in
     #           kube_proxy_configuration, and kubelet_configuration
     #           # [optional; default: ""]
     #           # - feature-gates=DynamicResourceAllocation=true
@@ -597,7 +597,7 @@ nodes:
               # yamllint enable rule:line-length
 
     #         # Path to node configuration template, relative to the playbook
-    #         directory:
+    #         # directory:
     #         # path: "templates/config/join_configuration.yaml.j2"
 workloads:
   # The name of the workload
@@ -636,13 +636,12 @@ workloads:
           type: "kustomization"
           # When applying multiple URIs it can be convenient to centralise the
           # version#; if <<<version>>> is encountered in a URI it will be
-          # substituted for the value
-          # of the version field.
+          # substituted for the value of the version field.
           # [optional; default: ""]
           version: "v0.16.6"
           # The URI[s] to the data;
-          # this field can be either a string (a single URI) or a list (a single
-          # or multiple URIs)
+          # this field can be either a string (a single URI) or a list
+          # (a single or multiple URIs)
           # All URIs need to be prefixed with their type
           # Valid prefixes:
           # http:// [highly discouraged due to security reasons]
@@ -680,13 +679,13 @@ workloads:
           # The version to install
           version: "v1.16.2"
   - name: "intel-resource-drivers-for-kubernetes"
+    # If you enable this you need to enable DRA support too and use
+    # Kubernetes 1.31 or newer
+    skip: true
     description: |
       Intel GPU resource driver is a better alternative for Intel GPU device
       plugin, facilitating workload offloading by providing GPU access on
       Kubernetes cluster worker nodes.
-    # If you enable this you need to enable DRA support too and use
-    # Kubernetes 1.31 or newer
-    skip: true
     deployments:
       - git:
           # The repository to clone (if not already available locally)
