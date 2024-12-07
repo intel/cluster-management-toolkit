@@ -2869,7 +2869,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "backgroundscanreports",
     },
     ("CleanupPolicy", "kyverno.io"): {
-        "api_paths": ["apis/kyverno.io/v2alpha1/"],
+        "api_paths": ["apis/kyverno.io/v2/",
+                      "apis/kyverno.io/v2alpha1/"],
         "api": "cleanuppolicies",
     },
     ("ClusterAdmissionReport", "kyverno.io"): {
@@ -2883,7 +2884,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("ClusterCleanupPolicy", "kyverno.io"): {
-        "api_paths": ["apis/kyverno.io/v2alpha1/"],
+        "api_paths": ["apis/kyverno.io/v2/",
+                      "apis/kyverno.io/v2alpha1/"],
         "api": "clustercleanuppolicies",
         "namespaced": False,
     },
@@ -2896,16 +2898,22 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/kyverno.io/v1/"],
         "api": "generaterequests",
     },
+    ("GlobalContextEntry", "kyverno.io"): {
+        "api_paths": ["apis/kyverno.io/v2alpha1/"],
+        "api": "globalcontextentries",
+        "namespaced": False,
+    },
     ("Policy", "kyverno.io"): {
         "api_paths": ["apis/kyverno.io/v1/"],
         "api": "policies",
     },
     ("PolicyException", "kyverno.io"): {
-        "api_paths": ["apis/kyverno.io/v2alpha1/"],
+        "api_paths": ["apis/kyverno.io/v2/",
+                      "apis/kyverno.io/v2alpha1/"],
         "api": "policyexceptions",
     },
     ("UpdateRequest", "kyverno.io"): {
-        "api_paths": ["apis/kyverno.io/v1beta1/"],
+        "api_paths": ["apis/kyverno.io/v2/"],
         "api": "updaterequests",
     },
     # linkerd.io
@@ -4184,6 +4192,16 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("Report", "reporting.kio.kasten.io"): {
         "api_paths": ["apis/reporting.kio.kasten.io/v1alpha1/"],
         "api": "reports",
+    },
+    # reports.kyverno.io
+    ("ClusterEphemeralReport", "reports.kyverno.io"): {
+        "api_paths": ["apis/reports.kyverno.io/v1/"],
+        "api": "clusterephemeralreports",
+        "namespaced": False,
+    },
+    ("EphemeralReport", "reports.kyverno.io"): {
+        "api_paths": ["apis/reports.kyverno.io/v1/"],
+        "api": "ephemeralreports",
     },
     # resolution.tekton.dev
     ("ResolutionRequest", "resolution.tekton.dev"): {

@@ -250,6 +250,8 @@ def str_3letter_to_severity(string: str, **kwargs: Any) -> LogLevel:
         "ERR": LogLevel.ERR,
         "WRN": LogLevel.WARNING,
         "INF": LogLevel.INFO,
+        "DBG": LogLevel.DEBUG,
+        "TRC": LogLevel.DEBUG,  # Most likely TRACE; no reason for different loglevel
     }
     return severities.get(string.upper(), default)
 

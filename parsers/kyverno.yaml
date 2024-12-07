@@ -10,5 +10,24 @@
     - pod_name: "kyverno-cleanup-controller"
     - pod_name: "kyverno-reports-controller"
   parser_rules:
+    - name: "strip_ansicodes"
+    - name: "ts_8601"
     - name: "glog"
     - name: "key_value_with_leading_message"
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^([A-Z]{3}) (.+?) > (.*)'
+        severity:
+          field: 1
+          transform: "3letter"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "version "
+          loglevel: "notice"
