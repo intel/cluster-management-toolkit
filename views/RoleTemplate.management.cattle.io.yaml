@@ -1,0 +1,241 @@
+---
+kind: "RoleTemplate"
+api_family: "management.cattle.io"
+default_command: "roletemplates.management.cattle.io"
+command:
+  - "roletemplates.cattle"
+  - "roletemplate.cattle"
+  - "roletempls.cattle"
+  - "roletempl.cattle"
+listview:
+  name: "Role Templates"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "display_name", "context", "builtin", "external", "hidden", "age", "description"]
+      sortcolumn: "context"
+  fields:
+    builtin:
+      header: "Builtin:"
+      path: "builtin"
+      default: "<unset>"
+      type: "bool"
+    context:
+      header: "Context:"
+      path: "context"
+      default: "<unset>"
+      type: "str"
+    description:
+      header: "Description:"
+      path: "description"
+      fallback_on_empty: true
+      default: "<unset>"
+      type: "str"
+    display_name:
+      header: "Display Name:"
+      path: "displayName"
+      default: "<unset>"
+      type: "str"
+    external:
+      header: "External:"
+      path: "external"
+      default: "<unset>"
+      type: "bool"
+    hidden:
+      header: "Hidden:"
+      path: "hidden"
+      default: "<unset>"
+      type: "bool"
+infoview:
+  name: "Role Template Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description", "context", "builtin", "external", "hidden"]
+    rows:
+      builtin:
+        header: [["Builtin:", ["main", "infoheader"]]]
+        path: "builtin"
+        default: "<unset>"
+        type: "bool"
+      context:
+        header: [["Context:", ["main", "infoheader"]]]
+        path: "context"
+        default: "<unset>"
+        type: "str"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "description"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "displayName"
+        default: "<unset>"
+        type: "str"
+      external:
+        header: [["External:", ["main", "infoheader"]]]
+        path: "external"
+        default: "<unset>"
+        type: "bool"
+      hidden:
+        header: [["Hidden:", ["main", "infoheader"]]]
+        path: "hidden"
+        default: "<unset>"
+        type: "bool"
+  listpad:
+    listgetter: "listgetter_policy_rules"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Wide:
+        fields: ["resource", "api_group", "non_resource_urls",
+                 "resource_names", "verbs_all", "verbs_get",
+                 "verbs_list", "verbs_watch", "verbs_create",
+                 "verbs_update", "verbs_patch", "verbs_delete", "verbs_misc"]
+        sortcolumn: "api_group"
+      Normal:
+        fields: ["resource", "api_group", "non_resource_urls",
+                 "resource_names", "verbs"]
+        sortcolumn: "api_group"
+    fields:
+      api_group:
+        header: "API-Group:"
+        path: "api_group"
+        type: "str"
+      non_resource_urls:
+        header: "Non-Resource URLs:"
+        path: "non_resource_urls"
+        type: "raw"
+        formatter: "list"
+      resource:
+        header: "Resource:"
+        path: "resource"
+        type: "str"
+      resource_names:
+        header: "Resource Names:"
+        path: "resource_names"
+        type: "raw"
+        formatter: "list"
+      verbs:
+        header: "Verbs:"
+        path: "verbs"
+        type: "raw"
+        formatter: "list"
+      verbs_all:
+        header: "All:"
+        path: "verbs_all"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_create:
+        header: "Create:"
+        path: "verbs_create"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_delete:
+        header: "Delete:"
+        path: "verbs_delete"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_get:
+        header: "Get:"
+        path: "verbs_get"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_list:
+        header: "List:"
+        path: "verbs_list"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_misc:
+        header: "Other:"
+        path: "verbs_misc"
+        type: "raw"
+        formatter: "list"
+      verbs_patch:
+        header: "Patch:"
+        path: "verbs_patch"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_update:
+        header: "Update:"
+        path: "verbs_update"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_watch:
+        header: "Watch:"
+        path: "verbs_watch"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
