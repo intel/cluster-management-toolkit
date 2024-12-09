@@ -970,7 +970,7 @@ def check_versions_yum(packages: list[str]) -> list[tuple[str, str, str, list[st
 
     yum_path = cmtio.secure_which(FilePath("/usr/bin/yum"), fallback_allowlist=["/usr/bin"],
                                   security_policy=SecurityPolicy.ALLOWLIST_RELAXED)
-    args = [yum_path, "--showduplicates", "-y", "-q", "list"] + packages
+    args = [yum_path, "-y", "-q", "list", "--showduplicates"] + packages
     response = cmtio.execute_command_with_response(args)
     split_response = response.splitlines()
 
