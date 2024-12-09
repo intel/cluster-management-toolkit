@@ -979,10 +979,10 @@ def check_versions_yum(packages: list[str]) -> list[tuple[str, str, str, list[st
     section = ""
 
     for line in split_response:
-        if line == "Installed Packages":
+        if line.lower() == "installed packages":
             section = "installed"
             continue
-        if line == "Available Packages":
+        if line.lower() == "available packages":
             section = "available"
             continue
         tmp = package_version.match(line)
