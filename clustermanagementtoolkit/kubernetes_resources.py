@@ -2469,6 +2469,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "adminpolicybasedexternalroutes",
         "namespaced": False,
     },
+    ("ClusterUserDefinedNetwork", "k8s.ovn.org"): {
+        "api_paths": ["apis/k8s.ovn.org/v1/"],
+        "api": "clusteruserdefinednetworks",
+        "namespaced": False,
+    },
     ("EgressFirewall", "k8s.ovn.org"): {
         "api_paths": ["apis/k8s.ovn.org/v1/"],
         "api": "egressfirewalls",
