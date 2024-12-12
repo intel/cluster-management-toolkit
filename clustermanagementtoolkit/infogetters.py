@@ -364,10 +364,17 @@ def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: A
         when_lte = deep_get(when_condition, DictPath("lte"))
         when_gt = deep_get(when_condition, DictPath("gt"))
         when_gte = deep_get(when_condition, DictPath("gte"))
+
         when_in = deep_get(when_condition, DictPath("in"))
         when_notin = deep_get(when_condition, DictPath("notin"))
+
         when_missing = deep_get(when_condition, DictPath("missing"))
         when_notmissing = deep_get(when_condition, DictPath("notmissing"))
+
+        when_startswith = deep_get(when_condition, DictPath("startswith"))
+        when_notstartswith = deep_get(when_condition, DictPath("notstartswith"))
+        when_endswith = deep_get(when_condition, DictPath("endswith"))
+        when_notendswith = deep_get(when_condition, DictPath("notendswith"))
 
         # These check dict values
         when_isdict = deep_get(when_condition, DictPath("isdict"))
@@ -419,6 +426,19 @@ def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: A
         if when_gt is not None and (value is None or value <= type(value)(when_gt)):
             return False
         if when_gte is not None and (value is None or value >= type(value)(when_gte)):
+            return False
+
+        if when_startswith is not None \
+                and (value is None or not value.startswith(when_startswith)):
+            return False
+        if when_notstartswith is not None \
+                and (value is None or value.startswith(when_notstartswith)):
+            return False
+        if when_endswith is not None \
+                and (value is None or not value.endswith(when_endswith)):
+            return False
+        if when_notendswith is not None \
+                and (value is None or value.endswith(when_notendswith)):
             return False
 
     return True
