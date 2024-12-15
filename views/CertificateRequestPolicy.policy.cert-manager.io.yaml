@@ -1,0 +1,243 @@
+---
+kind: "CertificateRequestPolicy"
+api_family: "policy.cert-manager.io"
+default_command: "certificaterequestpolicies"
+command:
+  - "certreqpols"
+  - "certreqpol"
+listview:
+  name: "Certificate Request Policies"
+  group: "Certificate Management"
+  field_indexes:
+    Normal:
+      fields: ["name", "condition_ready", "age"]
+      sortcolumn: "namespace"
+  fields:
+    condition_ready:
+      header: "Ready:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
+          default: "<unknown>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+infoview:
+  name: "Certificate Request Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["common_name", "selector_header", "selector_issuer_ref",
+                 "selector_namespace_header", "selector_namespace_match_names",
+                 "selector_namespace_match_labels", "ip_addresses", "is_ca",
+                 "dns_names", "email_addresses", "email_addresses_values",
+                 "email_addresses_required", "uris", "usages",
+                 "subject_header",
+                 "subject_organizational_units", "subject_organizations",
+                 "subject_street_addresses",
+                 "subject_postal_codes",
+                 "subject_localities",
+                 "subject_provinces",
+                 "subject_countries",
+                 "subject_serial_number",
+                 "condition_ready"]
+    rows:
+      common_name:
+        header: [["Common Name:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#allowed#commonName#value"], " (",
+                   "Required: ",
+                   ["spec#allowed#commonName#required"], ")"]
+            pathtype: "tuple"
+            default: ["<unset>", "", "", false, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
+            - type: "generic"
+            - type: "generic"
+          field_separators:
+            - type: "no_pad"
+            - type: "no_pad"
+            - type: "no_pad"
+            - type: "no_pad"
+      condition_ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
+            default: "<unknown>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "False":
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              "<unknown>":
+                field_colors:
+                  - context: "main"
+                    type: "status_unknown"
+      dns_names:
+        header: [["DNS Names:", ["main", "infoheader"]]]
+        path: "spec#allowed#dnsNames#values"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "address"
+      email_addresses:
+        header: [["E-mail Addresses:", ["main", "infoheader"]]]
+      email_addresses_values:
+        header: [["  Pattern:", ["main", "infoheader"]]]
+        path: "spec#allowed#emailAddresses#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "address"
+      email_addresses_required:
+        header: [["  Required:", ["main", "infoheader"]]]
+        path: "spec#allowed#emailAddresses#required"
+        default: false
+        type: "bool"
+      ip_addresses:
+        header: [["IP-addresses:", ["main", "infoheader"]]]
+        path: "spec#allowed#ipAddresses#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "address"
+      is_ca:
+        header: [["Is CA:", ["main", "infoheader"]]]
+        path: "spec#allowed#isCA"
+        default: false
+        type: "bool"
+      selector_issuer_ref:
+        header: [["  IssuerRef:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#selector#issuerRef#kind"],
+                   ["spec#selector#issuerRef#group"],
+                   ["spec#selector#issuerRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_family"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+      selector_header:
+        header: [["Selector:", ["main", "infoheader"]]]
+      selector_namespace_header:
+        header: [["  Namespace:", ["main", "infoheader"]]]
+      selector_namespace_match_labels:
+        header: [["    Match Labels:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#selector#namespace#matchLabels"
+            pathtype: "key_value"
+            default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      selector_namespace_match_names:
+        header: [["    Match Names:", ["main", "infoheader"]]]
+        path: "spec#selector#namespace#matchNames"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      subject_countries:
+        header: [["  Countries:", ["main", "infoheader"]]]
+        path: "spec#allowed#subject#countries#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      subject_header:
+        header: [["Subject:", ["main", "infoheader"]]]
+      subject_localities:
+        header: [["  Localities:", ["main", "infoheader"]]]
+        path: "spec#allowed#subject#localities#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      subject_organizational_units:
+        header: [["  Organizational Unit:", ["main", "infoheader"]]]
+        path: "spec#allowed#subject#organizationalUnits#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      subject_organizations:
+        header: [["  Organizations:", ["main", "infoheader"]]]
+        path: "spec#allowed#subject#organizations#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      subject_postal_codes:
+        header: [["  Postal Codes:", ["main", "infoheader"]]]
+        path: "spec#allowed#subject#postalCodes#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      subject_provinces:
+        header: [["  Provinces:", ["main", "infoheader"]]]
+        path: "spec#allowed#subject#provinces#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      subject_serial_number:
+        header: [["  Serial Number:", ["main", "infoheader"]]]
+        path: "spec#allowed#subject#serialNumber#value"
+        default: "<unset>"
+        type: "str"
+      subject_street_addresses:
+        header: [["  Street Addresses:", ["main", "infoheader"]]]
+        path: "spec#allowed#subject#streetAddresses#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      uris:
+        header: [["URIs:", ["main", "infoheader"]]]
+        path: "spec#allowed#uris#values"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "url"
+      usages:
+        header: [["Usages:", ["main", "infoheader"]]]
+        path: "spec#allowed#usages"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"

@@ -4065,6 +4065,12 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "platformoperators",
         "namespaced": False,
     },
+    # policy.cert-manager.io
+    ("CertificateRequestPolicy", "policy.cert-manager.io"): {
+        "api_paths": ["apis/policy.cert-manager.io/v1alpha1/"],
+        "api": "certificaterequestpolicies",
+        "namespaced": False,
+    },
     # policy.kruise.io
     ("PodUnavailableBudget", "policy.kruise.io"): {
         "api_paths": ["apis/policy.kruise.io/v1alpha1/"],
