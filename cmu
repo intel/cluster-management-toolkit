@@ -7300,14 +7300,19 @@ def patch_resource(**kwargs: Any) -> Retval:
     _retval = clear_screen()
 
     for item in items:
-        namespace, name = item
+        if isinstance(item, tuple):
+            namespace, name = item
+        else:
+            namespace = ""
+            name = item
 
         if action_str is not None:
-            msg = [ANSIThemeStr(f"{action_str} {kind[0]}.{kind[1]} “", "default"),
-                   ANSIThemeStr(namespace, "argument"),
-                   ANSIThemeStr("::", "separator"),
-                   ANSIThemeStr(name, "argument"),
-                   ANSIThemeStr("“", "default")]
+            msg = [ANSIThemeStr(f"{action_str} {kind[0]}.{kind[1]} “", "default")]
+            if namespace:
+                msg += [ANSIThemeStr(namespace, "argument"),
+                        ANSIThemeStr("::", "separator")]
+            msg += [ANSIThemeStr(name, "argument"),
+                    ANSIThemeStr("“", "default")]
             ansithemeprint(msg)
 
         patch_object(uip.stdscr, **{"kind": kind,
@@ -9868,8 +9873,8 @@ def open_view(options: list[tuple[str, str]], args: list[str]) -> None:
     try:
         wrapper(setupui)
     except curses.error as e:
-        # We don't really know *why* if failed to close the window,
-        # but we don't really care, since we're about to close down anyway
+        # We don't really know *why* it failed to close the window,
+        # but we don't really care, since we're about to close down anyway.
         if str(e) == "endwin() returned ERR":
             pass
         elif str(e) == "setupterm: could not find terminal":
