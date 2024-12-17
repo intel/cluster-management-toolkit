@@ -34,10 +34,22 @@ listview:
       formatting:
         mapping:
           mappings:
+            Aborted:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            Aborting:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
             Completed:
               field_colors:
                 - context: "main"
                   type: "status_done"
+            Completing:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
             Failed:
               field_colors:
                 - context: "main"
@@ -50,6 +62,14 @@ listview:
               field_colors:
                 - context: "main"
                   type: "status_ok"
+            Terminated:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            Terminating:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
     queue:
       header: "Queue:"
       path: "spec#queue"
@@ -106,10 +126,22 @@ infoview:
         formatting:
           mapping:
             mappings:
+              Aborted:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              Aborting:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
               Completed:
                 field_colors:
                   - context: "main"
                     type: "status_done"
+              Completing:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
               Failed:
                 field_colors:
                   - context: "main"
@@ -122,6 +154,14 @@ infoview:
                 field_colors:
                   - context: "main"
                     type: "status_ok"
+              Terminated:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              Terminating:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
       policies:
         header: [["P", ["main", "infoheader_shortcut"]],
                  ["olicies:", ["main", "infoheader"]]]
@@ -152,6 +192,7 @@ infoview:
       running_duration:
         header: [["Running Duration:", ["main", "infoheader"]]]
         path: "status#runningDuration"
+        default: "<unset>"
         type: "str"
         formatter: "numerical"
       scheduler:

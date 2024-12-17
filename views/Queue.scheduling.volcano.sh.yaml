@@ -15,7 +15,7 @@ listview:
   field_indexes:
     Wide:
       fields: ["name", "allocated", "capability", "weight",
-               "reclaimable", "status", "age"]
+               "reclaimable", "running", "status", "age"]
     Normal:
       fields: ["name", "allocated", "capability", "status", "age"]
   fields:
@@ -48,10 +48,37 @@ listview:
       header: "Reclaimable:"
       path: "spec#reclaimable"
       type: "str"
+    running:
+      header: "Running:"
+      path: "status#running"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
     status:
       header: "Status:"
       path: "status#state"
       type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Closed:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            Closing:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            Open:
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            Unknown:
+              field_colors:
+                - context: "main"
+                  type: "status_unknown"
     weight:
       header: "Weight:"
       path: "spec#weight"
@@ -63,7 +90,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["allocated", "capability", "weight", "reclaimable", "status"]
+        fields: ["allocated", "capability", "weight", "reclaimable", "running",
+                 "status"]
     rows:
       allocated:
         header: [["Allocated:", ["main", "infoheader"]]]
@@ -94,10 +122,36 @@ infoview:
         header: [["Reclaimable:", ["main", "infoheader"]]]
         path: "spec#reclaimable"
         type: "str"
+      running:
+        header: [["Running:", ["main", "infoheader"]]]
+        path: "status#running"
+        default: 0
+        type: "int"
+        formatter: "numerical"
       status:
         header: [["Status:", ["main", "infoheader"]]]
         path: "status#state"
         type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Closed:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              Closing:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              Open:
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              Unknown:
+                field_colors:
+                  - context: "main"
+                    type: "status_unknown"
       weight:
         header: [["Weight:", ["main", "infoheader"]]]
         path: "spec#weight"

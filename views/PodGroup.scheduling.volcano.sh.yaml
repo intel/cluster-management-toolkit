@@ -71,7 +71,8 @@ infoview:
     row_indexes:
       Normal:
         fields: ["controller", "queue", "priority_class",
-                 "min_members", "min_task_members", "running", "phase"]
+                 "min_members", "min_task_members",
+                 "min_resources", "running", "schedulable", "phase"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]],
@@ -102,6 +103,18 @@ infoview:
         path: "spec#minMember"
         type: "int"
         formatter: "numerical"
+      min_resources:
+        header: [["Min Resources:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#minResources"
+            pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "keyvalue"
       min_task_members:
         header: [["Min Task Members:", ["main", "infoheader"]]]
         paths:
@@ -183,6 +196,55 @@ infoview:
         default: 0
         type: "int"
         formatter: "numerical"
+      schedulable:
+        header: [["Schedulable:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "substitution"
+            when:
+              - key: "type"
+                eq: "Unschedulable"
+              - key: "status"
+                eq: true
+            substitute: false
+            default: null
+          - path: "status#conditions"
+            pathtype: "substitution"
+            when:
+              - key: "type"
+                eq: "Unschedulable"
+              - key: "status"
+                eq: false
+            substitute: true
+            default: null
+          - path: [" (", "Message: "]
+            pathtype: "tuple"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "message"
+          - path: [")"]
+            pathtype: "tuple"
+        default: ["Unknown"]
+        formatter: "list"
+        formatting:
+          field_separators:
+            - type: "no_pad"
+          item_separator:
+            type: "no_pad"
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "False":
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              "Unknown":
+                field_colors:
+                  - context: "main"
+                    type: "status_unknown"
   shortcuts:
     "Open controller":
       key: "c"
