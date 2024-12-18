@@ -522,7 +522,7 @@ def get_package_version_list(obj: dict, **kwargs: Any) -> Optional[list[tuple[st
     return package_versions
 
 
-# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-branches
 def get_pod_affinity(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str, str]]:
     """
     Get a list of pod affinities.
