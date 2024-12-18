@@ -3870,7 +3870,8 @@ class UIProps:
         # If we do not match we will just end up with the old pos
         self.move_cur_with_offset(offset)
 
-    def goto_first_match_by_name_namespace(self, name: str, namespace: str) -> Optional[Type]:
+    def goto_first_match_by_name_namespace(self, name: Optional[str],
+                                           namespace: Optional[str]) -> Optional[Type]:
         """
         This function is used to find the first match based on command line input
         The sort order used will still be the default, to ensure that the partial
