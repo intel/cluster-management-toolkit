@@ -99,6 +99,26 @@ listview:
         category: "Resource Level"
         confirm: true
         actionfunc: "delete_resource"
+      "Resume resource":
+        # Requires vcctl
+        description: "Resume resource"
+        category: "Resource Level"
+        action: "execute"
+        action_args:
+          command: ["vcctl", "job", "resume",
+                    "--namespace", "<<<item.0>>>",
+                    "--name", "<<<item.1>>>"]
+          iterate: true
+      "Suspend resource":
+        # Requires vcctl
+        description: "Suspend resource"
+        category: "Resource Level"
+        action: "execute"
+        action_args:
+          command: ["vcctl", "job", "suspend",
+                    "--namespace", "<<<item.0>>>",
+                    "--name", "<<<item.1>>>"]
+          iterate: true
 infoview:
   name: "Job Info"
   infopad:

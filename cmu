@@ -1242,6 +1242,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             uip.refresh_all()
             curses.doupdate()
 
+            actionfunc_args: dict = {}
             if selection is not None and selection != "":
                 actionfunc = None
 
@@ -1288,13 +1289,29 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 # At the very least asking for one input plus confirmation.
                 # A multi input box might be useful too.
                 if queryfunc is not None and queryval is not None and query is not None:
-                    if queryfunc == "string":
+                    if queryfunc in ("int", "string"):
                         # Not supported by inputbox widget
                         # querydefault = ""
                         query_title = f"{query}: "
                         if not (string := curses_helper.inputbox(uip.stdscr, title=query_title)):
                             continue
+                        if queryfunc == "int":
+                            try:
+                                string = int(string)
+                            except ValueError:
+                                message = f"{queryval} is not an integer"
+                                win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
+                                                          message=message)
+                                while True:
+                                    uip.stdscr.timeout(100)
+                                    c = uip.stdscr.getch()
+                                    if c != -1:
+                                        del win
+                                        break
+                                continue
                         selection_vars[queryval] = string
+                        deep_set(selection_vars, DictPath(f"values#{queryval}"), string,
+                                 create_path=True)
                     elif queryfunc == "confirm":
                         querydefault = False
                         query_title = f"{query}?"
@@ -1766,6 +1783,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             uip.refresh_all()
             curses.doupdate()
 
+            actionfunc_args: dict = {}
             if selection is not None and selection != "":
                 actionfunc = None
 
@@ -1818,13 +1836,29 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 # At the very least asking for one input plus confirmation.
                 # A multi input box might be useful too.
                 if queryfunc is not None and queryval is not None and query is not None:
-                    if queryfunc == "string":
+                    if queryfunc in ("int", "string"):
                         # Not supported by inputbox widget
                         # querydefault = ""
                         query_title = f"{query}: "
                         if not (string := curses_helper.inputbox(uip.stdscr, title=query_title)):
                             continue
+                        if queryfunc == "int":
+                            try:
+                                string = int(string)
+                            except ValueError:
+                                message = f"{queryval} is not an integer"
+                                win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
+                                                          message=message)
+                                while True:
+                                    uip.stdscr.timeout(100)
+                                    c = uip.stdscr.getch()
+                                    if c != -1:
+                                        del win
+                                        break
+                                continue
                         selection_vars[queryval] = string
+                        deep_set(selection_vars, DictPath(f"values#{queryval}"), string,
+                                 create_path=True)
                     elif queryfunc == "confirm":
                         querydefault = False
                         query_title = f"{query}?"
@@ -6184,12 +6218,19 @@ def patch_object(stdscr: curses.window, **kwargs: Any) -> Retval:
         Returns:
             (Retval): The return value
     """
-    kind = deep_get(kwargs, DictPath("kind"))
-    name = deep_get(kwargs, DictPath("name"))
-    namespace = deep_get(kwargs, DictPath("namespace"))
-    patch = deep_get(kwargs, DictPath("args#patch"))
-    subresource = deep_get(kwargs, DictPath("args#subresource"), "")
-    strategic_merge = deep_get(kwargs, DictPath("args#strategic_merge"), False)
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+    name: str = deep_get(kwargs, DictPath("name"))
+    namespace: str = deep_get(kwargs, DictPath("namespace"))
+    patch: dict[str, Any] = deep_get(kwargs, DictPath("args#patch"))
+    values: dict[str, Any] = deep_get(kwargs, DictPath("values"), {})
+    path_substitutions: list[dict[str, Any]] = \
+        deep_get(kwargs, DictPath("args#path_substitutions"), [])
+    subresource: str = deep_get(kwargs, DictPath("args#subresource"), "")
+    strategic_merge: bool = deep_get(kwargs, DictPath("args#strategic_merge"), False)
+
+    for key_path, value_path in path_substitutions.items():
+        value: Any = deep_get(values, DictPath(value_path))
+        deep_set(patch, DictPath(key_path), value, create_path=True)
 
     _message, _status = kh.patch_obj_by_kind_name_namespace(kind, name, namespace, patch,
                                                             subresource=subresource,
@@ -6981,9 +7022,23 @@ def __restart_resource(kind: tuple[str, str], namespace: str, name: str) -> int:
     return result.returncode
 
 
-def __get_resource_scale(kind: tuple[str, str], namespace: str, name: str) -> int:
+def __get_resource_scale(**kwargs: Any) -> int:
+    """
+    Get the scale of an object
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                kind ((str, str)): The kind of the object
+                name (str): The name of the object
+                namespace (str): The namespace of the object
+        path (str): [optional] The path to the scale
+    """
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"), ("", ""))
+    namespace: str = deep_get(kwargs, DictPath("namespace"), "")
+    name: str = deep_get(kwargs, DictPath("name"), "")
+    path: str = deep_get(kwargs, DictPath("path"), "status#replicas")
     obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache=kh_cache)
-    return deep_get(obj, DictPath("status#replicas"))
+    return deep_get(obj, DictPath(path))
 
 
 # Valid kinds:
@@ -6991,7 +7046,22 @@ def __get_resource_scale(kind: tuple[str, str], namespace: str, name: str) -> in
 # ("ReplicaSet", "apps")
 # ("ReplicationController", "")
 # ("StatefulSet", apps")
-def __scale_replicas(kind: tuple[str, str], namespace: str, name: str, scale: int) -> int:
+def __scale_replicas(**kwargs: Any) -> int:
+    """
+    Scale an object
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                kind ((str, str)): The kind of the object
+                name (str): The name of the object
+                namespace (str): The namespace of the object
+                scale (int): The new scale
+    """
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"), ("", ""))
+    namespace: str = deep_get(kwargs, DictPath("namespace"), "")
+    name: str = deep_get(kwargs, DictPath("name"), "")
+    scale: int = deep_get(kwargs, DictPath("scale"))
+
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -7294,6 +7364,7 @@ def patch_resource(**kwargs: Any) -> Retval:
     kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
     action_str: str = deep_get(kwargs, DictPath("values#action_str"))
     args: dict = deep_get(kwargs, DictPath("values#args"), {})
+    values: dict = deep_get(kwargs, DictPath("values#values"), {})
     items: list[tuple[str, str]] = deep_get(kwargs, DictPath("items"), [])
 
     curses.endwin()
@@ -7318,7 +7389,8 @@ def patch_resource(**kwargs: Any) -> Retval:
         patch_object(uip.stdscr, **{"kind": kind,
                                     "name": name,
                                     "namespace": namespace,
-                                    "args": args})
+                                    "args": args,
+                                    "values": values})
 
     print("\n")
 
@@ -7350,10 +7422,15 @@ def restart_resource_rescale(**kwargs: Any) -> Retval:
     _retval = clear_screen()
 
     for item in items:
-        namespace, name = item
-        old_scale = __get_resource_scale(kind, namespace, name)
-        __scale_replicas(kind, namespace, name, scale=0)
-        __scale_replicas(kind, namespace, name, scale=old_scale)
+        if isinstance(item, tuple):
+            namespace, name = item
+        else:
+            namespace = ""
+            name = item
+
+        old_scale = __get_resource_scale(kind=kind, namespace=namespace, name=name)
+        __scale_replicas(kind=kind, namespace=namespace, name=name, scale=0)
+        __scale_replicas(kind=kind, namespace=namespace, name=name, scale=old_scale)
         msg = [ANSIThemeStr(f"Restarting {kind[0]}.{kind[1]} “", "default"),
                ANSIThemeStr(namespace, "argument"),
                ANSIThemeStr("::", "separator"),
@@ -7392,7 +7469,12 @@ def restart_resource_rollout(**kwargs: Any) -> Retval:
     _retval = clear_screen()
 
     for item in items:
-        namespace, name = item
+        if isinstance(item, tuple):
+            namespace, name = item
+        else:
+            namespace = ""
+            name = item
+
         __restart_resource(kind, namespace, name)
         msg = [ANSIThemeStr(f"Restarting {kind[0]}.{kind[1]} “", "default"),
                ANSIThemeStr(namespace, "argument"),
@@ -7433,10 +7515,17 @@ def rescale_resource(**kwargs: Any) -> Retval:
     _retval = clear_screen()
 
     for item in items:
-        namespace, name = item
+        if isinstance(item, tuple):
+            namespace, name = item
+        else:
+            namespace = ""
+            name = item
+
         scale = values["scale"]
-        old_scale = __get_resource_scale(kind, namespace, name)
-        __scale_replicas(kind, namespace, name, scale)
+        old_scale = __get_resource_scale(kind=kind, namespace=namespace,
+                                         name=name,
+                                         path=deep_get(kwargs, DictPath("action_args#path")))
+        __scale_replicas(kind=kind, namespace=namespace, name=name, scale=scale)
         msg = [ANSIThemeStr(f"Rescaling {kind[0]}.{kind[1]} “", "default"),
                ANSIThemeStr(namespace, "argument"),
                ANSIThemeStr("::", "separator"),
@@ -7480,9 +7569,14 @@ def stop_resource_rescale(**kwargs: Any) -> Retval:
     _retval = clear_screen()
 
     for item in items:
-        namespace, name = item
-        old_scale = __get_resource_scale(kind, namespace, name)
-        __scale_replicas(kind, namespace, name, 0)
+        if isinstance(item, tuple):
+            namespace, name = item
+        else:
+            namespace = ""
+            name = item
+
+        old_scale = __get_resource_scale(kind=kind, namespace=namespace, name=name)
+        __scale_replicas(kind=kind, namespace=namespace, name=name, scale=0)
         msg = [ANSIThemeStr(f"Stopping {kind[0]}.{kind[1]} “", "default"),
                ANSIThemeStr(namespace, "argument"),
                ANSIThemeStr("::", "separator"),
@@ -8006,7 +8100,7 @@ def __populate_playbooklist(path: FilePath, action_list: dict) -> dict:
 
         # Sanity check
         if queryfunc is not None:
-            if queryfunc not in ("string", "yesno", "filechooser"):
+            if queryfunc not in ("int", "string", "yesno", "filechooser"):
                 raise ValueError(f"unknown queryfunc “{queryfunc}“ provided")
 
         confirm = deep_get(d[0], DictPath("vars#metadata#confirm"), False)

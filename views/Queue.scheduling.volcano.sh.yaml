@@ -85,6 +85,25 @@ listview:
       type: "int"
       formatter: "numerical"
       align: "right"
+  actions:
+    actionlist:
+      "Update weight":
+        description: "Update weight"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Updating weight"
+          args:
+            path_substitutions:
+              "spec#weight": "weight"
+            patch:
+              spec:
+                weight: "<<dummy>>"
+            strategic_merge: false
+        query: "New weight"
+        queryval: "weight"
+        queryfunc: "int"
 infoview:
   name: "Queue Info"
   infopad:
