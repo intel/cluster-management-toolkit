@@ -2722,6 +2722,28 @@ def substitute_bullets(message: str, prefix: str) -> str:
 def python_traceback_scanner_nested_exception(message: str, **kwargs: Any) \
         -> tuple[tuple[str, Optional[Callable], dict],
                  tuple[datetime, str, LogLevel, list[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Scanner for nested Python tracebacks.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (((str, Callable, dict),
+              (datetime, str, LogLevel, [(ThemeArray, LogLevel)]))):
+                ((str, Callable, dict)):
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                ((datetime, str, LogLevel, Callable, dict)):
+                    (datetime): The timestamp
+                    (str): The facility of the message
+                    (LogLevel): The LogLevel of the message
+                    ([(ThemeArray, LogLevel)]):
+                        (ThemeArray): The formatted strings of the remnant
+                        (LogLevel): The severity of the remnant
+    """
     timestamp: datetime = none_timestamp()
     facility: str = ""
     severity: LogLevel = LogLevel.ERR
@@ -2801,6 +2823,28 @@ def python_traceback_scanner_nested_exception(message: str, **kwargs: Any) \
 def python_traceback_scanner(message: str, **kwargs: Any) \
         -> tuple[tuple[str, Optional[Callable], dict],
                  tuple[datetime, str, LogLevel, list[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Scanner for Python tracebacks.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (((str, Callable, dict),
+              (datetime, str, LogLevel, [(ThemeArray, LogLevel)]))):
+                ((str, Callable, dict)):
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                ((datetime, str, LogLevel, Callable, dict)):
+                    (datetime): The timestamp
+                    (str): The facility of the message
+                    (LogLevel): The LogLevel of the message
+                    ([(ThemeArray, LogLevel)]):
+                        (ThemeArray): The formatted strings of the remnant
+                        (LogLevel): The severity of the remnant
+    """
     timestamp: datetime = none_timestamp()
     facility: str = ""
     severity: LogLevel = LogLevel.ERR
@@ -2858,6 +2902,27 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
 def python_traceback(message: str, **kwargs: Any) \
         -> tuple[Union[str, tuple[str, Optional[Callable], dict]],
                  list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    """
+    Parser for Python tracebacks.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            ((str | (str, Callable, dict)), [(ThemeArray, LogLevel)]):
+                ((str | (str, Callable, dict))):
+                    (str): The unformatted message
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                (ThemeArray): The formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     remnants: list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     if message.startswith(("Traceback (most recent call last):",
@@ -2883,6 +2948,28 @@ def json_line_scanner(message: str, **kwargs: Any) \
                  tuple[datetime, str, LogLevel,
                        Optional[list[tuple[list[Union[ThemeRef, ThemeStr]],
                                            LogLevel]]]]]:
+    """
+    Scanner for JSON.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (((str, Callable, dict),
+              (datetime, str, LogLevel, [(ThemeArray, LogLevel)]))):
+                ((str, Callable, dict)):
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                ((datetime, str, LogLevel, Callable, dict)):
+                    (datetime): The timestamp
+                    (str): The facility of the message
+                    (LogLevel): The LogLevel of the message
+                    ([(ThemeArray, LogLevel)]):
+                        (ThemeArray): The formatted strings of the remnant
+                        (LogLevel): The severity of the remnant
+    """
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     allow_empty_lines: bool = deep_get(options, DictPath("allow_empty_lines"), True)
@@ -2937,6 +3024,27 @@ def json_line_scanner(message: str, **kwargs: Any) \
 def json_line(message: str,
               **kwargs: Any) -> tuple[Union[str, tuple[str, Optional[Callable], dict]],
                                       list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    """
+    Parser for JSON.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            ((str | (str, Callable, dict)), [(ThemeArray, LogLevel)]):
+                ((str | (str, Callable, dict))):
+                    (str): The unformatted message
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                (ThemeArray): The formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -2993,6 +3101,28 @@ def yaml_line_scanner(message: str,
                                               tuple[datetime, str, LogLevel,
                                                     list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]]:
+    """
+    Scanner for YAML.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (((str, Callable, dict),
+              (datetime, str, LogLevel, [(ThemeArray, LogLevel)]))):
+                ((str, Callable, dict)):
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                ((datetime, str, LogLevel, Callable, dict)):
+                    (datetime): The timestamp
+                    (str): The facility of the message
+                    (LogLevel): The LogLevel of the message
+                    ([(ThemeArray, LogLevel)]):
+                        (ThemeArray): The formatted strings of the remnant
+                        (LogLevel): The severity of the remnant
+    """
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     timestamp: datetime = none_timestamp()
@@ -3048,6 +3178,27 @@ def yaml_line_scanner(message: str,
 def yaml_line(message: str, **kwargs: Any) -> \
         tuple[Union[str, tuple[str, Optional[Callable], dict]],
               Union[str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]]:
+    """
+    Parser for YAML.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            ((str | (str, Callable, dict)), [(ThemeArray, LogLevel)]):
+                ((str | (str, Callable, dict))):
+                    (str): The unformatted message
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                (ThemeArray): The formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -3106,6 +3257,28 @@ def diff_line_scanner(message: str,
                                               tuple[datetime, str, LogLevel,
                                                     list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]]:
+    """
+    Scanner for unified diffs.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (((str, Callable, dict),
+              (datetime, str, LogLevel, [(ThemeArray, LogLevel)]))):
+                ((str, Callable, dict)):
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                ((datetime, str, LogLevel, Callable, dict)):
+                    (datetime): The timestamp
+                    (str): The facility of the message
+                    (LogLevel): The LogLevel of the message
+                    ([(ThemeArray, LogLevel)]):
+                        (ThemeArray): The formatted strings of the remnant
+                        (LogLevel): The severity of the remnant
+    """
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     timestamp: datetime = none_timestamp()
@@ -3164,6 +3337,27 @@ def diff_line_scanner(message: str,
 def diff_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
                                                     list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
+    """
+    Parser for unified diffs.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            ((str | (str, Callable, dict)), [(ThemeArray, LogLevel)]):
+                ((str | (str, Callable, dict))):
+                    (str): The unformatted message
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                (ThemeArray): The formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -3223,6 +3417,28 @@ def ansible_line_scanner(message: str,
                                                  tuple[datetime, str, LogLevel,
                                                        list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                   LogLevel]]]]:
+    """
+    Scanner for Ansible results.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (((str, Callable, dict),
+              (datetime, str, LogLevel, [(ThemeArray, LogLevel)]))):
+                ((str, Callable, dict)):
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                ((datetime, str, LogLevel, Callable, dict)):
+                    (datetime): The timestamp
+                    (str): The facility of the message
+                    (LogLevel): The LogLevel of the message
+                    ([(ThemeArray, LogLevel)]):
+                        (ThemeArray): The formatted strings of the remnant
+                        (LogLevel): The severity of the remnant
+    """
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     timestamp: datetime = none_timestamp()
@@ -3296,6 +3512,27 @@ def ansible_line_scanner(message: str,
 def ansible_line(message: str,
                  **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
                                          list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    """
+    Parser for Ansible results.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            ((str | (str, Callable, dict)), [(ThemeArray, LogLevel)]):
+                ((str | (str, Callable, dict))):
+                    (str): The unformatted message
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                (ThemeArray): The formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -3318,6 +3555,28 @@ def ansible_line(message: str,
 def custom_line_scanner(message: str, **kwargs: Any) \
         -> tuple[tuple[str, Optional[Callable], dict],
                  tuple[datetime, str, LogLevel, list[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Scanner for custom block messages.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (((str, Callable, dict),
+              (datetime, str, LogLevel, [(ThemeArray, LogLevel)]))):
+                ((str, Callable, dict)):
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                ((datetime, str, LogLevel, Callable, dict)):
+                    (datetime): The timestamp
+                    (str): The facility of the message
+                    (LogLevel): The LogLevel of the message
+                    ([(ThemeArray, LogLevel)]):
+                        (ThemeArray): The formatted strings of the remnant
+                        (LogLevel): The severity of the remnant
+    """
     options: dict = deep_get(kwargs, DictPath("options"), {})
     loglevel_name: str = deep_get(options, DictPath("loglevel"), "info")
 
@@ -3374,6 +3633,27 @@ def custom_line_scanner(message: str, **kwargs: Any) \
 def custom_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
                                                       list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                  LogLevel]]]:
+    """
+    Parser for custom block messages.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            ((str | (str, Callable, dict)), [(ThemeArray, LogLevel)]):
+                ((str | (str, Callable, dict))):
+                    (str): The unformatted message
+                    (str, Callable, dict):
+                        (str): Command to the block parser
+                        (Callable): The block parser to use
+                        (dict): Arguments to the block parser
+                (ThemeArray): The formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -3423,11 +3703,41 @@ def custom_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callab
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def custom_splitter(message: str, **kwargs: Any) -> \
         tuple[Union[str, list[Union[ThemeRef, ThemeStr]]], LogLevel, str]:
+    """
+    Custom splitter.
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments
+                severity (LogLevel): The log severity
+                facility (str): The log facility
+                options (dict[str, Any]): splitter options
+                    regex (re.Pattern[str]): A compiled regex
+                    severity (dict[str, Any]): A dict of severity options
+                        field (str): The index of the field to get the severity from
+                        transform (str): The rule to use when transforming the severity value;
+                                         valid options:
+                                         letter, 3letter, 4letter, str, int
+                        overrides (list): Special cases for overriding the severity
+                    facility (dict[str, Any]): A dict of facility options
+                        fields ([int]): A list of indexes for the fields containing the facility
+                        separators ([str]): A list of separators to use when joining the facility
+                    message (dict[str, Any]): A dict of message options
+                        field (str): The index of the field to get the message from
+        Returns:
+            (str|ThemeArray, LogLevel, str, [(ThemeArray, LogLevel)]):
+                (str|ThemeArray): The untouched or formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.DEFAULT)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
-    compiled_regex = deep_get(options, DictPath("regex"))
+    compiled_regex: re.Pattern[str] = deep_get(options, DictPath("regex"))
     severity_field = deep_get(options, DictPath("severity#field"))
     severity_transform = deep_get(options, DictPath("severity#transform"))
     severity_overrides = deep_get(options, DictPath("severity#overrides"), [])
@@ -3498,6 +3808,29 @@ def custom_parser(message: str, filters: list[Union[str, tuple]], **kwargs: Any)
         -> tuple[str, LogLevel,
                  Union[list[Union[ThemeRef, ThemeStr]], tuple[str, Optional[Callable], dict]],
                  list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    """
+    The main loop for the parser; it will iterate loop through all rules specified for
+    a particular log until a line has been fully processed.
+    Note: The name of this function is a misnomer and should be renamed *and* refactored;
+    the name is a holdover from an early version of the logparser.
+
+        Parameters:
+            message (str): The message to format
+            filters ([str | (str, Any)]): The list of parser rules to apply (and options)
+            **kwargs (dict[str, Any]): Keyword arguments
+                fold_msg (bool): Should the message be expanded or folded?
+                options (dict[str, Any]): Options to pass to the block parsers
+        Returns:
+            (str, LogLevel, [(ThemeArray, LogLevel)] | (str, Callable, dict[str, Any]),
+             [([ThemeArray], LogLevel)]):
+                (str): The log facility
+                (LogLevel): The log severity
+                (ThemeArray | (str, Callable, dict[str, Any])):
+                    Either the formatted message or the block parser tuple
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -3694,7 +4027,6 @@ def init_parser_list() -> None:
     """
     Initialise the list of parsers
     """
-
     # This pylint warning seems incorrect--does it not handle namedtuple.append()?
     # pylint: disable-next=global-variable-not-assigned
     global parsers
