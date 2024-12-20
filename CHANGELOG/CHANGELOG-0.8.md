@@ -86,7 +86,7 @@ N/A.
 * `cmtadm upgrade-control-plane` now checks whether feature gates have been altered,
   and refuses to upgrade the cluster if this is the case.
 * `cmtadm` now uses `kubeadm.k8s.io/v1beta4` API-version when installing or upgrading to
-  _Kubernetes v1.31_
+  _Kubernetes v1.31_.
 
 ### Changes to _cmtinv_ in v0.8.5
 
@@ -99,11 +99,11 @@ No changes.
   originating view; this difference is significant when arriving to the info-view
   via a shortcut from another infoview.  Note that `^` is a "dead" key on many
   keyboards, so you may need to press the key twice.
-* 143 view-files were added.
+* 174 view-files were added.
 * The Pod info-view can now has shortcuts to show resources used by the Pod, volume mounts, volumes,
   and topology constraints. It also shows the preemption policy.
 * View-files for the new DRA API has been added.
-* Other notable view-file changes include _kueue_, _kruise_, _kubeflow_, _volcano_, and _longhorn_.
+* Other notable view-file changes and additions include _kueue_, _kruise_, _kubeflow_, _volcano_, _rancher_, and _longhorn_.
 * 37 parser-files were added.
 
 ### Changes to other files in v0.8.5
@@ -114,7 +114,7 @@ No changes.
 * A new tool, `mdtable.py` has been added, that creates simple Markdown tables from CSV data.
   It's now used by the `mypy-markdown` and `pylint-markdown` Make targets.
 * A lot of code has been refactored, documented, or otherwise improved.
-  In total `986 files changed, 66401 insertions(+), 27598 deletions(-)`.
+  In total `1023 files changed, 72372 insertions(+), 28439 deletions(-)`.
 
 ## Fixed Issues in v0.8.5
 
@@ -191,13 +191,11 @@ Execute with `make bandit`.
 Output:
 
 ```
-Run started:2024-12-02 22:57:06.810446
-
 Test results:
 	No issues identified.
 
 Code scanned:
-	Total lines of code: 78139
+	Total lines of code: 79006
 	Total lines skipped (#nosec): 8
 
 Run metrics:
@@ -233,14 +231,14 @@ Name                                                  Stmts   Miss Branch BrPart
 ---------------------------------------------------------------------------------------
 clustermanagementtoolkit/cluster_actions.py             223    175     72      3  19.3%
 clustermanagementtoolkit/itemgetters.py                 507    375    290      8  22.3%
-clustermanagementtoolkit/infogetters.py                1677   1208   1008     79  25.2%
+clustermanagementtoolkit/infogetters.py                1689   1168   1016     80  27.2%
 clustermanagementtoolkit/fieldgetters.py                 81     54     46      0  27.6%
 clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     61  28.0%
-clustermanagementtoolkit/listgetters.py                1212    808    662     90  28.7%
-clustermanagementtoolkit/curses_helper.py              2388   1544   1124    125  29.0%
 clustermanagementtoolkit/networkio.py                   342    237    171      2  29.2%
-clustermanagementtoolkit/logparser.py                  2008   1275   1125     45  31.1%
+clustermanagementtoolkit/curses_helper.py              2392   1535   1124    129  29.3%
+clustermanagementtoolkit/listgetters.py                1204    759    654    108  31.6%
 clustermanagementtoolkit/listgetters_async.py           119     76     54      2  31.8%
+clustermanagementtoolkit/logparser.py                  2008   1158   1125    119  35.8%
 clustermanagementtoolkit/datagetters.py                 277    145    142     11  45.1%
 clustermanagementtoolkit/checks.py                      631    310    248     11  47.3%
 clustermanagementtoolkit/generators.py                  732    317    384     59  49.6%
@@ -263,7 +261,7 @@ clustermanagementtoolkit/objgetters.py                   56      0     12      0
 clustermanagementtoolkit/pvtypes.py                       1      0      0      0 100.0%
 clustermanagementtoolkit/recommended_permissions.py      11      0      0      0 100.0%
 ---------------------------------------------------------------------------------------
-TOTAL                                                 16154   8202   8406    609  45.1%
+TOTAL                                                 16162   7987   8406    706  46.2%
 ```
 
 
@@ -287,7 +285,7 @@ Execute with `make mypy-markdown`.
 | cmtadm                                              | Success: no issues found in 1 source file             |
 | cmt-install                                         | Success: no issues found in 1 source file             |
 | cmtinv                                              | Success: no issues found in 1 source file             |
-| cmu                                                 | **Found 88 errors in 1 file (checked 1 source file)** |
+| cmu                                                 | **Found 85 errors in 1 file (checked 1 source file)** |
 | clustermanagementtoolkit/about.py                   | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/ansible_helper.py          | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/ansithemeprint.py          | Success: no issues found in 1 source file             |
@@ -326,44 +324,44 @@ Commandline: `pylint --py-version 3.9 --disable W0511 --enable useless-suppressi
 Table generated with `make pylint-markdown`.
 Currently all complaints are due to missing function or method docstrings.
 
-| Source file                                         | Score        |
-| :-------------------------------------------------- | -----------: |
-| cmt                                                 | 10.00/10     |
-| cmtadm                                              | 10.00/10     |
-| cmt-install                                         | 10.00/10     |
-| cmtinv                                              | 10.00/10     |
-| cmu                                                 | 10.00/10     |
-| clustermanagementtoolkit/about.py                   | 10.00/10     |
-| clustermanagementtoolkit/ansible_helper.py          | 10.00/10     |
-| clustermanagementtoolkit/ansithemeprint.py          | 10.00/10     |
-| clustermanagementtoolkit/checks.py                  | 10.00/10     |
-| clustermanagementtoolkit/cluster_actions.py         | 10.00/10     |
-| clustermanagementtoolkit/cmtio.py                   | 10.00/10     |
-| clustermanagementtoolkit/cmtio_yaml.py              | 10.00/10     |
-| clustermanagementtoolkit/cmtlib.py                  | 10.00/10     |
-| clustermanagementtoolkit/cmtpaths.py                | 10.00/10     |
-| clustermanagementtoolkit/cmttypes.py                | 10.00/10     |
-| clustermanagementtoolkit/cmtvalidators.py           | 10.00/10     |
-| clustermanagementtoolkit/cni_data.py                | 10.00/10     |
-| clustermanagementtoolkit/commandparser.py           | 10.00/10     |
-| clustermanagementtoolkit/curses_helper.py           | **9.85/10**  |
-| clustermanagementtoolkit/datagetters.py             | 10.00/10     |
-| clustermanagementtoolkit/fieldgetters.py            | 10.00/10     |
-| clustermanagementtoolkit/formatters.py              | 10.00/10     |
-| clustermanagementtoolkit/generators.py              | 10.00/10     |
-| clustermanagementtoolkit/helptexts.py               | 10.00/10     |
-| clustermanagementtoolkit/infogetters.py             | 10.00/10     |
-| clustermanagementtoolkit/itemgetters.py             | 10.00/10     |
-| clustermanagementtoolkit/kubernetes_helper.py       | 10.00/10     |
-| clustermanagementtoolkit/kubernetes_resources.py    | 10.00/10     |
-| clustermanagementtoolkit/listgetters.py             | **9.95/10**  |
-| clustermanagementtoolkit/listgetters_async.py       | 10.00/10     |
-| clustermanagementtoolkit/logparser.py               | **9.93/10**  |
-| clustermanagementtoolkit/networkio.py               | 10.00/10     |
-| clustermanagementtoolkit/objgetters.py              | 10.00/10     |
-| clustermanagementtoolkit/pvtypes.py                 | 10.00/10     |
-| clustermanagementtoolkit/recommended_permissions.py | 10.00/10     |
-| clustermanagementtoolkit/reexecutor.py              | 10.00/10     |
+| Source file                                         | Score    |
+| :-------------------------------------------------- | -------: |
+| cmt                                                 | 10.00/10 |
+| cmtadm                                              | 10.00/10 |
+| cmt-install                                         | 10.00/10 |
+| cmtinv                                              | 10.00/10 |
+| cmu                                                 | 10.00/10 |
+| clustermanagementtoolkit/about.py                   | 10.00/10 |
+| clustermanagementtoolkit/ansible_helper.py          | 10.00/10 |
+| clustermanagementtoolkit/ansithemeprint.py          | 10.00/10 |
+| clustermanagementtoolkit/checks.py                  | 10.00/10 |
+| clustermanagementtoolkit/cluster_actions.py         | 10.00/10 |
+| clustermanagementtoolkit/cmtio.py                   | 10.00/10 |
+| clustermanagementtoolkit/cmtio_yaml.py              | 10.00/10 |
+| clustermanagementtoolkit/cmtlib.py                  | 10.00/10 |
+| clustermanagementtoolkit/cmtpaths.py                | 10.00/10 |
+| clustermanagementtoolkit/cmttypes.py                | 10.00/10 |
+| clustermanagementtoolkit/cmtvalidators.py           | 10.00/10 |
+| clustermanagementtoolkit/cni_data.py                | 10.00/10 |
+| clustermanagementtoolkit/commandparser.py           | 10.00/10 |
+| clustermanagementtoolkit/curses_helper.py           | 10.00/10 |
+| clustermanagementtoolkit/datagetters.py             | 10.00/10 |
+| clustermanagementtoolkit/fieldgetters.py            | 10.00/10 |
+| clustermanagementtoolkit/formatters.py              | 10.00/10 |
+| clustermanagementtoolkit/generators.py              | 10.00/10 |
+| clustermanagementtoolkit/helptexts.py               | 10.00/10 |
+| clustermanagementtoolkit/infogetters.py             | 10.00/10 |
+| clustermanagementtoolkit/itemgetters.py             | 10.00/10 |
+| clustermanagementtoolkit/kubernetes_helper.py       | 10.00/10 |
+| clustermanagementtoolkit/kubernetes_resources.py    | 10.00/10 |
+| clustermanagementtoolkit/listgetters.py             | 10.00/10 |
+| clustermanagementtoolkit/listgetters_async.py       | 10.00/10 |
+| clustermanagementtoolkit/logparser.py               | 10.00/10 |
+| clustermanagementtoolkit/networkio.py               | 10.00/10 |
+| clustermanagementtoolkit/objgetters.py              | 10.00/10 |
+| clustermanagementtoolkit/pvtypes.py                 | 10.00/10 |
+| clustermanagementtoolkit/recommended_permissions.py | 10.00/10 |
+| clustermanagementtoolkit/reexecutor.py              | 10.00/10 |
 
 ### Regexploit Results for v0.8.5
 
@@ -376,7 +374,7 @@ Output:
 Running regexploit to check for ReDoS attacks
 
 Checking executables
-Processed 49 regexes
+Processed 50 regexes
 
 Checking libraries
 Processed 142 regexes
@@ -404,7 +402,7 @@ Output:
 └─────────────┘
 
 
-Scanning 1123 files with:
+Scanning 1133 files with:
 
 ✔ Semgrep OSS
   ✔ Basic security coverage for first-party code vulnerabilities.
@@ -415,7 +413,7 @@ Scanning 1123 files with:
 ✘ Semgrep Supply Chain (SCA)
   ✘ Find and fix the reachable vulnerabilities in your OSS dependencies.
 
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸ 100% 0:03:18
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸ 100% 0:02:53
 
 
 ┌──────────────┐
@@ -423,13 +421,10 @@ Scanning 1123 files with:
 └──────────────┘
 Some files were skipped or only partially analyzed.
   Partially scanned: 2 files only partially analyzed due to parsing or internal Semgrep errors
-  Scan skipped: 966 files matching --exclude patterns, 62 files matching .semgrepignore patterns
+  Scan skipped: 974 files matching --exclude patterns, 63 files matching .semgrepignore patterns
   For a full list of skipped files, run semgrep with the --verbose flag.
 
-Ran 600 rules on 95 files: 0 findings.
-
-✨ If Semgrep missed a finding, please send us feedback to let us know!
-   See https://semgrep.dev/docs/reporting-false-negatives/
+Ran 631 rules on 96 files: 0 findings.
 ```
 
 ### validate_playbooks Results for v0.8.5
@@ -452,8 +447,8 @@ Output:
 Summary:
      fail: 0
      skip: 3
-  success: 842
-    total: 845
+  success: 849
+    total: 852
 ```
 
 ### YAMLlint Results for v0.8.5
