@@ -8,7 +8,7 @@
 # pylint: disable=too-many-lines
 
 """
-Get list data synchronously
+Get list data synchronously.
 """
 
 import concurrent.futures
@@ -63,8 +63,21 @@ from clustermanagementtoolkit.kubernetes_helper import resource_kind_to_rtype
 from clustermanagementtoolkit import listgetters_async
 
 
-def check_matchlists(item: str, exacts: list[str],
-                     prefixes: tuple[str, ...], suffixes: tuple[str, ...], ins: list[str]) -> bool:
+def check_matchlists(item: str,
+                     exacts: tuple[str, ...], prefixes: tuple[str, ...],
+                     suffixes: tuple[str, ...], ins: tuple[str, ...]) -> bool:
+    """
+    Check whether a string has a match in a set of matchlists.
+
+        Parameters:
+            item (str): The item to match against the matchlists
+            exacts ((str, ...)): A tuple of exact matches
+            prefixes ((str, ...)): A tuple of prefix matches
+            suffixes ((str, ...)): A tuple of suffix matches
+            ins ((str, ...)): A tuple of infix matches
+        Returns:
+            (bool): True if the item matches any of the match items
+    """
     if item in exacts:
         return True
     for in_ in ins:
@@ -77,10 +90,17 @@ def check_matchlists(item: str, exacts: list[str],
 
 # Takes an unprocessed matchlist, splits it into individual matchlists, and checks for matches
 def check_matchlist(item: str, matchlist: list[str]) -> bool:
-    exacts, prefixes, suffixes, ins = \
-        split_matchlist(matchlist, exacts=[], prefixes=(), suffixes=(), ins=[])
-    return check_matchlists(item, exacts=exacts,
-                            prefixes=tuple(prefixes), suffixes=tuple(suffixes), ins=ins)
+    """
+    Given a string and a list of match items, check whether the string matches
+    any of the match items.
+
+        Parameters:
+            matchlist ([str]): A list of strings to match against
+        Returns:
+            (bool): True if the item matches any of the match items
+    """
+    exacts, prefixes, suffixes, ins = split_matchlist(matchlist)
+    return check_matchlists(item, exacts=exacts, prefixes=prefixes, suffixes=suffixes, ins=ins)
 
 
 def get_device_model(obj: dict, device: DictPath) -> str:
@@ -102,37 +122,39 @@ def get_device_model(obj: dict, device: DictPath) -> str:
     return ""
 
 
-# Takes a list and splits it into four lists;
-# exacts, strings starting _and_ ending with "*", strings starting with "*",
-# and strings ending with "*"
-def split_matchlist(matchlist: list[str],
-                    exacts: list[str],
-                    prefixes: tuple[str, ...],
-                    suffixes: tuple[str, ...],
-                    ins: list[str]) -> tuple[list[str],
-                                             tuple[str, ...], tuple[str, ...], list[str]]:
-    tmp_exacts = []
-    tmp_prefixes = []
-    tmp_suffixes = []
-    tmp_ins = []
+def split_matchlist(matchlist: list[str]) -> tuple[tuple[str, ...], tuple[str, ...],
+                                                   tuple[str, ...], tuple[str, ...]]:
+    """
+    Takes a list and splits it into four types of match lists:
+    exact matches (for entries in the matchlist that doesn't start or end with *)
+    prefixes (for entries in the matchlist that start with *)
+    suffixes (for entries in the matchlist that end with *)
+    ins (for entries in the matchlist that start and end with *).
+
+        Parameters:
+            matchlist ([str]): A list of strings to match against
+        Returns:
+            (((str, ...), (str, ...), (str, ...), (str, ...))):
+                ((str, ...)): Strings to match with ==
+                ((str, ...)): Strings to match with .startswith()
+                ((str, ...)): Strings to match with .endswith()
+                ((str, ...)): Strings to match with in
+    """
+    exacts: list[str] = []
+    prefixes: list[str] = []
+    suffixes: list[str] = []
+    ins: list[str] = []
+
     for item in matchlist:
         if item.startswith("*") and item.endswith("*"):
-            tmp_ins.append(item[1:-1])
+            ins.append(item[1:-1])
         elif item.endswith("*"):
-            tmp_prefixes.append(item[:-1])
+            prefixes.append(item[:-1])
         elif item.startswith("*"):
-            tmp_suffixes.append(item[1:])
+            suffixes.append(item[1:])
         else:
-            tmp_exacts.append(item)
-    if not tmp_exacts:
-        tmp_exacts = exacts
-    if not tmp_prefixes:
-        tmp_prefixes = list(prefixes)
-    if not tmp_suffixes:
-        tmp_suffixes = list(suffixes)
-    if not tmp_ins:
-        tmp_ins = ins
-    return tmp_exacts, tuple(tmp_prefixes), tuple(tmp_suffixes), tmp_ins
+            exacts.append(item)
+    return tuple(exacts), tuple(prefixes), tuple(suffixes), tuple(ins)
 
 
 # Returns True if the item should be skipped
@@ -1827,22 +1849,33 @@ def get_info_by_last_applied_configuration(obj: dict, **kwargs: Any) -> tuple[li
 
 # pylint: disable-next=unused-argument
 def get_sidecar_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
+    """
+    Return a list of Istio sidecar rules.
+
+        Parameters:
+            obj (dict): The pod object.
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of sidecar rules.
+                (int): The status for the request
+    """
     vlist: list[dict[str, Any]] = []
 
     for traffic_type, items in (("Ingress", deep_get(obj, DictPath("spec#ingress"), [])),
                                 ("Egress", deep_get(obj, DictPath("spec#egress"), []))):
         for item in items:
-            pport = deep_get(item, DictPath("port#number"), "")
-            name = deep_get(item, DictPath("port#name"), "")
-            protocol = deep_get(item, DictPath("port#protocol"), "")
-            port = (name, pport, protocol)
+            pport: str = deep_get(item, DictPath("port#number"), "")
+            name: str = deep_get(item, DictPath("port#name"), "")
+            protocol: str = deep_get(item, DictPath("port#protocol"), "")
+            port: tuple[str, str, str] = (name, pport, protocol)
             ref = item
-            bind = deep_get(item, DictPath("bind"), "")
-            capture_mode = deep_get(item, DictPath("captureMode"), "NONE")
+            bind: str = deep_get(item, DictPath("bind"), "")
+            capture_mode: str = deep_get(item, DictPath("captureMode"), "NONE")
             # Required
-            default_endpoint = deep_get(item, DictPath("defaultEndpoint"), "")
+            default_endpoint: str = deep_get(item, DictPath("defaultEndpoint"), "")
             # N/A
-            hosts = deep_get(item, DictPath("hosts"), [])
+            hosts: list[str] = deep_get(item, DictPath("hosts"), [])
             vlist.append({
                 "traffic_type": traffic_type,
                 "port": port,
@@ -1858,10 +1891,21 @@ def get_sidecar_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]
 
 # pylint: disable-next=unused-argument
 def get_virtsvc_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
-    vlist = []
+    """
+    Extracts data from an Istio Virtual Service.
+
+        Parameters:
+            obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): A list of virtual service rules
+                (int): The status for the request
+    """
+    vlist: list[dict[str, Any]] = []
 
     for rule_path, rule_type in [("spec#http", "HTTP"), ("spec#tls", "TLS"), ("spec#tcp", "TCP")]:
-        destinations = []
+        destinations: list[tuple[str, str, str]] = []
 
         for rule in deep_get(obj, DictPath(rule_path), []):
             for item in deep_get(rule, DictPath("route"), []):
@@ -2010,7 +2054,7 @@ def listgetter_dict_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[
         Returns:
             (([dict[str, Any]], int)):
                 ([dict[str, Any]]): The list representation of the dict
-                (int): The status.
+                (int): The status for the request
     """
     path = deep_get(kwargs, DictPath("path"))
     vlist = []
@@ -2031,7 +2075,7 @@ def listgetter_field(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[str,
         Returns:
             (([dict[str, Any]], int)):
                 ([dict[str, Any]]): The list representation of the dict
-                (int): The status.
+                (int): The status for the request
     """
     path = deep_get(kwargs, DictPath("path"))
     vlist = deep_get(obj, DictPath(path))
@@ -2060,7 +2104,21 @@ def listgetter_field(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[str,
 # [{"foo": "d", "bar": 1, "baz": 2}, {"foo": "e", "bar": 2, "baz": 3}]
 def listgetter_join_dicts_to_list(obj: dict[str, Any],
                                   **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
-    vlist = []
+    """
+    Join dicts into a single list.
+
+        Parameters:
+            obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments
+                key_paths (str): The paths to join paths from
+                key_name (str): The name to give to the give key field
+                fields ([dict[str, str]]): A list of dict paths, and the names to give them
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list representation of the dicts
+                (int): The status for the request
+    """
+    vlist: list[dict[str, Any]] = []
     key_paths = deep_get(kwargs, DictPath("key_paths"), "")
     key_name = deep_get(kwargs, DictPath("key_name"), "")
     fields = deep_get(kwargs, DictPath("fields"), [])
