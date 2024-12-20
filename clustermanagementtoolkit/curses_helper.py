@@ -2920,6 +2920,13 @@ class UIProps:
         self.data = deep_get(kwargs, DictPath("data"))
 
     def reinit_window(self, field_dict: dict, sortcolumn: str) -> None:
+        """
+        Reinitialise the main window.
+
+            Parameters:
+                field_dict (dict): The dict of field data
+                sortcolumn (str): The name of the column to use when sorting the list
+        """
         self.field_dict = field_dict
         self.searchkey = ""
         self.sortcolumn = sortcolumn
@@ -2928,6 +2935,12 @@ class UIProps:
 
     # pylint: disable-next=too-many-branches
     def update_window(self, update: str = "true") -> None:
+        """
+        Update the main window.
+
+            Parameters:
+                update (str): Update the timestamp? (true, pending, false)
+        """
         hline = deep_get(theme, DictPath("boxdrawing#hline"))
 
         maxyx = self.stdscr.getmaxyx()
@@ -2996,6 +3009,14 @@ class UIProps:
 
     # pylint: disable-next=unused-argument
     def update_timestamp(self, ypos: int = 0, xpos: int = -1, update: str = "true") -> None:
+        """
+        Update the timestamp in the menu bar.
+
+            Parameters:
+                ypos (int): The y-position of the timestamp
+                xpos (int): The x-position of the timestamp
+                update (str): Update the timestamp? (true, pending, false)
+        """
         if xpos == -1:
             xpos = self.maxx
         if update == "true" or self.last_timestamp_update is None:
@@ -3032,6 +3053,9 @@ class UIProps:
         self.addthemearray(self.stdscr, timestamparray, y=0, x=xpos)
 
     def draw_winheader(self) -> None:
+        """
+        Draw the main window header.
+        """
         if self.windowheader != "":
             ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
             rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
@@ -3057,6 +3081,9 @@ class UIProps:
                 self.addthemearray(self.stdscr, winheaderarray, y=0, x=0)
 
     def refresh_window(self) -> None:
+        """
+        Refresh the main window.
+        """
         if self.borders:
             bl = deep_get(theme, DictPath("boxdrawing#llcorner"))
             br = deep_get(theme, DictPath("boxdrawing#lrcorner"))
@@ -3094,8 +3121,10 @@ class UIProps:
                 self.addthemearray(self.statusbar, curposarray, y=1, x=xpos)
         self.stdscr.noutrefresh()
 
-    # This should be called when a resize event is detected
     def resize_window(self) -> None:
+        """
+        Resize the main window; this should be called whenever a resize event is detected.
+        """
         self.stdscr.clear()
         maxyx = self.stdscr.getmaxyx()
         self.miny = 0
@@ -3116,6 +3145,9 @@ class UIProps:
         self.reselect_uid()
 
     def refresh_all(self) -> None:
+        """
+        Refresh the main window and all pads.
+        """
         self.stdscr.touchwin()
         self.stdscr.noutrefresh()
         if self.infopad:
@@ -3152,8 +3184,14 @@ class UIProps:
         self.labels = get_labels(deep_get(kwargs, DictPath("labels"), {}))
         self.annotations = get_labels(deep_get(kwargs, DictPath("annotations"), {}))
 
-    # Pass -1 to keep the current height/width
     def resize_infopad(self, height: int, width: int) -> None:
+        """
+        Resize the infopad.
+
+            Parameters:
+                height (int): The height of the infopad (-1: keep current height)
+                width (int): The width of the infopad (-1: keep current width)
+        """
         if self.infopad is None:
             return
         self.infopadminwidth = self.maxx - self.infopadxpos
@@ -3165,6 +3203,9 @@ class UIProps:
         self.infopad.resize(max(self.infopadheight, self.maxy), self.infopadwidth)
 
     def refresh_infopad(self) -> None:
+        """
+        Refresh the infopad.
+        """
         if self.infopad is not None:
             height = self.infopadheight
             if self.borders:
@@ -3232,8 +3273,13 @@ class UIProps:
         self.yoffset = 0
         self.select(None)
 
-    # Pass -1 to keep the current height/width
     def resize_listpad(self, width: int) -> None:
+        """
+        Resize the listpad.
+
+            Parameters:
+                width (int): The width of the listpad (-1 to keep the current width)
+        """
         if self.listpad is None:
             return
         self.listpadheight = self.maxy - 2 - self.listpadypos
@@ -3261,6 +3307,9 @@ class UIProps:
         self.reselect_uid()
 
     def refresh_listpad(self) -> None:
+        """
+        Refresh the listpad.
+        """
         xpos = self.listpadxpos
         maxx = self.maxx - 1
         if not self.borders:
@@ -3296,9 +3345,15 @@ class UIProps:
                 except curses.error:
                     pass
 
-    # Recalculate the xpos of the log; this is needed when timestamps are toggled
     def recalculate_logpad_xpos(self, tspadxpos: int = -1,
                                 timestamps: Optional[bool] = None) -> None:
+        """
+        Recalculate the x-position of the logpad. This is necessary when toggling timestamps.
+
+            Parameters:
+                tspadxpos (int): The x-position of the timestamp pad
+                timestamps (bool): Are the timestamps enabled?
+        """
         if tspadxpos == -1:
             if self.tspadxpos is None:
                 raise ProgrammingError("logpad is not initialised and no tspad xpos provided")
@@ -3358,10 +3413,16 @@ class UIProps:
         self.logpad = curses.newpad(self.logpadheight + 1, self.logpadwidth)
         self.loglen = 0
 
-    # Pass -1 to keep the current height/width
     # Calling this function directly is not necessary;
     # the pad never grows down, and self.__addstr() calls this when x grows
     def resize_logpad(self, height: int, width: int) -> None:
+        """
+        Resize the logpad.
+
+            Parameters:
+                height (int): The height of the logpad (-1: keep current height)
+                width (int): The width of the logpad (-1: keep current width)
+        """
         self.recalculate_logpad_xpos(tspadxpos=self.tspadxpos)
         if height != -1:
             if self.borders:
@@ -3384,6 +3445,9 @@ class UIProps:
         self.yoffset = min(self.yoffset, self.maxyoffset)
 
     def refresh_logpad(self) -> None:
+        """
+        Refresh the logpad.
+        """
         if self.logpad is None:
             return
 
@@ -3434,6 +3498,14 @@ class UIProps:
                 pass
 
     def toggle_timestamps(self, timestamps: Optional[bool] = None) -> None:
+        """
+        Toggle timestamps on/off.
+
+            Parameters:
+                timestamps (bool): True to enable timestamps,
+                                   False to disable timestamps,
+                                   None to toggle the timestamps
+        """
         if timestamps is None:
             timestamps = self.tspadxpos == self.logpadxpos
 
@@ -3551,6 +3623,12 @@ class UIProps:
         return y, x
 
     def move_xoffset_abs(self, position: int) -> None:
+        """
+        Move the x-offset to an absolute position.
+
+            Parameters:
+                position (int): The new x-position (-1: the last possible x-offset)
+        """
         if self.borders:
             sideadjust = 0
         else:
@@ -3565,6 +3643,12 @@ class UIProps:
         self.refresh = True
 
     def move_yoffset_abs(self, position: int) -> None:
+        """
+        Move the y-offset to an absolute position.
+
+            Parameters:
+                position (int): The new y-position (-1: the last possible y-offset)
+        """
         if position == -1:
             self.yoffset = self.maxyoffset
         elif position == 0:
@@ -3576,6 +3660,12 @@ class UIProps:
         self.reselect_uid()
 
     def move_xoffset_rel(self, movement: int) -> None:
+        """
+        Move the x-offset relative to the current position.
+
+            Parameters:
+                movement (int): The number lines to move the offset left/right.
+        """
         if self.borders:
             sideadjust = 0
         else:
@@ -3585,12 +3675,25 @@ class UIProps:
         self.refresh = True
 
     def move_yoffset_rel(self, movement: int) -> None:
+        """
+        Move the y-offset relative to the current position.
+
+            Parameters:
+                movement (int): The number lines to move the offset up/down.
+        """
         self.yoffset = max(0, self.yoffset + movement)
         self.yoffset = min(self.maxyoffset, self.yoffset)
         self.refresh = True
         self.reselect_uid()
 
     def move_cur_abs(self, position: int) -> None:
+        """
+        Move the cursor y-position to an absolute position.
+        Note: Only 0 (first line) and -1 (last line) are supported.
+
+            Parameters:
+                position (int): The new y-position
+        """
         if position == -1:
             self.curypos = self.maxcurypos
             self.yoffset = self.maxyoffset
@@ -3603,6 +3706,12 @@ class UIProps:
         self.reselect_uid()
 
     def move_cur_with_offset(self, movement: int) -> None:
+        """
+        Move the cursor y-position relative to the current position.
+
+            Parameters:
+                movement (int): The number lines to the cursor move up/down.
+        """
         if self.curypos == -1 or self.yoffset == -1:
             self.curypos = 0
             self.yoffset = 0
@@ -3632,6 +3741,14 @@ class UIProps:
     def find_all_matches_by_searchkey(self,
                                       messages: list[Union[list[Union[ThemeRef, ThemeStr]], str]],
                                       searchkey: str) -> None:
+        """
+        Given a search key, find all lines that matches that search key,
+        and update the search_matches list with their indices.
+
+            Parameters:
+                messages ([[ThemeRef | ThemeStr] | str]): The messages to search through
+                searchkey (str): The search key
+        """
         self.match_index = None
         self.search_matches.clear()
 
@@ -3650,6 +3767,10 @@ class UIProps:
                 self.search_matches.add(y)
 
     def find_next_match(self) -> None:
+        """
+        Find the next matching entry in the log and move the y-offset to that entry
+        (or to the max y-offset, if the match is at the bottom of the log).
+        """
         start = self.match_index
         if start is None:
             start = self.yoffset
@@ -3662,6 +3783,9 @@ class UIProps:
         self.reselect_uid()
 
     def find_prev_match(self) -> None:
+        """
+        Find the previous matching entry in the log and move the y-offset to that entry.
+        """
         end = self.match_index
         if end is None:
             end = self.yoffset
@@ -3674,8 +3798,14 @@ class UIProps:
                     break
         self.reselect_uid()
 
-    # Find the next line that has severity > NOTICE
     def next_line_by_severity(self, severities: list[LogLevel]) -> None:
+        """
+        Find the next line that has a severity > NOTICE,
+        and move the the y-offset to that position.
+
+            Parameters:
+                severities ([LogLevel]): A list of the severities
+        """
         y = 0
         newoffset = self.yoffset
 
@@ -3694,6 +3824,13 @@ class UIProps:
 
     # Find the prev line that has severity > NOTICE
     def prev_line_by_severity(self, severities: list[LogLevel]) -> None:
+        """
+        Find the previous line that has a severity > NOTICE,
+        and move the the y-offset to that position.
+
+            Parameters:
+                severities ([LogLevel]): A list of the severities
+        """
         y = 0
         newoffset = self.yoffset
 
@@ -3712,6 +3849,19 @@ class UIProps:
         self.refresh = True
 
     def next_by_sortkey(self, info: list[Type]) -> None:
+        """
+        Jump to the next list entry by sortkey; this is used in listpads;
+        this doesn't use a user-provided sortkey. Instead it uses a bit of magic:
+        * For namespaces it jumps to the next namespace (since there typically several
+          entries in each namespace).
+        * For names it jumps to the next (represented) letter of the alphabet.
+        * For status it jumps to the next status.
+        * For node it jumps to the next node.
+        * For other types it just jumps to the next entry.
+
+            Parameters:
+                info ([Info]): The list information
+        """
         if not self.sortkey1:
             return
 
@@ -3722,11 +3872,6 @@ class UIProps:
         sortkey1, sortkey2 = self.get_sortkeys()
         sortkey = sortkey2 if sortkey1 == "status_group" else sortkey1
 
-        # Search forward within sort category
-        # next namespace when sorted by namespace
-        # next (existing) letter when sorted by name
-        # next status when sorted by status
-        # next node when sorted by node
         for entry in natsorted(info, key=attrgetter(sortkey1, sortkey2),
                                reverse=self.sortorder_reverse):
             entryval = getattr(entry, sortkey)
@@ -3757,6 +3902,19 @@ class UIProps:
 
     # pylint: disable-next=too-many-branches
     def prev_by_sortkey(self, info: list[Type]) -> None:
+        """
+        Jump to the previous list entry by sortkey; this is used in listpads;
+        this doesn't use a user-provided sortkey. Instead it uses a bit of magic:
+        * For namespaces it jumps to the previous namespace (since there typically several
+          entries in each namespace).
+        * For names it jumps to the previous (represented) letter of the alphabet.
+        * For status it jumps to the previous status.
+        * For node it jumps to the previous node.
+        * For other types it just jumps to the previous entry.
+
+            Parameters:
+                info ([Info]): The list information
+        """
         if self.sortkey1 is None:
             return
 
@@ -3805,6 +3963,13 @@ class UIProps:
             self.move_cur_with_offset(newpos)
 
     def find_next_by_sortkey(self, info: list[Type], searchkey: str) -> None:
+        """
+        Search a list using search key and jump to the next matching entry.
+
+            Parameters:
+                info ([Info]): The list information
+                searchkey (str): The search key
+        """
         pos = self.curypos + self.yoffset
         offset = 0
 
@@ -3841,6 +4006,13 @@ class UIProps:
         self.move_cur_with_offset(offset)
 
     def find_prev_by_sortkey(self, info: list[Type], searchkey: str) -> None:
+        """
+        Search a list using search key and jump to the previous matching entry.
+
+            Parameters:
+                info ([Info]): The list information
+                searchkey (str): The search key
+        """
         pos = self.curypos + self.yoffset
         offset = 0
 
@@ -3918,6 +4090,9 @@ class UIProps:
         return unique_match
 
     def next_sortcolumn(self) -> None:
+        """
+        Switch to the next sort column.
+        """
         if self.sortcolumn == "":
             return
 
@@ -3935,6 +4110,9 @@ class UIProps:
         self.sort_triggered = True
 
     def prev_sortcolumn(self) -> None:
+        """
+        Switch to the previous sort column.
+        """
         if self.sortcolumn == "":
             return
 
@@ -3950,9 +4128,21 @@ class UIProps:
         self.sort_triggered = True
 
     def get_sortcolumn(self) -> str:
+        """
+        Return the current sort column.
+
+            Returns:
+                (str): The current sort column.
+        """
         return self.sortcolumn
 
     def get_sortkeys(self) -> tuple[str, str]:
+        """
+        Return the sort key tuple.
+
+            Returns:
+                ((str, str)): The primary and secondary sort keys.
+        """
         if not self.field_dict:
             # We do not really care about what the sortkeys are; we do not have a list to sort
             # but if we return valid strings we can at least pacify the type checker
@@ -3975,10 +4165,23 @@ class UIProps:
     # noqa: E501 pylint: disable-next=too-many-return-statements,too-many-locals,too-many-statements,too-many-branches
     def handle_mouse_events(self, win: curses.window,
                             sorted_list: list[Type], **kwargs: Any) -> Retval:
+        """
+        Handle mouse events.
+
+            Parameters:
+                win (curses.window): The curses window to operate on
+                sorted_list ([Info]): The sorted list information
+                **kwargs (dict[str, Any]): Keyword arguments
+                    activatedfun (Callable): The function to call on activation
+                    extraref (str): An alternate view reference: This should probably be redesigned
+                    data (bool): FIXME
+            Returns:
+                (Retval): The return value
+        """
         activatedfun: Optional[Callable] = deep_get(kwargs, DictPath("activatedfun"))
         extraref: Optional[str] = deep_get(kwargs, DictPath("extraref"))
         data: Optional[bool] = deep_get(kwargs, DictPath("data"))
-        selected: Optional[Any]
+        selected: Optional[Any] = False
 
         try:
             _eventid, x, y, _z, bstate = curses.getmouse()
@@ -4151,8 +4354,21 @@ class UIProps:
 
         return Retval.NOMATCH
 
-    def enter_handler(self, activatedfun: Optional[Callable],
-                      extraref: Optional[str], data: Optional[bool]) -> Retval:
+    def enter_handler(self, **kwargs: Any) -> Retval:
+        """
+        Handle activation.
+
+            Parameters:
+                **kwargs (dict[str, Any]): Keyword arguments
+                    activatedfun (Callable): The function to call on activation
+                    extraref (str): An alternate view reference: This should probably be redesigned
+                    data (bool): FIXME
+            Returns:
+                (Retval): The return value
+        """
+        activatedfun: Optional[Callable] = deep_get(kwargs, DictPath("activatedfun"))
+        extraref: Optional[str] = deep_get(kwargs, DictPath("extraref"))
+        data: Optional[bool] = deep_get(kwargs, DictPath("data"))
         selected = self.get_selected()
 
         if activatedfun is not None and selected is not None and selected.ref is not None:
@@ -4181,6 +4397,17 @@ class UIProps:
 
     # pylint: disable-next=too-many-return-statements,too-many-statements,too-many-branches
     def generic_keycheck(self, c: int) -> Retval:
+        """
+        Process key presses, window resize events, and mouse events.
+
+            Parameters:
+                c (int): The key press.
+            Returns:
+                (Retval): The return value:
+                          Retval.NOMATCH if the key press was not handled,
+                          Retval.MATCH if the key press was handled,
+                          Retval.RETURNONE to return one level up.
+        """
         # We got some type of keypress; postpone idle
         if c != -1:
             self.last_action = datetime.now()
@@ -4196,7 +4423,8 @@ class UIProps:
                                             self.sorted_list, activatedfun=self.activatedfun,
                                             extraref=self.extraref, data=self.data)
         if c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
-            return self.enter_handler(self.activatedfun, self.extraref, self.data)
+            return self.enter_handler(activated_fun=self.activatedfun,
+                                      extraref=self.extraref, data=self.data)
         if c == ord("M"):
             # Toggle mouse support on/off to allow for copy'n'paste
             if get_mousemask() == 0:
@@ -4683,7 +4911,8 @@ class UIProps:
                                             extraref=self.extraref, data=self.data), {}
 
         if c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
-            return self.enter_handler(self.activatedfun, self.extraref, self.data), {}
+            return self.enter_handler(activated_fun=self.activatedfun,
+                                      extraref=self.extraref, data=self.data), {}
 
         # First generate a list of all the shortcuts we should check
         __shortcuts = {}
