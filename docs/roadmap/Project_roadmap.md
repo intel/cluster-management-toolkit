@@ -51,7 +51,7 @@ the roadmap has, for now, been pushed back one quarter, but further slips are li
 
 * _General_:
     * [x] tests: Achieve 45% test coverage for `*.py`.
-    * [ ] All functions, classes, and methods should have docstrings and type hints.
+    * [x] All functions, classes, and methods should have docstrings and type hints.
     * [ ] Distribute as:
         * [ ] Source code.
 
