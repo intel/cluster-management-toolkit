@@ -13,6 +13,7 @@ from datetime import datetime
 import errno
 from getpass import getuser
 import hashlib
+import io
 import os
 from pathlib import Path
 import re
@@ -401,14 +402,10 @@ def download_files(directory: str,
             # NamedTemporaryFile with delete = False will create a temporary file
             # owned by user with 0o600 permissions.
             with tempfile.NamedTemporaryFile(delete=False) as f:
-                f.write(r1.data)
-                # We want to use the content before the scope ends, so we need to flush the file
-                f.flush()
+                biodata = io.BytesIO(r1.data)
 
-                # We'd prefer to do this using BytesIO,
-                # but tarfile only supports it from Python 3.9+
-                if tarfile.is_tarfile(f.name):
-                    with tarfile.open(name=f.name, mode="r") as tf:
+                if tarfile.is_tarfile(biodata):
+                    with tarfile.open(fileobj=biodata) as tf:
                         members = tf.getnames()
                         if filename not in members:
                             ansithemeprint([ANSIThemeStr("Critical", "critical"),
@@ -418,20 +415,14 @@ def download_files(directory: str,
                                                          "aborting.", "default")], stderr=True)
                             sys.exit(errno.ENOENT)
 
-                        with tempfile.NamedTemporaryFile(delete=False) as f2:
-                            with tf.extractfile(filename) as tff:  # type: ignore
-                                f2.write(tff.read())
-
-                            # Here we change to the permissions we are supposed to use
-                            os.chmod(f2.name, permissions)
-                            # Here we atomically move it in place
-                            shutil.move(f2.name, f"{directory}/{filename}")
-                            os.remove(f.name)
+                        with tf.extractfile(filename) as tff:  # type: ignore
+                            f.write(tff.read())
                 else:
-                    # Here we change to the permissions we are supposed to use
-                    os.chmod(f.name, permissions)
-                    # Here we atomically move it in place
-                    shutil.move(f.name, f"{directory}/{filename}")
+                    f.write(r1.data)
+                # Here we change to the permissions we are supposed to use
+                os.chmod(f.name, permissions)
+                # Here we atomically move it in place
+                shutil.move(f.name, f"{directory}/{filename}")
         else:
             reason = []
             if r1.reason is not None:
