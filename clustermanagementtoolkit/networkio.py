@@ -48,7 +48,7 @@ from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_y
 from clustermanagementtoolkit import cmtpaths
 from clustermanagementtoolkit.cmtpaths import HOMEDIR, SSH_DIR
 from clustermanagementtoolkit.cmtpaths import VERSION_CACHE_DIR, VERSION_CACHE_LAST_UPDATED_PATH
-from clustermanagementtoolkit.cmtpaths import VERSION_CANDIDATES_FILE
+from clustermanagementtoolkit.cmtpaths import VERSION_CANDIDATES_FILE, NETRC_PATH
 
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, ANSIThemeStr
 
@@ -241,6 +241,42 @@ def verify_checksum(checksum: bytes,
     return True
 
 
+def get_netrc_token(url: str) -> Optional[str]:
+    """
+    Given a URL, check whether there's a matching bearer token in .netrc,
+    and if so, return it.
+
+        Parameters:
+            url (str): The URL to find a bearer token for
+        Returns:
+            (str): A bearer token
+    """
+    token: Optional[str] = None
+
+    if url is None or not url.startswith(("http://", "https://")):
+        return token
+
+    base_url: str = url.removeprefix("http://").removeprefix("https://").split("/", maxsplit=1)[0]
+
+    netrc_lines: list[str] = []
+
+    with open(NETRC_PATH, "r") as f:
+        netrc_lines = f.readlines()
+
+    is_machine: bool = False
+
+    for line in netrc_lines:
+        tmp: re.Match = re.match(r"^(machine|password)\s(.+)$", line.strip())
+        if tmp:
+            if tmp[1] == "machine" and tmp[2] == base_url:
+                is_machine = True
+                continue
+            if tmp[1] == "password" and is_machine:
+                token = tmp[2]
+                break
+    return token
+
+
 # download_files can extract single files from archives;
 # it will not extract entire archives due to the security risks,
 # and it requires the full path of the file within the archive to be specified.
@@ -335,14 +371,21 @@ def download_files(directory: str,
         # In case we're downloading heaps of files it's good manners to rate-limit our requests
         time.sleep(1)
 
+        header_params: dict[str, str] = {}
+
+        # If the URL has a token in .netrc, use it for the download; this can help alleviate
+        # rate-limiting for api.github.com, possibly also other sites.
+        if token := get_netrc_token(checksum_url):
+            header_params["Authorization"] = f"Bearer {token}"
+
         # If there's a checksum file, download it first
         checksum = None
 
         if checksum_url is not None:
             if checksum_url.startswith("http://"):
-                r1 = pm.request("GET", checksum_url)
+                r1 = pm.request("GET", checksum_url, headers=header_params)
             elif checksum_url.startswith("https://"):
-                r1 = spm.request("GET", checksum_url)
+                r1 = spm.request("GET", checksum_url, headers=header_params)
             else:
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": Unknown or missing protocol; "
@@ -357,11 +400,18 @@ def download_files(directory: str,
                 retval = False
                 break
 
+        header_params = {}
+
+        # If the URL has a token in .netrc, use it for the download; this can help alleviate
+        # rate-limiting for api.github.com, possibly also other sites.
+        if token := get_netrc_token(url):
+            header_params["Authorization"] = f"Bearer {token}"
+
         try:
             if url.startswith("http://"):
-                r1 = pm.request("GET", url)
+                r1 = pm.request("GET", url, headers=header_params)
             elif url.startswith("https://"):
-                r1 = spm.request("GET", url)
+                r1 = spm.request("GET", url, headers=header_params)
             else:
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": Unknown or missing protocol; URL ", "default"),
