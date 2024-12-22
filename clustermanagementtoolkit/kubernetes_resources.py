@@ -2066,6 +2066,52 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "hostpathprovisioners",
         "namespaced": False,
     },
+    # hub.traefik.io
+    ("AccessControlPolicy", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "accesscontrolpolicies",
+        "namespaced": False,
+    },
+    ("AIService", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "aiservices",
+    },
+    ("APIAccess", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "apiaccesses",
+    },
+    ("APIBundle", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "apibundles",
+    },
+    ("APICatalogItem", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "apicatalogitems",
+    },
+    ("APIPlan", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "apiplans",
+    },
+    ("APIPortal", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "apiportals",
+    },
+    ("APIRateLimit", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "apiratelimits",
+    },
+    ("API", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "apis",
+    },
+    ("APIVersion", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "apiversions",
+    },
+    ("ManagedSubscription", "hub.traefik.io"): {
+        "api_paths": ["apis/hub.traefik.io/v1alpha1/"],
+        "api": "managedsubscriptions",
+    },
     # image.openshift.io
     ("Image", "image.openshift.io"): {
         "api_paths": ["apis/image.openshift.io/v1/"],
