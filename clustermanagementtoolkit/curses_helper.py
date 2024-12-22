@@ -4423,7 +4423,7 @@ class UIProps:
                                             self.sorted_list, activatedfun=self.activatedfun,
                                             extraref=self.extraref, data=self.data)
         if c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
-            return self.enter_handler(activated_fun=self.activatedfun,
+            return self.enter_handler(activatedfun=self.activatedfun,
                                       extraref=self.extraref, data=self.data)
         if c == ord("M"):
             # Toggle mouse support on/off to allow for copy'n'paste
@@ -4911,7 +4911,7 @@ class UIProps:
                                             extraref=self.extraref, data=self.data), {}
 
         if c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
-            return self.enter_handler(activated_fun=self.activatedfun,
+            return self.enter_handler(activatedfun=self.activatedfun,
                                       extraref=self.extraref, data=self.data), {}
 
         # First generate a list of all the shortcuts we should check
