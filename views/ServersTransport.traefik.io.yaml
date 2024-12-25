@@ -12,3 +12,149 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Servers Transport Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["forwarding_timeouts_header",
+                 "forwarding_timeouts_dial_timeout",
+                 "forwarding_timeouts_idle_conn_timeout",
+                 "forwarding_timeouts_response_header_timeout",
+                 "disable_http2",
+                 "max_idle_conns_per_host",
+                 "server_name", "peer_cert_uri",
+                 "insecure_skip_verify", "certificates_secrets",
+                 "root_cas_secrets", "spiffe_header",
+                 "spiffe_trust_domain", "spiffe_ids"]
+    rows:
+      disable_http2:
+        header: [["Disable HTTP2:", ["main", "infoheader"]]]
+        path: "spec#disableHTTP2"
+        default: "<unset>"
+        type: "bool"
+      forwarding_timeouts_header:
+        header: [["Forwarding Timeouts:", ["main", "infoheader"]]]
+      forwarding_timeouts_dial_timeout:
+        header: [["  Dial Timeout:", ["main", "infoheader"]]]
+        path: "spec#forwardingTimeouts#dialTimeout"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical"
+      forwarding_timeouts_idle_conn_timeout:
+        header: [["  Idle Conn Timeout:", ["main", "infoheader"]]]
+        path: "spec#forwardingTimeouts#idleConnTimeout"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical"
+      forwarding_timeouts_response_header_timeout:
+        header: [["  Response Header Timeout:", ["main", "infoheader"]]]
+        path: "spec#forwardingTimeouts#responseHeaderTimeout"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical"
+      max_idle_conns_per_host:
+        header: [["Max Idle Conns Per Host:", ["main", "infoheader"]]]
+        path: "spec#maxIdleConnsPerHost"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical"
+      termination_delay:
+        header: [["Termination Delay:", ["main", "infoheader"]]]
+        path: "spec#terminationDelay"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical"
+      certificates_secrets:
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ertificates Secrets:", ["main", "infoheader"]]]
+        path: "spec#certificatesSecrets"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      insecure_skip_verify:
+        header: [["Insecure Skip Verify:", ["main", "infoheader"]]]
+        path: "spec#insecureSkipVerify"
+        type: "bool"
+      peer_cert_uri:
+        header: [["Peer Cert URI:", ["main", "infoheader"]]]
+        path: "spec#peerCertURI"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+      root_cas_secrets:
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["oot CAs Secrets:", ["main", "infoheader"]]]
+        path: "spec#rootCAsSecrets"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      server_name:
+        header: [["Server Name:", ["main", "infoheader"]]]
+        path: "spec#serverName"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "hostname"
+      spiffe_header:
+        header: [["SPIFFE:", ["main", "infoheader"]]]
+      spiffe_trust_domain:
+        header: [["  Trust Domain:", ["main", "infoheader"]]]
+        path: "spec#spiffe#trustDomain"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+      spiffe_ids:
+        header: [["  IDs:", ["main", "infoheader"]]]
+        path: "spec#spiffe#ids"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "url"
+  shortcuts:
+    "Certificate Secrets":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show mounts"
+      widget: "windowwidget"
+      title: "Certificate Secrets:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#certificatesSecrets"
+      # This isn't supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        kind: "Secret"
+        name_path: 0
+        namespace_path: "metadata#namespace"
+    "Root CAs Secrets":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show mounts"
+      widget: "windowwidget"
+      title: "Root CAs Secrets:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#rootCAsSecrets"
+      # This isn't supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        kind: "Secret"
+        name_path: 0
+        namespace_path: "metadata#namespace"
