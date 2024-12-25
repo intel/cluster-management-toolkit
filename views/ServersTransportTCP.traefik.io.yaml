@@ -17,14 +17,59 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["tls_header", "tls_server_name", "tls_insecure_skip_verify"]
+        fields: ["dial_keepalive", "dial_timeout", "termination_delay",
+                 "tls_header", "tls_server_name", "tls_peer_cert_uri",
+                 "tls_insecure_skip_verify", "tls_certificates_secrets",
+                 "tls_root_cas_secrets", "tls_spiffe_header",
+                 "tls_spiffe_trust_domain", "tls_spiffe_ids"]
     rows:
+      dial_keepalive:
+        header: [["Dial Keepalive:", ["main", "infoheader"]]]
+        path: "spec#dialKeepAlive"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical"
+      dial_timeout:
+        header: [["Dial Timeout:", ["main", "infoheader"]]]
+        path: "spec#dialTimeout"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical"
+      termination_delay:
+        header: [["Termination Delay:", ["main", "infoheader"]]]
+        path: "spec#terminationDelay"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical"
+      tls_certificates_secrets:
+        header: [["  ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["ertificates Secrets:", ["main", "infoheader"]]]
+        path: "spec#tls#certificatesSecrets"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
       tls_header:
         header: [["TLS:", ["main", "infoheader"]]]
       tls_insecure_skip_verify:
         header: [["  Insecure Skip Verify:", ["main", "infoheader"]]]
         path: "spec#tls#insecureSkipVerify"
         type: "bool"
+      tls_peer_cert_uri:
+        header: [["  Peer Cert URI:", ["main", "infoheader"]]]
+        path: "spec#tls#peerCertURI"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+      tls_root_cas_secrets:
+        header: [["  ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["oot CAs Secrets:", ["main", "infoheader"]]]
+        path: "spec#tls#rootCAsSecrets"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
       tls_server_name:
         header: [["  Server Name:", ["main", "infoheader"]]]
         path: "spec#tls#serverName"
@@ -32,3 +77,64 @@ infoview:
         formatting:
           field_colors:
             - type: "hostname"
+      tls_spiffe_header:
+        header: [["  SPIFFE:", ["main", "infoheader"]]]
+      tls_spiffe_trust_domain:
+        header: [["    Trust Domain:", ["main", "infoheader"]]]
+        path: "spec#tls#spiffe#trustDomain"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+      tls_spiffe_ids:
+        header: [["    IDs:", ["main", "infoheader"]]]
+        path: "spec#tls#spiffe#ids"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "url"
+  shortcuts:
+    "Certificate Secrets":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show mounts"
+      widget: "windowwidget"
+      title: "Certificate Secrets:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#tls#certificatesSecrets"
+      # This isn't supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        kind: "Secret"
+        name_path: 0
+        namespace_path: "metadata#namespace"
+    "Root CAs Secrets":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show mounts"
+      widget: "windowwidget"
+      title: "Root CAs Secrets:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#tls#rootCAsSecrets"
+      # This isn't supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        kind: "Secret"
+        name_path: 0
+        namespace_path: "metadata#namespace"
