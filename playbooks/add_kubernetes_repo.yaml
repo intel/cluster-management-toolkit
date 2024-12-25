@@ -12,7 +12,7 @@
             conditions:
               - "Debian and derivatives"
         "Downloaded files":
-          - description: "https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key (GPG key for new Kubernetes repo)"
+          - description: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key (GPG key for new Kubernetes repo)"
             conditions:
               - "Debian and derivatives"
         "Created files":
@@ -37,6 +37,8 @@
             conditions:
               - "Debian and derivatives"
               - "Red Hat and derivatives"
+      playbook_types:
+        - "cmtinv"
   gather_subset:
     - "!min"
     - "!all"
@@ -57,7 +59,7 @@
       register: "tempdir"
     - name: "Fetching Kubernetes repository key for pkgs.k8s.io"
       ansible.builtin.get_url:
-        url: "https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key"
+        url: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key"
         dest: "/etc/apt/keyrings/kubernetes-apt-keyring.asc"
         mode: "0644"
         force: true
