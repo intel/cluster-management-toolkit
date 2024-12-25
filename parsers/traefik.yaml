@@ -22,10 +22,23 @@
   matchkeys:
     - pod_name: "traefik"
   parser_rules:
+    - name: "strip_ansicodes"
+    - name: "ts_8601"
     - name: "glog"
     - name: "key_value"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]{3}) (.*)'
+        severity:
+          field: 1
+          transform: "3letter"
+        message:
+          field: 2
     - name: "override_severity"
       overrides:
+        - matchtype: "startswith"
+          matchkey: "Traefik version"
+          loglevel: "notice"
         - matchtype: "startswith"
           matchkey: "Trace["
           loglevel: "debug"
