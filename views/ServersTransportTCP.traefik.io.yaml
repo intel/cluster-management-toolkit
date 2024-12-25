@@ -1,0 +1,34 @@
+---
+kind: "ServersTransportTCP"
+api_family: "traefik.io"
+default_command: "serverstransporttcps"
+command:
+  - "srvtransporttcps"
+  - "srvtransporttcp"
+listview:
+  name: "Servers Transport TCPs"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Servers Transport TCP Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["tls_header", "tls_server_name", "tls_insecure_skip_verify"]
+    rows:
+      tls_header:
+        header: [["TLS:", ["main", "infoheader"]]]
+      tls_insecure_skip_verify:
+        header: [["  Insecure Skip Verify:", ["main", "infoheader"]]]
+        path: "spec#tls#insecureSkipVerify"
+        type: "bool"
+      tls_server_name:
+        header: [["  Server Name:", ["main", "infoheader"]]]
+        path: "spec#tls#serverName"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "hostname"
