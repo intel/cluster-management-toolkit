@@ -1,0 +1,111 @@
+---
+kind: "__IngressRouteTCPEntry"
+api_family: "traefik.io"
+default_command: "__"
+infoview:
+  name: "Ingress Route TCP Entry Info"
+  infopad:
+    name_path: null
+    namespace_path: null
+    creation_date: null
+    row_indexes:
+      Normal:
+        fields: ["namespace", "match", "priority", "middlewares"]
+    rows:
+      match:
+        header: [["Match:", ["main", "infoheader"]]]
+        path: "match"
+        type: "str"
+      middlewares:
+        header: [["Middlewares:", ["main", "infoheader"]]]
+        paths:
+          - path: "middlewares"
+            pathtype: "items"
+            subpaths:
+              - "namespace"
+              - "name"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
+            - type: "generic"
+          field_separators:
+            - type: "namespace"
+      namespace:
+        header: [["Namespace:", ["main", "infoheader"]]]
+        path: "_extra_data#namespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "priority"
+        type: "int"
+        formatter: "numerical"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch_with_lookup"
+      kind: "Service"
+      name_path: "name"
+      namespace_path: "_extra_data#namespace"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "services"
+    infogetter: "generic_infogetter"
+    infogetter_args:
+      _extra_data:
+        namespace: ["_extra_data#namespace"]
+    field_indexes:
+      Normal:
+        fields: ["weight", "namespace", "name", "native_lb",
+                 "node_port_lb", "port", "proxy_protocol",
+                 "servers_transport", "tls"]
+        sortcolumn: "weight"
+    fields:
+      namespace:
+        header: "Namespace:"
+        path: "_extra_data#namespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      native_lb:
+        header: "Native LB:"
+        path: "nativeLB"
+        type: "bool"
+      node_port_lb:
+        header: "Node Port LB:"
+        path: "nodePortLB"
+        type: "bool"
+      port:
+        header: "Port:"
+        path: "port"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      proxy_protocol:
+        header: "Proxy Protocol:"
+        path: "proxyProtocol#version"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      servers_transport:
+        header: "Servers Transport:"
+        path: "serversTransport"
+        type: "str"
+      tls:
+        header: "TLS:"
+        path: "tls"
+        type: "bool"
+      weight:
+        header: "Weight:"
+        path: "weight"
+        type: "int"
+        formatter: "numerical"
+        align: "right"

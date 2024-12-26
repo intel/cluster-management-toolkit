@@ -10,14 +10,24 @@ listview:
   group: "Network"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age"]
+      fields: ["namespace", "name", "entrypoints", "age"]
       sortcolumn: "namespace"
+  fields:
+    entrypoints:
+      header: "Entrypoints:"
+      path: "spec#entryPoints"
+      default: ["<none>"]
+      type: "raw"
+      formatter: "list"
 infoview:
   name: "Ingress Route Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["entrypoints"]
+        fields: ["entrypoints", "tls_header", "tls_cert_resolver",
+                 "tls_secret_name", "tls_options_header",
+                 "tls_options_name", "tls_options_namespace",
+                 "tls_domains"]
     rows:
       entrypoints:
         header: [["Entrypoints:", ["main", "infoheader"]]]
@@ -25,15 +35,58 @@ infoview:
         default: ["<none>"]
         type: "raw"
         formatter: "list"
+      tls_cert_resolver:
+        header: [["  Cert Resolver:", ["main", "infoheader"]]]
+        path: "spec#tls#certResolver"
+        type: "str"
+      tls_domains:
+        header: [["  Domains:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#tls#domains"
+            pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "keyvalue"
+      tls_header:
+        header: [["TLS:", ["main", "infoheader"]]]
+      tls_options_header:
+        header: [["  Options:", ["main", "infoheader"]]]
+      tls_options_name:
+        header: [["    Name:", ["main", "infoheader"]]]
+        path: "spec#tls#options#name"
+        default: "<none>"
+        type: "str"
+      tls_options_namespace:
+        header: [["    Name", ["main", "infoheader"]],
+                 ["s", ["main", "infoheader_shortcut"]],
+                 ["pace:", ["main", "infoheader"]]]
+        path: "spec#tls#options#namespace"
+        default: "<none>"
+        type: "str"
+      tls_secret_name:
+        header: [["  ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ecret Name:", ["main", "infoheader"]]]
+        path: "spec#tls#secretName"
+        default: "<none>"
+        type: "str"
   listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__IngressRouteEntry"
+      api_family: "traefik.io"
     listgetter: "listgetter_path"
     listgetter_args:
       path: "spec#routes"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["kind", "match", "services"]
-        sortcolumn: "kind"
+        fields: ["kind", "priority", "match", "services", "middlewares"]
+        sortcolumn: "priority"
     fields:
       kind:
         header: "Kind:"
@@ -46,6 +99,27 @@ infoview:
         header: "match:"
         path: "match"
         type: "str"
+      middlewares:
+        header: "Middlewares:"
+        paths:
+          - path: "middlewares"
+            pathtype: "items"
+            subpaths:
+              - "namespace"
+              - "name"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
+            - type: "generic"
+          field_separators:
+            - type: "namespace"
+      priority:
+        header: "Priority:"
+        path: "priority"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
       services:
         header: "Services:"
         paths:
@@ -53,12 +127,38 @@ infoview:
             pathtype: "items"
             subpaths:
               - "kind"
+              - "namespace"
               - "name"
             type: "raw"
         formatter: "list"
         formatting:
           field_colors:
             - type: "kind"
+            - type: "namespace"
             - type: "generic"
           field_separators:
             - type: "kind"
+            - type: "namespace"
+  shortcuts:
+    "TLS Options Namespace":
+      key: "s"
+      read_only: true
+      helptext: "Open info page for TLS options Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "spec#tls#options#namespace"
+    "Secret":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "spec#tls#secretName"
+        namespace_path: "metadata#namespace"

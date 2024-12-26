@@ -1,0 +1,127 @@
+---
+kind: "__IngressRouteEntry"
+api_family: "traefik.io"
+default_command: "__"
+infoview:
+  name: "Ingress Route Entry Info"
+  infopad:
+    name_path: null
+    namespace_path: null
+    creation_date: null
+    row_indexes:
+      Normal:
+        fields: ["match", "kind", "priority", "middlewares"]
+    rows:
+      kind:
+        header: [["Kind:", ["main", "infoheader"]]]
+        path: "kind"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "kind"
+      match:
+        header: [["Match:", ["main", "infoheader"]]]
+        path: "match"
+        type: "str"
+      middlewares:
+        header: [["Middlewares:", ["main", "infoheader"]]]
+        paths:
+          - path: "middlewares"
+            pathtype: "items"
+            subpaths:
+              - "namespace"
+              - "name"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
+            - type: "generic"
+          field_separators:
+            - type: "namespace"
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "priority"
+        type: "int"
+        formatter: "numerical"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch_with_lookup"
+      kind_path: "kind"
+      name_path: "name"
+      namespace_path: "namespace"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "services"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["weight", "kind", "namespace", "name", "native_lb",
+                 "node_port_lb", "pass_host_header", "scheme", "port",
+                 "strategy", "servers_transport", "health_check_interval",
+                 "health_check_path"]
+        sortcolumn: "weight"
+    fields:
+      health_check_interval:
+        header: "Health Check Interval:"
+        path: "healthCheck#interval"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      health_check_path:
+        header: "Health Check Path:"
+        path: "healthCheck#path"
+        type: "str"
+      kind:
+        header: "Kind:"
+        path: "kind"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "kind"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      namespace:
+        header: "Namespace:"
+        path: "namespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      native_lb:
+        header: "Native LB:"
+        path: "nativeLB"
+        type: "bool"
+      node_port_lb:
+        header: "Node Port LB:"
+        path: "nodePortLB"
+        type: "bool"
+      pass_host_header:
+        header: "Pass Host Header:"
+        path: "passHostHeader"
+        type: "bool"
+      port:
+        header: "Port:"
+        path: "port"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      scheme:
+        header: "Scheme:"
+        path: "scheme"
+        type: "str"
+      servers_transport:
+        header: "Servers Transport:"
+        path: "serversTransport"
+        type: "str"
+      strategy:
+        header: "Strategy:"
+        path: "strategy"
+        type: "str"
+      weight:
+        header: "Weight:"
+        path: "weight"
+        type: "int"
+        formatter: "numerical"
+        align: "right"

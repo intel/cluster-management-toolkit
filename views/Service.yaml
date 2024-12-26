@@ -86,12 +86,17 @@ infoview:
     row_indexes:
       Normal:
         fields: ["controller", "external_name", "selector", "endpoints",
-                 "endpoint_slices", "type", "cluster_ips",
-                 "internal_traffic_policy", "ip_families",
-                 "ip_family_policy", "external_ips", "ports",
-                 "topology_keys", "session_affinity_header",
-                 "session_affinity", "session_affinity_timeout"]
+                 "endpoint_slices", "type", "allocate_node_balancer_node_ports",
+                 "cluster_ips", "external_traffic_policy",
+                 "internal_traffic_policy", "ip_families", "ip_family_policy",
+                 "external_ips", "ports", "topology_keys",
+                 "session_affinity_header", "session_affinity",
+                 "session_affinity_timeout"]
     rows:
+      allocate_node_balancer_node_ports:
+        header: [["Allocate Node Balancer Node Ports:", ["main", "infoheader"]]]
+        path: "spec#allocateLoadBalancerNodePorts"
+        type: "bool"
       cluster_ips:
         header: [["Cluster IPs:", ["main", "infoheader"]]]
         paths:
@@ -167,6 +172,10 @@ infoview:
         path: "spec#externalName"
         type: "str"
         default: "<unset>"
+      external_traffic_policy:
+        header: [["External Traffic Policy:", ["main", "infoheader"]]]
+        path: "spec#externalTrafficPolicy"
+        type: "str"
       internal_traffic_policy:
         header: [["Internal Traffic Policy:", ["main", "infoheader"]]]
         path: "spec#internalTrafficPolicy"
