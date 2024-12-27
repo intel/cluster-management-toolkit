@@ -109,12 +109,12 @@ infoview:
         header: [["C", ["main", "infoheader_shortcut"]],
                  ["hain:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#chain#middlewares"
-          pathtype: "items"
-          subpaths:
-            - subpath: "namespace"
-              fallback_path: "metadata#namespace"
-            - "name"
+          - path: "spec#chain#middlewares"
+            pathtype: "items"
+            subpaths:
+              - subpath: "namespace"
+                fallback_path: "metadata#namespace"
+              - "name"
         default: ["<empty>"]
         formatter: "list"
         formatting:
@@ -223,9 +223,9 @@ infoview:
       ip_allow_list:
         header: [["IP Allowlist:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#ipAllowList#sourceRange"
-          pathtype: "list"
-          default: ["<unset>"]
+          - path: "spec#ipAllowList#sourceRange"
+            pathtype: "list"
+            default: ["<unset>"]
         formatter: "address"
       redirect_scheme_header:
         header: [["Redirect Scheme:", ["main", "infoheader"]]]
