@@ -260,7 +260,7 @@ def get_netrc_token(url: str) -> Optional[str]:
 
     netrc_lines: list[str] = []
 
-    with open(NETRC_PATH, "r") as f:
+    with open(NETRC_PATH, "r", encoding="utf-8") as f:
         netrc_lines = f.readlines()
 
     is_machine: bool = False
