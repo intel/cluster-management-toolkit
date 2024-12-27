@@ -24,7 +24,9 @@ infoview:
         path: "match"
         type: "str"
       middlewares:
-        header: [["Middlewares:", ["main", "infoheader"]]]
+        header: [["Middle", ["main", "infoheader"]],
+                 ["w", ["main", "infoheader_shortcut"]],
+                 ["ares:", ["main", "infoheader"]]]
         paths:
           - path: "middlewares"
             pathtype: "items"
@@ -125,3 +127,29 @@ infoview:
         type: "int"
         formatter: "numerical"
         align: "right"
+  shortcuts:
+    "Middlewares":
+      key: "w"
+      read_only: true
+      helptext: "Show Middlewares"
+      widget: "windowwidget"
+      title: "Middlewares:"
+      selectable: true
+      headers: ["Namespace:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "middlewares"
+        fields:
+          - "namespace"
+          - "name"
+      # This isn't supported for now
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        kind: "Middleware"
+        api_family: "traefik.io"
+        name_path: 1
+        namespace_path: 0

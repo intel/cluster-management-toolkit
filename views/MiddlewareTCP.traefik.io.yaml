@@ -9,3 +9,21 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Middleware TCP Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["inflight_connections", "ip_allow_list"]
+    rows:
+      inflight_connections:
+        header: [["In-Flight Connections:", ["main", "infoheader"]]]
+        path: "spec#inFlightConn#amount"
+        type: "int"
+        formatter: "numerical"
+      ip_allow_list:
+        header: [["IP Allowlist:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#ipAllowList#sourceRange"
+          pathtype: "list"
+        formatter: "address"

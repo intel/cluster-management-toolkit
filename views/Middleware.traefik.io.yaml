@@ -9,3 +9,129 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Middleware Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["basic_auth_header", "basic_auth_realm",
+                 "basic_auth_secret", "basic_auth_header_field",
+                 "basic_auth_remove_header", "add_prefix",
+                 "strip_prefix_header", "strip_prefix_prefixes",
+                 "strip_prefix_force_slash",
+                 "buffering_header",
+                 "buffering_max_request_body_bytes",
+                 "buffering_mem_request_body_bytes",
+                 "buffering_max_response_body_bytes",
+                 "buffering_mem_response_body_bytes",
+                 "redirect_scheme_header",
+                 "redirect_scheme_scheme",
+                 "redirect_scheme_permanent",
+                 "redirect_scheme_port",
+                 "ip_allow_list"]
+    rows:
+      add_prefix:
+        header: [["Add Prefix:", ["main", "infoheader"]]]
+        path: "spec#addPrefix#prefix"
+        default: "<unset>"
+        type: "str"
+      basic_auth_header:
+        header: [["Basic Auth:", ["main", "infoheader"]]]
+      basic_auth_header_field:
+        header: [["  Header Field:", ["main", "infoheader"]]]
+        path: "spec#basicAuth#headerField"
+        default: "<unset>"
+        type: "str"
+      basic_auth_realm:
+        header: [["  Realm:", ["main", "infoheader"]]]
+        path: "spec#basicAuth#realm"
+        default: "<unset>"
+        type: "str"
+      basic_auth_remove_header:
+        header: [["  Remove Header:", ["main", "infoheader"]]]
+        path: "spec#basicAuth#removeHeader"
+        default: false
+        type: "bool"
+      basic_auth_secret:
+        header: [["  ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ecret:", ["main", "infoheader"]]]
+        path: "spec#basicAuth#secret"
+        default: "<unset>"
+        type: "str"
+      buffering_header:
+        header: [["Buffering:", ["main", "infoheader"]]]
+      buffering_max_request_body_bytes:
+        header: [["  Max Request Body (bytes):", ["main", "infoheader"]]]
+        path: "spec#maxRequestBodyBytes"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+      buffering_mem_request_body_bytes:
+        header: [["  Mem Request Body (bytes):", ["main", "infoheader"]]]
+        path: "spec#memRequestBodyBytes"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+      buffering_max_response_body_bytes:
+        header: [["  Max Response Body (bytes):", ["main", "infoheader"]]]
+        path: "spec#maxResponseBodyBytes"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+      buffering_mem_response_body_bytes:
+        header: [["  Mem Response Body (bytes):", ["main", "infoheader"]]]
+        path: "spec#memResponseBodyBytes"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+      ip_allow_list:
+        header: [["IP Allowlist:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#ipAllowList#sourceRange"
+          pathtype: "list"
+          default: ["<unset>"]
+        formatter: "address"
+      redirect_scheme_header:
+        header: [["Redirect Scheme:", ["main", "infoheader"]]]
+      redirect_scheme_permanent:
+        header: [["  Permanent:", ["main", "infoheader"]]]
+        path: "spec#redirectScheme#permanent"
+        default: false
+        type: "bool"
+      redirect_scheme_port:
+        header: [["  Port:", ["main", "infoheader"]]]
+        path: "spec#redirectScheme#port"
+        default: "<unset>"
+        type: "str"
+      redirect_scheme_scheme:
+        header: [["  Scheme:", ["main", "infoheader"]]]
+        path: "spec#redirectScheme#scheme"
+        default: "<unset>"
+        type: "str"
+      strip_prefix_header:
+        header: [["Strip Prefix:", ["main", "infoheader"]]]
+      strip_prefix_prefixes:
+        header: [["  Prefixes:", ["main", "infoheader"]]]
+        path: "spec#stripPrefix#prefixes"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      strip_prefix_force_slash:
+        header: [["  Force Slash:", ["main", "infoheader"]]]
+        path: "spec#stripPrefix#forceSlash"
+        default: false
+        type: "bool"
+  shortcuts:
+    "Secret":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "spec#basicAuth#secret"
+        namespace_path: "metadata#namespace"
