@@ -16,9 +16,13 @@ infoview:
       Normal:
         fields: ["basic_auth_header", "basic_auth_realm",
                  "basic_auth_secret", "basic_auth_header_field",
-                 "basic_auth_remove_header", "add_prefix",
+                 "basic_auth_remove_header",
+                 "digest_auth_header", "digest_auth_realm",
+                 "digest_auth_secret", "digest_auth_header_field",
+                 "digest_auth_remove_header",
+                 "add_prefix",
                  "strip_prefix_header", "strip_prefix_prefixes",
-                 "strip_prefix_force_slash",
+                 "strip_prefix_force_slash", "strip_prefix_regex",
                  "buffering_header",
                  "buffering_max_request_body_bytes",
                  "buffering_mem_request_body_bytes",
@@ -28,7 +32,23 @@ infoview:
                  "redirect_scheme_scheme",
                  "redirect_scheme_permanent",
                  "redirect_scheme_port",
-                 "ip_allow_list"]
+                 "ip_allow_list",
+                 "circuit_breaker",
+                 "compress_header",
+                 "compress_encodings",
+                 "compress_default_encoding",
+                 "compress_included_content_types",
+                 "compress_excluded_content_types",
+                 "compress_min_response_body_bytes",
+                 "errors_header", "errors_query", "errors_status",
+                 "errors_service",
+                 "grpc_web_allow_origins",
+                 "replace_path_header",
+                 "replace_path_path",
+                 "replace_path_regex",
+                 "replace_path_replacement",
+                 "retry_header", "retry_attempts", "retry_initial_interval",
+                 "chain"]
     rows:
       add_prefix:
         header: [["Add Prefix:", ["main", "infoheader"]]]
@@ -85,6 +105,121 @@ infoview:
         default: 0
         type: "int"
         formatter: "numerical"
+      chain:
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["hain:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#chain#middlewares"
+          pathtype: "items"
+          subpaths:
+            - subpath: "namespace"
+              fallback_path: "metadata#namespace"
+            - "name"
+        default: ["<empty>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
+            - type: "generic"
+          field_separators:
+            - type: "namespace"
+      circuit_breaker:
+        header: [["Circuit Breaker:", ["main", "infoheader"]]]
+        path: "spec#circuitBreaker#expression"
+        type: "str"
+      compress_default_encoding:
+        header: [["  Default Encoding:", ["main", "infoheader"]]]
+        path: "spec#compress#defaultEncoding"
+        default: "<unset>"
+        type: "str"
+      compress_encodings:
+        header: [["  Encodings:", ["main", "infoheader"]]]
+        path: "spec#compress#encodings"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      compress_excluded_content_types:
+        header: [["  Excluded Content-Types:", ["main", "infoheader"]]]
+        path: "spec#compress#excludedContentTypes"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      compress_header:
+        header: [["Compress:", ["main", "infoheader"]]]
+      compress_included_content_types:
+        header: [["  Included Content-Types:", ["main", "infoheader"]]]
+        path: "spec#compress#includedContentTypes"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      compress_min_response_body_bytes:
+        header: [["  Min Response Body (bytes):", ["main", "infoheader"]]]
+        path: "spec#compress#minResponseBodyBytes"
+        default: 1024
+        type: "int"
+        formatter: "numerical"
+      digest_auth_header:
+        header: [["Digest Auth:", ["main", "infoheader"]]]
+      digest_auth_header_field:
+        header: [["  Header Field:", ["main", "infoheader"]]]
+        path: "spec#digestAuth#headerField"
+        default: "<unset>"
+        type: "str"
+      digest_auth_realm:
+        header: [["  Realm:", ["main", "infoheader"]]]
+        path: "spec#digestAuth#realm"
+        default: "<unset>"
+        type: "str"
+      digest_auth_remove_header:
+        header: [["  Remove Header:", ["main", "infoheader"]]]
+        path: "spec#digestAuth#removeHeader"
+        default: false
+        type: "bool"
+      digest_auth_secret:
+        header: [["  Se", ["main", "infoheader"]],
+                 ["c", ["main", "infoheader_shortcut"]],
+                 ["ret:", ["main", "infoheader"]]]
+        path: "spec#digestAuth#secret"
+        default: "<unset>"
+        type: "str"
+      errors_header:
+        header: [["Errors:", ["main", "infoheader"]]]
+      errors_query:
+        header: [["  Query:", ["main", "infoheader"]]]
+        path: "spec#errors#query"
+        default: "<unset>"
+        type: "str"
+      errors_service:
+        header: [["  Service:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#errors#service#name"],
+                   ["spec#errors#service#port"]]
+            pathtype: "tuple"
+        default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "service"
+            - type: "port"
+          field_separators:
+            - type: "port"
+      errors_service_port:
+        header: [["    Port:", ["main", "infoheader"]]]
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      errors_status:
+        header: [["  Status:", ["main", "infoheader"]]]
+        path: "spec#errors#status"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      grpc_web_allow_origins:
+        header: [["GRPC Web Allow Origins:", ["main", "infoheader"]]]
+        path: "spec#grpcWeb#allowOrigins"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
       ip_allow_list:
         header: [["IP Allowlist:", ["main", "infoheader"]]]
         paths:
@@ -109,6 +244,35 @@ infoview:
         path: "spec#redirectScheme#scheme"
         default: "<unset>"
         type: "str"
+      replace_path_header:
+        header: [["Replace Path:", ["main", "infoheader"]]]
+      replace_path_path:
+        header: [["  Path:", ["main", "infoheader"]]]
+        path: "spec#replacePath#path"
+        default: "<unset>"
+        type: "str"
+      replace_path_regex:
+        header: [["  Regex:", ["main", "infoheader"]]]
+        path: "spec#replacePathRegex#regex"
+        default: "<unset>"
+        type: "str"
+      replace_path_replacement:
+        header: [["  Replacement:", ["main", "infoheader"]]]
+        path: "spec#replacePathRegex#replacement"
+        default: "<unset>"
+        type: "str"
+      retry_attempts:
+        header: [["  Attempts:", ["main", "infoheader"]]]
+        path: "spec#retry#attempts"
+        type: "int"
+        formatter: "numerical"
+      retry_initial_interval:
+        header: [["  Initial Interval:", ["main", "infoheader"]]]
+        path: "spec#retry#initialInterval"
+        type: "str"
+        formatter: "numerical"
+      retry_header:
+        header: [["Retry:", ["main", "infoheader"]]]
       strip_prefix_header:
         header: [["Strip Prefix:", ["main", "infoheader"]]]
       strip_prefix_prefixes:
@@ -122,16 +286,60 @@ infoview:
         path: "spec#stripPrefix#forceSlash"
         default: false
         type: "bool"
+      strip_prefix_regex:
+        header: [["  Regex:", ["main", "infoheader"]]]
+        path: "spec#stripPrefixRegex#regex"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
   shortcuts:
-    "Secret":
+    "Middleware Chain":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Middleware chain"
+      widget: "windowwidget"
+      title: "Middlewares:"
+      selectable: true
+      headers: ["Namespace:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#chain#middlewares"
+        fields:
+          - "namespace"
+          - "name"
+      # This isn't supported for now
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        kind: "Middleware"
+        api_family: "traefik.io"
+        name_path: 1
+        namespace_path: 0
+        _parent_namespace_path: "metadata#namespace"
+    "Basic Auth Secret":
       key: "s"
       modifier: "shift"
       read_only: true
-      helptext: "Open info page for Secret"
+      helptext: "Open info page for basic auth Secret"
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind: "Secret"
         name_path: "spec#basicAuth#secret"
+        namespace_path: "metadata#namespace"
+    "Digest Auth Secret":
+      key: "c"
+      read_only: true
+      helptext: "Open info page for digest auth Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "spec#digestAuth#secret"
         namespace_path: "metadata#namespace"
