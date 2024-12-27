@@ -514,9 +514,8 @@ def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
 
     array: list[Union[ThemeRef, ThemeStr]] = []
 
-    subnet = False
-
     for item in items:
+        subnet = False
         _vlist = []
         tmp = ""
         for ch in item:
