@@ -4915,43 +4915,6 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "policies",
         "namespaced": False,
     },
-    # traefik.containo.us
-    ("IngressRoute", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "ingressroutes",
-    },
-    ("IngressRouteTCP", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "ingressroutetcps",
-    },
-    ("IngressRouteUDP", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "ingressrouteudps",
-    },
-    ("Middleware", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "middlewares",
-    },
-    ("MiddlewareTCP", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "middlewaretcps",
-    },
-    ("ServersTransport", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "serverstransports",
-    },
-    ("TLSOption", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "tlsoptions",
-    },
-    ("TLSStore", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "tlsstores",
-    },
-    ("TraefikService", "traefik.containo.us"): {
-        "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
-        "api": "traefikservices",
-    },
     # traefik.io
     ("IngressRoute", "traefik.io"): {
         "api_paths": ["apis/traefik.io/v1alpha1/"],
