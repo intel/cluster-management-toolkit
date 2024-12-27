@@ -1,0 +1,55 @@
+---
+kind: "ReferenceGrant"
+api_family: "gateway.networking.k8s.io"
+default_command: "referencegrants"
+command:
+  - "refgrants"
+  - "refgrant"
+listview:
+  name: "Reference Grants"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Reference Grant Info"
+  group: "Network"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["from", "to"]
+    rows:
+      from:
+        header: [["From:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#from"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "group"
+              - "namespace"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+      to:
+        header: [["To:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#to"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "group"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+          field_separators:
+            - type: "kind_api_group"

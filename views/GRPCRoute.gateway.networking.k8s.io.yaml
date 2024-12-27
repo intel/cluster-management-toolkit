@@ -1,0 +1,77 @@
+---
+kind: "GRPCRoute"
+api_family: "gateway.networking.k8s.io"
+default_command: "grpcroutes"
+listview:
+  name: "GRPC Routes"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "GRPC Route Info"
+  group: "Network"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["hostnames"]
+    rows:
+      hostnames:
+        header: [["H", ["main", "infoheader"]],
+                 ["o", ["main", "infoheader_shortcut"]],
+                 ["stnames:", ["main", "infoheader"]]]
+        path: "spec#hostnames"
+        type: "raw"
+        formatter: "list"
+  shortcuts:
+    "Hostnames":
+      key: "o"
+      read_only: true
+      helptext: "Show hostnames"
+      widget: "windowwidget"
+      headers: ["Hostname:"]
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#hostnames"
+      # This isn't supported for now
+      sortcolumn: "hostname"
+    "Parent References":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show target references"
+      widget: "windowwidget"
+      headers: ["Kind:", "Group:", "Name:", "Port:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#parentRefs"
+        fields:
+          - "kind"
+          - "group"
+          - "name"
+          - "port"
+      # This isn't supported for now
+      sortcolumn: "group"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _parent_namespace_path: "metadata#namespace"
+        kind_path: 0
+        api_family_path: 1
+        name_path: 2
+        # Use parent namespace
+        namespace_path: null
+    "Rules":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show rules"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Rules"
+        _pass_obj: true
+        path: "spec#rules"
+        include_root: true
