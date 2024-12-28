@@ -103,7 +103,7 @@ def deep_get(dictionary: Optional[dict], path: DictPath, default: Any = None) ->
     """
     if dictionary is None:
         return default
-    if path is None or not path:
+    if path is None or not path or not isinstance(path, str):
         return default
     result = reduce(lambda d,
                     key: d.get(key, default) if isinstance(d, dict) else default,
@@ -1022,7 +1022,7 @@ def deep_get_with_fallback(obj: dict,
         Returns:
             (Any): The value from the path(s)
     """
-    if paths is None:
+    if paths is None or not isinstance(paths, list):
         return default
 
     result = None
