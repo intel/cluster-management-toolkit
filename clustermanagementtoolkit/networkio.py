@@ -212,7 +212,7 @@ def verify_checksum(checksum: bytes,
     # If filename is supplied it is expected that the checksum file can contain
     # more than one checksum, or at least that it contains a filename;
     # if so we find the matching entry
-    regex = re.compile(r"^([0-9a-f]+)\s+(\S+)$")
+    regex: re.Pattern[str] = re.compile(r"^([0-9a-f]+)\s+(\S+)$")
     match_checksum = None
 
     for line in checksum.decode("utf-8", errors="replace").splitlines():
@@ -241,7 +241,7 @@ def verify_checksum(checksum: bytes,
     return True
 
 
-def get_netrc_token(url: str) -> Optional[str]:
+def get_netrc_token(url: Optional[str]) -> Optional[str]:
     """
     Given a URL, check whether there's a matching bearer token in .netrc,
     and if so, return it.
@@ -266,8 +266,8 @@ def get_netrc_token(url: str) -> Optional[str]:
     is_machine: bool = False
 
     for line in netrc_lines:
-        tmp: re.Match = re.match(r"^(machine|password)\s(.+)$", line.strip())
-        if tmp:
+        tmp: Optional[re.Match] = re.match(r"^(machine|password)\s(.+)$", line.strip())
+        if tmp is not None:
             if tmp[1] == "machine" and tmp[2] == base_url:
                 is_machine = True
                 continue

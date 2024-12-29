@@ -1082,10 +1082,10 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
             for status_data in deep_get(viewref, DictPath("statusmsg"), []):
                 if len(status_data) == 2:
-                    key, path = status_data
+                    key_, path = status_data
                     default_status = "<unset>"
                 else:
-                    key, path, default_status = status_data
+                    key_, path, default_status = status_data
 
                 src_obj = listview_args
 
@@ -1103,12 +1103,12 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     src_obj = listview_args
                     value_path = DictPath(path)
 
-                value = str(deep_get(src_obj, value_path, default_status))
+                value_ = str(deep_get(src_obj, value_path, default_status))
                 if statusarray2:
                     statusarray2 += [ThemeRef("separators", "statusbar")]
                 statusarray2 += [
-                    ThemeStr(key, ThemeAttr("statusbar", "infoheader")),
-                    ThemeStr(value, ThemeAttr("statusbar", "default")),
+                    ThemeStr(key_, ThemeAttr("statusbar", "infoheader")),
+                    ThemeStr(value_, ThemeAttr("statusbar", "default")),
                 ]
 
             uip.addthemearray(uip.statusbar, statusarray1, y=0, x=0)
@@ -1542,11 +1542,11 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 tagged_items.clear()
                 uip.list_needs_regeneration(True)
                 continue
-            for key, value in cast(list[tuple[str, str]], natsorted(labels)):
+            for key_, value_ in cast(list[tuple[str, str]], natsorted(labels)):
                 labellist.append({
                     "lineattrs": WidgetLineAttrs.NORMAL,
-                    "columns": [[ThemeStr(f"{key}", ThemeAttr("windowwidget", "default"))],
-                                [ThemeStr(f"{value}", ThemeAttr("windowwidget", "default"))]],
+                    "columns": [[ThemeStr(f"{key_}", ThemeAttr("windowwidget", "default"))],
+                                [ThemeStr(f"{value_}", ThemeAttr("windowwidget", "default"))]],
                 })
             label_headers = ["Label:", "Value:"]
             curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx,
@@ -3548,6 +3548,29 @@ def generate_helptext(view: Union[str, tuple[str, str]], viewtype: str,
     return format_helptext(helptext)
 
 
+def process_selection(**kwargs: Any) -> dict[str, Any]:
+    """
+    Process selected values.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                process_selection (dict[str, Any]): A lookup table for substitution
+                                                    the output from input selections.
+    """
+    process_selection_dict: dict[str, dict[str, dict[str, Any]]] = \
+        deep_get(kwargs, DictPath("process_selection"), {})
+
+    for i, selection in enumerate(deep_get(kwargs, DictPath("selection"), [])):
+        string: str = themearray_to_string(selection)
+        values: dict[str, Any] = {}
+        if i in process_selection_dict:
+            default = deep_get(process_selection_dict[i], DictPath("__default"), {})
+            values = deep_get(process_selection_dict[i], DictPath(string), default)
+        for key, value in values.items():
+            deep_set(kwargs, DictPath(key), value)
+    return kwargs
+
+
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
 def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
@@ -4616,6 +4639,8 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 if tmpselection is not None:
                     action_args["selection"] = tmpselection
                 if action == "call" and action_call is not None:
+                    if "process_selection" in action_args:
+                        action_args = process_selection(**action_args)
                     retval = action_call(uip.stdscr, **action_args)
                     if retval is not None:
                         if retval == Retval.RETURNFULL:
