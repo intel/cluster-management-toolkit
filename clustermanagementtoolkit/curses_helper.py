@@ -4408,9 +4408,12 @@ class UIProps:
                           Retval.MATCH if the key press was handled,
                           Retval.RETURNONE to return one level up.
         """
+        # No input
+        if c == -1:
+            return Retval.NOMATCH
+
         # We got some type of keypress; postpone idle
-        if c != -1:
-            self.last_action = datetime.now()
+        self.last_action = datetime.now()
 
         if c == curses.KEY_RESIZE:
             self.resize_window()

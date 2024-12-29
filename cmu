@@ -4351,6 +4351,8 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         uip.stdscr.timeout(100)
         c = uip.stdscr.getch()
         retval = uip.generic_keycheck(c)
+        if c == -1:
+            continue
 
         if retval == Retval.MATCH:
             continue
@@ -4408,7 +4410,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             wrap_lines = not wrap_lines
             uip.refresh_all()
             uip.force_update()
-        elif c == ord("T"):
+        elif c == ord("T") and uip.logpad is not None:
             uip.toggle_timestamps()
             uip.refresh_all()
             uip.force_update()
