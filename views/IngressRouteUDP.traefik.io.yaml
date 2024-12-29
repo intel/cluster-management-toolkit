@@ -12,3 +12,47 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Ingress Route UDP Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["entry_points"]
+    rows:
+      entry_points:
+        header: [["Entry Points:", ["main", "infoheader"]]]
+        path: "spec#entryPoints"
+        type: "raw"
+        formatter: "list"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__IngressRouteUDPEntry"
+      api_family: "traefik.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#routes"
+    infogetter: "generic_infogetter"
+    infogetter_args:
+      _extra_data:
+        namespace: ["metadata#namespace"]
+    field_indexes:
+      Normal:
+        fields: ["services"]
+        sortcolumn: "match"
+    fields:
+      services:
+        header: "Services:"
+        paths:
+          - path: "services"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - "port"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "service"
+            - type: "port"
+          field_separators:
+            - type: "port"

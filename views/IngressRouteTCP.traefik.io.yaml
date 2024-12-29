@@ -53,7 +53,9 @@ infoview:
       tls_header:
         header: [["TLS:", ["main", "infoheader"]]]
       tls_options_header:
-        header: [["  Options:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["O", ["main", "infoheader_shortcut"]],
+                 ["ptions:", ["main", "infoheader"]]]
       tls_options_name:
         header: [["    Name:", ["main", "infoheader"]]]
         path: "spec#tls#options#name"
@@ -113,6 +115,19 @@ infoview:
             - type: "port"
             - type: "service"
   shortcuts:
+    "TLS Options":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for TLS Options"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "TLSOption"
+        api_family: "traefik.io"
+        name_path: "spec#tls#options#name"
+        namespace_path: "spec#tls#options#namespace"
     "TLS Options Namespace":
       key: "s"
       read_only: true
@@ -123,6 +138,19 @@ infoview:
         _pass_obj: true
         kind: "Namespace"
         name_path: "spec#tls#options#namespace"
+    "TLS Store":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for TLS Store"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "TLSStore"
+        api_family: "traefik.io"
+        name: "default"
+        namespace_path: "metadata#namespace"
     "Secret":
       key: "s"
       modifier: "shift"

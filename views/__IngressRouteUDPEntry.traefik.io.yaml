@@ -1,0 +1,55 @@
+---
+kind: "__IngressRouteUDPEntry"
+api_family: "traefik.io"
+default_command: "__"
+infoview:
+  name: "Ingress Route UDP Entry Info"
+  infopad:
+    name_path: null
+    namespace_path: "_extra_data#namespace"
+    creation_timestamp_path: null
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "services"
+    infogetter: "generic_infogetter"
+    infogetter_args:
+      _extra_data:
+        namespace: ["_extra_data#namespace"]
+    field_indexes:
+      Normal:
+        fields: ["weight", "namespace", "name", "native_lb",
+                 "node_port_lb", "port"]
+        sortcolumn: "weight"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      namespace:
+        header: "Namespace:"
+        path: "_extra_data#namespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      native_lb:
+        header: "Native LB:"
+        path: "nativeLB"
+        type: "bool"
+      node_port_lb:
+        header: "Node Port LB:"
+        path: "nodePortLB"
+        type: "bool"
+      port:
+        header: "Port:"
+        path: "port"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      weight:
+        header: "Weight:"
+        path: "weight"
+        type: "int"
+        formatter: "numerical"
+        align: "right"

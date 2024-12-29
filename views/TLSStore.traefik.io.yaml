@@ -9,3 +9,65 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "TLS Store Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["certificates_header", "certificates_certificates",
+                 "certificates_default"]
+    rows:
+      certificates_header:
+        header: [["Certificates:", ["main", "infoheader"]]]
+      certificates_certificates:
+        header: [["  ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["ertificates:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#certificates"
+            pathtype: "items"
+            subpaths:
+              - "secretName"
+        default: ["<none>"]
+        formatter: "list"
+      certificates_default:
+        header: [["  ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["efault Certificate:", ["main", "infoheader"]]]
+        path: "spec#defaultCertificate#secretName"
+        default: "<none>"
+        type: "str"
+  shortcuts:
+    "Certificates":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List certificates"
+      widget: "windowwidget"
+      title: "Certificates:"
+      selectable: true
+      action: "call"
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#certificates"
+        fields:
+          - "secretName"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        kind: "Secret"
+        name_path: 0
+        namespace_path: "metadata#namespace"
+    "Default certificate":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for default certificate"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "spec#defaultCertificate#secretName"
+        namespace_path: "metadata#namespace"

@@ -285,7 +285,7 @@ Execute with `make mypy-markdown`.
 | cmtadm                                              | Success: no issues found in 1 source file             |
 | cmt-install                                         | Success: no issues found in 1 source file             |
 | cmtinv                                              | Success: no issues found in 1 source file             |
-| cmu                                                 | **Found 85 errors in 1 file (checked 1 source file)** |
+| cmu                                                 | **Found 91 errors in 1 file (checked 1 source file)** |
 | clustermanagementtoolkit/about.py                   | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/ansible_helper.py          | Success: no issues found in 1 source file             |
 | clustermanagementtoolkit/ansithemeprint.py          | Success: no issues found in 1 source file             |

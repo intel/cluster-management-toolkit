@@ -7,5 +7,95 @@ listview:
   group: "Network"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age"]
+      fields: ["namespace", "name", "min_version", "max_version", "age"]
       sortcolumn: "namespace"
+  fields:
+    max_version:
+      header: "Max Version:"
+      path: "spec#maxVersion"
+      default: "<unset>"
+      type: "str"
+    min_version:
+      header: "Min Version:"
+      path: "spec#minVersion"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "TLS Option Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["min_version", "max_version", "alpn_protocols",
+                 "cipher_suites", "curve_preferences",
+                 "sni_strict",
+                 "client_auth_header", "client_auth_type",
+                 "client_auth_secrets"]
+    rows:
+      alpn_protocols:
+        header: [["ALPN Protocols:", ["main", "infoheader"]]]
+        path: "spec#alpnProtocols"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
+      cipher_suites:
+        header: [["Cipher Suites:", ["main", "infoheader"]]]
+        path: "spec#cipherSuites"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
+      client_auth_header:
+        header: [["Client Auth:", ["main", "infoheader"]]]
+      client_auth_secrets:
+        header: [["  ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ecrets:", ["main", "infoheader"]]]
+        path: "spec#clientAuth#secretNames"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
+      client_auth_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#clientAuth#clientAuthType"
+        default: "<unset>"
+        type: "str"
+      curve_preferences:
+        header: [["Curve Preferences:", ["main", "infoheader"]]]
+        path: "spec#curvePreferences"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
+      max_version:
+        header: [["Max Version:", ["main", "infoheader"]]]
+        path: "spec#maxVersion"
+        default: "<unset>"
+        type: "str"
+      min_version:
+        header: [["Min Version:", ["main", "infoheader"]]]
+        path: "spec#minVersion"
+        default: "<unset>"
+        type: "str"
+      sni_strict:
+        header: [["Strict SNI Checking:", ["main", "infoheader"]]]
+        path: "spec#sniStrict"
+        default: "<unset>"
+        type: "bool"
+  shortcuts:
+    "Secrets":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Secrets"
+      widget: "windowwidget"
+      title: "Secrets:"
+      selectable: true
+      action: "call"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#clientAuth#secretNames"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        kind: "Secret"
+        name_path: 0
+        namespace_path: "metadata#namespace"

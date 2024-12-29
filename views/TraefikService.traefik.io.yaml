@@ -12,3 +12,193 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Traefik Service Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["mirroring_header",
+                 "mirroring_kind",
+                 "mirroring_namespace",
+                 "mirroring_name",
+                 "mirroring_body",
+                 "mirroring_port",
+                 "mirroring_mirrors",
+                 "weighted_loadbalancing_header"]
+    rows:
+      mirroring_body:
+        header: [["  Body:", ["main", "infoheader"]]]
+        path: "spec#mirroring#mirrorBody"
+        default: false
+        type: "bool"
+      mirroring_header:
+        header: [["Mirroring:", ["main", "infoheader"]]]
+      mirroring_kind:
+        header: [["  Kind:", ["main", "infoheader"]]]
+        path: "spec#mirroring#kind"
+        default: "Service"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "kind"
+      mirroring_mirrors:
+        header: [["  M", ["main", "infoheader"]],
+                 ["i", ["main", "infoheader_shortcut"]],
+                 ["rrors:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#mirroring#mirrors"
+            pathtype: "items"
+            subpaths:
+              - "namespace"
+              - "name"
+              - "port"
+              - "percent"
+        default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
+            - type: "name"
+            - type: "port"
+            - type: "numerical"
+          field_separators:
+            - type: "namespace"
+            - type: "port"
+            - type: "field"
+            - type: "no_pad"
+          field_suffixes:
+            -
+              - type: "no_pad"
+            -
+              - type: "no_pad"
+            -
+              - type: "no_pad"
+            -
+              - type: "percentage"
+      mirroring_namespace:
+        header: [["  Name", ["main", "infoheader"]],
+                 ["s", ["main", "infoheader_shortcut"]],
+                 ["pace:", ["main", "infoheader"]]]
+        path: "spec#mirroring#namespace"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      mirroring_name:
+        header: [["  Name:", ["main", "infoheader"]]]
+        path: "spec#mirroring#name"
+        default: "<unset>"
+        type: "str"
+      mirroring_port:
+        header: [["  Port:", ["main", "infoheader"]]]
+        path: "spec#mirroring#port"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "port"
+      weighted_loadbalancing_header:
+        header: [["W", ["main", "infoheader_shortcut"]],
+                 ["eighted Load-Balancing:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#weighted#services"
+            pathtype: "items"
+            subpaths:
+              - "namespace"
+              - "name"
+              - "port"
+              - "weight"
+        default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
+            - type: "name"
+            - type: "port"
+            - type: "numerical"
+          field_separators:
+            - type: "namespace"
+            - type: "port"
+            - type: "field"
+  shortcuts:
+    "Mirror Namespace":
+      key: "s"
+      read_only: true
+      helptext: "Open info page for mirror Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "spec#mirroring#namespace"
+    "Mirrors":
+      key: "i"
+      read_only: true
+      helptext: "List Mirrors"
+      widget: "windowwidget"
+      title: "Mirrors:"
+      headers: ["Kind:", "Namespace:", "Name:", "Port:", "Percent:"]
+      selectable: true
+      action: "call"
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#mirroring#mirrors"
+        fields:
+          - "kind"
+          - "namespace"
+          - "name"
+          - "port"
+          - "percent"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        process_selection:
+          0:
+            Service:
+              kind: "Service"
+              api_version: ""
+            TraefikService:
+              kind: "TraefikService"
+              api_family: "traefik.io"
+            __default:
+              kind: "Service"
+              api_family: ""
+        namespace_path: 1
+        name_path: 2
+    "Weighted Load-Balancing":
+      key: "w"
+      modifier: "shift"
+      read_only: true
+      helptext: "List weighted load-balancers"
+      widget: "windowwidget"
+      title: "Weighted Load-balancers:"
+      headers: ["Kind:", "Namespace:", "Name:", "Weight:"]
+      selectable: true
+      action: "call"
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#weighted#services"
+        fields:
+          - "kind"
+          - "namespace"
+          - "name"
+          - "weight"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        process_selection:
+          0:
+            Service:
+              kind: "Service"
+              api_version: ""
+            TraefikService:
+              kind: "TraefikService"
+              api_family: "traefik.io"
+            __default:
+              kind: "Service"
+              api_family: ""
+        namespace_path: 1
+        name_path: 2
