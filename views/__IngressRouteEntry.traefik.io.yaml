@@ -153,3 +153,18 @@ infoview:
         api_family: "traefik.io"
         name_path: 1
         namespace_path: 0
+    "ServersTransport":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open ServersTransport"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      force_update: true
+      action_args:
+        _pass_selected: true
+        _pass_selected_obj: true
+        kind: "ServersTransport"
+        api_family: "traefik.io"
+        name_path: "serversTransport"
+        namespace_path: "namespace"

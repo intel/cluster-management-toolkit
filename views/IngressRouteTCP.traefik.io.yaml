@@ -27,7 +27,7 @@ infoview:
         fields: ["entry_points", "tls_header", "tls_cert_resolver",
                  "tls_secret_name", "tls_options_header",
                  "tls_options_name", "tls_options_namespace",
-                 "tls_domains"]
+                 "tls_domains", "tls_passthrough"]
     rows:
       entry_points:
         header: [["Entry Points:", ["main", "infoheader"]]]
@@ -68,6 +68,11 @@ infoview:
         path: "spec#tls#options#namespace"
         default: "<none>"
         type: "str"
+      tls_passthrough:
+        header: [["  Passthrough:", ["main", "infoheader"]]]
+        path: "spec#tls#passthrough"
+        default: "<none>"
+        type: "bool"
       tls_secret_name:
         header: [["  ", ["main", "infoheader"]],
                  ["S", ["main", "infoheader_shortcut"]],
