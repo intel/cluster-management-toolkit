@@ -711,8 +711,16 @@ def get_prepopulated_list(obj: dict, **kwargs: Any) -> list[dict]:
         namespace_path = deep_get(action_args, DictPath("namespace_path"))
         namespace = deep_get(obj, DictPath(namespace_path), "")
         kind = kubernetes_helper.guess_kind((kind, api_family))
-        columns = deep_get(item, DictPath("columns"), [])
+        tmp_columns = deep_get(item, DictPath("columns"), [])
         args = deep_get(action_args, DictPath("args"), {})
+
+        columns: list[str, Tuple[str, list[str]]] = []
+
+        # Where necessary do path lookups
+        for column in tmp_columns:
+            if isinstance(column, list):
+                column = deep_get_with_fallback(obj, column, "")
+            columns.append(column)
 
         vlist.append({
             "fields": columns,
