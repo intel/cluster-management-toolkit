@@ -14,25 +14,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["basic_auth_header", "basic_auth_realm",
+        fields: ["add_prefix",
+                 "basic_auth_header", "basic_auth_realm",
                  "basic_auth_secret", "basic_auth_header_field",
                  "basic_auth_remove_header",
-                 "digest_auth_header", "digest_auth_realm",
-                 "digest_auth_secret", "digest_auth_header_field",
-                 "digest_auth_remove_header",
-                 "add_prefix",
-                 "strip_prefix_header", "strip_prefix_prefixes",
-                 "strip_prefix_force_slash", "strip_prefix_regex",
-                 "buffering_header",
-                 "buffering_max_request_body_bytes",
-                 "buffering_mem_request_body_bytes",
-                 "buffering_max_response_body_bytes",
-                 "buffering_mem_response_body_bytes",
-                 "redirect_scheme_header",
-                 "redirect_scheme_scheme",
-                 "redirect_scheme_permanent",
-                 "redirect_scheme_port",
-                 "ip_allow_list",
+                 "buffering_mem_max_request_body_bytes",
+                 "buffering_mem_max_response_body_bytes",
+                 "chain",
                  "circuit_breaker",
                  "compress_header",
                  "compress_encodings",
@@ -40,15 +28,53 @@ infoview:
                  "compress_included_content_types",
                  "compress_excluded_content_types",
                  "compress_min_response_body_bytes",
+                 "digest_auth_header", "digest_auth_realm",
+                 "digest_auth_secret", "digest_auth_header_field",
+                 "digest_auth_remove_header",
                  "errors_header", "errors_query", "errors_status",
                  "errors_service",
+                 "forward_auth_header",
+                 "forward_auth_address",
+                 "forward_auth_add_auth_cookies_to_response",
+                 "forward_auth_auth_response_headers",
+                 "forward_auth_auth_response_headers_regex",
+                 "forward_auth_auth_request_headers",
+                 "forward_auth_trust_forward_header",
+                 "forward_auth_tls_header",
+                 "forward_auth_tls_ca_secret",
+                 "forward_auth_tls_cert_secret",
+                 "forward_auth_insecure_skip_verify",
                  "grpc_web_allow_origins",
+                 "inflight_req_header",
+                 "inflight_req_amount",
+                 "inflight_req_source_criterion_header",
+                 "inflight_req_source_criterion_depth",
+                 "inflight_req_source_criterion_ipv6_subnet",
+                 "ip_allow_list_header",
+                 "ip_allow_list_source_range",
+                 "ip_allow_list_ip_strategy_depth",
+                 "ip_allow_list_ip_strategy_excluded_ips",
+                 "ratelimit_header",
+                 "ratelimit_average",
+                 "ratelimit_burst",
+                 "ratelimit_period",
+                 "ratelimit_source_criterion_header",
+                 "ratelimit_source_criterion_ip_strategy_depth",
+                 "ratelimit_source_criterion_excluded_ips",
+                 "ratelimit_source_criterion_ipv6_subnet",
+                 "redirect_header",
+                 "redirect_regex",
+                 "redirect_regex_replacement",
+                 "redirect_scheme_scheme",
+                 "redirect_scheme_permanent",
+                 "redirect_scheme_port",
                  "replace_path_header",
                  "replace_path_path",
                  "replace_path_regex",
                  "replace_path_replacement",
                  "retry_header", "retry_attempts", "retry_initial_interval",
-                 "chain"]
+                 "strip_prefix_header", "strip_prefix_prefixes",
+                 "strip_prefix_force_slash", "strip_prefix_regex"]
     rows:
       add_prefix:
         header: [["Add Prefix:", ["main", "infoheader"]]]
@@ -79,32 +105,32 @@ infoview:
         path: "spec#basicAuth#secret"
         default: "<unset>"
         type: "str"
-      buffering_header:
-        header: [["Buffering:", ["main", "infoheader"]]]
-      buffering_max_request_body_bytes:
-        header: [["  Max Request Body (bytes):", ["main", "infoheader"]]]
-        path: "spec#maxRequestBodyBytes"
-        default: 0
-        type: "int"
-        formatter: "numerical"
-      buffering_mem_request_body_bytes:
-        header: [["  Mem Request Body (bytes):", ["main", "infoheader"]]]
-        path: "spec#memRequestBodyBytes"
-        default: 0
-        type: "int"
-        formatter: "numerical"
-      buffering_max_response_body_bytes:
-        header: [["  Max Response Body (bytes):", ["main", "infoheader"]]]
-        path: "spec#maxResponseBodyBytes"
-        default: 0
-        type: "int"
-        formatter: "numerical"
-      buffering_mem_response_body_bytes:
-        header: [["  Mem Response Body (bytes):", ["main", "infoheader"]]]
-        path: "spec#memResponseBodyBytes"
-        default: 0
-        type: "int"
-        formatter: "numerical"
+      buffering_mem_max_request_body_bytes:
+        header: [["Buffering::Request Body (Mem/Max bytes):",
+                  ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#buffering#memRequestBodyBytes"],
+                   ["spec#buffering#maxRequestBodyBytes"]]
+            pathtype: "tuple"
+            default: [0, 0]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "numerical"
+            - type: "numerical"
+      buffering_mem_max_response_body_bytes:
+        header: [["Buffering::Request Body (Mem/Max bytes):",
+                  ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#buffering#memRequestBodyBytes"],
+                   ["spec#buffering#maxRequestBodyBytes"]]
+            pathtype: "tuple"
+            default: [0, 0]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "numerical"
+            - type: "numerical"
       chain:
         header: [["C", ["main", "infoheader_shortcut"]],
                  ["hain:", ["main", "infoheader"]]]
@@ -126,6 +152,7 @@ infoview:
       circuit_breaker:
         header: [["Circuit Breaker:", ["main", "infoheader"]]]
         path: "spec#circuitBreaker#expression"
+        default: "<unset>"
         type: "str"
       compress_default_encoding:
         header: [["  Default Encoding:", ["main", "infoheader"]]]
@@ -195,7 +222,7 @@ infoview:
           - path: [["spec#errors#service#name"],
                    ["spec#errors#service#port"]]
             pathtype: "tuple"
-        default: ["<unset>"]
+            default: ["<unset>"]
         formatter: "list"
         formatting:
           field_colors:
@@ -214,21 +241,161 @@ infoview:
         default: ["<unset>"]
         type: "raw"
         formatter: "list"
+      forward_auth_add_auth_cookies_to_response:
+        header: [["  Add Auth Cookies to Response:", ["main", "infoheader"]]]
+        path: "spec#forwardAuth#addAuthCookiesToResponse"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      forward_auth_address:
+        header: [["  Address:", ["main", "infoheader"]]]
+        path: "spec#forwardAuth#address"
+        default: "<unset>"
+        type: "str"
+      forward_auth_header:
+        header: [["Forward Auth:", ["main", "infoheader"]]]
+      forward_auth_auth_response_headers:
+        header: [["  Auth Response Headers:", ["main", "infoheader"]]]
+        path: "spec#forwardAuth#authResponseHeaders"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      forward_auth_auth_response_headers_regex:
+        header: [["  Auth Response Headers Regex:", ["main", "infoheader"]]]
+        path: "spec#forwardAuth#authResponseHeadersRegex"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      forward_auth_auth_request_headers:
+        header: [["  Auth Request Headers:", ["main", "infoheader"]]]
+        path: "spec#forwardAuth#authRequestHeaders"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      forward_auth_trust_forward_header:
+        header: [["  Trust Forward Header:", ["main", "infoheader"]]]
+        path: "spec#forwardAuth#trustForwardHeader"
+        default: "<unset>"
+        type: "bool"
+      forward_auth_tls_header:
+        header: [["  TLS:", ["main", "infoheader"]]]
+      forward_auth_tls_ca_secret:
+        header: [["    CA Secret:", ["main", "infoheader"]]]
+        path: "spec#forwardAuth#tls#caSecret"
+        default: "<unset>"
+        type: "str"
+      forward_auth_tls_cert_secret:
+        header: [["    Cert Secret:", ["main", "infoheader"]]]
+        path: "spec#forwardAuth#tls#certSecret"
+        default: "<unset>"
+        type: "str"
+      forward_auth_insecure_skip_verify:
+        header: [["    Insecure Skip Verify:", ["main", "infoheader"]]]
+        path: "insecureSkipVerify"
+        default: "<unset>"
+        type: "bool"
       grpc_web_allow_origins:
         header: [["GRPC Web Allow Origins:", ["main", "infoheader"]]]
         path: "spec#grpcWeb#allowOrigins"
         default: ["<unset>"]
         type: "raw"
         formatter: "list"
-      ip_allow_list:
+      inflight_req_amount:
+        header: [["  Amount:", ["main", "infoheader"]]]
+        path: "spec#inFlightReq#amount"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      inflight_req_source_criterion_depth:
+        header: [["    IP Strategy::Depth:", ["main", "infoheader"]]]
+        path: "spec#inFlightReq#sourceCriterion#ipStrategy#depth"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      inflight_req_source_criterion_header:
+        header: [["  Source Criterion:", ["main", "infoheader"]]]
+      inflight_req_source_criterion_ipv6_subnet:
+        header: [["    IP Strategy::IPv6 Subnet:", ["main", "infoheader"]]]
+        path: "spec#inFlightReq#sourceCriterion#ipStrategy#ipv6Subnet"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      inflight_req_header:
+        header: [["In-Flight Requests:", ["main", "infoheader"]]]
+      ip_allow_list_header:
         header: [["IP Allowlist:", ["main", "infoheader"]]]
+      ip_allow_list_ip_strategy_depth:
+        header: [["  IP-strategy::Depth:", ["main", "infoheader"]]]
+        path: "spec#ipAllowList#ipStrategy#depth"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      ip_allow_list_ip_strategy_excluded_ips:
+        header: [["  IP-strategy::Excluded IPs:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#ipAllowList#ipStrategy#excludedIPs"
+            pathtype: "list"
+            default: ["<unset>"]
+        formatter: "address"
+      ip_allow_list_source_range:
+        header: [["  Source Range:", ["main", "infoheader"]]]
         paths:
           - path: "spec#ipAllowList#sourceRange"
             pathtype: "list"
             default: ["<unset>"]
         formatter: "address"
-      redirect_scheme_header:
-        header: [["Redirect Scheme:", ["main", "infoheader"]]]
+      ratelimit_average:
+        header: [["  Average:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#average"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      ratelimit_burst:
+        header: [["  Burst:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#burst"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      ratelimit_header:
+        header: [["Rate Limit:", ["main", "infoheader"]]]
+      ratelimit_period:
+        header: [["  Period:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#period"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      ratelimit_source_criterion_header:
+        header: [["  Source Criterion:", ["main", "infoheader"]]]
+      ratelimit_source_criterion_ip_strategy_depth:
+        header: [["    IP-Strategy::Depth:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#sourceCriterion#ipStrategy#depth"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      ratelimit_source_criterion_excluded_ips:
+        header: [["    IP-Strategy::Excluded IPs:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#sourceCriterion#ipStrategy#excludedIPs"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      ratelimit_source_criterion_ipv6_subnet:
+        header: [["    IP-Strategy::IPv6 Subnet:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#sourceCriterion#ipStrategy#ipv6Subnet"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      redirect_header:
+        header: [["Redirect:", ["main", "infoheader"]]]
+      redirect_regex:
+        header: [["  Regex:", ["main", "infoheader"]]]
+        path: "spec#redirectRegex#regex"
+        default: "<unset>"
+        type: "str"
+      redirect_regex_replacement:
+        header: [["  Regex Replacement:", ["main", "infoheader"]]]
+        path: "spec#redirectRegex#replacement"
+        default: "<unset>"
+        type: "str"
       redirect_scheme_permanent:
         header: [["  Permanent:", ["main", "infoheader"]]]
         path: "spec#redirectScheme#permanent"
@@ -264,11 +431,13 @@ infoview:
       retry_attempts:
         header: [["  Attempts:", ["main", "infoheader"]]]
         path: "spec#retry#attempts"
+        default: "<unset>"
         type: "int"
         formatter: "numerical"
       retry_initial_interval:
         header: [["  Initial Interval:", ["main", "infoheader"]]]
         path: "spec#retry#initialInterval"
+        default: "<unset>"
         type: "str"
         formatter: "numerical"
       retry_header:
@@ -343,3 +512,51 @@ infoview:
         kind: "Secret"
         name_path: "spec#digestAuth#secret"
         namespace_path: "metadata#namespace"
+    "Show Headers":
+      key: "h"
+      read_only: true
+      helptext: "Display headers"
+      title: "Headers:"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        _pass_obj: true
+        path: "spec#headers"
+    "Show Pass TLS Client Cert":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Display pass TLS client cert information"
+      title: "Pass TLS Client Cert Information:"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        _pass_obj: true
+        path: "spec#passTLSClientCert"
+    "TLS Secrets":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "List TLS Secrets"
+      widget: "windowwidget"
+      title: "TLS Secrets:"
+      headers: ["Type:", "Name:"]
+      selectable: true
+      action: "from_ref"
+      itemgetter: "get_prepopulated_list"
+      itemgetter_args:
+        items:
+          - columns: ["CA Secret", ["spec#forwardAuth#tls#caSecret"]]
+            action: "call"
+            action_call: "resourceinfodispatch_with_lookup"
+            action_args:
+              name_path: "spec#forwardAuth#tls#caSecret"
+              namespace_path: "metadata#namespace"
+              kind: "Secret"
+          - columns: ["Cert Secret", ["spec#forwardAuth#tls#certSecret"]]
+            action: "call"
+            action_call: "resourceinfodispatch_with_lookup"
+            action_args:
+              name_path: "spec#forwardAuth#tls#certSecret"
+              namespace_path: "metadata#namespace"
+              kind: "Secret"
