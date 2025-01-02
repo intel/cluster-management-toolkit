@@ -223,6 +223,16 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "prioritylevelconfigurations",
         "namespaced": False,
     },
+    # frrk8s.metallb.io
+    ("FRRConfiguration", "frrk8s.metallb.io"): {
+        "api_paths": ["apis/frrk8s.metallb.io/v1beta1/"],
+        "api": "frrconfigurations",
+    },
+    ("FRRNodeState", "frrk8s.metallb.io"): {
+        "api_paths": ["apis/frrk8s.metallb.io/v1beta1/"],
+        "api": "frrnodestates",
+        "namespaced": False,
+    },
     # groupsnapshot.storage.k8s.io
     ("VolumeGroupSnapshotClass", "groupsnapshot.storage.k8s.io"): {
         "api_paths": ["apis/groupsnapshot.storage.k8s.io/v1alpha1/"],

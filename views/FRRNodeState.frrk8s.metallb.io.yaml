@@ -1,0 +1,90 @@
+---
+kind: "FRRNodeState"
+api_family: "frrk8s.metallb.io"
+default_command: "frrnodestates"
+command:
+  - "frrnostates"
+  - "frrnostate"
+listview:
+  name: "FRR Node States"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["name", "last_conversion", "last_reload", "age"]
+  fields:
+    last_conversion:
+      header: "Last Conversion:"
+      path: "status#lastConversionResult"
+      type: str
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "success":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            __default:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+    last_reload:
+      header: "Last Reload:"
+      path: "status#lastReloadResult"
+      type: str
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "success":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            __default:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+infoview:
+  name: "FRR Node State Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["last_conversion", "last_reload"]
+    rows:
+      last_conversion:
+        header: [["Last Conversion:", ["main", "infoheader"]]]
+        path: "status#lastConversionResult"
+        type: str
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "success":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              __default:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+      last_reload:
+        header: [["Last Reload:", ["main", "infoheader"]]]
+        path: "status#lastReloadResult"
+        type: str
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "success":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              __default:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+  logpad:
+    infogetter: "logpad_msg_getter"
+    infogetter_args:
+      path: "status#runningConfig"
+    timestamps: false
