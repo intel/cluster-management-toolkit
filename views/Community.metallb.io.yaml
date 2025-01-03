@@ -1,0 +1,51 @@
+---
+kind: "Community"
+api_family: "metallb.io"
+default_command: "communities"
+listview:
+  name: "Communities"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Community Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["communities"]
+    rows:
+      communities:
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ommunities:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#communities"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - "value"
+            default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "keyvalue"
+  shortcuts:
+    "List communities":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List communities"
+      widget: "windowwidget"
+      title: "Communities:"
+      headers: ["Name:", "Value:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#communities"
+        fields:
+          - "name"
+          - "value"
+      # Not supported for now
+      sortcolumn: "name"
