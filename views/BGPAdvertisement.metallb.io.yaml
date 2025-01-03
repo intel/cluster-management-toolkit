@@ -1,0 +1,73 @@
+---
+kind: "BGPAdvertisement"
+api_family: "metallb.io"
+default_command: "bgpadvertisements"
+command:
+  - "bgpads"
+  - "bgpad"
+listview:
+  name: "BGP Advertisements"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "ip_address_pools", "peers",
+               "aggregation_length", "aggregation_length_v6", "age"]
+  fields:
+    aggregation_length:
+      header: "Aggregation Length:"
+      path: "spec#aggregationLength"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    aggregation_length_v6:
+      header: "Aggregation Length v6:"
+      path: "spec#aggregationLengthV6"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    ip_address_pools:
+      header: "IP-Address Pools:"
+      path: "spec#ipAddressPools"
+      default: "<unset>"
+      type: "raw"
+      formatter: "list"
+    peers:
+      header: "Peers:"
+      path: "spec#peers"
+      default: "<unset>"
+      type: "raw"
+      formatter: "list"
+infoview:
+  name: "BGP Advertisement Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ip_address_pools", "peers",
+                 "aggregation_length", "aggregation_length_v6"]
+    rows:
+      aggregation_length:
+        header: [["Aggregation Length:", ["main", "infoheader"]]]
+        path: "spec#aggregationLength"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      aggregation_length_v6:
+        header: [["Aggregation Length v6:", ["main", "infoheader"]]]
+        path: "spec#aggregationLengthV6"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      ip_address_pools:
+        header: [["IP-Address Pools:", ["main", "infoheader"]]]
+        path: "spec#ipAddressPools"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
+      peers:
+        header: [["Peers:", ["main", "infoheader"]]]
+        path: "spec#peers"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
