@@ -30,7 +30,7 @@ listview:
     ip_address_pools:
       header: "IP-Address Pools:"
       path: "spec#ipAddressPools"
-      default: "<unset>"
+      default: ["<unset>"]
       type: "raw"
       formatter: "list"
     peers:
@@ -45,7 +45,8 @@ infoview:
     row_indexes:
       Normal:
         fields: ["ip_address_pools", "peers",
-                 "aggregation_length", "aggregation_length_v6"]
+                 "aggregation_length", "aggregation_length_v6",
+                 "local_pref", "communities"]
     rows:
       aggregation_length:
         header: [["Aggregation Length:", ["main", "infoheader"]]]
@@ -59,15 +60,40 @@ infoview:
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+      communities:
+        header: [["Communities:", ["main", "infoheader"]]]
+        path: "spec#communities"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "address"
       ip_address_pools:
         header: [["IP-Address Pools:", ["main", "infoheader"]]]
         path: "spec#ipAddressPools"
-        default: "<unset>"
+        default: ["<unset>"]
         type: "raw"
         formatter: "list"
+      local_pref:
+        header: [["Local Preference:", ["main", "infoheader"]]]
+        path: "spec#localPref"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
       peers:
         header: [["Peers:", ["main", "infoheader"]]]
         path: "spec#peers"
-        default: "<unset>"
+        default: ["<unset>"]
         type: "raw"
         formatter: "list"
+  shortcuts:
+    "Node Selectors":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show node selectors"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Node Selectors"
+        _pass_obj: true
+        path: "spec#nodeSelectors"
+        include_root: true

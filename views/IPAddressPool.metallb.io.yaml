@@ -1,0 +1,54 @@
+---
+kind: "IPAddressPool"
+api_family: "metallb.io"
+default_command: "ipaddresspools"
+command:
+- "ipaddrpools"
+- "ipaddrpool"
+listview:
+  name: "IP-Address Pools"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "auto_assign", "avoid_buggy_ips",
+               "addresses", "age"]
+  fields:
+    addresses:
+      header: "Addresses:"
+      path: "spec#addresses"
+      default: ["<unset>"]
+      type: "raw"
+      formatter: "address"
+    auto_assign:
+      header: "Auto-Assign:"
+      path: "spec#autoAssign"
+      default: "<unset>"
+      type: "bool"
+    avoid_buggy_ips:
+      header: "Avoid Buggy IPs:"
+      path: "spec#avoidBuggyIPs"
+      default: "<unset>"
+      type: "bool"
+infoview:
+  name: "IP-Address Pool Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["auto_assign", "avoid_buggy_ips", "addresses"]
+    rows:
+      addresses:
+        header: [["Addresses:", ["main", "infoheader"]]]
+        path: "spec#addresses"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "address"
+      auto_assign:
+        header: [["Auto-Assign:", ["main", "infoheader"]]]
+        path: "spec#autoAssign"
+        default: "<unset>"
+        type: "bool"
+      avoid_buggy_ips:
+        header: [["Avoid Buggy IPs:", ["main", "infoheader"]]]
+        path: "spec#avoidBuggyIPs"
+        default: "<unset>"
+        type: "bool"

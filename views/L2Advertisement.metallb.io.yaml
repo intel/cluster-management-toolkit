@@ -15,3 +15,30 @@ listview:
 infoview:
   name: "L2 Advertisement Info"
   infopad:
+    row_indexes:
+      Normal:
+        fields: ["interfaces", "ip_address_pool"]
+    rows:
+      interfaces:
+        header: [["Interfaces:", ["main", "infoheader"]]]
+        path: "spec#interfaces"
+        type: "raw"
+        formatter: "list"
+      ip_address_pool:
+        header: [["IP-Address Pool:", ["main", "infoheader"]]]
+        path: "spec#interfaces"
+        type: "raw"
+        formatter: "list"
+  shortcuts:
+    "Node Selectors":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show node selectors"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Node Selectors"
+        _pass_obj: true
+        path: "spec#nodeSelectors"
+        include_root: true

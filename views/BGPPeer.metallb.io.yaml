@@ -1,0 +1,110 @@
+---
+kind: "BGPPeer"
+api_family: "metallb.io"
+default_command: "communities"
+listview:
+  name: "BGP Peers"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "source_address",
+               "peer_address", "peer_asn", "multi_hops", "age"]
+  fields:
+    multi_hops:
+      header: "Multi-Hops:"
+      path: "spec#ebgpMultiHop"
+      default: "<unset>"
+      type: "str"
+    peer_address:
+      header: "Peer Address:"
+      path: "spec#peerAddress"
+      default: "<unset>"
+      type: "str"
+      formatter: "address"
+    peer_asn:
+      header: "Peer ASN:"
+      path: "spec#peerASN"
+      default: "<unset>"
+      type: "str"
+      formatter: "numerical"
+      align: "right"
+    source_address:
+      header: "Source Address:"
+      path: "spec#sourceAddress"
+      default: "<unset>"
+      type: "str"
+      formatter: "address"
+infoview:
+  name: "BGP Peer Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["source_address", "peer_header", "peer_address", "peer_asn",
+                 "peer_port", "my_asn", "bfd_profile", "multi_hops", "disable_mp",
+                 "enable_graceful_restart"]
+    rows:
+      bfd_profile:
+        header: [["BFD Profile:", ["main", "infoheader"]]]
+        path: "spec#bfdProfile"
+        default: "<unset>"
+        type: "str"
+      disable_mp:
+        header: [["Disable MP:", ["main", "infoheader"]]]
+        path: "spec#disableMP"
+        default: "<unset>"
+        type: "bool"
+      enable_graceful_restart:
+        header: [["Enable Graceful Restart:", ["main", "infoheader"]]]
+        path: "spec#enableGracefulRestart"
+        default: "<unset>"
+        type: "bool"
+      multi_hops:
+        header: [["Multi-Hops:", ["main", "infoheader"]]]
+        path: "spec#ebgpMultiHop"
+        default: "<unset>"
+        type: "str"
+      my_asn:
+        header: [["My ASN:", ["main", "infoheader"]]]
+        path: "spec#myASN"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      peer_address:
+        header: [["  Address:", ["main", "infoheader"]]]
+        path: "spec#peerAddress"
+        default: "<unset>"
+        type: "str"
+        formatter: "address"
+      peer_asn:
+        header: [["  ASN:", ["main", "infoheader"]]]
+        path: "spec#peerASN"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      peer_header:
+        header: [["Peer:", ["main", "infoheader"]]]
+      peer_port:
+        header: [["  Port:", ["main", "infoheader"]]]
+        path: "spec#peerPort"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      source_address:
+        header: [["Source Address:", ["main", "infoheader"]]]
+        path: "spec#sourceAddress"
+        default: "<unset>"
+        type: "str"
+        formatter: "address"
+  shortcuts:
+    "Node Selectors":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show node selectors"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Node Selectors"
+        _pass_obj: true
+        path: "spec#nodeSelectors"
+        include_root: true

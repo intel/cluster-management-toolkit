@@ -1,0 +1,22 @@
+---
+kind: "FRRConfiguration"
+api_family: "frrk8s.metallb.io"
+default_command: "frrconfigurations"
+command:
+  - "frrconfs"
+  - "frrconf"
+listview:
+  name: "FRR Configurations"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "FRR Configuration Info"
+  infopad:
+  logpad:
+    infogetter: "logpad_yaml"
+    infogetter_args:
+      path: "spec#bgp"
+    timestamps: false
