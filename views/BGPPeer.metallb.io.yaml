@@ -44,7 +44,9 @@ infoview:
                  "enable_graceful_restart"]
     rows:
       bfd_profile:
-        header: [["BFD Profile:", ["main", "infoheader"]]]
+        header: [["BFD ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["rofile:", ["main", "infoheader"]]]
         path: "spec#bfdProfile"
         default: "<unset>"
         type: "str"
@@ -108,3 +110,16 @@ infoview:
         _pass_obj: true
         path: "spec#nodeSelectors"
         include_root: true
+    "BFD Profile":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for BFD Profile"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "BFDProfile"
+        api_family: "metallb.io"
+        name_path: "spec#bfdProfile"
+        namespace_path: "metadata#namespace"

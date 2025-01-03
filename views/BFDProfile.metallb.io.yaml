@@ -1,0 +1,75 @@
+---
+kind: "BFDProfile"
+api_family: "metallb.io"
+default_command: "bfdprofiles"
+command:
+  - "bfdprofs"
+  - "bfdprof"
+listview:
+  name: "BFD Profiles"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "passive_mode", "transmit_interval",
+               "receive_interval", "multiplier", "age"]
+      sortcolumn: "namespace"
+  fields:
+    multiplier:
+      header: "Multiplier:"
+      path: "spec#detectMultiplier"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    passive_mode:
+      header: "Passive Mode:"
+      path: "spec#passiveMode"
+      default: "<unset>"
+      type: "bool"
+    receive_interval:
+      header: "Receive Interval:"
+      path: "spec#receiveInterval"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    transmit_interval:
+      header: "Transmit Interval:"
+      path: "spec#transmitInterval"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "BFD Profile Info"
+  group: "Network"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["passive_mode", "transmit_interval",
+                 "receive_interval", "multiplier"]
+        sortcolumn: "namespace"
+    rows:
+      multiplier:
+        header: [["Multiplier:", ["main", "infoheader"]]]
+        path: "spec#detectMultiplier"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      passive_mode:
+        header: [["Passive Mode:", ["main", "infoheader"]]]
+        path: "spec#passiveMode"
+        default: "<unset>"
+        type: "bool"
+      receive_interval:
+        header: [["Receive Interval:", ["main", "infoheader"]]]
+        path: "spec#receiveInterval"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      transmit_interval:
+        header: [["Transmit Interval:", ["main", "infoheader"]]]
+        path: "spec#transmitInterval"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
