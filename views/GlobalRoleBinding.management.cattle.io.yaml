@@ -1,0 +1,55 @@
+---
+kind: "GlobalRoleBinding"
+api_family: "management.cattle.io"
+default_command: "globalrolebindings"
+command:
+  - "globalclrbs.mgmnt.cattle"
+  - "globalclrb.mgmnt.cattle"
+listview:
+  name: "Global Role Bindings"
+  group: "Rancher"
+  field_indexes:
+    Wide:
+      fields: ["name", "global_role_name", "user_name",
+               "group_principal_name", "age"]
+    Normal:
+      fields: ["name", "global_role_name", "user_name", "age"]
+  fields:
+    global_role_name:
+      header: "Global Role:"
+      path: "globalRoleName"
+      default: "<unset>"
+      type: "str"
+    group_principal_name:
+      header: "Group Principal:"
+      path: "groupPrincipalName"
+      default: "<unset>"
+      type: "str"
+    user_name:
+      header: "User Name:"
+      path: "userName"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "Global Role Binding Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["global_role_name", "user_name",
+                 "group_principal_name"]
+    rows:
+      global_role_name:
+        header: [["Global Role:", ["main", "infoheader"]]]
+        path: "globalRoleName"
+        default: "<unset>"
+        type: "str"
+      group_principal_name:
+        header: [["Group Principal:", ["main", "infoheader"]]]
+        path: "groupPrincipalName"
+        default: "<unset>"
+        type: "str"
+      user_name:
+        header: [["User Name:", ["main", "infoheader"]]]
+        path: "userName"
+        default: "<none>"
+        type: "str"

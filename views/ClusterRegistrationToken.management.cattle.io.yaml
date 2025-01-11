@@ -1,0 +1,76 @@
+---
+kind: "ClusterRegistrationToken"
+api_family: "management.cattle.io"
+default_command: "clusterregistrationtokens"
+command:
+  - "clrregistrationtokens.mgmnt.cattle"
+  - "clrregistrationtoken.mgmnt.cattle"
+  - "clrregtokens.mgmnt.cattle"
+  - "clrregtoken.mgmnt.cattle"
+listview:
+  name: "Cluster Registration Tokens"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "cluster_name", "age"]
+      sortcolumn: "namespace"
+  fields:
+    cluster_name:
+      header: "Cluster Name:"
+      path: "spec#clusterName"
+      default: "<none>"
+      type: "str"
+infoview:
+  name: "Cluster Registration Token Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_name",
+                 "command",
+                 "insecure_command",
+                 "node_command",
+                 "insecure_node_command",
+                 "windows_node_command",
+                 "insecure_windows_node_command",
+                 "token"]
+    rows:
+      cluster_name:
+        header: [["Cluster Name:", ["main", "infoheader"]]]
+        path: "spec#clusterName"
+        default: "<none>"
+        type: "str"
+      command:
+        header: [["Command:", ["main", "infoheader"]]]
+        path: "status#command"
+        default: "<none>"
+        type: "str"
+      insecure_command:
+        header: [["Insecure Command:", ["main", "infoheader"]]]
+        path: "status#insecureCommand"
+        default: "<none>"
+        type: "str"
+      insecure_node_command:
+        header: [["Insecure Node Command:", ["main", "infoheader"]]]
+        path: "status#insecureNodeCommand"
+        default: "<none>"
+        type: "str"
+      insecure_windows_node_command:
+        header: [["Insecure Windows Node Command:", ["main", "infoheader"]]]
+        path: "status#insecureNodeCommand"
+        default: "<none>"
+        type: "str"
+      node_command:
+        header: [["Node Command:", ["main", "infoheader"]]]
+        path: "status#nodeCommand"
+        default: "<none>"
+        type: "str"
+      token:
+        header: [["Token:", ["main", "infoheader"]]]
+        path: "status#token"
+        default: "<none>"
+        type: "str"
+      windows_node_command:
+        header: [["Node Windows Command:", ["main", "infoheader"]]]
+        path: "status#nodeCommand"
+        default: "<none>"
+        type: "str"
