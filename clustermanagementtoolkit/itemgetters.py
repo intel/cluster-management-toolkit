@@ -13,7 +13,7 @@ Get items from lists for use in windowwidget
 
 import re
 import sys
-from typing import Any, cast, Optional, Union
+from typing import Any, cast, Optional, Tuple, Union
 from collections.abc import Callable
 
 try:

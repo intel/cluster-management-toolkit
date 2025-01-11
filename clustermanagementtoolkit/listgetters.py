@@ -765,19 +765,28 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
                           deep_get(port, DictPath("protocol"), "")))
         pod_label_selector = deep_get(item, DictPath("podSelector#matchLabels"), {})
         namespace_label_selector = deep_get(item, DictPath("namespaceSelector#matchLabels"), {})
+        # Specific to AdminNetworkPolicy
+        action: str = deep_get(item, DictPath("action"), "")
+        name: str = deep_get(item, DictPath("name"), "")
 
         from_rules = deep_get(item, DictPath("from"), [])
 
         for source in from_rules:
             ipblock = deep_get(source, DictPath("cidr"))
             ipblock_exceptions = deep_get(source, DictPath("except"))
+            pods_pod_label_selector = \
+                deep_get(source, DictPath("pods#podSelector#matchLabels"), pod_label_selector)
+            pods_namespace_label_selector = \
+                deep_get(source, DictPath("pods#namespaceSelector#matchLabels"), namespace_label_selector)
             vlist.append({
                 "policy_type": policy_type,
                 "ipblock": ipblock,
                 "ipblock_exceptions": ipblock_exceptions,
                 "ports": ports,
-                "pod_label_selector": pod_label_selector,
-                "namespace_label_selector": namespace_label_selector,
+                "pod_label_selector": pods_pod_label_selector,
+                "namespace_label_selector": pods_namespace_label_selector,
+                "action": action,
+                "name": name,
             })
 
         if not from_rules:
@@ -788,6 +797,8 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
                 "ports": ports,
                 "pod_label_selector": pod_label_selector,
                 "namespace_label_selector": namespace_label_selector,
+                "action": action,
+                "name": name,
             })
 
     for item in deep_get(obj, DictPath("spec#egress"), []):
@@ -798,19 +809,28 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
                           deep_get(port, DictPath("protocol"), "")))
         pod_label_selector = deep_get(item, DictPath("podSelector#matchLabels"), {})
         namespace_label_selector = deep_get(item, DictPath("namespaceSelector#matchLabels"), {})
+        # Specific to AdminNetworkPolicy
+        action: str = deep_get(item, DictPath("action"), "")
+        name: str = deep_get(item, DictPath("name"), "")
 
         to_rules = deep_get(item, DictPath("to"), [])
 
         for source in to_rules:
             ipblock = deep_get(source, DictPath("cidr"))
             ipblock_exceptions = deep_get(source, DictPath("except"))
+            pods_pod_label_selector = \
+                deep_get(source, DictPath("pods#podSelector#matchLabels"), pod_label_selector)
+            pods_namespace_label_selector = \
+                deep_get(source, DictPath("pods#namespaceSelector#matchLabels"), namespace_label_selector)
             vlist.append({
                 "policy_type": policy_type,
                 "ipblock": ipblock,
                 "ipblock_exceptions": ipblock_exceptions,
                 "ports": ports,
-                "pod_label_selector": pod_label_selector,
-                "namespace_label_selector": namespace_label_selector,
+                "pod_label_selector": pods_pod_label_selector,
+                "namespace_label_selector": pods_namespace_label_selector,
+                "action": action,
+                "name": name,
             })
 
         if not to_rules:
@@ -821,6 +841,8 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
                 "ports": ports,
                 "pod_label_selector": pod_label_selector,
                 "namespace_label_selector": namespace_label_selector,
+                "action": action,
+                "name": name,
             })
 
     return vlist, status
