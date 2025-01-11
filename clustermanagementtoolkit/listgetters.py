@@ -741,7 +741,7 @@ def get_ingress_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]
     return vlist, status
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
     """
     Get a list of network policy rules.
@@ -777,7 +777,8 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
             pods_pod_label_selector = \
                 deep_get(source, DictPath("pods#podSelector#matchLabels"), pod_label_selector)
             pods_namespace_label_selector = \
-                deep_get(source, DictPath("pods#namespaceSelector#matchLabels"), namespace_label_selector)
+                deep_get(source, DictPath("pods#namespaceSelector#matchLabels"),
+                         namespace_label_selector)
             vlist.append({
                 "policy_type": policy_type,
                 "ipblock": ipblock,
@@ -821,7 +822,8 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
             pods_pod_label_selector = \
                 deep_get(source, DictPath("pods#podSelector#matchLabels"), pod_label_selector)
             pods_namespace_label_selector = \
-                deep_get(source, DictPath("pods#namespaceSelector#matchLabels"), namespace_label_selector)
+                deep_get(source, DictPath("pods#namespaceSelector#matchLabels"),
+                         namespace_label_selector)
             vlist.append({
                 "policy_type": policy_type,
                 "ipblock": ipblock,
