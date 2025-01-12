@@ -1,0 +1,26 @@
+---
+kind: "RkeAddon"
+api_family: "management.cattle.io"
+default_command: "rkeaddons"
+listview:
+  name: "RKE Addons"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "RKE Addon Info"
+  infopad:
+  shortcuts:
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Template"
+        _pass_obj: true
+        path: "template"

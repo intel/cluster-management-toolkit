@@ -1,0 +1,52 @@
+---
+kind: "RkeK8sSystemImage"
+api_family: "management.cattle.io"
+default_command: "rkek8ssystemimages"
+command:
+  - "rkek8ssysimgs"
+  - "rkek8ssysimg"
+listview:
+  name: "RKE K8s System Images"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "images", "age"]
+      sortcolumn: "namespace"
+  fields:
+    images:
+      header: "Images:"
+      paths:
+        - path: "systemImages"
+          pathtype: "count"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "RKE K8s System Image Info"
+  infopad:
+  listpad:
+    listgetter: "listgetter_dict_list"
+    listgetter_args:
+      path: "systemImages"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "image"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "key"
+        type: "str"
+      image:
+        header: "Image:"
+        paths:
+          - path: "value"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"

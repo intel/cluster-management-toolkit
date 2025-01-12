@@ -1,0 +1,22 @@
+---
+kind: "RkeK8sServiceOption"
+api_family: "management.cattle.io"
+default_command: "rkek8sserviceoptions"
+command:
+  - "rkek8ssvcopts"
+  - "rkek8ssvcopg"
+listview:
+  name: "RKE K8s Service Options"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "RKE K8s Service Option Info"
+  infopad:
+  logpad:
+    infogetter: "logpad_yaml"
+    timestamps: false
+    infogetter_args:
+      path: "serviceOptions"
