@@ -2052,8 +2052,9 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: dict,
     packages = []
     held_packages = []
 
-    # The first minor Kubernetes version available from the new repository is 1.24.0;
-    # let's add all minor versions from 24 and up; the old repository is no longer usable.
+    # The first patch revision that isn't available from the new repositories is 1.24.0,
+    # but anything older than 1.28.0 is signed with a key that has expired, so only
+    # include 1.28.0 and newer; the old repository is no longer usable.
     if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
@@ -2065,7 +2066,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: dict,
     # Split the version tuple
     _upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
     minor_versions = []
-    for minor_version in range(24, int(upstream_minor) + 1):
+    for minor_version in range(28, int(upstream_minor) + 1):
         minor_versions.append(f"{minor_version}")
 
     if os_distro in ("debian",):
@@ -2113,8 +2114,9 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: dict,
         selection = control_planes + nodes
     playbooks = populate_playbooks_from_filenames(prepare_targets[k8s_distro]["playbooks"])
 
-    # The first minor Kubernetes version available from the new repository is 1.24.0;
-    # let's add all minor versions from 24 and up; the old repository is no longer usable.
+    # The first patch revision that isn't available from the new repositories is 1.24.0,
+    # but anything older than 1.28.0 is signed with a key that has expired, so only
+    # include 1.28.0 and newer; the old repository is no longer usable.
     if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
@@ -2126,7 +2128,7 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: dict,
     # Split the version tuple
     _upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
     minor_versions = []
-    for minor_version in range(24, int(upstream_minor) + 1):
+    for minor_version in range(28, int(upstream_minor) + 1):
         minor_versions.append(f"{minor_version}")
 
     if os_distro in ("debian",):
@@ -3273,10 +3275,10 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
         _major, minor = requested_version.split(".")
         requested_version = f"v{requested_version}"
 
-    if int(minor) < 24:
+    if int(minor) < 28:
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": kubeadm versions older than ", "default"),
-                        ANSIThemeStr("1.24", "version"),
+                        ANSIThemeStr("1.28", "version"),
                         ANSIThemeStr(" are not supported by ", "default"),
                         ANSIThemeStr(f"{about.PROGRAM_SUITE_NAME}", "programname"),
                         ANSIThemeStr("; aborting.", "default")], stderr=True)
@@ -3446,8 +3448,9 @@ def prepare_installation(options: list[tuple[str, Any]], args: list[str]) -> Non
         ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                         ANSIThemeStr("Updating version cache", "action")])
 
-        # The first minor Kubernetes version available from the new repository is 1.24.0;
-        # thus we don't support any version older than that.
+        # The first patch revision that isn't available from the new repositories is 1.24.0,
+        # but anything older than 1.28.0 is signed with a key that has expired, so only
+        # include 1.28.0 and newer; the old repository is no longer usable.
         if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
@@ -4196,7 +4199,7 @@ def add_nodes(options: list[tuple[str, Any]], args: list[Any]) -> None:
         join_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
     minor_versions = []
-    for minor_version in range(24, int(requested_minor) + 1):
+    for minor_version in range(28, int(requested_minor) + 1):
         minor_versions.append(f"{minor_version}")
 
     extra_values = {
@@ -6178,8 +6181,9 @@ def upgrade_control_plane(options: list[tuple[str, str]], args: list[str]) -> No
 
     ansithemeprint([ANSIThemeStr("\n[Preparing upgrade]", "phase")])
 
-    # The first minor Kubernetes version available from the new repository is 1.24.0;
-    # let's add all minor versions from 24 and up; the old repository is no longer usable.
+    # The first patch revision that isn't available from the new repositories is 1.24.0,
+    # but anything older than 1.28.0 is signed with a key that has expired, so only
+    # include 1.28.0 and newer; the old repository is no longer usable.
     if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
@@ -6191,7 +6195,7 @@ def upgrade_control_plane(options: list[tuple[str, str]], args: list[str]) -> No
     # Split the version tuple
     upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
     minor_versions = []
-    for minor_version in range(24, int(upstream_minor) + 1):
+    for minor_version in range(28, int(upstream_minor) + 1):
         minor_versions.append(f"{minor_version}")
 
     if update_cache:

@@ -260,8 +260,9 @@ def run_playbook(playbookpath: FilePath, hosts: list[str], extra_values: Optiona
             (int): The return value from ansible_run_playbook_on_selection()
             (dict): A dict with the results from the run
     """
-    # The first patch revision that isn't available from the new repositories is 1.24.0;
-    # so include all repositories from 1.24 and up for the time being.
+    # The first patch revision that isn't available from the new repositories is 1.24.0,
+    # but anything older than 1.28.0 is signed with a key that has expired, so only
+    # include 1.28.0 and newer; the old repository is no longer usable.
     if (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")) is None:
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
@@ -273,7 +274,7 @@ def run_playbook(playbookpath: FilePath, hosts: list[str], extra_values: Optiona
     # Split the version tuple
     _upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
     minor_versions = []
-    for minor_version in range(24, int(upstream_minor) + 1):
+    for minor_version in range(28, int(upstream_minor) + 1):
         minor_versions.append(f"{minor_version}")
 
     values = {

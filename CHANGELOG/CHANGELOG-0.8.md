@@ -87,6 +87,11 @@ N/A.
   and refuses to upgrade the cluster if this is the case.
 * `cmtadm` now uses `kubeadm.k8s.io/v1beta4` API-version when installing or upgrading to
   _Kubernetes v1.31_.
+* Installation of _Kubernetes v1.27_ or older is no longer supported;
+  the upstream signing key for older repositories have expired. Rather than wait
+  for upstream to fix this we deprecate installation of older versions instead;
+  while we still support administrating v1.27-based clusters, new installations
+  should generally use more recent versions.
 
 ### Changes to _cmtinv_ in v0.8.5
 
