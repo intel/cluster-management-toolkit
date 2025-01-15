@@ -100,7 +100,7 @@ No changes.
   via a shortcut from another infoview.  Note that `^` is a "dead" key on many
   keyboards, so you may need to press the key twice.
 * 174 view-files were added.
-* The Pod info-view can now has shortcuts to show resources used by the Pod, volume mounts, volumes,
+* The Pod info-view now has shortcuts to show resources used by the Pod, volume mounts, volumes,
   and topology constraints. It also shows the preemption policy.
 * View-files for the new DRA API has been added.
 * Other notable view-file changes and additions include _kueue_, _kruise_, _kubeflow_, _volcano_, _rancher_, and _longhorn_.
