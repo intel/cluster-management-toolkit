@@ -59,7 +59,7 @@ from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
 from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE
 from clustermanagementtoolkit.cmtpaths import KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
 
-from clustermanagementtoolkit.commandparser import parse_commandline
+from clustermanagementtoolkit.commandparser import parse_commandline, CommandType
 
 from clustermanagementtoolkit.ansible_helper import ansible_configuration
 from clustermanagementtoolkit.ansible_helper import ansible_get_inventory_dict, ansible_set_vars
@@ -6848,7 +6848,7 @@ def troubleshoot(options: list[tuple[str, str]], args: list[str]) -> None:
                                      "problem free.", "default")])
 
 
-COMMANDLINE: dict[str, Any] = {
+COMMANDLINE: dict[str, CommandType] = {
     "Check Versions": {
         "command": ["check-versions", "cv"],
         "description": [
@@ -6877,6 +6877,8 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Be more verbose", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": check_for_updates,
     },
     "Import Cluster": {
@@ -6929,6 +6931,7 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Be more verbose", "description")],
             },
         },
+        "required_args": [],
         "optional_args": [
             {
                 "name": "clustername",
@@ -7125,6 +7128,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": create_cluster,
     },
     "Setup Control Plane": {
@@ -7302,6 +7306,7 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Do not ask for confirmation", "description")],
             },
         },
+        "required_args": [],
         "optional_args": [
             {
                 "name": "cni",
@@ -7366,6 +7371,7 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Be more verbose", "description")],
             },
         },
+        "required_args": [],
         "optional_args": [
             {
                 "name": "cni",
@@ -7415,6 +7421,8 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Be more verbose", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": teardown_cni,
     },
     "Upgrade CNI": {
@@ -7431,6 +7439,7 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Be more verbose", "description")],
             },
         },
+        "required_args": [],
         "optional_args": [
             {
                 "name": "cni",
@@ -7568,6 +7577,7 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Do not ask for confirmation", "description")],
             },
         },
+        "required_args": [],
         "optional_args": [
             {
                 "name": "version",
@@ -7663,6 +7673,8 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Do not ask for confirmation", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": teardown_control_plane,
     },
     "Purge Control Plane": {
@@ -7740,6 +7752,8 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Do not ask for confirmation", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": purge_control_plane,
     },
     "Taint Control Plane": {
@@ -7763,6 +7777,7 @@ COMMANDLINE: dict[str, Any] = {
              ANSIThemeStr(" is not specified", "description")],
             [ANSIThemeStr("all control planes will be tainted", "description")],
         ],
+        "required_args": [],
         "optional_args": [
             {
                 "name": "controlplane",
@@ -7801,6 +7816,7 @@ COMMANDLINE: dict[str, Any] = {
             [ANSIThemeStr("all control planes will be untainted", "description")],
 
         ],
+        "required_args": [],
         "optional_args": [
             {
                 "name": "controlplane",
@@ -7860,6 +7876,8 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": audit,
     },
     "Preflight Check": {
@@ -7893,18 +7911,24 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": preflight_check,
     },
     "Troubleshoot": {
         "command": ["troubleshoot"],
         "description": [
             ANSIThemeStr("Search for potential problems in the cluster", "description")],
+        "required_args": [],
+        "optional_args": [],
         "callback": troubleshoot,
     },
     "spacer1": {
         "command": [""],
         "description": [
             ANSIThemeStr("", "description")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
 }
 

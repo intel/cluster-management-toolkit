@@ -13,7 +13,7 @@ Get items from lists for use in windowwidget
 
 import re
 import sys
-from typing import Any, cast, Optional, Tuple, Union
+from typing import Any, cast, Optional, Union
 from collections.abc import Callable
 
 try:
@@ -714,7 +714,7 @@ def get_prepopulated_list(obj: dict, **kwargs: Any) -> list[dict]:
         tmp_columns = deep_get(item, DictPath("columns"), [])
         args = deep_get(action_args, DictPath("args"), {})
 
-        columns: list[str, Tuple[str, list[str]]] = []
+        columns: list = []
 
         # Where necessary do path lookups
         for column in tmp_columns:

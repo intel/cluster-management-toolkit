@@ -811,8 +811,8 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
         pod_label_selector = deep_get(item, DictPath("podSelector#matchLabels"), {})
         namespace_label_selector = deep_get(item, DictPath("namespaceSelector#matchLabels"), {})
         # Specific to AdminNetworkPolicy
-        action: str = deep_get(item, DictPath("action"), "")
-        name: str = deep_get(item, DictPath("name"), "")
+        action = deep_get(item, DictPath("action"), "")
+        name = deep_get(item, DictPath("name"), "")
 
         to_rules = deep_get(item, DictPath("to"), [])
 

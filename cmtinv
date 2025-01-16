@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Optional, Union
+from typing import cast, Optional, Union
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -47,7 +47,7 @@ from clustermanagementtoolkit import cmtio
 
 from clustermanagementtoolkit import cmtio_yaml
 
-from clustermanagementtoolkit.commandparser import parse_commandline
+from clustermanagementtoolkit.commandparser import parse_commandline, CommandType
 
 from clustermanagementtoolkit.ansible_helper import ansible_configuration
 from clustermanagementtoolkit.ansible_helper import ansible_get_inventory_pretty
@@ -1201,7 +1201,7 @@ def ping(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
-COMMANDLINE: dict[str, Any] = {
+COMMANDLINE: dict[str, CommandType] = {
     "Add Groups": {
         "command": ["add-group", "add-groups"],
         "values": [
@@ -1247,6 +1247,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": add_groups,
     },
     "Add Hosts to Inventory": {
@@ -1343,6 +1344,9 @@ COMMANDLINE: dict[str, Any] = {
             ANSIThemeStr("GROUP", "argument"),
             ANSIThemeStr(",", "separator"),
             ANSIThemeStr("...", "argument")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "Inventory": {
         "command": ["inventory", "inv"],
@@ -1388,6 +1392,7 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Show variables", "description")],
             },
         },
+        "required_args": [],
         "optional_args": [
             {
                 "name": "groups",
@@ -1467,6 +1472,8 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Show host variables", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": list_hosts,
     },
     "List Groups": {
@@ -1532,6 +1539,8 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Show group variables", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": list_groups,
     },
     "Ping": {
@@ -1554,6 +1563,7 @@ COMMANDLINE: dict[str, Any] = {
             ANSIThemeStr(" (Default: “", "description"),
             ANSIThemeStr("all", "argument"),
             ANSIThemeStr("“)", "description")],
+        "required_args": [],
         "optional_args": [
             {
                 "name": "groups_or_hosts",
@@ -1591,6 +1601,8 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr(" inventory to be overwritten", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": rebuild_inventory,
     },
     "Remove Groups": {
@@ -1633,6 +1645,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": remove_groups,
     },
     "Remove Hosts from ALL Groups": {
@@ -1681,6 +1694,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": remove_hosts,
     },
     # This is purely for the benefit of the helptext generator
@@ -1702,6 +1716,9 @@ COMMANDLINE: dict[str, Any] = {
             ANSIThemeStr("GROUP", "argument"),
             ANSIThemeStr(",", "separator"),
             ANSIThemeStr("...", "argument")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "List Playbooks": {
         "command": ["list-playbooks"],
@@ -1762,6 +1779,8 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": list_playbooks,
     },
     "Run Playbook": {
@@ -1817,6 +1836,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": run_playbook,
     },
     "Set Global Variables": {
@@ -1857,6 +1877,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": set_global_vars,
     },
     "Set Group Variables": {
@@ -1910,6 +1931,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": set_group_vars,
     },
     "Set Host Variables": {
@@ -1962,6 +1984,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": set_host_vars,
     },
     "Unset Global Variables": {
@@ -1993,6 +2016,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": unset_global_vars,
     },
     "Unset Group Variables": {
@@ -2037,6 +2061,7 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": unset_group_vars,
     },
     "Unset Host Variables": {
@@ -2080,12 +2105,16 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": unset_host_vars,
     },
     "spacer1": {
         "command": [""],
         "description": [
             ANSIThemeStr("", "default")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
 }
 

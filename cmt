@@ -55,7 +55,7 @@ from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENA
 from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE, VIEW_DIR, SYSTEM_VIEWS_DIR
 from clustermanagementtoolkit.cmtvalidators import validate_fqdn, validator_bool
 
-from clustermanagementtoolkit.commandparser import parse_commandline
+from clustermanagementtoolkit.commandparser import parse_commandline, CommandType
 
 from clustermanagementtoolkit.ansible_helper import ansible_configuration, get_playbook_path
 from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
@@ -2599,7 +2599,7 @@ def list_api_resources(options: list[tuple[str, str]], args: list[str]) -> int:
     return result
 
 
-CMT_COMMANDLINE: dict[str, Any] = {
+CMT_COMMANDLINE: dict[str, CommandType] = {
     "Cordon Node": {
         "command": ["cordon"],
         "values":
@@ -2634,6 +2634,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": cordon_nodes,
     },
     "Drain Node": {
@@ -2703,6 +2704,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": drain_nodes,
     },
     "Drain Node (Force)": {
@@ -2758,6 +2760,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": drain_nodes,
     },
     "Uncordon Node": {
@@ -2794,6 +2797,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": uncordon_nodes,
     },
     "Taint Node": {
@@ -2871,6 +2875,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": taint_nodes,
     },
     "Untaint Node": {
@@ -2943,6 +2948,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": untaint_nodes,
     },
     "Prepare Host": {
@@ -3047,6 +3053,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": prepare_hosts,
     },
     "Add Node": {
@@ -3228,6 +3235,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": add_nodes,
     },
     "Remove Node": {
@@ -3344,6 +3352,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": remove_nodes,
     },
     "Purge": {
@@ -3453,6 +3462,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": purge_hosts,
     },
     "Upgrade Node": {
@@ -3538,19 +3548,21 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
         "callback": upgrade_nodes,
     },
     "Get Contexts": {
         "command": ["get-contexts", "get-ctx"],
         "description": [
             ANSIThemeStr("Get the list of available contexts", "description")],
+        "required_args": [],
+        "optional_args": [],
         "callback": get_contexts,
     },
     "Use Context": {
         "command": ["use-context", "use-ctx"],
         "description": [
             ANSIThemeStr("Set current context", "description")],
-        "callback": use_context,
         "values": [
             ANSIThemeStr("NAME", "argument"),
             ANSIThemeStr("|", "separator"),
@@ -3575,6 +3587,8 @@ CMT_COMMANDLINE: dict[str, Any] = {
                 },
             },
         ],
+        "optional_args": [],
+        "callback": use_context,
     },
     "List API-resources": {
         "command": ["api-resources"],
@@ -3827,12 +3841,17 @@ CMT_COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Wide output format", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
         "callback": list_api_resources,
     },
     "spacer1": {
         "command": [""],
         "description": [
             ANSIThemeStr("", "default")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "extended_description": [
         [ANSIThemeStr("You can use “", "description"),
@@ -3850,7 +3869,7 @@ CMT_COMMANDLINE: dict[str, Any] = {
         [ANSIThemeStr("control planes you need to use “", "description"),
          ANSIThemeStr("--include-control-planes", "option"),
          ANSIThemeStr("“ (where applicable)", "description")],
-    ]
+    ],  # type: ignore
 }
 
 

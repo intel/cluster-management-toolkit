@@ -11,7 +11,7 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, TypedDict
 from collections.abc import Callable
 
 from clustermanagementtoolkit import about
@@ -30,6 +30,134 @@ programname: str = ""
 programversion: str = ""
 programdescription: str = ""
 programauthors: str = ""
+
+
+class ValidationTypeOptional(TypedDict, total=False):
+    """
+    Optional fields in the TypedDict for argument validation.
+
+        Parameters:
+            allowlist ([str]): A list of explicitly allowed values used by the allowlist validator
+            regex (str): A regular expression used by the regex validator
+            list_separator (str): A separator to use to split the argument into a list
+            valid_range (([Optional[int], Optional[int]])): A range of valid values
+    """
+    allowlist: list[str]
+    regex: str
+    list_separator: str
+    valid_range: tuple[Optional[int], Optional[int]]
+
+
+class ValidationType(ValidationTypeOptional):
+    """
+    A TypedDict for argument validation.
+
+        Parameters:
+            validator (str): The name of the validator to use
+    """
+    validator: str
+
+
+class ArgumentWithDefaultType(TypedDict, total=False):
+    """
+    Argument TypedDict to use when a default argument can be valid.
+
+        Parameters:
+            default (str): The default value for an argument
+    """
+    default: str
+
+
+class ArgumentWithOptionalDefaultType(ArgumentWithDefaultType):
+    """
+    Argument TypedDict to use with optional default argument; to be used
+    when the argument is optional, since mandatory arguments cannot have a default.
+
+        Parameters:
+            name (str)   # The name of the argument
+            string ([ANSIThemeStr]): An ANSIThemeArray with a description of the argument
+            validation  (ValidationType): Information about validation to perform on the argument
+    """
+    name: str
+    string: list[ANSIThemeStr]
+    validation: ValidationType
+
+
+class ArgumentType(TypedDict):
+    """
+    The TypedDict for use with required arguments.
+
+        Parameters:
+            name (str)   # The name of the argument
+            string ([ANSIThemeStr]): An ANSIThemeArray with a description of the argument
+            validation  (ValidationType): Information about validation to perform on the argument
+    """
+    name: str
+    string: list[ANSIThemeStr]
+    validation: ValidationType
+
+
+class OptionTypeOptional(TypedDict, total=False):
+    """
+    Optional fields that are part of the TypedDict for options.
+
+        Parameters:
+            extended_description ([[ANSIThemeStr]]): A multi-line description of the option
+            requires_arg (bool): Does the option require an argument?
+            values  ([ANSIThemeStr]): An ANSIThemeArray with ARGUMENTs to the option
+            validation (ValidationType): Information about validation to perform on the argument
+    """
+    extended_description: list[list[ANSIThemeStr]]
+    requires_arg: bool
+    values: list[ANSIThemeStr]
+    validation: ValidationType
+
+
+class OptionType(OptionTypeOptional):
+    """
+    A TypedDict for options.
+
+        Parameters:
+            description ([ANSIThemeStr]): A description of the option
+    """
+    description: list[ANSIThemeStr]
+
+
+class CommandTypeOptional(TypedDict, total=False):
+    """
+    Optional fields for the TypedDict for commands.
+
+        Parameters:
+            command_alias (str): A string with an alias for the command
+            values ([ANSIThemeStr]): An ANSIThemeArray with ARGUMENTs to the command
+            options (dict[str, OptionType]): A dict of command options
+            implicit_options: ([(str, Any)]): A list of implicit options
+            extended_description ([[ANSIThemeStr]]): A multi-line description of the command
+    """
+    command_alias: str
+    values: list[ANSIThemeStr]
+    options: dict[str, OptionType]
+    implicit_options: list[tuple[str, Any]]
+    extended_description: list[list[ANSIThemeStr]]
+
+
+class CommandType(CommandTypeOptional):
+    """
+    A TypedDict for commands.
+
+        Parameters:
+            command ([str]): A list of command aliases
+            description ([ANSIThemeStr]): An ANSIThemeArray with a description of the command
+            required_args ([ArgumentType]): A list of required arguments
+            optional_args ([ArgumentWithOptionalDefaultType]): A list of optional arguments
+            callback (Optional[Callable]): The callback to use
+    """
+    command: list[str]
+    description: list[ANSIThemeStr]
+    required_args: list[ArgumentType]
+    optional_args: list[ArgumentWithOptionalDefaultType]
+    callback: Optional[Callable]
+
 
 commandline: dict[str, Any] = {}
 
@@ -457,12 +585,8 @@ def __find_command(__commandline: dict[str, Any], arg: str) -> \
                 command = deep_get(value, DictPath("callback"))
                 required_args = deep_get(value, DictPath("required_args"), [])
                 optional_args = deep_get(value, DictPath("optional_args"), [])
-                min_args = deep_get(value, DictPath("min_args"))
-                max_args = deep_get(value, DictPath("max_args"))
-                if min_args is None:
-                    min_args = len(required_args)
-                if max_args is None:
-                    max_args = min_args + len(optional_args)
+                min_args = len(required_args)
+                max_args = min_args + len(optional_args)
                 break
         if command is not None:
             break
@@ -470,7 +594,7 @@ def __find_command(__commandline: dict[str, Any], arg: str) -> \
     return commandname, command, key, min_args, max_args, required_args, optional_args
 
 
-COMMANDLINEDEFAULTS = {
+COMMANDLINEDEFAULTS: dict[str, CommandType] = {
     "Help": {
         "command": ["help"],
         "values": [ANSIThemeStr("COMMAND", "argument")],
@@ -496,8 +620,18 @@ COMMANDLINEDEFAULTS = {
                 },
             },
         },
-        "min_args": 0,
-        "max_args": 1,
+        "required_args": [],
+        "optional_args": [
+            {
+                "name": "command",
+                "string": [
+                    ANSIThemeStr("COMMAND", "argument")],
+                "validation": {
+                    "validator": "regex",
+                    "regex": r"^[a-z][a-z0-9-]*$",
+                },
+            },
+        ],
         "callback": __command_usage,
     },
     "Help2": {
@@ -522,15 +656,15 @@ COMMANDLINEDEFAULTS = {
                 },
             },
         },
-        "min_args": 0,
-        "max_args": 0,
+        "required_args": [],
+        "optional_args": [],
         "callback": __usage,
     },
     "Version": {
         "command": ["version", "--version"],
         "description": [ANSIThemeStr("Output version information and exit", "description")],
-        "min_args": 0,
-        "max_args": 0,
+        "required_args": [],
+        "optional_args": [],
         "callback": __version,
     },
 }

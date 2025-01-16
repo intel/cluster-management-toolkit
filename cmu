@@ -86,7 +86,7 @@ from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
 from clustermanagementtoolkit.cmtvalidators import validate_name
 
-from clustermanagementtoolkit.commandparser import parse_commandline
+from clustermanagementtoolkit.commandparser import parse_commandline, CommandType
 
 from clustermanagementtoolkit.logparser import logparser, logparser_initialised
 from clustermanagementtoolkit.logparser import LogLevel, LogparserConfiguration
@@ -10011,12 +10011,16 @@ def open_view(options: list[tuple[str, str]], args: list[str]) -> None:
             raise
 
 
-COMMANDLINE: dict[str, Any] = {
+COMMANDLINE: dict[str, CommandType] = {
     # This is purely for the benefit of the helptext generator
     "View": {
         "command": ["VIEW"],
-        "description": [ANSIThemeStr("start in ", "description"),
-                        ANSIThemeStr("VIEW", "command")],
+        "description": [
+            ANSIThemeStr("start in ", "description"),
+            ANSIThemeStr("VIEW", "command")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "View [NAMESPACE/]OBJECT[:MEMBER]": {
         "command": ["VIEW"],
@@ -10049,15 +10053,20 @@ COMMANDLINE: dict[str, Any] = {
              ANSIThemeStr(":", "argument"),
              ANSIThemeStr(" is sufficient", "description")],
         ],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "spacer1": {
         "command": [""],
         "description": [ANSIThemeStr("", "description")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "List Namespaces": {
         "command": ["list-namespaces"],
         "description": [ANSIThemeStr("List valid namespaces and exit", "description")],
-        "callback": list_namespaces,
         "options": {
             "--color": {
                 "values": [ANSIThemeStr("WHEN", "argument")],
@@ -10110,10 +10119,15 @@ COMMANDLINE: dict[str, Any] = {
                 },
             },
         },
+        "required_args": [],
+        "optional_args": [],
+        "callback": list_namespaces,
     },
     "List Views": {
         "command": ["list-views"],
         "description": [ANSIThemeStr("List view information and exit", "description")],
+        "required_args": [],
+        "optional_args": [],
         "callback": list_views,
     },
     "__*": {
@@ -10148,6 +10162,7 @@ COMMANDLINE: dict[str, Any] = {
              ANSIThemeStr(":", "argument"),
              ANSIThemeStr(" is sufficient", "description")],
         ],
+        "required_args": [],
         "optional_args": [
             {
                 "name": "view",
@@ -10207,31 +10222,12 @@ COMMANDLINE: dict[str, Any] = {
         ],
         "callback": open_view,
     },
-    "extended_description": [
-        [ANSIThemeStr("If ", "description"),
-         ANSIThemeStr("VIEW", "argument"),
-         ANSIThemeStr(" is not specified ", "description"),
-         ANSIThemeStr(about.UI_PROGRAM_NAME, "programname"),
-         ANSIThemeStr(" will show a list with all available views", "description")],
-        [ANSIThemeStr("", "separator")],
-        [ANSIThemeStr("Note", "note"),
-         ANSIThemeStr(": ", "description"),
-         ANSIThemeStr(CMT_CONFIG_FILENAME, "path"),
-         ANSIThemeStr(" or a file in ", "description"),
-         ANSIThemeStr(CMT_CONFIG_FILE_DIRNAME, "path"),
-         ANSIThemeStr(" can be used to set a ", "description"),
-         ANSIThemeStr("VIEW", "argument"),
-         ANSIThemeStr(" to use", "description")],
-        [ANSIThemeStr("if no view is specified.", "description"),
-         ANSIThemeStr(" To override this and open the selector instead,", "description")],
-        [ANSIThemeStr("simply use “", "description"),
-         ANSIThemeStr(about.UI_PROGRAM_NAME, "programname"),
-         ANSIThemeStr(" selector", "argument"),
-         ANSIThemeStr("“.", "description")],
-    ],
     "spacer2": {
         "command": [""],
         "description": [ANSIThemeStr("", "description")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "__global_options": {
         "command": ["__global_options"],
@@ -10286,11 +10282,39 @@ COMMANDLINE: dict[str, Any] = {
                 "requires_arg": True,
             },
         },
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "spacer3": {
         "command": [""],
         "description": [ANSIThemeStr("", "description")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
+    "extended_description": [
+        [ANSIThemeStr("If ", "description"),
+         ANSIThemeStr("VIEW", "argument"),
+         ANSIThemeStr(" is not specified ", "description"),
+         ANSIThemeStr(about.UI_PROGRAM_NAME, "programname"),
+         ANSIThemeStr(" will show a list with all available views", "description")],
+        [ANSIThemeStr("", "separator")],
+        [ANSIThemeStr("Note", "note"),
+         ANSIThemeStr(": ", "description"),
+         ANSIThemeStr(CMT_CONFIG_FILENAME, "path"),
+         ANSIThemeStr(" or a file in ", "description"),
+         ANSIThemeStr(CMT_CONFIG_FILE_DIRNAME, "path"),
+         ANSIThemeStr(" can be used to set a ", "description"),
+         ANSIThemeStr("VIEW", "argument"),
+         ANSIThemeStr(" to use", "description")],
+        [ANSIThemeStr("if no view is specified.", "description"),
+         ANSIThemeStr(" To override this and open the selector instead,", "description")],
+        [ANSIThemeStr("simply use “", "description"),
+         ANSIThemeStr(about.UI_PROGRAM_NAME, "programname"),
+         ANSIThemeStr(" selector", "argument"),
+         ANSIThemeStr("“.", "description")],
+    ],  # type: ignore
 }
 
 

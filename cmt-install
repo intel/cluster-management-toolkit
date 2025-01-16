@@ -22,7 +22,7 @@ import re
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, Union
+from typing import Union
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
 
@@ -47,7 +47,7 @@ from clustermanagementtoolkit.cmtpaths import SOFTWARE_SOURCES_DIRNAME, SOFTWARE
 from clustermanagementtoolkit.cmtio import execute_command_with_response
 from clustermanagementtoolkit.cmtio import secure_copy, secure_mkdir, secure_symlink, secure_which
 
-from clustermanagementtoolkit.commandparser import parse_commandline
+from clustermanagementtoolkit.commandparser import parse_commandline, CommandType
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint, ansithemeinput
 
@@ -945,7 +945,7 @@ def install(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
-COMMANDLINE: dict[str, Any] = {
+COMMANDLINE: dict[str, CommandType] = {
     # Default command
     "__global_options": {
         "command": ["__global_options"],
@@ -991,17 +991,25 @@ COMMANDLINE: dict[str, Any] = {
                     ANSIThemeStr("Do not ask for confirmation", "description")],
             },
         },
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
     "__default": {
         "command": ["__default"],
         "description": [
             ANSIThemeStr("", "")],
+        "required_args": [],
+        "optional_args": [],
         "callback": install,
     },
     "spacer1": {
         "command": [""],
         "description": [
             ANSIThemeStr("", "")],
+        "required_args": [],
+        "optional_args": [],
+        "callback": None,
     },
 }
 
