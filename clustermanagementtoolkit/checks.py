@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Union
+from typing import Any, cast, TypedDict, Union
 from collections.abc import Generator
 
 from clustermanagementtoolkit.ansible_helper import ansible_configuration
@@ -929,7 +929,21 @@ def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> tuple[bool, int, int
     return abort, critical, error, warning, note
 
 
-required_pods: dict[str, list[dict[str, list]]] = {
+class PodListType(TypedDict, total=False):
+    """
+    A list of possible and/or required pods, optionally with a note
+    that can be used to explain special cases, exceptions, etc.
+
+        Parameters:
+            any_of ([(str, str)]): At least one of these must exist
+            all_of ([(str, str)]): All of these pods must exist
+            note ([ANSIThemeStr]): Additional notes
+    """
+    any_of: list[tuple[str, str]]
+    all_of: list[tuple[str, str]]
+    note: list[ANSIThemeStr]
+
+required_pods: dict[str, list[PodListType]] = {
     "api-server": [
         {
             "any_of": [("kube-system", "kube-apiserver")],
@@ -1118,9 +1132,9 @@ def check_running_pods(**kwargs: Any) -> tuple[bool, int, int, int, int]:
         matches = []
 
         for rp_match in rp_data:
-            any_of = deep_get(rp_match, DictPath("any_of"), [])
-            all_of = deep_get(rp_match, DictPath("all_of"), [])
-            additional_info = deep_get(rp_match, DictPath("note"), [])
+            any_of = deep_get(cast(dict, rp_match), DictPath("any_of"), [])
+            all_of = deep_get(cast(dict, rp_match), DictPath("all_of"), [])
+            additional_info = deep_get(cast(dict, rp_match), DictPath("note"), [])
             any_of_matches, all_of_matches = get_pod_set(cast(list[dict], pods), any_of, all_of)
 
             if any_of_matches or all_of_matches:

@@ -9,7 +9,8 @@
 Helper for installing and upgrading CNI
 """
 
-from typing import Any
+from collections.abc import Callable
+from typing import TypedDict
 
 from clustermanagementtoolkit.cmtio import check_path, execute_command, join_securitystatus_set
 
@@ -124,7 +125,72 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
     return execute_command(args)
 
 
-cni_data: dict[str, dict[str, dict[str, Any]]] = {
+class URLTypeOptional(TypedDict, total=False):
+    """
+    Optional parts of a URL dict.
+
+        Parameters:
+            checksum_url (str): The URL to fetch the checksum from
+            checksum_type (str): The type of the checksum
+            patch (Callable): A function to call to patch the downloaded file
+    """
+    checksum_url: str
+    checksum_type: str
+    patch: Callable
+
+
+class URLType(URLTypeOptional):
+    """
+    A URL dict.
+
+        Parameters:
+            url (str): The URL to download
+            filename (str): The filename of the downloaded file
+    """
+    url: str
+    filename: str
+
+
+class CNIDataTypeOptional(TypedDict, total=False):
+    """
+    CNI data.
+
+        Parameters:
+            candidate_version_command ([str]): A command that returns the candidate CNI version
+            candidate_version_function (Callable): A function that returns the candidate CNI version
+            candidate_version_url (str): A URL to retrieve the candidate CNI version from
+            candidate_version_regex (str): A regex for use with candidate_version_function
+            manual_candidate_version_regex (str): A regex to use with candidate_version_command
+            version_command ([str]): A command that returns the current CNI version
+            version_regex (str): A regex to use with version_command
+            urls ([URLType]): A list of URLs to download
+            upgrade ([str]): The command to use to upgrade the CNI
+            upgrade ([str]): The command to use to install the CNI
+            upgrade ([str]): The command to use to uninstall the CNI
+    """
+    candidate_version_command: list[str]
+    candidate_version_function: Callable
+    candidate_version_url: str
+    manual_candidate_version_regex: str
+    version_command: list[str]
+    version_regex: str
+    urls: list[URLType]
+    upgrade: list[str]
+    install: list[str]
+    uninstall: list[str]
+
+
+class CNIDataType(CNIDataTypeOptional):
+    """
+    CNI data.
+
+        Parameters:
+            candidate_version_regex (str): A regex that extracts the candidate CNI version
+    """
+    candidate_version_regex: str
+
+
+cni_data: dict[str, dict[str, CNIDataType]] = {
     "antrea": {
         "executable": {
             "candidate_version_function": get_github_version,

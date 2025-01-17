@@ -348,7 +348,7 @@ def prepare_nodes(hosts: list[str], **kwargs: Any) -> int:
         Returns:
             (int): 0 on success, non-zero on failure
     """
-    extra_values: dict = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"), {})
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     playbooks = populate_playbooks_from_filenames(prepare_playbooks)
@@ -382,7 +382,7 @@ def setup_nodes(hosts: list[str], **kwargs: Any) -> int:
     """
     kh: kubernetes_helper.KubernetesHelper = deep_get(kwargs, DictPath("kubernetes_helper"))
     k8s_distro: str = deep_get(kwargs, DictPath("k8s_distro"), "kubeadm")
-    extra_values: dict = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"), {})
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     cri: str = deep_get(kwargs, DictPath("cri"))
 
@@ -497,7 +497,7 @@ def prepare_vm_template(vmhost: str, hosts: list[tuple[str, str, str]], **kwargs
     os_variant: str = deep_get(kwargs, DictPath("os_variant"))
     template_name: str = deep_get(kwargs, DictPath("template_name"))
     template_balloon_size: str = deep_get(kwargs, DictPath("template_balloon_size"))
-    extra_values: dict[str, Any] = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict[str, Any] = deep_get(kwargs, DictPath("extra_values"), {})
     cri: str = deep_get(kwargs, DictPath("cri"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
@@ -566,7 +566,7 @@ def create_vm_hosts(vmhost: str, hosts: list[tuple[str, str, str]], **kwargs: An
     """
     os_image: FilePath = deep_get(kwargs, DictPath("os_image"))
     os_variant: str = deep_get(kwargs, DictPath("os_variant"))
-    extra_values: dict = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"), {})
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     playbooks = populate_playbooks_from_filenames(vm_create_playbooks)
