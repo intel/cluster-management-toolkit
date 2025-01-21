@@ -32,14 +32,8 @@
 
 ### Source Code for v0.8.5
 
-CMT v0.8.5 does not include source code tarballs. It is just a git tag.
-We aim for CMT v0.9.0 to be the first release with source code tarballs.
-
-<!--
-| Filename | sha512 hash |
-| :------- | :---------- |
-| [fixme](https://fixme) | `fixme` |
--->
+Source code tarballs are created by GitHub. The source code is also
+available by checking out the git repository.
 
 ### Distro packages for v0.8.5
 
@@ -119,7 +113,79 @@ No changes.
 * A new tool, `mdtable.py` has been added, that creates simple Markdown tables from CSV data.
   It's now used by the `mypy-markdown` and `pylint-markdown` Make targets.
 * A lot of code has been refactored, documented, or otherwise improved.
-  In total `1023 files changed, 72372 insertions(+), 28439 deletions(-)`.
+  In total `1045 files changed, 76495 insertions(+), 28815 deletions(-)`.
+
+### Notable view-file changes (by API-files)
+
+* operator.openshift.io (18 changed files)
+* management.cattle.io (17 changed files)
+* apps.kruise.io (17 changed files)
+* aquasecurity.github.io (17 changed files)
+* traefik.io (13 changed files)
+* kubeflow.org (12 changed files)
+* crd.antrea.io (9 changed files)
+* longhorn.io (9 changed files)
+* traefik.containo.us (9 changed files)
+* config.openshift.io (8 changed files)
+* kueue.x-k8s.io (8 changed files)
+* infrastructure.cluster.x-k8s.io (8 changed files)
+* fleet.cattle.io (7 changed files)
+* resource.k8s.io (7 changed files)
+* storage.loft.sh (6 changed files)
+* kyverno.io (6 changed files)
+* metallb.io (6 changed files)
+* gateway.networking.k8s.io (6 changed files)
+* serving.kserve.io (6 changed files)
+* monitoring.coreos.com (5 changed files)
+* argoproj.io (5 changed files)
+* storage.k8s.io (5 changed files)
+* cluster.x-k8s.io (5 changed files)
+* networking.k8s.io (5 changed files)
+* serving.knative.dev (5 changed files)
+* apps (5 changed files)
+* deviceplugin.intel.com (5 changed files)
+* crd.projectcalico.org (5 changed files)
+* kargo.akuity.io (5 changed files)
+* getambassador.io (5 changed files)
+* image.openshift.io (5 changed files)
+
+### Notable view-file changes (by line count)
+
+* views/Event.events.k8s.io.yaml (1586 changed lines)
+* views/Event.yaml (1585 changed lines)
+* views/SecurityContextConstraints.security.openshift.io.yaml (240 changed lines)
+* views/ScaledJob.keda.sh.yaml (218 changed lines)
+* views/ClusterPolicy.nvidia.com.yaml (208 changed lines)
+* views/MPIJob.kubeflow.org.yaml (177 changed lines)
+* views/ScaledObject.keda.sh.yaml (174 changed lines)
+* views/Workflow.argoproj.io.yaml (174 changed lines)
+* views/Telemetry.telemetry.istio.io.yaml (140 changed lines)
+* views/ClusterQueue.kueue.x-k8s.io.yaml (120 changed lines)
+* views/ClusterNetworkPolicy.crd.antrea.io.yaml (114 changed lines)
+* views/Pod.yaml (112 changed lines)
+* views/ImageStream.image.openshift.io.yaml (111 changed lines)
+* views/ConsolePlugin.console.openshift.io.yaml (105 changed lines)
+* views/__VersionData.yaml (105 changed lines)
+* views/Workload.kueue.x-k8s.io.yaml (104 changed lines)
+* views/MachineHealthCheck.cluster.x-k8s.io.yaml (101 changed lines)
+* views/ResourceClaim.resource.k8s.io.yaml (100 changed lines)
+* views/ServiceMonitor.monitoring.coreos.com.yaml (98 changed lines)
+* views/Image.image.openshift.io.yaml (88 changed lines)
+* views/VirtualMachine.kubevirt.io.yaml (82 changed lines)
+* views/CompositeController.metacontroller.k8s.io.yaml (78 changed lines)
+* views/LocalQueue.kueue.x-k8s.io.yaml (77 changed lines)
+* views/Service.yaml (75 changed lines)
+* views/RequestAuthentication.security.istio.io.yaml (67 changed lines)
+* views/CachedImage.kuik.enix.io.yaml (64 changed lines)
+* views/RayCluster.ray.io.yaml (61 changed lines)
+* views/SigningKey.dex.coreos.com.yaml (56 changed lines)
+* views/CSIStorageCapacity.storage.k8s.io.yaml (53 changed lines)
+* views/PersistentVolumeClaim.yaml (52 changed lines)
+* views/Challenge.acme.cert-manager.io.yaml (50 changed lines)
+
+### parser-file changes
+
+37 parserfiles were added.
 
 ## Fixed Issues in v0.8.5
 
@@ -144,7 +210,7 @@ No changes.
 | :------------- | :-------------- | :-------------------------------------- |
 | ansible-runner | 2.1.4           | openSUSE/SLES/RHEL, unsupported distros |
 | cryptography   |                 | openSUSE, unsupported distros           |
-| jinja2         | 3.1.4           | openSUSE/SLES/RHEL, unsupported distros |
+| jinja2         | 3.1.5           | openSUSE/SLES/RHEL, unsupported distros |
 | natsort        | 8.0.2           | openSUSE/SLES/RHEL, unsupported distros |
 | paramiko       |                 | openSUSE/SLES/RHEL, unsupported distros |
 | PyYAML         | 6.0             | Unsupported distros                     |
@@ -200,7 +266,7 @@ Test results:
 	No issues identified.
 
 Code scanned:
-	Total lines of code: 79006
+	Total lines of code: 79418
 	Total lines skipped (#nosec): 8
 
 Run metrics:
@@ -382,7 +448,7 @@ Checking executables
 Processed 50 regexes
 
 Checking libraries
-Processed 142 regexes
+Processed 143 regexes
 ```
 
 ### Ruff Results for v0.8.5
@@ -402,34 +468,38 @@ Execute with `make semgrep`.
 Output:
 
 ```
-┌──── ○○○ ────┐
-│ Semgrep CLI │
-└─────────────┘
-
-
-Scanning 1133 files with:
-
-✔ Semgrep OSS
-  ✔ Basic security coverage for first-party code vulnerabilities.
-
-✔ Semgrep Code (SAST)
-  ✔ Find and fix vulnerabilities in the code you write with advanced scanning and expert security rules.
-
-✘ Semgrep Supply Chain (SCA)
-  ✘ Find and fix the reachable vulnerabilities in your OSS dependencies.
-
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸ 100% 0:02:53
-
-
 ┌──────────────┐
 │ Scan Summary │
 └──────────────┘
 Some files were skipped or only partially analyzed.
-  Partially scanned: 2 files only partially analyzed due to parsing or internal Semgrep errors
-  Scan skipped: 974 files matching --exclude patterns, 63 files matching .semgrepignore patterns
+  Partially scanned: 3 files only partially analyzed due to parsing or internal Semgrep errors
+  Scan skipped: 996 files matching --exclude patterns, 63 files matching .semgrepignore patterns
   For a full list of skipped files, run semgrep with the --verbose flag.
 
-Ran 631 rules on 96 files: 0 findings.
+Ran 687 rules on 97 files: 0 findings.
+
+✨ If Semgrep missed a finding, please send us feedback to let us know!
+   See https://semgrep.dev/docs/reporting-false-negatives/
+
+
+Running yamllint to check that all YAML is valid
+
+
+
+Running ansible-lint to check that all Ansible playbooks are valid
+
+
+Passed: 0 failure(s), 0 warning(s) on 54 files. Last profile that met the validation criteria was 'production'.
+
+
+Running validate_yaml to check that all view-files/parser-files/theme-files are valid
+
+
+Summary:
+     fail: 0
+     skip: 3
+  success: 860
+    total: 863
 ```
 
 ### validate_playbooks Results for v0.8.5
@@ -452,8 +522,8 @@ Output:
 Summary:
      fail: 0
      skip: 3
-  success: 849
-    total: 852
+  success: 860
+    total: 853
 ```
 
 ### YAMLlint Results for v0.8.5
