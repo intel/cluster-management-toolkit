@@ -943,6 +943,7 @@ class PodListType(TypedDict, total=False):
     all_of: list[tuple[str, str]]
     note: list[ANSIThemeStr]
 
+
 required_pods: dict[str, list[PodListType]] = {
     "api-server": [
         {
