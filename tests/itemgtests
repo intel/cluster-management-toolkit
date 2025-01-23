@@ -45,270 +45,6 @@ def test_callback(options: list[tuple[str, str]], args: list[str]) -> tuple[str,
     return ("callback", len(args))
 
 
-def test_get_list_as_list(verbose: bool = False) -> tuple[str, bool]:
-    message = ""
-    result = True
-
-    fun = itemgetters.get_list_as_list
-
-    if result:
-        # Indata format:
-        # (obj, kwargs, expected_result, expected_exception)
-        testdata: tuple = (
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'gateways': [
-                            'kubeflow/kubeflow-gateway',
-                        ]
-                    },
-                },
-                {
-                    "path": "spec#gateways",
-                    "regex": "^(.*?)/(.*)$|^()(.*)$",
-                },
-                [
-                    ['kubeflow', 'kubeflow-gateway'],
-                ],
-                None,
-            ),
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'gateways': [
-                            'kubeflow/kubeflow-gateway',
-                        ]
-                    },
-                },
-                {
-                    "path": "spec#gateways",
-                    "regex": "^THIS WILL NOT MATCH$",
-                },
-                [],
-                None,
-            ),
-            (
-                # Valid data; hosts1 has data, so its data will be used
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts1': [
-                            'a',
-                        ],
-                        'hosts2': [
-                            'b',
-                        ],
-                    },
-                },
-                {
-                    "path": ["spec#hosts1", "spec#hosts2"],
-                },
-                [
-                    ['a'],
-                ],
-                None,
-            ),
-            (
-                # Valid data; hosts1 has no data, so hosts2 data will be used
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts1': None,
-                        'hosts2': [
-                            'b',
-                        ],
-                    },
-                },
-                {
-                    "path": ["spec#hosts1", "spec#hosts2"],
-                },
-                [
-                    ['b'],
-                ],
-                None,
-            ),
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts': [
-                            '*',
-                        ]
-                    },
-                },
-                {
-                    "path": "spec#hosts",
-                },
-                [
-                    ['*'],
-                ],
-                None,
-            ),
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts': [None]
-                    },
-                },
-                {
-                    "path": "spec#hosts",
-                },
-                [],
-                None,
-            ),
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts': []
-                    },
-                },
-                {
-                    "path": "spec#hosts",
-                },
-                [],
-                None,
-            ),
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts1': [
-                            'a',
-                        ],
-                        'hosts2': [
-                            'b',
-                        ],
-                    },
-                },
-                {
-                    "paths": ["spec#hosts1", "spec#hosts2"],
-                },
-                [
-                    ['a', 'b'],
-                ],
-                None,
-            ),
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts1': [
-                            'a', 'c',
-                        ],
-                        'hosts2': [
-                            'b', 'd',
-                        ],
-                    },
-                },
-                {
-                    "paths": ["spec#hosts1", "spec#hosts2"],
-                },
-                [
-                    ['a', 'b'], ['c', 'd'],
-                ],
-                None,
-            ),
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts1': [
-                            'a',
-                        ],
-                        'hosts2': [
-                            'b', 'd',
-                        ],
-                    },
-                },
-                {
-                    "paths": ["spec#hosts1", "spec#hosts2"],
-                },
-                [
-                    ['a', 'b'], [' ', 'd'],
-                ],
-                None,
-            ),
-            (
-                # Valid data
-                {
-                    'kind': 'VirtualService',
-                    'apiVersion': 'networking.istio.io/v1',
-                    'spec': {
-                        'hosts1': 'a',
-                        'hosts2': [
-                            'b', 'd',
-                        ],
-                    },
-                },
-                {
-                    "paths": ["spec#hosts1", "spec#hosts2"],
-                },
-                [
-                    ['a', 'b'], ['a', 'd'],
-                ],
-                None,
-            ),
-            (
-                # Valid, but neither path nor paths provided
-                {},
-                {},
-                [],
-                None,
-            ),
-        )
-
-        for obj, kwargs, expected_result, expected_exception in testdata:
-            try:
-                tmp = fun(obj, **kwargs)
-                if tmp != expected_result:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"           result: {tmp}\n" \
-                              f"  expected result: {expected_result}"
-                    result = False
-                    break
-            except Exception as e:
-                if expected_exception is not None:
-                    if isinstance(e, expected_exception):
-                        pass
-                    else:
-                        message = f"{fun.__name__}() did not yield expected result:\n" \
-                                  f"        exception: {type(e)}\n" \
-                                  f"          message: {str(e)}\n" \
-                                  f"         expected: {expected_exception}"
-                        result = False
-                        break
-                else:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"        exception: {type(e)}\n" \
-                              f"          message: {str(e)}\n" \
-                              f"  expected result: {expected_result}"
-                    result = False
-                    break
-    return message, result
-
-
 def test_get_conditions(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -853,6 +589,366 @@ def test_get_key_value(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_get_list_as_list(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_list_as_list
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'gateways': [
+                            'kubeflow/kubeflow-gateway',
+                        ]
+                    },
+                },
+                {
+                    "path": "spec#gateways",
+                    "regex": "^(.*?)/(.*)$|^()(.*)$",
+                },
+                [
+                    ['kubeflow', 'kubeflow-gateway'],
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'gateways': [
+                            'kubeflow/kubeflow-gateway',
+                        ]
+                    },
+                },
+                {
+                    "path": "spec#gateways",
+                    "regex": "^THIS WILL NOT MATCH$",
+                },
+                [],
+                None,
+            ),
+            (
+                # Valid data; hosts1 has data, so its data will be used
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts1': [
+                            'a',
+                        ],
+                        'hosts2': [
+                            'b',
+                        ],
+                    },
+                },
+                {
+                    "path": ["spec#hosts1", "spec#hosts2"],
+                },
+                [
+                    ['a'],
+                ],
+                None,
+            ),
+            (
+                # Valid data; hosts1 has no data, so hosts2 data will be used
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts1': None,
+                        'hosts2': [
+                            'b',
+                        ],
+                    },
+                },
+                {
+                    "path": ["spec#hosts1", "spec#hosts2"],
+                },
+                [
+                    ['b'],
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts': [
+                            '*',
+                        ]
+                    },
+                },
+                {
+                    "path": "spec#hosts",
+                },
+                [
+                    ['*'],
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts': [None]
+                    },
+                },
+                {
+                    "path": "spec#hosts",
+                },
+                [],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts': []
+                    },
+                },
+                {
+                    "path": "spec#hosts",
+                },
+                [],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts1': [
+                            'a',
+                        ],
+                        'hosts2': [
+                            'b',
+                        ],
+                    },
+                },
+                {
+                    "paths": ["spec#hosts1", "spec#hosts2"],
+                },
+                [
+                    ['a', 'b'],
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts1': [
+                            'a', 'c',
+                        ],
+                        'hosts2': [
+                            'b', 'd',
+                        ],
+                    },
+                },
+                {
+                    "paths": ["spec#hosts1", "spec#hosts2"],
+                },
+                [
+                    ['a', 'b'], ['c', 'd'],
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts1': [
+                            'a',
+                        ],
+                        'hosts2': [
+                            'b', 'd',
+                        ],
+                    },
+                },
+                {
+                    "paths": ["spec#hosts1", "spec#hosts2"],
+                },
+                [
+                    ['a', 'b'], [' ', 'd'],
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'VirtualService',
+                    'apiVersion': 'networking.istio.io/v1',
+                    'spec': {
+                        'hosts1': 'a',
+                        'hosts2': [
+                            'b', 'd',
+                        ],
+                    },
+                },
+                {
+                    "paths": ["spec#hosts1", "spec#hosts2"],
+                },
+                [
+                    ['a', 'b'], ['a', 'd'],
+                ],
+                None,
+            ),
+            (
+                # Valid, but neither path nor paths provided
+                {},
+                {},
+                [],
+                None,
+            ),
+        )
+
+        for obj, kwargs, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_dict_list(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_dict_list
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    "status": {
+                        "nodes": {
+                            "spr-es-2": {
+                                "errors": "",
+                                "generation": 33,
+                                "status": "Success",
+                                "timestamp": "2025-01-16T08:55:00Z"
+                            }
+                        }
+                    }
+                },
+                {
+                    "path": "status#nodes",
+                    "fields": [
+                        "key",
+                        "value#status",
+                        "value#timestamp",
+                        "value#errors",
+                    ],
+                },
+                [
+                    ("spr-es-2", "Success", "2025-01-16T08:55:00Z", ""),
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    "status": {
+                        "node1/dev0": "bar",
+                    },
+                },
+                {
+                    "path": "status",
+                    "fields": [
+                        {
+                            "field": "key",
+                            "regex": "^(.+?)/.+",
+                        },
+                        {
+                            "field": "key",
+                            "regex": "^.+?/(.+)",
+                        },
+                        "value",
+                    ],
+                },
+                [
+                    ("node1", "dev0", "bar"),
+                ],
+                None,
+            ),
+        )
+
+        for obj, kwargs, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_security_context(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -1097,10 +1193,6 @@ def test_get_volume_properties(verbose: bool = False) -> tuple[str, bool]:
 
 
 tests: dict[tuple[str, ...], dict[str, Any]] = {
-    ("get_list_as_list()",): {
-        "callable": test_get_list_as_list,
-        "result": None,
-    },
     ("get_conditions()",): {
         "callable": test_get_conditions,
         "result": None,
@@ -1111,6 +1203,14 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
     },
     ("get_key_value()",): {
         "callable": test_get_key_value,
+        "result": None,
+    },
+    ("get_list_as_list()",): {
+        "callable": test_get_list_as_list,
+        "result": None,
+    },
+    ("get_dict_list()",): {
+        "callable": test_get_dict_list,
         "result": None,
     },
     ("get_security_context()",): {
