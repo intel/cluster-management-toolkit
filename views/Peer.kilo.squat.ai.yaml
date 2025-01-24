@@ -13,21 +13,24 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["persistent_keepalive", "peer_endpoint", "allowed_ips"]
+        fields: ["persistent_keepalive", "peer_endpoint", "allowed_ips",
+                 "preshared_key", "public_key"]
     rows:
       allowed_ips:
         header: [["Allowed ", ["main", "infoheader"]],
                  ["I", ["main", "infoheader_shortcut"]],
                  ["Ps:", ["main", "infoheader"]]]
         path: "spec#allowedIPs"
+        default: ["<none>"]
         type: "raw"
-        formatter: "list"
+        formatter: "address"
       peer_endpoint:
         header: [["Peer Endpoint:", ["main", "infoheader"]]]
         paths:
           - path: [["spec#endpoint#dnsOrIP#ip", "spec#endpoint#dnsOrIP#dns"],
                    ["spec#endpoint#port"]]
             pathtype: "tuple"
+            default: ["<unset>"]
         # FIXME: The formatter needs to be improved to handle lists
         # that contain addresses, etc.
         formatter: "list"
@@ -40,8 +43,19 @@ infoview:
       persistent_keepalive:
         header: [["Persistent Keepalive:", ["main", "infoheader"]]]
         path: "spec#persistentKeepalive"
+        default: "<unset>"
         type: "int"
         formatter: "numerical"
+      preshared_key:
+        header: [["Pre-shared Key:", ["main", "infoheader"]]]
+        path: "spec#presharedKey"
+        default: "<unset>"
+        type: "str"
+      public_key:
+        header: [["Public Key:", ["main", "infoheader"]]]
+        path: "spec#publicKey"
+        default: "<unset>"
+        type: "str"
   shortcuts:
     "Allowed IPs":
       key: "i"
@@ -50,6 +64,8 @@ infoview:
       helptext: "Show list of allowed IPs"
       widget: "windowwidget"
       title: "Allowed IPs:"
-      itemgetter: "get_allowed_ips"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#allowedIPs"
       # This isn't supported for now
       sortcolumn: "key"

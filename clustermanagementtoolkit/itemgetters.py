@@ -37,43 +37,6 @@ from clustermanagementtoolkit import kubernetes_helper
 from clustermanagementtoolkit.pvtypes import KNOWN_PV_TYPES
 
 
-# pylint: disable-next=unused-argument
-def get_allowed_ips(obj: dict, **kwargs: Any) -> list[dict]:
-    """
-    Get a list of allowed IP-addresses.
-
-        Parameters:
-            obj (dict): The object to get data from
-            **kwargs (dict[str, Any]): Keyword arguments
-        Returns:
-            ([dict]): A list of allowed IPs
-    """
-    allowed_ips = []
-
-    ip_mask_regex = re.compile(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)")
-
-    for addr in deep_get(obj, DictPath("spec#allowedIPs")):
-        if "/" in addr:
-            tmp = ip_mask_regex.match(addr)
-            if tmp is None:
-                raise ValueError(f"Could not parse {addr} as an address/address mask")
-            ip = tmp[1]
-            mask = tmp[2]
-            allowed_ips.append({
-                "lineattrs": WidgetLineAttrs.NORMAL,
-                "columns": [[ThemeStr(f"{ip}", ThemeAttr("windowwidget", "default")),
-                             ThemeStr("/", ThemeAttr("windowwidget", "dim")),
-                             ThemeStr(f"{mask}", ThemeAttr("windowwidget", "default"))]],
-            })
-        else:
-            allowed_ips.append({
-                "lineattrs": WidgetLineAttrs.NORMAL,
-                "columns": [[ThemeStr(f"{addr}", ThemeAttr("windowwidget", "default"))]],
-            })
-
-    return allowed_ips
-
-
 def get_conditions(obj: dict, **kwargs: Any) -> list[dict]:
     """
     Get a list of conditions.
@@ -1066,7 +1029,6 @@ def get_volume_properties(obj: dict, **kwargs: Any) -> list[tuple[str, str]]:
 
 # Itemgetters acceptable for direct use in view files
 itemgetter_allowlist: dict[str, Callable] = {
-    "get_allowed_ips": get_allowed_ips,
     "get_kubernetes_objects": get_kubernetes_objects,
     "get_events": get_events,
     "get_image_list": get_image_list,
