@@ -1040,6 +1040,11 @@ def main() -> int:
 
     init_ansithemeprint(themefile=None)
 
+    if "--include-cluster" in sys.argv:
+        tests = {**tests, **tests_with_cluster}
+        kh = kubernetes_helper.KubernetesHelper("khtests", "v0.1")
+        kh_cache = kubernetes_helper.KubernetesResourceCache()
+
     # How many non-prepare testcases do we have?
     testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
     start_at_task = 0
@@ -1064,9 +1069,7 @@ def main() -> int:
             end_at_task = int(optarg)
             i += 1
         elif opt == "--include-cluster":
-            tests = {**tests, **tests_with_cluster}
-            kh = kubernetes_helper.KubernetesHelper("khtests", "v0.1")
-            kh_cache = kubernetes_helper.KubernetesResourceCache()
+            pass
         else:
             sys.exit(f"Unknown argument: {opt}")
         i += 1

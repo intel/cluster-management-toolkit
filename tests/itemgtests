@@ -17,20 +17,28 @@ from datetime import datetime, timezone
 from pathlib import PurePath
 import sys
 from typing import Any
+from unittest import mock
 import yaml
 
 from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
+from clustermanagementtoolkit.cmttypes import ProgrammingError
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
 
 from clustermanagementtoolkit import itemgetters
 
+from clustermanagementtoolkit import kubernetes_helper
+
 TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
 
 # unit-tests for itemgetters.py
+
+
+kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
+kh_cache: kubernetes_helper.KubernetesResourceCache = None  # type: ignore
 
 
 def yaml_dump(data: Any, base_indent: int = 4) -> str:
@@ -327,6 +335,324 @@ def test_get_conditions(verbose: bool = False) -> tuple[str, bool]:
         for conditions, path, expected_result, expected_exception in testdata:
             try:
                 tmp = fun(conditions, path=path)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_kubernetes_objects(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_kubernetes_objects
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, mock_response, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                {},
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "kind": "Service",
+                    "name": "cert-manager",
+                    "namespace": "default",
+                    "field_paths": [
+                        "metadata#namespace",
+                        "metadata#name",
+                        "metadata#creationTimestamp",
+                    ],
+                },
+                ([
+                    {
+                        "kind": "Service",
+                        "apiVersion": "v1",
+                        "metadata": {
+                            "name": "cert-manager",
+                            "namespace": "default",
+                            "creationTimestamp": "2024-10-23T20:24:11Z",
+                        },
+                    },
+                ], 200),
+                [
+                    (
+                        "default",
+                        "cert-manager",
+                        "2024-10-23T20:24:11Z",
+                    ),
+                ],
+                None,
+            ),
+            (
+                {
+                    "metadata": {
+                        "namespace": "default",
+                        "name": "cert-manager",
+                    }
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "kind": "Service",
+                    "name_path": "metadata#name",
+                    "namespace_path": "metadata#namespace",
+                    "field_paths": [
+                        "metadata#namespace",
+                        "metadata#name",
+                        "metadata#creationTimestamp",
+                    ],
+                },
+                ([
+                    {
+                        "kind": "Service",
+                        "apiVersion": "v1",
+                        "metadata": {
+                            "name": "cert-manager",
+                            "namespace": "default",
+                            "creationTimestamp": "2024-10-23T20:24:11Z",
+                        },
+                    },
+                ], 200),
+                [
+                    (
+                        "default",
+                        "cert-manager",
+                        "2024-10-23T20:24:11Z",
+                    ),
+                ],
+                None,
+            ),
+            (
+                {
+                    "metadata": {
+                        "namespace": "default",
+                        "name": "cert-manager",
+                    }
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "kind": "Service",
+                    "name_path": "metadata#name",
+                    "namespace_path": "metadata#namespace",
+                    "selector": "foo",
+                    "selector_type": "label",
+                    "field_paths": [
+                        "metadata#namespace",
+                        "metadata#name",
+                        "metadata#creationTimestamp",
+                    ],
+                },
+                ([], 200),
+                [],
+                None,
+            ),
+            (
+                {
+                    "metadata": {
+                        "namespace": "default",
+                        "name": "cert-manager",
+                    }
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "kind": "Service",
+                    "name_path": "metadata#name",
+                    "namespace_path": "metadata#namespace",
+                    "selector": "metadata.name",
+                    "selector_type": "field",
+                    "field_paths": [
+                        "metadata#namespace",
+                        "metadata#name",
+                        "metadata#creationTimestamp",
+                    ],
+                },
+                ([], 200),
+                [],
+                None,
+            ),
+            (
+                {
+                    "metadata": {
+                        "namespace": "default",
+                        "name": "cert-manager",
+                    }
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "kind": "Service",
+                    "namespace_path": "metadata#namespace",
+                    "selector": "foo=bar",
+                    "selector_type": "label",
+                    "field_paths": [
+                        "metadata#namespace",
+                        "metadata#name",
+                        "metadata#creationTimestamp",
+                    ],
+                },
+                ([], 200),
+                [],
+                None,
+            ),
+            (
+                # Everything OK with the request, but fake a HTTP error.
+                {},
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "kind": "Service",
+                    "name": "cert-manager",
+                    "namespace": "default",
+                    "field_paths": [
+                        "metadata#namespace",
+                        "metadata#name",
+                        "metadata#creationTimestamp",
+                    ],
+                },
+                ([], 503),
+                [],
+                None,
+            ),
+            (
+                # kh missing; exception expected.
+                {},
+                {
+                    "kubernetes_helper": None,
+                },
+                None,
+                None,
+                ProgrammingError,
+            ),
+        )
+
+        for obj, kwargs, mock_response, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.kubernetes_helper."
+                                "KubernetesHelper.get_list_by_kind_namespace",
+                                return_value=mock_response):
+                    tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_events(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_events
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, mock_response, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                {
+                    "kind": "PersistentVolumeClaim",
+                    "metadata": {
+                        "name": "data-jaeger-cassandra-0",
+                        "namespace": "default",
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                },
+                [
+                    (
+                        "default",
+                        "data-jaeger-cassandra-0.181d83af5b43f262",
+                        "2025-01-24 22:57:08",
+                        "Normal",
+                        "FailedBinding",
+                        "persistentvolume-controller",
+                        "2025-01-24 05:37:00",
+                        "4161",
+                        "no persistent volumes available for this claim",
+                    ),
+                ],
+                [
+                    {
+                        "fields": (
+                            "default",
+                            "data-jaeger-cassandra-0.181d83af5b43f262",
+                            "2025-01-24 22:57:08",
+                            "Normal",
+                            "FailedBinding",
+                            "persistentvolume-controller",
+                            "2025-01-24 05:37:00",
+                            "4161",
+                            "no persistent volumes available for this claim",
+                        ),
+                    },
+                ],
+                None,
+            ),
+            (
+                # kh missing; exception expected.
+                {},
+                {
+                    "kubernetes_helper": None,
+                },
+                None,
+                None,
+                ProgrammingError,
+            ),
+        )
+
+        for obj, kwargs, mock_response, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.kubernetes_helper."
+                                "KubernetesHelper.get_events_by_kind_name_namespace",
+                                return_value=mock_response):
+                    tmp = fun(obj, **kwargs)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           result: {tmp}\n" \
@@ -917,11 +1243,354 @@ def test_get_dict_list(verbose: bool = False) -> tuple[str, bool]:
                 ],
                 None,
             ),
+            (
+                # Valid data, without regex
+                {
+                    "status": {
+                        "node1/dev0": "bar",
+                    },
+                },
+                {
+                    "path": "status",
+                    "fields": [
+                        {
+                            "field": "key",
+                        },
+                        "value",
+                    ],
+                },
+                [
+                    ("node1/dev0", "bar"),
+                ],
+                None,
+            ),
+            (
+                # Valid data, but non-existing field
+                {
+                    "status": {
+                        "node1/dev0": "bar",
+                    },
+                },
+                {
+                    "path": "status",
+                    "fields": [
+                        {
+                            "field": "INVALID",
+                        },
+                        "value",
+                    ],
+                },
+                [
+                    (" ", "bar"),
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    "status": [
+                        {
+                            "node1/dev0": "foo",
+                        },
+                        {
+                            "node2/dev1": "bar",
+                        },
+                    ],
+                },
+                {
+                    "path": "status",
+                    "fields": [
+                        {
+                            "field": "key",
+                            "regex": "^(.+?)/.+",
+                        },
+                        {
+                            "field": "key",
+                            "regex": "^.+?/(.+)",
+                        },
+                        "value",
+                    ],
+                },
+                [
+                    ("node1", "dev0", "foo"),
+                    ("node2", "dev1", "bar"),
+                ],
+                None,
+            ),
+            (
+                # Valid data, but doesn't match the regex
+                {
+                    "status": {
+                        "node1": "bar",
+                    },
+                },
+                {
+                    "path": "status",
+                    "fields": [
+                        {
+                            "field": "key",
+                            "regex": "^(.+?)?(:/.+)?$",
+                        },
+                        {
+                            "field": "key",
+                            "regex": "^.+?/(.+)",
+                        },
+                        "value",
+                    ],
+                },
+                [
+                    ("node1", " ", "bar"),
+                ],
+                None,
+            ),
+            (
+                # Valid data, but data is None
+                {
+                    "status": {
+                        "node1": None,
+                    },
+                },
+                {
+                    "path": "status",
+                    "fields": [
+                        {
+                            "field": "key",
+                            "regex": "^(.+?)?(:/.+)?$",
+                        },
+                        {
+                            "field": "key",
+                            "regex": "^.+?/(.+)",
+                        },
+                        "value",
+                    ],
+                },
+                [
+                    ("node1", " ", " "),
+                ],
+                None,
+            ),
+            (
+                # Missing data
+                {},
+                {
+                    "path": "status",
+                    "fields": [
+                        {
+                            "field": "key",
+                            "regex": "^(.+?)?(:/.+)?$",
+                        },
+                        {
+                            "field": "key",
+                            "regex": "^.+?/(.+)",
+                        },
+                        "value",
+                    ],
+                },
+                [],
+                None,
+            ),
         )
 
         for obj, kwargs, expected_result, expected_exception in testdata:
             try:
                 tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_package_version_list(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_package_version_list
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, mock_response, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                {
+                    "kind": "Node",
+                    "metadata": {
+                        "name": "mynode",
+                    },
+                },
+                {
+                    "name_path": "metadata#name",
+                },
+                [
+                    (
+                        "ansible",
+                        "11.1.0+dfsg-1"
+                    ),
+                    (
+                        "ansible-core",
+                        "2.18.1-4"
+                    ),
+                    (
+                        "containerd",
+                        "1.7.24~ds1-4"
+                    ),
+                    (
+                        "containerd.io",
+                        "N/A"
+                    ),
+                    (
+                        "cri-o",
+                        "1.31.1-1.1"
+                    ),
+                    (
+                        "cri-tools",
+                        "1.32.0-1.1"
+                    ),
+                    (
+                        "docker-ce",
+                        "N/A"
+                    ),
+                    (
+                        "docker-engine",
+                        "N/A"
+                    ),
+                    (
+                        "docker.io",
+                        "26.1.5+dfsg1-4+b1"
+                    ),
+                    (
+                        "kubeadm",
+                        "1.32.0-1.1"
+                    ),
+                    (
+                        "kubectl",
+                        "1.32.0-1.1"
+                    ),
+                    (
+                        "kubelet",
+                        "1.32.0-1.1"
+                    ),
+                    (
+                        "kubernetes-cni",
+                        "1.6.0-1.1 "
+                    ),
+                    (
+                        "kubernetes-client",
+                        "N/A"
+                    ),
+                    (
+                        "kubernetes-master",
+                        "N/A"
+                    ),
+                    (
+                        "kubernetes-node",
+                        "N/A"
+                    ),
+                    (
+                        "runc",
+                        "1.1.15+ds1-1+b1"
+                    )
+                ],
+                [
+                    (
+                        "ansible",
+                        "11.1.0+dfsg-1"
+                    ),
+                    (
+                        "ansible-core",
+                        "2.18.1-4"
+                    ),
+                    (
+                        "containerd",
+                        "1.7.24~ds1-4"
+                    ),
+                    (
+                        "containerd.io",
+                        "N/A"
+                    ),
+                    (
+                        "cri-o",
+                        "1.31.1-1.1"
+                    ),
+                    (
+                        "cri-tools",
+                        "1.32.0-1.1"
+                    ),
+                    (
+                        "docker-ce",
+                        "N/A"
+                    ),
+                    (
+                        "docker-engine",
+                        "N/A"
+                    ),
+                    (
+                        "docker.io",
+                        "26.1.5+dfsg1-4+b1"
+                    ),
+                    (
+                        "kubeadm",
+                        "1.32.0-1.1"
+                    ),
+                    (
+                        "kubectl",
+                        "1.32.0-1.1"
+                    ),
+                    (
+                        "kubelet",
+                        "1.32.0-1.1"
+                    ),
+                    (
+                        "kubernetes-cni",
+                        "1.6.0-1.1 "
+                    ),
+                    (
+                        "kubernetes-client",
+                        "N/A"
+                    ),
+                    (
+                        "kubernetes-master",
+                        "N/A"
+                    ),
+                    (
+                        "kubernetes-node",
+                        "N/A"
+                    ),
+                    (
+                        "runc",
+                        "1.1.15+ds1-1+b1"
+                    )
+                ],
+                None,
+            ),
+        )
+
+        for obj, kwargs, mock_response, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.itemgetters."
+                                "get_package_versions",
+                                return_value=mock_response):
+                    tmp = fun(obj, **kwargs)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           result: {tmp}\n" \
@@ -1213,6 +1882,10 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
         "callable": test_get_dict_list,
         "result": None,
     },
+    ("get_package_version_list()",): {
+        "callable": test_get_package_version_list,
+        "result": None,
+    },
     ("get_security_context()",): {
         "callable": test_get_security_context,
         "result": None,
@@ -1224,7 +1897,23 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
 }
 
 
+tests_with_cluster: dict[tuple[str, ...], dict[str, Any]] = {
+    ("get_kubernetes_objects()",): {
+        "callable": test_get_kubernetes_objects,
+        "result": None,
+    },
+    ("get_events()",): {
+        "callable": test_get_events,
+        "result": None,
+    },
+}
+
+
 def main() -> int:
+    global kh
+    global kh_cache
+    global tests
+
     fail = 0
     success = 0
     verbose = False
@@ -1232,6 +1921,11 @@ def main() -> int:
 
     themefile = DEFAULT_THEME_FILE
     init_ansithemeprint(themefile=themefile)
+
+    if "--include-cluster" in sys.argv:
+        tests = {**tests, **tests_with_cluster}
+        kh = kubernetes_helper.KubernetesHelper("khtests", "v0.1")
+        kh_cache = kubernetes_helper.KubernetesResourceCache()
 
     # How many non-prepare testcases do we have?
     testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
@@ -1256,6 +1950,8 @@ def main() -> int:
                 raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
             end_at_task = int(optarg)
             i += 1
+        elif opt == "--include-cluster":
+            pass
         else:
             sys.exit(f"Unknown argument: {opt}")
         i += 1

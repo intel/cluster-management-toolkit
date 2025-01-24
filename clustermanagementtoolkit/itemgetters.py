@@ -22,8 +22,6 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeStr, WidgetLineAttrs
-
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
 from clustermanagementtoolkit.cmttypes import ProgrammingError
 
@@ -100,7 +98,7 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
             ([(str, str)]): A list of fields from Kubernetes objects
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_endpoint_slices() called without kubernetes_helper")
+        raise ProgrammingError("get_kubernetes_objects() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     field_paths = deep_get(kwargs, DictPath("field_paths"), [])
@@ -137,7 +135,7 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
         else:
             field_selector = selector
 
-    vlist, _status = \
+    vlist, status = \
         kh.get_list_by_kind_namespace((kind, api_family),
                                       namespace,
                                       label_selector=label_selector,
@@ -145,7 +143,7 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
                                       resource_cache=kh_cache)
 
     tmp: list[tuple[str, ...]] = []
-    if vlist is None or _status != 200:
+    if vlist is None or status != 200:
         return tmp
 
     for item in vlist:
@@ -333,7 +331,7 @@ def get_dict_list(obj: dict, **kwargs: Any) -> list[Any]:
     path: Union[str, DictPath] = deep_get(kwargs, DictPath("path"))
     fields = deep_get(kwargs, DictPath("fields"))
 
-    data: Union[dict, list[dict]] = deep_get(obj, DictPath(path), {})
+    data: Union[dict, list[dict]] = deep_get(obj, DictPath(path), [])
 
     if isinstance(data, dict):
         data = [data]
@@ -355,13 +353,15 @@ def get_dict_list(obj: dict, **kwargs: Any) -> list[Any]:
                         tmp2 = re.match(field_regex, tmp)
                         if tmp2 is not None:
                             tmp = tmp2.group(1)
+                        else:
+                            tmp = " "
                 else:
-                    tmp = "<none>"
+                    tmp = " "
             else:
                 if (tmp := deep_get(item, DictPath(field))) is not None:
                     tmp = str(tmp)
                 else:
-                    tmp = "<none>"
+                    tmp = " "
             newobj.append(tmp)
         vlist.append(tuple(newobj))
     return vlist
@@ -828,6 +828,7 @@ def get_strings_from_string(obj: dict, **kwargs: Any) -> list[list[str]]:
 def get_endpoint_ips(subsets: list[dict]) -> list[str]:
     """
     Get a list of endpoint IPs.
+    Note: this is a helper, not an itemgetter.
 
         Parameters:
             subsets ([dict]): The subsets to get endpoint IPs from
@@ -978,6 +979,7 @@ def get_svc_port_target_endpoints(obj: dict, **kwargs: Any) -> list[tuple[str, s
 def get_pv_type(obj: dict) -> Optional[str]:
     """
     Given a volume object, return its type.
+    Note: this is a helper, not an itemgetter.
 
         Parameters:
             obj (dict): The object to get data from
@@ -1029,22 +1031,23 @@ def get_volume_properties(obj: dict, **kwargs: Any) -> list[tuple[str, str]]:
 
 # Itemgetters acceptable for direct use in view files
 itemgetter_allowlist: dict[str, Callable] = {
+    "get_conditions": get_conditions,
     "get_kubernetes_objects": get_kubernetes_objects,
     "get_events": get_events,
     "get_image_list": get_image_list,
     "get_key_value": get_key_value,
-    "get_dict_list": get_dict_list,
     "get_list_as_list": get_list_as_list,
+    "get_dict_list": get_dict_list,
     "get_list_fields": get_list_fields,
     "get_package_version_list": get_package_version_list,
     "get_pod_affinity": get_pod_affinity,
     "get_pod_configmaps": get_pod_configmaps,
-    "get_pod_tolerations": get_pod_tolerations,
     "get_prepopulated_list": get_prepopulated_list,
+    "get_pod_tolerations": get_pod_tolerations,
     "get_resource_list": get_resource_list,
     "get_resources": get_resources,
-    "get_security_context": get_security_context,
     "get_strings_from_string": get_strings_from_string,
+    "get_security_context": get_security_context,
     "get_svc_port_target_endpoints": get_svc_port_target_endpoints,
     "get_volume_properties": get_volume_properties,
 }
