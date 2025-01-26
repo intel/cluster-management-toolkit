@@ -1618,6 +1618,356 @@ def test_get_package_version_list(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_get_pod_affinity(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_pod_affinity
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    "kind": "Pod",
+                    "apiVersion": "v1",
+                    "spec": {
+                        "affinity": {
+                            "nodeAffinity": {
+                                "requiredDuringSchedulingIgnoredDuringExecution": {
+                                    "nodeSelectorTerms": [
+                                        {
+                                            "matchFields": [
+                                                {
+                                                    "key": "metadata.name",
+                                                    "operator": "In",
+                                                    "values": [
+                                                        "crc",
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    "path": "spec#affinity",
+                },
+                [
+                    (
+                        "nodeAffinity",
+                        "Required",
+                        "Ignored",
+                        "metadata.name In [crc]",
+                        ""
+                    ),
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    "kind": "Pod",
+                    "apiVersion": "v1",
+                    "spec": {
+                        "affinity": {
+                            "podAntiAffinity": {
+                                "requiredDuringSchedulingIgnoredDuringExecution": [
+                                    {
+                                        "labelSelector": {
+                                            "matchLabels": {
+                                                "apiserver": "true",
+                                                "app": "openshift-apiserver-a",
+                                                "openshift-apiserver-anti-affinity": "true"
+                                            }
+                                        },
+                                        "topologyKey": "kubernetes.io/hostname"
+                                    }
+                                ]
+                            }
+                        },
+                    },
+                },
+                {
+                    "path": "spec#affinity",
+                },
+                [
+                    (
+                        "podAntiAffinity",
+                        "Required",
+                        "Ignored",
+                        "apiserver=true,app=openshift-apiserver-a,"
+                        "openshift-apiserver-anti-affinity=true",
+                        "kubernetes.io/hostname"
+                    ),
+                ],
+                None,
+            ),
+        )
+
+        for obj, kwargs, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_pod_tolerations(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_pod_tolerations
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    "kind": "Pod",
+                    "apiVersion": "v1",
+                    "spec": {
+                        "tolerations": [
+                            {
+                                "key": "node-role.kubernetes.io/master",
+                                "operator": "Exists",
+                                "effect": "NoSchedule"
+                            },
+                            {
+                                "key": "node-role.kubernetes.io/control-plane",
+                                "operator": "Exists",
+                                "effect": "NoExecute"
+                            },
+                            {
+                                "key": "node.kubernetes.io/unreachable",
+                                "operator": "Exists",
+                                "effect": "NoExecute",
+                                "tolerationSeconds": 120
+                            },
+                            {
+                                "key": "node.kubernetes.io/not-ready",
+                                "operator": "Exists",
+                                "effect": "NoExecute",
+                                "tolerationSeconds": -1
+                            },
+                            {
+                                "key": "node.kubernetes.io/memory-pressure",
+                                "operator": "Exists",
+                                "effect": "NoSchedule"
+                            },
+                        ],
+                    },
+                },
+                [
+                    (
+                        "node-role.kubernetes.io/master",
+                        "Exists",
+                        "",
+                        "NoSchedule",
+                        "Never"
+                    ),
+                    (
+                        "node-role.kubernetes.io/control-plane",
+                        "Exists",
+                        "",
+                        "NoExecute",
+                        "Never"
+                    ),
+                    (
+                        "node.kubernetes.io/unreachable",
+                        "Exists",
+                        "",
+                        "NoExecute",
+                        "120"
+                    ),
+                    (
+                        "node.kubernetes.io/not-ready",
+                        "Exists",
+                        "",
+                        "NoExecute",
+                        "Immediately"
+                    ),
+                    (
+                        "node.kubernetes.io/memory-pressure",
+                        "Exists",
+                        "",
+                        "NoSchedule",
+                        "Never"
+                    ),
+                ],
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_resource_list(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_resource_list
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    "kind": "Node",
+                    "apiVersion": "v1",
+                    "status": {
+                        "allocatable": {
+                            "cpu": "3800m",
+                            "ephemeral-storage": "57070512853",
+                            "hugepages-1Gi": "0",
+                            "hugepages-2Mi": "0",
+                            "memory": "15909892Ki",
+                            "pods": "250"
+                        },
+                        "capacity": {
+                            "cpu": "4",
+                            "ephemeral-storage": "62323692Ki",
+                            "hugepages-1Gi": "0",
+                            "hugepages-2Mi": "0",
+                            "memory": "16370692Ki",
+                            "pods": "250"
+                        },
+                    },
+                },
+                [
+                    (
+                        "cpu",
+                        "3800m",
+                        "4"
+                    ),
+                    (
+                        "ephemeral-storage",
+                        "57070512853",
+                        "62323692Ki"
+                    ),
+                    (
+                        "hugepages-1Gi",
+                        "0",
+                        "0"
+                    ),
+                    (
+                        "hugepages-2Mi",
+                        "0",
+                        "0"
+                    ),
+                    (
+                        "memory",
+                        "15909892Ki",
+                        "16370692Ki"
+                    ),
+                    (
+                        "pods",
+                        "250",
+                        "250"
+                    )
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    "kind": "Node",
+                    "apiVersion": "v1",
+                    "status": {},
+                },
+                [],
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_security_context(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -1884,6 +2234,18 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
     },
     ("get_package_version_list()",): {
         "callable": test_get_package_version_list,
+        "result": None,
+    },
+    ("get_pod_affinity()",): {
+        "callable": test_get_pod_affinity,
+        "result": None,
+    },
+    ("get_pod_tolerations()",): {
+        "callable": test_get_pod_tolerations,
+        "result": None,
+    },
+    ("get_resource_list()",): {
+        "callable": test_get_resource_list,
         "result": None,
     },
     ("get_security_context()",): {
