@@ -709,7 +709,7 @@ def get_pod_tolerations(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, s
 
         Parameters:
             obj (dict): The object to get data from
-            **kwargs (dict[str, Any]): Keyword arguments
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
             ([(str, str, str, str, str)]): A list of pod tolerations
                 (str): key
@@ -748,7 +748,7 @@ def get_resource_list(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
 
         Parameters:
             obj (dict): The object to get data from
-            **kwargs (dict[str, Any]): Keyword arguments
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
             ([(str, str)]): A list of resources
                 (str): Resource
@@ -771,7 +771,7 @@ def get_resources(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
 
         Parameters:
             obj (dict): The object to get data from
-            **kwargs (dict[str, Any]): Keyword arguments
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
             ([(str, str)]): A list of resources
                 (str): Resource
