@@ -4465,7 +4465,7 @@ class UIProps:
             return Retval.MATCH
         if c == ord("a"):
             if self.annotations:
-                title = ""
+                title = "Annotations:"
 
                 windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
                              items=self.annotations, headers=annotation_headers,
@@ -4475,8 +4475,11 @@ class UIProps:
                 return Retval.MATCH
         if c == ord("l"):
             if self.labels:
+                title = "Labels:"
+
                 windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
-                             items=self.labels, headers=label_headers, cursor=False)
+                             items=self.labels, headers=label_headers,
+                             title=title, cursor=False)
 
                 self.refresh_all()
                 return Retval.MATCH
