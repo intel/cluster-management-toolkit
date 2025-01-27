@@ -817,8 +817,8 @@ def get_strings_from_string(obj: dict, **kwargs: Any) -> list[list[str]]:
     """
     vlist = []
     if "path" in kwargs:
-        path = deep_get(kwargs, DictPath("path"))
-        tmp = deep_get(obj, DictPath(path), [])
+        path: DictPath = DictPath(deep_get(kwargs, DictPath("path"), ""))
+        tmp = deep_get(obj, DictPath(path), "")
         if tmp is not None and tmp:
             for line in split_msg(tmp):
                 vlist.append([line])
