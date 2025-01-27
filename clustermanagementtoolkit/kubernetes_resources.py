@@ -473,6 +473,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/agent.k8s.elastic.co/v1alpha1/"],
         "api": "agents",
     },
+    # analysis.koordinator.sh
+    ("Recommendation", "analysis.koordinator.sh"): {
+        "api_paths": ["apis/analysis.koordinator.sh/v1alpha1/"],
+        "api": "recommendations",
+    },
     # apiserver.openshift.io
     ("APIRequestCount", "apiserver.openshift.io"): {
         "api_paths": ["apis/apiserver.openshift.io/v1/"],
@@ -1146,6 +1151,12 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("Template", "config.kiosk.sh"): {
         "api_paths": ["apis/config.kiosk.sh/v1alpha1/"],
         "api": "templates",
+        "namespaced": False,
+    },
+    # config.koordinator.sh
+    ("ClusterColocationProfile", "config.koordinator.sh"): {
+        "api_paths": ["apis/config.koordinator.sh/v1alpha1/"],
+        "api": "clustercolocationprofiles",
         "namespaced": False,
     },
     # config.openshift.io
@@ -4214,6 +4225,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/provisioning.cattle.io/v1/"],
         "api": "clusters",
     },
+    # quota.koordinator.sh
+    ("ElasticQuotaProfile", "quota.koordinator.sh"): {
+        "api_paths": ["apis/quota.koordinator.sh/v1alpha1/"],
+        "api": "elasticquotaprofiles",
+    },
     # quota.openshift.io
     ("AppliedClusterResourceQuota", "quota.openshift.io"): {
         "api_paths": ["apis/quota.openshift.io/v1/"],
@@ -4447,6 +4463,22 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/samples.operator.openshift.io/v1/"],
         "api": "configs",
     },
+    # scheduling.koordinator.sh
+    ("Device", "scheduling.koordinator.sh"): {
+        "api_paths": ["apis/scheduling.koordinator.sh/v1alpha1/"],
+        "api": "devices",
+        "namespaced": False,
+    },
+    ("PodMigrationJob", "scheduling.koordinator.sh"): {
+        "api_paths": ["apis/scheduling.koordinator.sh/v1alpha1/"],
+        "api": "podmigrationjobs",
+        "namespaced": False,
+    },
+    ("Reservation", "scheduling.koordinator.sh"): {
+        "api_paths": ["apis/scheduling.koordinator.sh/v1alpha1/"],
+        "api": "reservations",
+        "namespaced": False,
+    },
     # scheduling.volcano.sh
     ("PodGroup", "scheduling.volcano.sh"): {
         "api_paths": ["apis/scheduling.volcano.sh/v1beta1/"],
@@ -4573,6 +4605,17 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("SharedSecret", "sharedresource.openshift.io"): {
         "api_paths": ["apis/sharedresource.openshift.io/v1alpha1/"],
         "api": "sharedsecrets",
+        "namespaced": False,
+    },
+    # slo.koordinator.sh
+    ("NodeMetric", "slo.koordinator.sh"): {
+        "api_paths": ["apis/slo.koordinator.sh/v1alpha1/"],
+        "api": "nodemetrics",
+        "namespaced": False,
+    },
+    ("NodeSLO", "slo.koordinator.sh"): {
+        "api_paths": ["apis/slo.koordinator.sh/v1alpha1/"],
+        "api": "nodeslos",
         "namespaced": False,
     },
     # snapshot.kubevirt.io

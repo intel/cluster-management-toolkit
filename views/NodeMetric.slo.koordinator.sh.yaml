@@ -1,0 +1,68 @@
+---
+kind: "NodeMetric"
+api_family: "slo.koordinator.sh"
+default_command: "nodemetrics.slo.koordinator.sh"
+command:
+  - "koordnodemetrics"
+  - "koordnodemetric"
+listview:
+  name: "Node Metrics"
+  group: "Scheduling & Scaling"
+  field_indexes:
+    Normal:
+      fields: ["name", "node_memory_collect_policy",
+               "aggregate_duration", "report_interval", "age"]
+  fields:
+    aggregate_duration:
+      header: "Report Interval:"
+      path: "spec#metricCollectPolicy#aggregateDurationSeconds"
+      align: "right"
+      type: "str"
+      formatter: "numerical"
+    node_memory_collect_policy:
+      header: "Node Memory Collect Policy:"
+      path: "spec#metricCollectPolicy#nodeMemoryCollectPolicy"
+      type: "str"
+    report_interval:
+      header: "Report Interval:"
+      path: "spec#metricCollectPolicy#reportIntervalSeconds"
+      align: "right"
+      type: "str"
+      formatter: "numerical"
+infoview:
+  name: "Node Metric Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_memory_collect_policy",
+                 "node_aggregate_policy",
+                 "aggregate_duration", "report_interval",
+                 "update_time"]
+    rows:
+      aggregate_duration:
+        header: [["Aggregate Duration:", ["main", "infoheader"]]]
+        path: "spec#metricCollectPolicy#aggregateDurationSeconds"
+        type: "str"
+        formatter: "numerical"
+      node_aggregate_policy:
+        header: [["Node Aggregate Policy:", ["main", "infoheader"]]]
+        path: "spec#metricCollectPolicy#nodeAggregatePolicy#durations"
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_formatters:
+            - "numerical_with_units"
+      node_memory_collect_policy:
+        header: [["Node Memory Collect Policy:", ["main", "infoheader"]]]
+        path: "spec#metricCollectPolicy#nodeMemoryCollectPolicy"
+        type: "str"
+      report_interval:
+        header: [["Report Interval:", ["main", "infoheader"]]]
+        path: "spec#metricCollectPolicy#reportIntervalSeconds"
+        type: "str"
+        formatter: "numerical"
+      update_time:
+        header: [["Update Time:", ["main", "infoheader"]]]
+        path: "status#updateTime"
+        type: "str"
+        formatter: "timestamp"

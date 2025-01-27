@@ -1,0 +1,109 @@
+---
+kind: "NodeSLO"
+api_family: "slo.koordinator.sh"
+default_command: "nodeslos.slo.koordinator.sh"
+command:
+  - "koordnodeslos"
+  - "koordnodeslo"
+listview:
+  name: "Node SLOs"
+  group: "Scheduling & Scaling"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Node SLO Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields:
+          - "cpu_burst_strategy_header"
+          - "cpu_burst_strategy_cfs_quota_burst_percent"
+          - "cpu_burst_strategy_cfs_quota_burst_period_seconds"
+          - "cpu_burst_strategy_cpu_burst_percent"
+          - "cpu_burst_strategy_policy"
+          - "cpu_burst_strategy_share_pool_threshold_percent"
+          - "resource_used_threshold_with_be_header"
+          - "resource_used_threshold_with_be_enabled"
+          - "resource_used_threshold_with_be_cpu_evict_policy"
+          - "resource_used_threshold_with_be_cpu_suppress_policy"
+          - "resource_used_threshold_with_be_cpu_suppress_threshold_percent"
+          - "resource_used_threshold_with_be_memory_evict_threshold_percent"
+          - "system_strategy_header"
+          - "system_strategy_memcg_reap_background"
+          - "system_strategy_min_free_kbytes_factor"
+          - "system_strategy_total_network_bandwidth"
+          - "system_strategy_watermark_scale_factor"
+    rows:
+      cpu_burst_strategy_header:
+        header: [["CPU Burst Strategy:", ["main", "infoheader"]]]
+      cpu_burst_strategy_cfs_quota_burst_percent:
+        header: [["  CFS Quota Burst %:", ["main", "infoheader"]]]
+        path: "spec#cpuBurstStrategy#cfsQuotaBurstPercent"
+        type: "int"
+        formatter: "numerical"
+      cpu_burst_strategy_cfs_quota_burst_period_seconds:
+        header: [["  CFS Quota Burst Period:", ["main", "infoheader"]]]
+        path: "spec#cpuBurstStrategy#cfsQuotaBurstPeriodSeconds"
+        type: "int"
+        formatter: "numerical"
+      cpu_burst_strategy_cpu_burst_percent:
+        header: [["  CPU Burst %:", ["main", "infoheader"]]]
+        path: "spec#cpuBurstStrategy#cpuBurstPercent"
+        type: "int"
+        formatter: "numerical"
+      cpu_burst_strategy_policy:
+        header: [["  Policy:", ["main", "infoheader"]]]
+        path: "spec#cpuBurstStrategy#policy"
+        type: "str"
+      cpu_burst_strategy_share_pool_threshold_percent:
+        header: [["  Share Pool Threshold %:", ["main", "infoheader"]]]
+        path: "spec#cpuBurstStrategy#sharePoolThresholdPercent"
+        type: "int"
+        formatter: "numerical"
+      resource_used_threshold_with_be_header:
+        header: [["Resource Used Threshold with BE:", ["main", "infoheader"]]]
+      resource_used_threshold_with_be_cpu_evict_policy:
+        header: [["  CPU Evict Policy:", ["main", "infoheader"]]]
+        path: "spec#resourceUsedThresholdWithBE#cpuEvictPolicy"
+        type: "str"
+      resource_used_threshold_with_be_cpu_suppress_policy:
+        header: [["  CPU Suppress Policy:", ["main", "infoheader"]]]
+        path: "spec#resourceUsedThresholdWithBE#cpuSuppressPolicy"
+        type: "str"
+      resource_used_threshold_with_be_cpu_suppress_threshold_percent:
+        header: [["  CPU Suppress Threshold Percent:", ["main", "infoheader"]]]
+        path: "spec#resourceUsedThresholdWithBE#cpuSuppressThresholdPercent"
+        type: "int"
+        formatter: "numerical"
+      resource_used_threshold_with_be_enabled:
+        header: [["  Enabled:", ["main", "infoheader"]]]
+        path: "spec#resourceUsedThresholdWithBE#enable"
+        type: "bool"
+      resource_used_threshold_with_be_memory_evict_threshold_percent:
+        header: [["  Memory Evict Threshold Percent:", ["main", "infoheader"]]]
+        path: "spec#resourceUsedThresholdWithBE#memoryEvictThresholdPercent"
+        type: "int"
+        formatter: "numerical"
+      system_strategy_header:
+        header: [["System Strategy:", ["main", "infoheader"]]]
+      system_strategy_memcg_reap_background:
+        header: [["  Mem CGroup Reap Background:", ["main", "infoheader"]]]
+        path: "spec#systemStrategy#memcgReapBackGround"
+        type: "int"
+        formatter: "numerical"
+      system_strategy_min_free_kbytes_factor:
+        header: [["  Min Free Kilobytes Factor:", ["main", "infoheader"]]]
+        path: "spec#systemStrategy#minFreeKbytesFactor"
+        type: "int"
+        formatter: "numerical"
+      system_strategy_total_network_bandwidth:
+        header: [["  Total Network Bandwidth:", ["main", "infoheader"]]]
+        path: "spec#systemStrategy#totalNetworkBandwidth"
+        type: "int"
+        formatter: "numerical"
+      system_strategy_watermark_scale_factor:
+        header: [["  Watermark Scale Factor:", ["main", "infoheader"]]]
+        path: "spec#systemStrategy#watermarkScaleFactor"
+        type: "int"
+        formatter: "numerical"
