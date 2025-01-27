@@ -1740,6 +1740,103 @@ def test_get_pod_affinity(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_get_prepopulated_list(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_prepopulated_list
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    "metadata": {
+                        "name": "vm1",
+                    }
+                },
+                {
+                    "items": [
+                        {
+                            "columns": ["Pause", "Pause a running VM"],
+                            "action_args": {
+                                "kind": "VirtualMachine",
+                                "api_family": "virt.virtink.smartx.com",
+                            },
+                        },
+                        {
+                            "columns": [["metadata#name"], "Test"],
+                            "action_args": {
+                                "kind": "VirtualMachine",
+                                "api_family": "virt.virtink.smartx.com",
+                            },
+                        },
+                    ],
+                },
+                [
+                    {
+                        "fields": ["Pause", "Pause a running VM"],
+                        "ref": {
+                            "action": None,
+                            "action_call": None,
+                            "action_args": {
+                                "kind": ("VirtualMachine", "virt.virtink.smartx.com"),
+                                "name": None,
+                                "namespace": "",
+                                "args": {},
+                            },
+                        },
+                    },
+                    {
+                        "fields": ["vm1", "Test"],
+                        "ref": {
+                            "action": None,
+                            "action_call": None,
+                            "action_args": {
+                                "kind": ("VirtualMachine", "virt.virtink.smartx.com"),
+                                "name": None,
+                                "namespace": "",
+                                "args": {},
+                            },
+                        },
+                    },
+                ],
+                None,
+            ),
+        )
+
+        for obj, kwargs, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_pod_tolerations(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -1748,7 +1845,7 @@ def test_get_pod_tolerations(verbose: bool = False) -> tuple[str, bool]:
 
     if result:
         # Indata format:
-        # (obj, kwargs, expected_result, expected_exception)
+        # (obj, expected_result, expected_exception)
         testdata: tuple = (
             (
                 # Valid data
@@ -1866,7 +1963,7 @@ def test_get_resource_list(verbose: bool = False) -> tuple[str, bool]:
 
     if result:
         # Indata format:
-        # (obj, kwargs, expected_result, expected_exception)
+        # (obj, expected_result, expected_exception)
         testdata: tuple = (
             (
                 # Valid data
@@ -1941,6 +2038,82 @@ def test_get_resource_list(verbose: bool = False) -> tuple[str, bool]:
         for obj, expected_result, expected_exception in testdata:
             try:
                 tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_strings_from_string(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_strings_from_string
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    "data": "line1\nline2",
+                },
+                {
+                    "path": "data",
+                },
+                [
+                    ["line1"],
+                    ["line2"],
+                ],
+                None,
+            ),
+            (
+                # No data
+                {},
+                {
+                    "path": "data",
+                },
+                [],
+                None,
+            ),
+            (
+                # None data
+                {
+                    "data": None,
+                },
+                {
+                    "path": "data",
+                },
+                [],
+                None,
+            ),
+        )
+
+        for obj, kwargs, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, **kwargs)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           result: {tmp}\n" \
@@ -2240,12 +2413,20 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
         "callable": test_get_pod_affinity,
         "result": None,
     },
+    ("get_prepopulated_list()",): {
+        "callable": test_get_prepopulated_list,
+        "result": None,
+    },
     ("get_pod_tolerations()",): {
         "callable": test_get_pod_tolerations,
         "result": None,
     },
     ("get_resource_list()",): {
         "callable": test_get_resource_list,
+        "result": None,
+    },
+    ("get_strings_from_string()",): {
+        "callable": test_get_strings_from_string,
         "result": None,
     },
     ("get_security_context()",): {
