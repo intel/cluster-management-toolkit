@@ -540,6 +540,6 @@ install:
 	$(INSTALL_DATA) cmt.yaml $(DESTDIR)$(CMT_CONFIG_DIR) &&\
 	$(INSTALL_DATA) $(COMPLETION_FILES) $(DESTDIR)$(BASH_COMPLETION_DIR) &&\
 	$(INSTALL) cmt cmtadm cmtinv cmu $(DESTDIR)$(BINDIR) &&\
-	tar cf - --exclude=.*.swp clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
-	tar cf - --exclude=.*.swp parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) &&\
+	tar cf - --exclude-ignore=$$(pwd)/.gitignore clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
+	tar cf - --exclude-ignore=$$(pwd)/.gitignore parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) &&\
 	cp views/*.yaml $(DESTDIR)$(CMT_VIEWS_DIR) || printf -- "Installation failed.\n"
