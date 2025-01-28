@@ -408,12 +408,15 @@ infoview:
         name_path: 1
     "Resources":
       key: "r"
+      modifier: "shift"
       read_only: true
-      helptext: "Show resource information"
+      helptext: "Show resources"
       widget: "windowwidget"
       title: "Resources:"
-      itemgetter: "get_resources"
-      headers: ["Resource:", "Type:", "Value:"]
+      headers: ["Request Type:", "Limits:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#resources"
     "Containers":
       key: "c"
       modifier: "shift"

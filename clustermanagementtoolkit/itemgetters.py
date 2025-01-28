@@ -571,6 +571,9 @@ def get_pod_configmaps(obj: dict, **kwargs: Any) -> Optional[list[tuple[str, str
             **kwargs (dict[str, Any]): Keyword arguments
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+                cm_namespace (str|[str]): The namespace/path to the ConfigMap namespace
+                cm_name (str|[str]): The name/path to the ConfigMap name
+                pod_name (str): The name of the pod
         Returns:
             ([(str, str)]):
                 (str): Namespace of the pod using this ConfigMap
@@ -602,7 +605,6 @@ def get_pod_configmaps(obj: dict, **kwargs: Any) -> Optional[list[tuple[str, str
                                                    cm_namespace,
                                                    field_selector=field_selector,
                                                    resource_cache=kh_cache)
-
     plist = cast(list, plist)
 
     for item in plist:
@@ -764,46 +766,6 @@ def get_resource_list(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
     return vlist
 
 
-# pylint: disable-next=unused-argument
-def get_resources(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
-    """
-    Get a list of Prometheus resources.
-
-        Parameters:
-            obj (dict): The object to get data from
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
-        Returns:
-            ([(str, str)]): A list of resources
-                (str): Resource
-                (str): Type
-                (str): Capacity
-    """
-    resources: list[tuple[str, str, str]] = []
-
-    for limit in list(deep_get(obj, DictPath("spec#resources#limits"), {})):
-        if limit == "cpu":
-            resources.append(("CPU", "Limit",
-                              deep_get(obj, DictPath("spec#resources#limits#cpu"))))
-        elif limit == "memory":
-            resources.append(("Memory", "Limit",
-                              deep_get(obj, DictPath("spec#resources#limits#memory"))))
-        elif limit.startswith("hugepages-"):
-            resources.append((f"H{limit[1:]}", "Limit",
-                              deep_get(obj, DictPath(f"spec#resources#limits#{limit}"))))
-
-    for request in list(deep_get(obj, DictPath("spec#resources#requests"), {})):
-        if request == "cpu":
-            resources.append(("CPU", "Limit",
-                              deep_get(obj, DictPath("spec#resources#requests#cpu"))))
-        elif request == "memory":
-            resources.append(("Memory", "Limit",
-                              deep_get(obj, DictPath("spec#resources#requests#memory"))))
-        elif request.startswith("hugepages-"):
-            resources.append((f"{request.capitalize()}", "Limit",
-                              deep_get(obj, DictPath(f"spec#resources#requests#{request}"))))
-    return resources
-
-
 def get_strings_from_string(obj: dict, **kwargs: Any) -> list[list[str]]:
     """
     Get a list of strings from a string with embedded newlines.
@@ -962,15 +924,11 @@ def get_svc_port_target_endpoints(obj: dict, **kwargs: Any) -> list[tuple[str, s
         if cluster_ip is not None:
             target_port = deep_get(port, DictPath("targetPort"), "")
         else:
-            target_port = ""
+            target_port = "<none>"
         endpointstr = f":{target_port}, ".join(endpoints)
-        if endpointstr:
-            endpointstr += f":{target_port}"
+        endpointstr += f":{target_port}"
         port_target_endpoints.append((f"{name}:{svcport}/{protocol}",
                                       f"{node_port}", f"{target_port}/{protocol}", endpointstr))
-
-    if not port_target_endpoints:
-        port_target_endpoints = [("<none>", "", "", "")]
 
     return port_target_endpoints
 
@@ -1044,7 +1002,6 @@ itemgetter_allowlist: dict[str, Callable] = {
     "get_prepopulated_list": get_prepopulated_list,
     "get_pod_tolerations": get_pod_tolerations,
     "get_resource_list": get_resource_list,
-    "get_resources": get_resources,
     "get_strings_from_string": get_strings_from_string,
     "get_security_context": get_security_context,
     "get_svc_port_target_endpoints": get_svc_port_target_endpoints,
