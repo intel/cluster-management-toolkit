@@ -1740,6 +1740,280 @@ def test_get_pod_affinity(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_get_pod_configmaps(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_pod_configmaps
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, mock_response, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    "kind": "ConfigMap",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "coredns",
+                        "namespace": "kube-system",
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "cm_namespace": ["metadata#namespace"],
+                    "cm_name": ["metadata#name"],
+                },
+                ([
+                    {
+                        "kind": "Pod",
+                        "apiVersion": "v1",
+                        "metadata": {
+                            "name": "coredns-1",
+                        },
+                        "spec": {
+                            "volumes": [
+                                {
+                                    "configMap": {
+                                        "name": "coredns",
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        "kind": "Pod",
+                        "apiVersion": "v1",
+                        "metadata": {
+                            "name": "coredns-2",
+                        },
+                        "spec": {
+                            "volumes": [],
+                            "containers": [
+                                {
+                                    "env": [
+                                        {
+                                            "ValueFrom": {
+                                                "configMapKeyRef": {
+                                                    "name": "coredns",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        "kind": "Pod",
+                        "apiVersion": "v1",
+                        "metadata": {
+                            "name": "coredns-3",
+                        },
+                        "spec": {
+                            "volumes": [
+                                {
+                                    "projected": [
+                                        {
+                                            "sources": [],
+                                        },
+                                    ],
+                                },
+                            ],
+                            "containers": [
+                                {
+                                    "env": [
+                                        {
+                                            "ValueFrom": {
+                                                "configMapKeyRef": {
+                                                    "name": "somethingelse",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    "envFrom": [
+                                        {
+                                            "configMapKeyRef": {
+                                                "name": "somethingelse",
+                                            },
+                                        },
+                                        {
+                                            "configMapKeyRef": {
+                                                "name": "coredns",
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        "kind": "Pod",
+                        "apiVersion": "v1",
+                        "metadata": {
+                            "name": "coredns-4",
+                        },
+                        "spec": {
+                            "volumes": [
+                                {
+                                    "projected": {
+                                        "sources": [
+                                            {
+                                                "configMap": {
+                                                    "name": "somethingelse",
+                                                },
+                                            },
+                                            {
+                                                "configMap": {
+                                                    "name": "coredns",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        "kind": "Pod",
+                        "apiVersion": "v1",
+                        "metadata": {
+                            "name": "coredns-1",
+                        },
+                        "spec": {
+                            "containers": [
+                                {
+                                    "envFrom": [],
+                                },
+                            ],
+                        },
+                    },
+                ], 200),
+                [
+                    ("kube-system", "coredns-1"),
+                    ("kube-system", "coredns-2"),
+                    ("kube-system", "coredns-3"),
+                    ("kube-system", "coredns-4"),
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    "kind": "ConfigMap",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "coredns",
+                        "namespace": "kube-system",
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "cm_namespace": "kube-system",
+                    "cm_name": "coredns",
+                    "pod_name": ["metadata#name"],
+                },
+                ([
+                    {
+                        "kind": "Pod",
+                        "apiVersion": "v1",
+                        "metadata": {
+                            "name": "coredns",
+                        },
+                        "spec": {
+                            "volumes": [
+                                {
+                                    "configMap": {
+                                        "name": "coredns",
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ], 200),
+                [
+                    ("kube-system", "coredns"),
+                ],
+                None,
+            ),
+            (
+                # Valid data; no Pods using the ConfigMap
+                {
+                    "kind": "ConfigMap",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "coredns",
+                        "namespace": "kube-system",
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "cm_namespace": ["metadata#namespace"],
+                    "cm_name": ["metadata#name"],
+                },
+                ([], 200),
+                None,
+                None,
+            ),
+            (
+                # cm_name or cm_namespace is None
+                {
+                    "kind": "ConfigMap",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "coredns",
+                        "namespace": "kube-system",
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                    "cm_namespace": None,
+                    "cm_name": None,
+                },
+                ([], 200),
+                None,
+                None,
+            ),
+        )
+
+        for obj, kwargs, mock_response, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.kubernetes_helper."
+                                "KubernetesHelper.get_list_by_kind_namespace",
+                                return_value=mock_response):
+                    tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_prepopulated_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -2209,6 +2483,386 @@ def test_get_security_context(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_get_svc_port_target_endpoints(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_svc_port_target_endpoints
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, mock_response_1, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data; endpoints ready
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                        "creationTimestamp": "2024-10-23T20:24:11Z",
+                    },
+                    "spec": {
+                        "type": "ClusterIP",
+                        "clusterIP": "10.96.0.1",
+                        "ports": [
+                            {
+                                "name": "https",
+                                "port": 443,
+                                "protocol": "TCP",
+                                "targetPort": 6443,
+                            },
+                        ],
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                },
+                {
+                    "kind": "Endpoints",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                    },
+                    "subsets": [
+                        {
+                            "addresses": [
+                                {
+                                    "ip": "192.168.1.42",
+                                },
+                            ],
+                            "ports": [
+                                {
+                                    "name": "https",
+                                    "port": 6443,
+                                    "protocol": "TCP",
+                                },
+                            ],
+                        },
+                    ],
+                },
+                [
+                    (
+                        "https:443/TCP",
+                        "N/A",
+                        "6443/TCP",
+                        "192.168.1.42:6443",
+                    ),
+                ],
+                None,
+            ),
+            (
+                # Valid data; endpoints ready; type=NodePort
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                        "creationTimestamp": "2024-10-23T20:24:11Z",
+                    },
+                    "spec": {
+                        "type": "NodePort",
+                        "clusterIP": "10.96.0.1",
+                        "ports": [
+                            {
+                                "name": "https",
+                                "port": 443,
+                                "protocol": "TCP",
+                                "targetPort": 6443,
+                            },
+                        ],
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                },
+                {
+                    "kind": "Endpoints",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                    },
+                    "subsets": [
+                        {
+                            "addresses": [
+                                {
+                                    "ip": "192.168.1.42",
+                                },
+                            ],
+                            "ports": [
+                                {
+                                    "name": "https",
+                                    "port": 6443,
+                                    "protocol": "TCP",
+                                },
+                            ],
+                        },
+                    ],
+                },
+                [
+                    (
+                        "https:443/TCP",
+                        "Auto Allocate",
+                        "6443/TCP",
+                        "192.168.1.42:6443",
+                    ),
+                ],
+                None,
+            ),
+            (
+                # Valid data; endpoints ready; type=LoadBalancer, no ClusterIP
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                        "creationTimestamp": "2024-10-23T20:24:11Z",
+                    },
+                    "spec": {
+                        "type": "LoadBalancer",
+                        "ports": [
+                            {
+                                "name": "https",
+                                "port": 443,
+                                "protocol": "TCP",
+                                "targetPort": 6443,
+                            },
+                        ],
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                },
+                {
+                    "kind": "Endpoints",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                    },
+                    "subsets": [
+                        {
+                            "addresses": [
+                                {
+                                    "ip": "192.168.1.42",
+                                },
+                            ],
+                            "ports": [
+                                {
+                                    "name": "https",
+                                    "port": 6443,
+                                    "protocol": "TCP",
+                                },
+                            ],
+                        },
+                    ],
+                },
+                [
+                    (
+                        "https:443/TCP",
+                        "Auto Allocate",
+                        "<none>/TCP",
+                        "192.168.1.42:<none>",
+                    ),
+                ],
+                None,
+            ),
+            (
+                # Valid data; endpoints not ready
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                        "creationTimestamp": "2024-10-23T20:24:11Z",
+                    },
+                    "spec": {
+                        "type": "ClusterIP",
+                        "clusterIP": "10.96.0.1",
+                        "ports": [
+                            {
+                                "name": "https",
+                                "port": 443,
+                                "protocol": "TCP",
+                                "targetPort": 6443,
+                            },
+                        ],
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                },
+                {
+                    "kind": "Endpoints",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                    },
+                    "subsets": [
+                        {
+                            "notReadyAddresses": [
+                                {
+                                    "ip": "192.168.1.42",
+                                },
+                            ],
+                            "ports": [
+                                {
+                                    "name": "https",
+                                    "port": 6443,
+                                    "protocol": "TCP",
+                                },
+                            ],
+                        },
+                    ],
+                },
+                [
+                    (
+                        "https:443/TCP",
+                        "N/A",
+                        "6443/TCP",
+                        "<not ready>:6443",
+                    ),
+                ],
+                None,
+            ),
+            (
+                # Has subsets section; but no subsets in it
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                        "creationTimestamp": "2024-10-23T20:24:11Z",
+                    },
+                    "spec": {
+                        "type": "ClusterIP",
+                        "clusterIP": "10.96.0.1",
+                        "ports": [
+                            {
+                                "name": "https",
+                                "port": 443,
+                                "protocol": "TCP",
+                                "targetPort": 6443,
+                            },
+                        ],
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                },
+                {
+                    "kind": "Endpoints",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                    },
+                    "subsets": [],
+                },
+                [
+                    (
+                        "https:443/TCP",
+                        "N/A",
+                        "6443/TCP",
+                        "<none>:6443",
+                    ),
+                ],
+                None,
+            ),
+            (
+                # No subsets
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                        "creationTimestamp": "2024-10-23T20:24:11Z",
+                    },
+                    "spec": {
+                        "type": "ClusterIP",
+                        "clusterIP": "10.96.0.1",
+                        "ports": [
+                            {
+                                "name": "https",
+                                "port": 443,
+                                "protocol": "TCP",
+                                "targetPort": 6443,
+                            },
+                        ],
+                    },
+                },
+                {
+                    "kubernetes_helper": kh,
+                    "kh_cache": kh_cache,
+                },
+                {
+                    "kind": "Endpoints",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "kubernetes",
+                        "namespace": "default",
+                    },
+                    "subsets": None,
+                },
+                [
+                    (
+                        "https:443/TCP",
+                        "N/A",
+                        "6443/TCP",
+                        "<none>:6443",
+                    ),
+                ],
+                None,
+            ),
+        )
+
+        for obj, kwargs, mock_response, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.kubernetes_helper."
+                                "KubernetesHelper.get_ref_by_kind_name_namespace",
+                                return_value=mock_response):
+                    tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_volume_properties(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -2447,6 +3101,14 @@ tests_with_cluster: dict[tuple[str, ...], dict[str, Any]] = {
     },
     ("get_events()",): {
         "callable": test_get_events,
+        "result": None,
+    },
+    ("get_svc_port_target_endpoints()",): {
+        "callable": test_get_svc_port_target_endpoints,
+        "result": None,
+    },
+    ("get_pod_configmaps()",): {
+        "callable": test_get_pod_configmaps,
         "result": None,
     },
 }
