@@ -30,8 +30,11 @@ def fieldgetter_executable_version(**kwargs: Any) -> list[Any]:
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
+                executable (str): The executable to get the version for
+                args ([str]): The arguments to pass to the executable
+                version_regex (str): The regular expression to use to extract the version
         Returns:
-            [str]: The list of cmt versions
+            [str]: The version tuple
     """
     executable: FilePath = FilePath(deep_get(kwargs, DictPath("executable"), ""))
     args: list[str] = deep_get(kwargs, DictPath("args"), [])
@@ -101,7 +104,7 @@ def fieldgetter_crc_version(**kwargs: Any) -> list[Any]:
     fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin",
                           "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
-    versions = ["", "", ""]
+    versions = ["", "", "", ""]
 
     try:
         crc_path = secure_which(FilePath("/usr/bin/crc"), fallback_allowlist=fallback_allowlist,
@@ -130,8 +133,10 @@ def fieldgetter_crc_version(**kwargs: Any) -> list[Any]:
                     versions[0] = line.removeprefix("CRC version: ")
                 elif line.startswith("OpenShift version: "):
                     versions[1] = line.removeprefix("OpenShift version: ")
+                elif line.startswith("MicroShift version: "):
+                    versions[2] = line.removeprefix("MicroShift version: ")
                 elif line.startswith("Podman version: "):
-                    versions[2] = line.removeprefix("Podman version: ")
+                    versions[3] = line.removeprefix("Podman version: ")
 
     version_strings = []
     for field in fields:

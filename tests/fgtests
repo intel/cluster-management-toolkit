@@ -15,11 +15,16 @@
 
 import sys
 from typing import Any
+from unittest import mock
 import yaml
 
+from clustermanagementtoolkit import about
+
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, ProgrammingError
+
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
 from clustermanagementtoolkit import fieldgetters
 
 # unit-tests for fieldgetters.py
@@ -31,6 +36,68 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     for line in dump.splitlines():
         result += f"{' '.ljust(base_indent)}{line}\n"
     return result
+
+
+def test_fieldgetter_executable_version(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = fieldgetters.fieldgetter_executable_version
+
+    if result:
+        # Indata format:
+        # (kwargs, mock_return_value, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                {
+                    "executable": "/bin/true",
+                    "args": ["--version"],
+                    "version_regex": r"true.+ (\d+)(\.)(\d+)",
+                },
+                "true (GNU coreutils) 9.5",
+                ["9.5"],
+                None,
+            ),
+            (
+                {
+                    "executable": "NONEXISTING",
+                    "args": ["version"],
+                    "version_regex": r"true.+ (\d+)(\.)(\d+)",
+                },
+                "",
+                [""],
+                None,
+            ),
+        )
+
+        for kwargs, mock_response, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.fieldgetters."
+                                "execute_command_with_response",
+                                return_value=mock_response):
+                    tmp = fun(**kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 
 class FakeKH():
@@ -92,9 +159,177 @@ def test_fieldgetter_api_server_version(verbose: bool = False) -> tuple[str, boo
     return message, result
 
 
+def test_fieldgetter_cmt_version(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = fieldgetters.fieldgetter_cmt_version
+
+    if result:
+        # Indata format:
+        # (fields, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                [0, 1, 2, 3, 4, 5],
+                [
+                    about.PROGRAM_SUITE_VERSION,
+                    about.UI_PROGRAM_VERSION,
+                    about.TOOL_PROGRAM_VERSION,
+                    about.ADMIN_PROGRAM_VERSION,
+                    about.INVENTORY_PROGRAM_VERSION,
+                    about.INSTALL_PROGRAM_VERSION,
+                ],
+                None,
+            ),
+            (
+                [0, 3],
+                [
+                    about.PROGRAM_SUITE_VERSION,
+                    about.ADMIN_PROGRAM_VERSION,
+                ],
+                None,
+            ),
+            (
+                [42],
+                [],
+                None,
+            ),
+        )
+
+        for fields, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(fields=fields)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         fields: {fields}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"         fields: {fields}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         fields: {fields}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_fieldgetter_crc_version(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = fieldgetters.fieldgetter_crc_version
+
+    if result:
+        # Indata format:
+        # (fields, mock_return_value1, mock_return_value_2, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                [0],
+                [FileNotFoundError],
+                ["Machine does not exist", ""],
+                [""],
+                None,
+            ),
+            (
+                [0],
+                ["/usr/bin/crc"],
+                ["Machine does not exist", ""],
+                [""],
+                None,
+            ),
+            (
+                [0],
+                ["/usr/bin/crc"],
+                ["CRC VM:          Running",
+                 "CRC version: 2.46.0+8f40e8\nOpenShift version: 4.17.10\n"
+                 "MicroShift version: 4.17.10"],
+                 ["2.46.0+8f40e8"],
+                None,
+            ),
+            (
+                [0, 1, 3],
+                ["/usr/bin/crc"],
+                ["CRC VM:          Running",
+                 "CRC version: 2.46.0+8f40e8\nOpenShift version: 4.17.10\n"
+                 "Podman version: 1.2.3\nSomething else here"],
+                 ["2.46.0+8f40e8", "4.17.10", "1.2.3"],
+                None,
+            ),
+            (
+                [4],
+                ["/usr/bin/crc"],
+                ["CRC VM:          Running",
+                 "CRC version: 2.46.0+8f40e8\nOpenShift version: 4.17.10\n"
+                 "Podman version: 1.2.3\nSomething else here"],
+                 [],
+                None,
+            ),
+        )
+
+        for fields, mock_response_1, mock_response_2, \
+                expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.fieldgetters.secure_which",
+                                side_effect=mock_response_1), \
+                        mock.patch("clustermanagementtoolkit.fieldgetters."
+                                   "execute_command_with_response",
+                                   side_effect=mock_response_2):
+                    tmp = fun(fields=fields)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         fields: {fields}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"         fields: {fields}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         fields: {fields}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 tests: dict[tuple[str, ...], dict[str, Any]] = {
+    ("fieldgetter_executable_version()",): {
+        "callable": test_fieldgetter_executable_version,
+        "result": None,
+    },
     ("fieldgetter_api_server_version()",): {
         "callable": test_fieldgetter_api_server_version,
+        "result": None,
+    },
+    ("fieldgetter_cmt_version()",): {
+        "callable": test_fieldgetter_cmt_version,
+        "result": None,
+    },
+    ("fieldgetter_crc_version()",): {
+        "callable": test_fieldgetter_crc_version,
         "result": None,
     },
 }

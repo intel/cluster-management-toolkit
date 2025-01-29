@@ -6,16 +6,15 @@ python_executables = \
 	cmtinv \
 	cmu
 python_test_executables = \
-	tests/async_fetch \
 	tests/ansibletests \
+	tests/async_fetch \
 	tests/atptests \
-	tests/check_theme_use \
 	tests/checkstests \
+	tests/check_theme_use \
 	tests/clptests \
 	tests/cmtlibtests \
 	tests/cnitests \
 	tests/coverage_stats \
-	tests/cnitests \
 	tests/cursestests \
 	tests/datatests \
 	tests/dgtests \
