@@ -376,6 +376,9 @@ def get_list_fields(obj: dict, **kwargs: Any) -> list[Any]:
             obj (dict): The object to get data from
             **kwargs (dict[str, Any]): Keyword arguments
                 path (str): The path to the dict
+                fields ([str]): The fields to return data from
+                pass_ref (bool): Pass a reference to the object?
+                override_types ([str]): List of override-types for the list fields
         Returns:
             list[dict]: A list of data
     """
@@ -438,7 +441,9 @@ def get_list_fields(obj: dict, **kwargs: Any) -> list[Any]:
                 elif isinstance(value_, str):
                     if (i < len(fields) and i < len(override_types)
                             and override_types[i] == "timestamp"):
-                        if value_ is None:
+
+                        # Empty string or None indicates a missing timestamp
+                        if value_ is None or not value_:
                             value = "<unset>"
                         else:
                             timestamp = timestamp_to_datetime(value_)

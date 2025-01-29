@@ -1421,6 +1421,302 @@ def test_get_dict_list(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_get_list_fields(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_list_fields
+
+    if result:
+        # Indata format:
+        # (obj, kwargs, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                # Valid data
+                {
+                    "spec": {
+                        "descriptor": {
+                            "links": [
+                                {
+                                    "description": "About",
+                                    "url": "https://wordpress.org/"
+                                },
+                                {
+                                    "description": "Web Server Dashboard",
+                                    "url": "https://metrics/internal/wordpress-01/web-app"
+                                },
+                                {
+                                    "description": "Mysql Dashboard",
+                                    "url": "https://metrics/internal/wordpress-01/mysql"
+                                },
+                            ],
+                        },
+                    },
+                },
+                {
+                    "path": "spec#descriptor#links",
+                    "fields": [
+                        "description",
+                        "url",
+                    ],
+                },
+                [
+                    ["About", "https://wordpress.org/"],
+                    ["Web Server Dashboard", "https://metrics/internal/wordpress-01/web-app"],
+                    ["Mysql Dashboard", "https://metrics/internal/wordpress-01/mysql"],
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "alertmanager",
+                            },
+                            {
+                                "name": "config-reloader",
+                            },
+                        ],
+                    },
+                },
+                {
+                    "path": "spec#containers",
+                    "pass_ref": True,
+                    "fields": ["name"],
+                },
+                [
+                    {
+                        "fields": ["alertmanager"],
+                        "ref": {
+                            "name": "alertmanager",
+                        },
+                    }, {
+                        "fields": ["config-reloader"],
+                        "ref": {
+                            "name": "config-reloader",
+                        },
+                    },
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    "spec": {
+                        "volumes": [
+                            {
+                                "name": "config-volume",
+                                "configMap": {
+                                    "name": "coredns",
+                                    "items": [
+                                        {
+                                            "key": "Corefile",
+                                            "path": "Corefile",
+                                        }
+                                    ],
+                                    "defaultMode": 420,
+                                },
+                            },
+                            {
+                                "name": "kube-api-access-mdwb6",
+                                "projected": {
+                                    "sources": [
+                                        {
+                                            "configMap": {
+                                                "name": "kube-root-ca.crt",
+                                                "items": [
+                                                    {
+                                                        "key": "ca.crt",
+                                                        "path": "ca.crt",
+                                                    },
+                                                ],
+                                            },
+                                        },
+                                        {
+                                            "downwardAPI": {
+                                                "items": [
+                                                    {
+                                                        "path": "namespace",
+                                                        "fieldRef": {
+                                                            "apiVersion": "v1",
+                                                            "fieldPath": "metadata.namespace"
+                                                        },
+                                                    },
+                                                ],
+                                            },
+                                        },
+                                    ],
+                                    "defaultMode": 420,
+                                },
+                            },
+                        ],
+                    },
+                },
+                {
+                    "path": "spec#volumes",
+                    "fields": [
+                        "name",
+                        {
+                            "name": ["configMap", "downwardAPI", "projected"],
+                            "value": "key",
+                        },
+                        {
+                            "name": ["configMap", "downwardAPI", "projected"],
+                        },
+                    ],
+                },
+                [
+                    [
+                        "config-volume",
+                        "configMap",
+                        "name:coredns, "
+                        "items:[{'key': 'Corefile', 'path': 'Corefile'}], "
+                        "defaultMode:420",
+                    ],
+                    [
+                        "kube-api-access-mdwb6",
+                        "projected",
+                        "sources:[{'configMap': {"
+                        "'name': 'kube-root-ca.crt', "
+                        "'items': [{'key': 'ca.crt', 'path': 'ca.crt'}]}}, {"
+                        "'downwardAPI': {"
+                        "'items': [{"
+                        "'path': 'namespace', "
+                        "'fieldRef': {"
+                        "'apiVersion': 'v1', "
+                        "'fieldPath': 'metadata.namespace'"
+                        "}}]}}], defaultMode:420",
+                    ],
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    "spec": {
+                        "endpoints": [
+                            {
+                                "path": "/metrics",
+                                "port": "http",
+                            },
+                        ],
+                    },
+                },
+                {
+                    "path": "spec#endpoints",
+                    "fields": [
+                        {
+                            "value": "index",
+                            "index_template": "endpoint-<<<index>>>",
+                        },
+                    ],
+                    "pass_ref": True,
+                },
+                [
+                    {
+                        "fields": [
+                            "endpoint-0",
+                        ],
+                        "ref": {
+                            "path": "/metrics",
+                            "port": "http",
+                        },
+                    },
+                ],
+                None,
+            ),
+            (
+                # Valid data with override types
+                {
+                    "data": [
+                        {
+                            "name": "foo",
+                            "timestamp": "2024-10-23T20:23:25Z",
+                        },
+                        {
+                            "name": "bar",
+                            "timestamp": None,
+                        },
+                    ],
+                },
+                {
+                    "path": "data",
+                    "fields": [
+                        "name",
+                        "timestamp",
+                    ],
+                    "override_types": ["", "timestamp"],
+                },
+                [
+                    [
+                        "foo",
+                        "2024-10-23 23:23:25",
+                    ],
+                    [
+                        "bar",
+                        "<unset>",
+                    ],
+                ],
+                None,
+            ),
+            (
+                # No path
+                {
+                    "data": [
+                        {
+                            "name": "foo",
+                            "timestamp": "2024-10-23T20:23:25Z",
+                        },
+                        {
+                            "name": "bar",
+                            "timestamp": None,
+                        },
+                    ],
+                },
+                {
+                    "fields": [
+                        "name",
+                        "timestamp",
+                    ],
+                    "override_types": ["", "timestamp"],
+                },
+                [],
+                None,
+            ),
+        )
+
+        for obj, kwargs, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, **kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_package_version_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -3057,6 +3353,10 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
     },
     ("get_dict_list()",): {
         "callable": test_get_dict_list,
+        "result": None,
+    },
+    ("get_list_fields()",): {
+        "callable": test_get_list_fields,
         "result": None,
     },
     ("get_package_version_list()",): {
