@@ -145,6 +145,108 @@ def test_format_special(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_align_and_pad(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.align_and_pad
+
+    if result:
+        # Indata format:
+        # (themearray, pad, fieldlen, ralign, selected, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                [
+                    ThemeStr("Foo", ThemeAttr("main", "default")),
+                ],
+                2,
+                8,
+                False,
+                False,
+                [
+                    ThemeStr("Foo", ThemeAttr("main", "default"), False),
+                    ThemeStr("     ", ThemeAttr("types", "generic"), False),
+                    ThemeRef("separators", "pad", False)
+                ],
+                None,
+            ),
+            (
+                [
+                    ThemeStr("Foo", ThemeAttr("main", "default")),
+                ],
+                0,
+                0,
+                False,
+                False,
+                [
+                    ThemeStr("Foo", ThemeAttr("main", "default"), False),
+                    ThemeStr("", ThemeAttr("types", "generic"), False),
+                ],
+                None,
+            ),
+            (
+                [
+                    ThemeStr("Foo", ThemeAttr("main", "default")),
+                ],
+                3,
+                4,
+                False,
+                False,
+                [
+                    ThemeStr("Foo", ThemeAttr("main", "default"), False),
+                    ThemeStr(" ", ThemeAttr("types", "generic"), False),
+                    ThemeRef("separators", "pad", False)
+                ],
+                None,
+            ),
+            (
+                [
+                    ThemeStr("Foo", ThemeAttr("main", "default")),
+                ],
+                2,
+                6,
+                True,
+                False,
+                [
+                    ThemeStr("   ", ThemeAttr("types", "generic"), False),
+                    ThemeStr("Foo", ThemeAttr("main", "default"), False),
+                    ThemeRef("separators", "pad", False)
+                ],
+                None,
+            ),
+        )
+
+        for themearray, pad, fieldlen, ralign, \
+                selected, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(themearray, pad, fieldlen, ralign, selected)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_processor_list(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -929,6 +1031,10 @@ def test_get_formatter(verbose: bool = False) -> tuple[str, bool]:
 tests: dict[tuple[str], dict[str, Any]] = {
     ("format_special()",): {
         "callable": test_format_special,
+        "result": None,
+    },
+    ("align_and_pad()",): {
+        "callable": test_align_and_pad,
         "result": None,
     },
     ("processor_list()",): {

@@ -297,6 +297,8 @@ def align_and_pad(array: list[Union[ThemeRef, ThemeStr]], pad: int,
                   selected: bool) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Given a field, align to the left or right, and pad it to the field length.
+    FIXME: pad doesn't do what it claims to do; instead of padding pad number of spaces
+    it will insert the pre-defined pad-size from the theme.
 
         Parameters:
             array (ThemeArray): The themearray to align and pad
