@@ -309,7 +309,7 @@ def get_list_as_list(obj: dict, **kwargs: Any) -> list[Any]:
     return vlist
 
 
-# pylint: disable-next=too-many-locals
+# pylint: disable-next=too-many-locals,too-many-branches
 def get_dict_list(obj: dict, **kwargs: Any) -> list[Any]:
     """
     Given a path to a dict (or a list of dicts), generate a list with all items

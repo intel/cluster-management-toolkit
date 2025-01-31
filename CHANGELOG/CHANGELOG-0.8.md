@@ -113,7 +113,7 @@ No changes.
 * A new tool, `mdtable.py` has been added, that creates simple Markdown tables from CSV data.
   It's now used by the `mypy-markdown` and `pylint-markdown` Make targets.
 * A lot of code has been refactored, documented, or otherwise improved.
-  In total `1045 files changed, 76495 insertions(+), 28815 deletions(-)`.
+  In total `1049 files changed, 80367 insertions(+), 29002 deletions(-)`.
 
 ### Notable view-file changes (by API-files)
 
@@ -151,8 +151,8 @@ No changes.
 
 ### Notable view-file changes (by line count)
 
-* views/Event.events.k8s.io.yaml (1586 changed lines)
-* views/Event.yaml (1585 changed lines)
+* views/Event.events.k8s.io.yaml (1591 changed lines)
+* views/Event.yaml (1590 changed lines)
 * views/SecurityContextConstraints.security.openshift.io.yaml (240 changed lines)
 * views/ScaledJob.keda.sh.yaml (218 changed lines)
 * views/ClusterPolicy.nvidia.com.yaml (208 changed lines)
@@ -162,7 +162,7 @@ No changes.
 * views/Telemetry.telemetry.istio.io.yaml (140 changed lines)
 * views/ClusterQueue.kueue.x-k8s.io.yaml (120 changed lines)
 * views/ClusterNetworkPolicy.crd.antrea.io.yaml (114 changed lines)
-* views/Pod.yaml (112 changed lines)
+* views/Pod.yaml (114 changed lines)
 * views/ImageStream.image.openshift.io.yaml (111 changed lines)
 * views/ConsolePlugin.console.openshift.io.yaml (105 changed lines)
 * views/__VersionData.yaml (105 changed lines)
@@ -185,7 +185,7 @@ No changes.
 
 ### parser-file changes
 
-37 parserfiles were added.
+38 parserfiles were added.
 
 ## Fixed Issues in v0.8.5
 
@@ -266,7 +266,7 @@ Test results:
 	No issues identified.
 
 Code scanned:
-	Total lines of code: 79418
+	Total lines of code: 82622
 	Total lines skipped (#nosec): 8
 
 Run metrics:
@@ -300,41 +300,40 @@ Output:
 ```
 Name                                                  Stmts   Miss Branch BrPart  Cover
 ---------------------------------------------------------------------------------------
+clustermanagementtoolkit/listgetters.py                1212   1006    654     12  15.6%
+clustermanagementtoolkit/infogetters.py                1695   1346   1020     23  19.3%
 clustermanagementtoolkit/cluster_actions.py             223    175     72      3  19.3%
-clustermanagementtoolkit/itemgetters.py                 507    375    290      8  22.3%
-clustermanagementtoolkit/infogetters.py                1689   1168   1016     80  27.2%
-clustermanagementtoolkit/fieldgetters.py                 81     54     46      0  27.6%
-clustermanagementtoolkit/kubernetes_helper.py          1494   1004    760     61  28.0%
-clustermanagementtoolkit/networkio.py                   342    237    171      2  29.2%
-clustermanagementtoolkit/curses_helper.py              2392   1535   1124    129  29.3%
-clustermanagementtoolkit/listgetters.py                1204    759    654    108  31.6%
+clustermanagementtoolkit/curses_helper.py              2394   1811   1124     21  21.0%
+clustermanagementtoolkit/kubernetes_helper.py          1494   1045    760     62  25.8%
+clustermanagementtoolkit/logparser.py                  2008   1384   1125     32  26.6%
+clustermanagementtoolkit/networkio.py                   364    258    185      3  27.3%
 clustermanagementtoolkit/listgetters_async.py           119     76     54      2  31.8%
-clustermanagementtoolkit/logparser.py                  2008   1158   1125    119  35.8%
-clustermanagementtoolkit/datagetters.py                 277    145    142     11  45.1%
-clustermanagementtoolkit/checks.py                      631    310    248     11  47.3%
-clustermanagementtoolkit/generators.py                  732    317    384     59  49.6%
-clustermanagementtoolkit/formatters.py                  807    310    424     25  57.8%
-clustermanagementtoolkit/ansible_helper.py              805    199    490     24  74.0%
-clustermanagementtoolkit/cmtlib.py                      659    125    388     34  77.2%
-clustermanagementtoolkit/cmtio.py                       425     33    242     21  90.7%
-clustermanagementtoolkit/ansithemeprint.py              216      6     84      3  96.3%
-clustermanagementtoolkit/reexecutor.py                   72      0     34      3  97.2%
-clustermanagementtoolkit/commandparser.py               412      1    254      2  99.5%
-clustermanagementtoolkit/cmtvalidators.py               324      0    200      1  99.8%
+clustermanagementtoolkit/checks.py                      635    341    248      0  43.9%
+clustermanagementtoolkit/generators.py                  732    371    384     28  46.5%
+clustermanagementtoolkit/formatters.py                  807    366    424     32  52.1%
+clustermanagementtoolkit/datagetters.py                 277    125    142     16  53.0%
+clustermanagementtoolkit/cmtlib.py                      659    161    388     31  73.3%
+clustermanagementtoolkit/ansible_helper.py              805    207    490     24  73.4%
+clustermanagementtoolkit/cmtio.py                       425     39    242     21  89.8%
+clustermanagementtoolkit/reexecutor.py                   72      2     34      3  95.3%
+clustermanagementtoolkit/itemgetters.py                 478     17    266     14  95.6%
+clustermanagementtoolkit/ansithemeprint.py              216      7     84      3  96.0%
+clustermanagementtoolkit/fieldgetters.py                 83      0     48      3  97.7%
+clustermanagementtoolkit/cmtvalidators.py               324      6    200      2  98.1%
+clustermanagementtoolkit/commandparser.py               444      1    250      2  99.6%
+clustermanagementtoolkit/cmttypes.py                    471      1    178      0  99.8%
 clustermanagementtoolkit/about.py                        18      0      0      0 100.0%
 clustermanagementtoolkit/cmtio_yaml.py                   34      0      6      0 100.0%
 clustermanagementtoolkit/cmtpaths.py                     89      0      0      0 100.0%
-clustermanagementtoolkit/cmttypes.py                    471      0    178      0 100.0%
-clustermanagementtoolkit/cni_data.py                     37      0      8      0 100.0%
+clustermanagementtoolkit/cni_data.py                     58      0      8      0 100.0%
 clustermanagementtoolkit/helptexts.py                    23      0      0      0 100.0%
 clustermanagementtoolkit/kubernetes_resources.py          3      0      0      0 100.0%
 clustermanagementtoolkit/objgetters.py                   56      0     12      0 100.0%
 clustermanagementtoolkit/pvtypes.py                       1      0      0      0 100.0%
 clustermanagementtoolkit/recommended_permissions.py      11      0      0      0 100.0%
 ---------------------------------------------------------------------------------------
-TOTAL                                                 16162   7987   8406    706  46.2%
+TOTAL                                                 16230   8745   8398    337  43.5%
 ```
-
 
 ### Flake8 Results for v0.8.5
 
@@ -445,10 +444,10 @@ Output:
 Running regexploit to check for ReDoS attacks
 
 Checking executables
-Processed 50 regexes
+Processed 67 regexes
 
 Checking libraries
-Processed 143 regexes
+Processed 142 regexes
 ```
 
 ### Ruff Results for v0.8.5
@@ -473,33 +472,10 @@ Output:
 └──────────────┘
 Some files were skipped or only partially analyzed.
   Partially scanned: 3 files only partially analyzed due to parsing or internal Semgrep errors
-  Scan skipped: 996 files matching --exclude patterns, 63 files matching .semgrepignore patterns
+  Scan skipped: 997 files matching --exclude patterns, 63 files matching .semgrepignore patterns
   For a full list of skipped files, run semgrep with the --verbose flag.
 
-Ran 687 rules on 97 files: 0 findings.
-
-✨ If Semgrep missed a finding, please send us feedback to let us know!
-   See https://semgrep.dev/docs/reporting-false-negatives/
-
-
-Running yamllint to check that all YAML is valid
-
-
-
-Running ansible-lint to check that all Ansible playbooks are valid
-
-
-Passed: 0 failure(s), 0 warning(s) on 54 files. Last profile that met the validation criteria was 'production'.
-
-
-Running validate_yaml to check that all view-files/parser-files/theme-files are valid
-
-
-Summary:
-     fail: 0
-     skip: 3
-  success: 860
-    total: 863
+Ran 693 rules on 97 files: 0 findings.
 ```
 
 ### validate_playbooks Results for v0.8.5
@@ -522,8 +498,8 @@ Output:
 Summary:
      fail: 0
      skip: 3
-  success: 860
-    total: 853
+  success: 863
+    total: 866
 ```
 
 ### YAMLlint Results for v0.8.5
