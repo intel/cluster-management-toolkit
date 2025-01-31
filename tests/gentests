@@ -13,6 +13,7 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from pathlib import PurePath
 import sys
 from typing import Any
@@ -220,6 +221,387 @@ def test_align_and_pad(verbose: bool = False) -> tuple[str, bool]:
                 selected, expected_result, expected_exception in testdata:
             try:
                 tmp = fun(themearray, pad, fieldlen, ralign, selected)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_generator_value_mapper(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.generator_value_mapper
+
+    if result:
+        # Indata format:
+        # (obj, field, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                type("InfoClass", (), {
+                    "state": "Completed",
+                }),
+                "state",
+                9,
+                2,
+                False,
+                True,
+                {
+                    "item_separator": ThemeRef("separators",
+                    "list", False),
+                    "field_separators": [
+                        ThemeRef("separators", "field", False),
+                    ],
+                    "field_colors": [
+                        ThemeAttr("types", "field")
+                    ],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef("separators", "ellipsis", False),
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "mapping": {
+                        "mappings": {
+                            "Active": {
+                                "field_colors": [
+                                    {
+                                        "context": "main",
+                                        "type": "status_pending",
+                                    },
+                                ],
+                            },
+                            "Completed": {
+                                "field_colors": [
+                                    {
+                                        "context": "main",
+                                        "type": "status_done",
+                                    },
+                                ],
+                            },
+                            "Running": {
+                                "field_colors": [
+                                    {
+                                        "context": "main",
+                                        "type": "status_ok",
+                                    },
+                                ],
+                            },
+                            "<unset>": {
+                                "field_colors": [
+                                    {
+                                        "context": "types",
+                                        "type": "unset",
+                                    },
+                                ],
+                            },
+                            "__default": {
+                                "field_colors": [
+                                    {
+                                        "context": "main",
+                                        "type": "status_not_ok",
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    "field_formatters": [],
+                },
+                [
+                    ThemeStr("Completed", ThemeAttr("main", "status_done"), True),
+                    ThemeStr("", ThemeAttr("types", "generic"), True),
+                    ThemeRef("separators", "pad", True)
+                ],
+                None,
+            ),
+        )
+
+        for obj, field, fieldlen, pad, ralign, selected, formatting, \
+                expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, field, fieldlen, pad, ralign, selected, **formatting)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_processor_timestamp(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.processor_timestamp
+
+    if result:
+        # Indata format:
+        # (obj, field, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                type("InfoClass", (), {
+                    "completion_time": "2024-10-23T20:42:31Z",
+                }),
+                "completion_time",
+                "2024-10-23T20:42:31Z",
+                None,
+            ),
+            (
+                type("InfoClass", (), {
+                    "completion_time": datetime(2024, 3, 17, 2, 23, 32, 342062),
+                }),
+                "completion_time",
+                "2024-03-17 02:23:32",
+                None,
+            ),
+            (
+                type("InfoClass", (), {
+                    "completion_time": None,
+                }),
+                "completion_time",
+                "",
+                None,
+            ),
+            (
+                type("InfoClass", (), {
+                    "completion_time": 42,
+                }),
+                "completion_time",
+                "42",
+                None,
+            ),
+        )
+
+        for obj, field, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, field)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_processor_timestamp_with_age(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.processor_timestamp_with_age
+
+    if result:
+        # Indata format:
+        # (obj, field, formatting, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                type("InfoClass", (), {
+                    "completion_time_with_age": (
+                        "2024-10-23T20:42:31Z",
+                        " (",
+                        "Duration: ",
+                        1087,
+                        ")",
+                    ),
+                }),
+                "completion_time_with_age",
+                {
+                    "item_separator": ThemeRef("separators", "list", False),
+                    "field_separators": [
+                        ThemeRef("separators", "field", False),
+                    ],
+                    "field_colors": [
+                        ThemeAttr("types", "timestamp"),
+                        ThemeAttr("types", "generic"),
+                        ThemeAttr("types", "generic"),
+                        ThemeAttr("types", "age"),
+                        ThemeAttr("types", "generic"),
+                    ],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef("separators", "ellipsis", False),
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "mapping": {},
+                    "field_formatters": []
+                },
+                "2024-10-23T20:42:31Z (Duration: 18m7s)",
+                None,
+            ),
+            (
+                type("InfoClass", (), {
+                    "completion_time_with_age": (
+                        "2024-10-23T20:42:31Z",
+                        " (",
+                        "Duration: ",
+                        1087,
+                        ")",
+                    ),
+                }),
+                "completion_time_with_age",
+                {
+                    "item_separator": ThemeRef("separators", "list", False),
+                    "field_separators": [
+                        ThemeRef("separators", "field", False),
+                    ],
+                    "field_colors": [],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef("separators", "ellipsis", False),
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "mapping": {},
+                    "field_formatters": []
+                },
+                None,
+                ValueError,
+            ),
+            (
+                type("InfoClass", (), {
+                    "completion_time_with_age": (
+                        datetime(2024, 3, 17, 2, 23, 32, 342062),
+                        "23d",
+                    ),
+                }),
+                "completion_time_with_age",
+                {
+                    "item_separator": ThemeRef("separators", "list", False),
+                    "field_separators": [
+                        ThemeRef("separators", "field", False),
+                    ],
+                    "field_colors": [
+                        ThemeAttr("types", "timestamp"),
+                        ThemeAttr("types", "generic"),
+                        ThemeAttr("types", "generic"),
+                        ThemeAttr("types", "age"),
+                        ThemeAttr("types", "generic"),
+                    ],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef("separators", "ellipsis", False),
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "mapping": {},
+                    "field_formatters": []
+                },
+                "2024-03-17 02:23:32 (23d)",
+                None,
+            ),
+            (
+                type("InfoClass", (), {
+                    "completion_time_with_age": (
+                        None,
+                        None,
+                    ),
+                }),
+                "completion_time_with_age",
+                {
+                    "item_separator": ThemeRef("separators", "list", False),
+                    "field_separators": [
+                        ThemeRef("separators", "field", False),
+                    ],
+                    "field_colors": [
+                        ThemeAttr("types", "timestamp"),
+                        ThemeAttr("types", "generic"),
+                        ThemeAttr("types", "generic"),
+                        ThemeAttr("types", "age"),
+                        ThemeAttr("types", "generic"),
+                    ],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef("separators", "ellipsis", False),
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "mapping": {},
+                    "field_formatters": []
+                },
+                "<none>",
+                None,
+            ),
+            (
+                type("InfoClass", (), {
+                    "completion_time_with_age": (),
+                }),
+                "completion_time_with_age",
+                {
+                    "item_separator": ThemeRef("separators", "list", False),
+                    "field_separators": [
+                        ThemeRef("separators", "field", False),
+                    ],
+                    "field_colors": [
+                        ThemeAttr("types", "timestamp"),
+                        ThemeAttr("types", "generic"),
+                        ThemeAttr("types", "generic"),
+                        ThemeAttr("types", "age"),
+                        ThemeAttr("types", "generic"),
+                    ],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef("separators", "ellipsis", False),
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "mapping": {},
+                    "field_formatters": []
+                },
+                "",
+                None,
+            ),
+        )
+
+        for obj, field, formatting, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, field, formatting)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           result: {tmp}\n" \
@@ -690,6 +1072,122 @@ def test_processor_list_with_status(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_processor_age(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.processor_age
+
+    if result:
+        # Indata format:
+        # (obj, field, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                type("InfoClass", (), {
+                    "age": 328662,
+                }),
+                "age",
+                "3d19h",
+                None,
+            ),
+            (
+                type("InfoClass", (), {
+                    "age": -200,
+                }),
+                "age",
+                "<clock skew detected>",
+                None,
+            ),
+        )
+
+        for obj, field, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, field)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_processor_mem(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.processor_mem
+
+    if result:
+        # Indata format:
+        # (obj, field, expected_result, expected_exception)
+        testdata: tuple = (
+            (
+                type("InfoClass", (), {
+                    "mem": ["15985080Ki", "16087480Ki"],
+                }),
+                "mem",
+                "0.6% / 15.3GiB",
+                None,
+            ),
+            (
+                type("InfoClass", (), {
+                    "mem": ["Foo", "Bar"],
+                }),
+                "mem",
+                None,
+                ValueError,
+            ),
+        )
+
+        for obj, field, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, field)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_formatting(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -1037,12 +1535,32 @@ tests: dict[tuple[str], dict[str, Any]] = {
         "callable": test_align_and_pad,
         "result": None,
     },
+    ("generator_value_mapper()",): {
+        "callable": test_generator_value_mapper,
+        "result": None,
+    },
+    ("processor_timestamp()",): {
+        "callable": test_processor_timestamp,
+        "result": None,
+    },
+    ("processor_timestamp_with_age()",): {
+        "callable": test_processor_timestamp_with_age,
+        "result": None,
+    },
     ("processor_list()",): {
         "callable": test_processor_list,
         "result": None,
     },
     ("processor_list_with_status()",): {
         "callable": test_processor_list_with_status,
+        "result": None,
+    },
+    ("processor_age()",): {
+        "callable": test_processor_age,
+        "result": None,
+    },
+    ("processor_mem()",): {
+        "callable": test_processor_mem,
         "result": None,
     },
     ("get_formatting()",): {
