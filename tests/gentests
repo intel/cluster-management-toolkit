@@ -160,7 +160,7 @@ def test_align_and_pad(verbose: bool = False) -> tuple[str, bool]:
                 [
                     ThemeStr("Foo", ThemeAttr("main", "default")),
                 ],
-                2,
+                True,
                 8,
                 False,
                 False,
@@ -175,7 +175,7 @@ def test_align_and_pad(verbose: bool = False) -> tuple[str, bool]:
                 [
                     ThemeStr("Foo", ThemeAttr("main", "default")),
                 ],
-                0,
+                False,
                 0,
                 False,
                 False,
@@ -189,7 +189,7 @@ def test_align_and_pad(verbose: bool = False) -> tuple[str, bool]:
                 [
                     ThemeStr("Foo", ThemeAttr("main", "default")),
                 ],
-                3,
+                True,
                 4,
                 False,
                 False,
@@ -204,7 +204,7 @@ def test_align_and_pad(verbose: bool = False) -> tuple[str, bool]:
                 [
                     ThemeStr("Foo", ThemeAttr("main", "default")),
                 ],
-                2,
+                True,
                 6,
                 True,
                 False,
@@ -220,7 +220,7 @@ def test_align_and_pad(verbose: bool = False) -> tuple[str, bool]:
         for themearray, pad, fieldlen, ralign, \
                 selected, expected_result, expected_exception in testdata:
             try:
-                tmp = fun(themearray, pad, fieldlen, ralign, selected)
+                tmp = fun(themearray, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           result: {tmp}\n" \

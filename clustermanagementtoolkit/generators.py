@@ -14,7 +14,7 @@ This generates and post-processes elements for various more complex types
 import copy
 from datetime import datetime
 import re
-from typing import Any, cast, Optional, Type, Union
+from typing import Any, cast, Optional, Type, TypedDict, Union
 from collections.abc import Callable
 import yaml
 
@@ -32,6 +32,76 @@ from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, 
 from clustermanagementtoolkit.cmttypes import StatusGroup, LogLevel, ProgrammingError
 
 from clustermanagementtoolkit import datagetters
+
+
+class RangeType(TypedDict):
+    """
+    A dict with range mapping information.
+
+        Parameters:
+            min (None | int | float): The start of the range (None for an open-started range)
+            max (None | int | float): The end of the range (None for an open-ended range)
+            field_colors ([ThemeAttr]): The colors to apply to matching values (length: 1)
+            default (bool): Is this the default range?
+    """
+    min: Union[None, int, float]
+    max: Union[None, int, float]
+    field_colors: list[ThemeAttr]
+    default: bool
+
+
+class MappingTypeOptional(TypedDict, total=False):
+    """
+    Optional parts of a dict with mapping information.
+
+        Parameters:
+            substitutions (dict[int | str, str | dict | ThemeRef]): Substitutions to perform
+            ranges ([RangeType]): Range mapping information
+            match_case (bool): Should mapping be case sensitive?
+            mappings (dict): A dict of mappings
+    """
+    substitutions: dict[Union[int, str], Union[str, dict, ThemeRef]]
+    ranges: list[RangeType]
+    match_case: bool
+    mappings: dict[Any, dict[str, list[dict[str, str]]]]
+
+
+class MappingType(MappingTypeOptional):
+    """
+    A dict with mapping information.
+    """
+
+
+class FormattingTypeOptional(TypedDict, total=False):
+    """
+    Optional parts of a dict with formatting information.
+
+        Parameters:
+            item_separator (ThemeRef): The separator to use between items in a list
+            field_separators ([ThemeRef]): The separators to use between members in a field
+            field_colors ([ThemeAttr]): The colors to use for each member in a field
+            ellipsise (int): Ellipsise after this many list entries (-1 to keep the entire list)
+            ellipsis (ThemeRef): The string to use to ellipsise a list
+            field_prefixes ([[ThemeRef]]): The prefix(es) for each member in a field
+            field_suffixes ([[ThemeRef]]): The suffix(es) for each member in a field
+            mapping (MappingType): A dict with information about value mappings
+            field_formatters ([str]): A list of formatters to apply to each field in a list
+    """
+    item_separator: ThemeRef
+    field_separators: list[ThemeRef]
+    field_colors: list[ThemeAttr]
+    ellipsise: int
+    ellipsis: ThemeRef
+    field_prefixes: list[list[ThemeRef]]
+    field_suffixes: list[list[ThemeRef]]
+    mapping: dict[str, MappingType]
+    field_formatters: list[str]
+
+
+class FormattingType(FormattingTypeOptional):
+    """
+    A dict with formatting information.
+    """
 
 
 def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, ThemeStr]]:
@@ -63,7 +133,7 @@ def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, Them
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def format_list(items: Any, fieldlen: int, pad: int,
+def format_list(items: Any, fieldlen: int, pad: bool,
                 **kwargs: Any) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Format the elements of a list.
@@ -71,7 +141,7 @@ def format_list(items: Any, fieldlen: int, pad: int,
         Parameters:
             items (Any): The list items
             fieldlen (int): The length of the field
-            pad (int): The amount of padding to insert after the field
+            pad (bool): Pad the string? to insert after the field
             **kwargs (dict[str, Any]): Keyword arguments
                 ralign (bool): Align the data to the right?
                 selected (bool): Mark the field as selected?
@@ -184,7 +254,7 @@ def format_list(items: Any, fieldlen: int, pad: int,
                 array += themearray_select(field_suffixes[i], selected=selected, force=True)
             skip_separator = False
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=too-many-locals,too-many-statements,too-many-branches
@@ -292,18 +362,16 @@ def map_value(value: Any, selected: bool = False,
     return ThemeStr(string, fmt, selected), string
 
 
-def align_and_pad(array: list[Union[ThemeRef, ThemeStr]], pad: int,
-                  fieldlen: int, ralign: bool,
-                  selected: bool) -> list[Union[ThemeRef, ThemeStr]]:
+def align_and_pad(array: list[Union[ThemeRef, ThemeStr]], fieldlen: int,
+                  pad: bool = False, ralign: bool = False,
+                  selected: bool = False) -> list[Union[ThemeRef, ThemeStr]]:
     """
-    Given a field, align to the left or right, and pad it to the field length.
-    FIXME: pad doesn't do what it claims to do; instead of padding pad number of spaces
-    it will insert the pre-defined pad-size from the theme.
+    Given a field, align to the left or right, and pad it to fieldlen.
 
         Parameters:
             array (ThemeArray): The themearray to align and pad
-            pad (int): The amount of padding to insert after the field
             fieldlen (int): The length of the field
+            pad (bool): Pad the string?
             ralign (bool): Align the data to the right?
             selected (bool): Mark the field as selected?
         Returns:
@@ -448,9 +516,9 @@ def generator_age_raw(value: Union[int, str], selected: bool) -> list[Union[Them
 
 
 # pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
-def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_age(obj: dict, field: str, fieldlen: int, pad: bool,
                   ralign: bool, selected: bool,
-                  **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                  **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     A generator for age.
 
@@ -458,7 +526,7 @@ def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): The amount of padding
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -470,13 +538,13 @@ def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
 
     array = generator_age_raw(value, selected)
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
-def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_address(obj: dict, field: str, fieldlen: int, pad: bool,
                       ralign: bool, selected: bool,
-                      **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                      **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     A generator for IP-addresses and IP-masks.
 
@@ -484,7 +552,7 @@ def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -544,13 +612,13 @@ def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
             array.append(item_separator)
         array += _vlist
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-def generator_basic(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_basic(obj: dict, field: str, fieldlen: int, pad: bool,
                     ralign: bool, selected: bool,
-                    **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                    **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     The default generator; it knows about certain special strings,
     but otherwise will use the provided formatting.
@@ -559,7 +627,7 @@ def generator_basic(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -590,13 +658,13 @@ def generator_basic(obj: dict, field: str, fieldlen: int, pad: int,
         ThemeStr(string, fmt, selected)
     ]
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
-def generator_hex(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_hex(obj: dict, field: str, fieldlen: int, pad: bool,
                   ralign: bool, selected: bool,
-                  **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                  **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     A generator for hexadecimal values.
 
@@ -604,7 +672,7 @@ def generator_hex(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -618,13 +686,13 @@ def generator_hex(obj: dict, field: str, fieldlen: int, pad: int,
     array = format_numerical_with_units(string, "field",
                                         selected, non_units=set("0123456789abcdefABCDEF"))
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=too-many-locals,too-many-arguments,too-many-positional-arguments
-def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_list(obj: dict, field: str, fieldlen: int, pad: bool,
                    ralign: bool, selected: bool,
-                   **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                   **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Generate a formatted list, with support for custom list separators,
     grouped tuples, ellipsising after a certain length, etc.
@@ -633,7 +701,7 @@ def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -678,9 +746,9 @@ def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
 
 
 # noqa: E501 pylint: disable-next=too-many-branches,too-many-locals,too-many-arguments,too-many-positional-arguments
-def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: bool,
                                ralign: bool, selected: bool,
-                               **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                               **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Generate a formatted list, mapping the items based on their status.
     FIXME: This implementation is really ugly.
@@ -689,7 +757,7 @@ def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -767,9 +835,9 @@ def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: int,
 
 
 # pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
-def generator_mem(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_mem(obj: dict, field: str, fieldlen: int, pad: bool,
                   ralign: bool, selected: bool,
-                  **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                  **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Generate formatting for memory usage tuples (free / total).
 
@@ -777,7 +845,7 @@ def generator_mem(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -814,13 +882,13 @@ def generator_mem(obj: dict, field: str, fieldlen: int, pad: int,
         ThemeStr(unit, ThemeAttr("types", "unit"), selected),
     ]
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: bool,
                                    ralign: bool, selected: bool,
-                                   **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                                   **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Generate numerical values with units.
 
@@ -828,7 +896,7 @@ def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: in
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -841,7 +909,7 @@ def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: in
     if value in ("<none>", "<unset>", "<unknown>"):
         fmt = ThemeAttr("types", "none")
         array = [ThemeStr(value, fmt, selected)]
-        return align_and_pad(array, pad, fieldlen, ralign, selected)
+        return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
     # Currently allow_signed seems to be unused
     if value == -1 and not deep_get(formatting, DictPath("allow_signed")):
@@ -851,13 +919,13 @@ def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: in
 
     array = format_numerical_with_units(string, "numerical", selected)
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
-def generator_status(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_status(obj: dict, field: str, fieldlen: int, pad: bool,
                      ralign: bool, selected: bool,
-                     **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                     **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Generate formatting for status messages.
 
@@ -865,7 +933,7 @@ def generator_status(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -881,13 +949,13 @@ def generator_status(obj: dict, field: str, fieldlen: int, pad: int,
         ThemeStr(status, fmt, selected)
     ]
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
-def generator_timestamp(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_timestamp(obj: dict, field: str, fieldlen: int, pad: bool,
                         ralign: bool, selected: bool,
-                        **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                        **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Generate a formatted string either from a timestamp or a string;
     special strings such as "<none>" are also handled.
@@ -896,7 +964,7 @@ def generator_timestamp(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -926,13 +994,13 @@ def generator_timestamp(obj: dict, field: str, fieldlen: int, pad: int,
         else:
             array = format_numerical_with_units(string, "timestamp", selected)
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: int,
+def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: bool,
                                  ralign: bool, selected: bool,
-                                 **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                                 **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Generate a formatted string either from a timestamp or a string;
     with both timestamp *and* age. Typically used to represent timestamp + duration.
@@ -941,7 +1009,7 @@ def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -979,7 +1047,8 @@ def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: int,
             if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
                 fmt = ThemeAttr("types", "generic")
                 array += [ThemeStr(data, fmt, selected)]
-            elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
+            elif deep_get(formatting,
+                          DictPath("field_colors"))[i] == ThemeAttr("types", "timestamp"):
                 if data is None:
                     array += [
                         ThemeStr("<unset>", ThemeAttr("types", "none"), selected)
@@ -989,20 +1058,20 @@ def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: int,
                 timestamp = timestamp_to_datetime(data)
                 timestamp_string = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
                 array += format_numerical_with_units(timestamp_string, "timestamp", selected)
-            elif formatting["field_colors"][i] == ThemeAttr("types", "age"):
+            elif deep_get(formatting, DictPath("field_colors"))[i] == ThemeAttr("types", "age"):
                 array += generator_age_raw(data, selected)
             else:
                 array += [
-                    ThemeStr(data, formatting["field_colors"][i], selected)
+                    ThemeStr(data, deep_get(formatting, DictPath("field_colors"))[i], selected)
                 ]
 
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-def generator_value_mapper(obj: dict, field: "str", fieldlen: int, pad: int,
+def generator_value_mapper(obj: dict, field: "str", fieldlen: int, pad: bool,
                            ralign: bool, selected: bool,
-                           **formatting: dict) -> list[Union[ThemeRef, ThemeStr]]:
+                           **formatting: FormattingType) -> list[Union[ThemeRef, ThemeStr]]:
     """
     Generate a formatted string with value mapping.
 
@@ -1010,7 +1079,7 @@ def generator_value_mapper(obj: dict, field: "str", fieldlen: int, pad: int,
             obj (dict): The object to get data from
             field (str): The field in the object to get data from
             fieldlen (int): The length of the field
-            pad (int): The amount of padding
+            pad (bool): Pad the string?
             ralign (bool): Should the text be right-aligned?
             selected (bool): Should the generated field be selected?
             **formatting (dict): Formatting for the data
@@ -1031,7 +1100,8 @@ def generator_value_mapper(obj: dict, field: "str", fieldlen: int, pad: int,
     array = [
         formatted_string
     ]
-    return align_and_pad(array, pad, fieldlen, ralign, selected)
+
+    return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
 
 # Processors should be possible to be replaced by using generator + str().
@@ -1057,7 +1127,7 @@ def processor_timestamp(obj: dict, field: str) -> str:
     return str(value)
 
 
-def processor_timestamp_with_age(obj: dict, field: str, formatting: dict) -> str:
+def processor_timestamp_with_age(obj: dict, field: str, formatting: FormattingType) -> str:
     """
     A processor for timestamps with age; given a value,
     return the processed string for that value.
@@ -1070,7 +1140,7 @@ def processor_timestamp_with_age(obj: dict, field: str, formatting: dict) -> str
     """
     values = getattr(obj, field)
 
-    if len(deep_get(formatting, DictPath("field_colors"), [])) < 2 < len(values):
+    if len(deep_get(cast(dict, formatting), DictPath("field_colors"), [])) < 2 < len(values):
         raise ValueError("Received more than 2 fields for timestamp_with_age "
                          "but no formatting to specify what the values signify")
 
@@ -1095,7 +1165,7 @@ def processor_timestamp_with_age(obj: dict, field: str, formatting: dict) -> str
         for i, data in enumerate(values):
             # If there is no formatting for this field we assume that
             # it is a generic string
-            if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
+            if len(deep_get(cast(dict, formatting), DictPath("field_colors"), [])) <= i:
                 fmt = ThemeAttr("types", "generic")
                 array += [
                     ThemeStr(data, fmt)

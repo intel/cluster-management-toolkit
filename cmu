@@ -125,6 +125,7 @@ from clustermanagementtoolkit import datagetters
 
 from clustermanagementtoolkit import generators
 from clustermanagementtoolkit.generators import generator_allowlist, default_processor
+from clustermanagementtoolkit.generators import FormattingType
 
 from clustermanagementtoolkit import infogetters
 from clustermanagementtoolkit.infogetters import infogetter_allowlist
@@ -327,7 +328,7 @@ def update_field_widths(field_dict: dict, field_names: list[str], objects: list[
         field_prefixes = field_dict[field_name].get("field_prefixes", [])
         field_suffixes = field_dict[field_name].get("field_suffixes", [])
         field_formatters = field_dict[field_name].get("field_formatters", [])
-        formatting = deep_get(field_dict, DictPath(f"{field_name}#formatting"), {})
+        formatting: FormattingType = deep_get(field_dict, DictPath(f"{field_name}#formatting"), {})
 
         tmplen = 0
 
@@ -676,14 +677,11 @@ def generate_list_row(uip: UIProps, data: Type, field_dict: dict,
                 deep_get(generator_allowlist, DictPath(generator), generators.generator_basic)
 
         fieldlen = field_dict[field]["fieldlen"]
-        if i < len(field_dict):
-            fpad = len(ThemeRef("separators", "pad"))
-        else:
-            fpad = 0
+        fpad = i < len(field_dict)
 
         ralign = field_dict[field].get("ralign", False)
 
-        formatting = {
+        formatting: FormattingType = {
             "item_separator":
                 field_dict[field].get("item_separator", ThemeRef("separators", "list")),
             "field_separators":
@@ -697,7 +695,8 @@ def generate_list_row(uip: UIProps, data: Type, field_dict: dict,
             "field_formatters": field_dict[field].get("field_formatters", []),
         }
 
-        tmp = generator(data, field, fieldlen, fpad, ralign, is_selected, **formatting)
+        tmp = generator(data, field, fieldlen=fieldlen, pad=fpad,
+                        ralign=ralign, selected=is_selected, **formatting)
 
         pos = field_dict[field]["pos"]
 
@@ -2617,8 +2616,8 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         else:
             k8s_distro_string = ThemeStr("<unknown>", ThemeAttr("types", "unset"))
 
-        internal_ips_array = generators.format_list(iips, 0, 0)
-        external_ips_array = generators.format_list(eips, 0, 0)
+        internal_ips_array = generators.format_list(iips, fieldlen=0, pad=False)
+        external_ips_array = generators.format_list(eips, fieldlen=0, pad=False)
 
         infoarrays: list[list[Union[ThemeRef, ThemeStr]]] = [
             [
@@ -2820,7 +2819,8 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 2
 
             selectednodetaints = \
-                generators.format_list(nodeinfo[selected_node].taints, node_heatmap_width, 0,
+                generators.format_list(nodeinfo[selected_node].taints, fieldlen=node_heatmap_width,
+                                       pad=False,
                                        field_colors=[ThemeAttr("types", "key"),
                                                      ThemeAttr("types", "value")],
                                        field_separators=[ThemeRef("separators", "keyvalue_taint")])
@@ -3938,7 +3938,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                 ralign = deep_get(_formatter, DictPath(f"{key}#ralign"))
                                 formatting = deep_get(_formatter, DictPath(f"{key}#formatting"))
                                 fieldarray += [ThemeStr(" ", ThemeAttr("types", "generic"))]
-                                fieldarray += _generator(data, key, fieldlen=0, pad=0,
+                                fieldarray += _generator(data, key, fieldlen=0, pad=False,
                                                          ralign=ralign,
                                                          selected=False, **formatting)
                         uip.addthemearray(uip.infopad, fieldarray, y=y, x=0)
@@ -5344,7 +5344,7 @@ def containerinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                         ThemeStr("Containers: ", ThemeAttr("main", "infoheader")),
                     ]
                     containerarray += \
-                        generators.format_list(multilog_containers, 0, 0,
+                        generators.format_list(multilog_containers, fieldlen=0, pad=False,
                                                field_colors=[
                                                    ThemeAttr("types", "namespace"),
                                                    ThemeAttr("types", "generic"),
