@@ -1,0 +1,21 @@
+---
+- name: "List CPU information"
+  hosts: "selection"
+  vars:
+    metadata:
+      description: "List CPU information"
+      playbook_types:
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
+      category: "Information"
+      summary:
+        "Information gathering":
+          - description: "Lists CPU information"
+      read_only: true
+  gather_facts: false
+  tasks:
+    - name: "Listing CPU information"
+      ansible.builtin.shell: |
+        lscpu || printf -- "Error: lscpu not installed\n"
+      changed_when: false
