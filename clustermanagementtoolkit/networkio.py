@@ -249,7 +249,7 @@ def get_netrc_token(url: Optional[str]) -> Optional[str]:
         Parameters:
             url (str): The URL to find a bearer token for
         Returns:
-            (str): A bearer token
+            (str): A bearer token, o None if no token could be found
     """
     token: Optional[str] = None
 
@@ -260,8 +260,11 @@ def get_netrc_token(url: Optional[str]) -> Optional[str]:
 
     netrc_lines: list[str] = []
 
-    with open(NETRC_PATH, "r", encoding="utf-8") as f:
-        netrc_lines = f.readlines()
+    try:
+        with open(NETRC_PATH, "r", encoding="utf-8") as f:
+            netrc_lines = f.readlines()
+    except FileNotFoundError:
+        return token
 
     is_machine: bool = False
 
