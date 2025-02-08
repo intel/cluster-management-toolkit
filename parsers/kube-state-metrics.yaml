@@ -4,5 +4,13 @@
   matchkeys:
     - pod_name: "kube-state-metrics"
     - pod_name: "prometheus-stack-kube-state-metrics"
+    - pod_name: "prometheus-kube-state-metrics"
+    - pod_name: "kube-prometheus"
+      container_name: "kube-state-metrics"
   parser_rules:
     - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

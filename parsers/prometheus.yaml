@@ -28,19 +28,9 @@
 - name: "prometheus"
   show_in_selector: false
   matchkeys:
-    - pod_name: "kube-prometheus"
-      container_name: "kube-state-metrics"
-  parser_rules:
-    - name: "glog"
-    - name: "override_severity"
-      overrides:
-        - matchtype: "startswith"
-          matchkey: "Trace["
-          loglevel: "debug"
-- name: "prometheus"
-  show_in_selector: false
-  matchkeys:
     - pod_name: "prometheus-stack-prometheus-node-exporter"
+      container_name: "node-exporter"
+    - pod_name: "prometheus-node-exporter"
       container_name: "node-exporter"
     - pod_name: "node-exporter"
       container_name: "node-exporter"
@@ -73,6 +63,8 @@
     - pod_name: "prometheus"
       container_name: "init-config-reloader"
       container_type: "init_container"
+    - pod_name: "prometheus-kube-prometheus-blackbox-exporter"
+      container_name: "blackbox-exporter"
     - pod_name: "blackbox-exporter"
       container_name: "blackbox-exporter"
     - pod_name: "alertmanager"
