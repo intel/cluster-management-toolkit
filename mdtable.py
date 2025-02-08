@@ -245,8 +245,6 @@ def main() -> None:
 
     format_table(file, separator, headers, bold_regex=bold_regex, italics_regex=italics_regex)
 
-    return 0
-
 
 if __name__ == "__main__":
     main()
