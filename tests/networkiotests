@@ -150,6 +150,11 @@ def test_get_github_version(verbose: bool = False) -> tuple[str, bool]:
              r"v(\d+)(\.)(\d+)(\.)(\d+)$", True, [
                  {},
              ], ([], "", ""), None),
+            # version_regex is None; should be skipped
+            ("https://api.github.com/repos/kubernetes/kubernetes/releases",
+             r"", True, [
+                 {},
+             ], ([], "", ""), None),
         )
         for url, version_regex, mock_retval, mock_data, \
                 expected_result, expected_exception in testdata:
@@ -167,6 +172,7 @@ def test_get_github_version(verbose: bool = False) -> tuple[str, bool]:
                     result = False
                     break
             except Exception as e:
+                raise
                 if expected_exception is not None:
                     if isinstance(e, expected_exception):
                         pass

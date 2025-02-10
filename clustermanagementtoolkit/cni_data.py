@@ -9,11 +9,15 @@
 Helper for installing and upgrading CNI
 """
 
-from collections.abc import Callable
-from typing import TypedDict
+from collections.abc import Callable, Generator
+from typing import Any, TypedDict
 
-from clustermanagementtoolkit.cmtio import check_path, execute_command, join_securitystatus_set
+from clustermanagementtoolkit.cmtio import check_path, join_securitystatus_set
 
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from clustermanagementtoolkit.cmtio_yaml import secure_write_yaml
+
+from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, SecurityStatus
 
 from clustermanagementtoolkit.networkio import get_github_version
@@ -36,12 +40,17 @@ def __patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> bool:
         violations_joined = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
 
-    # Ideally we should patch this using a round-trip capable YAML parser,
-    # such as ruamel
-    sedstr = fr's#cidr: 192.168.0.0/16$' \
-             fr'#cidr: {pod_network_cidr}#'
-    args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-    return execute_command(args)
+    dl: Generator = secure_read_yaml_all(cni_path)
+    dl_mod: list[Any] = []
+
+    for d in dl:
+        if deep_get(d, DictPath("kind"), "") == "Installation":
+            for ippool in deep_get(d, DictPath("spec#calicoNetwork#ipPools"), []):
+                if deep_get(ippool, DictPath("name"), "") == "default-ipv4-ippool":
+                    deep_set(ippool, DictPath("cidr"), f"{pod_network_cidr}")
+        dl_mod.append(d)
+    secure_write_yaml(cni_path, dl_mod, sort_keys=False, permissions=0o644)
+    return True
 
 
 def __patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> bool:
@@ -61,17 +70,19 @@ def __patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> bool:
         violations_joined = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
 
-    # Ideally we should patch this using a round-trip capable YAML parser,
-    # such as ruamel
-    # This seems like the obvious thing to patch
-    sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16"\(,.*\)$' \
-             fr'#\1Network": "{pod_network_cidr}"\2#;' \
-             r's,# - name: CALICO_IPV4POOL_CIDR$' \
-             r',- name: CALICO_IPV4POOL_CIDR,;' \
-             fr's,#   value: "192.168.0.0/16"$' \
-             fr',  value: "{pod_network_cidr}",'
-    args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-    return execute_command(args)
+    dl: Generator = secure_read_yaml_all(cni_path)
+    dl_mod: list[Any] = []
+
+    for d in dl:
+        if deep_get(d, DictPath("kind"), "") == "ConfigMap" \
+                and deep_get(d, DictPath("metadata#name"), "") == "canal-config":
+            data = deep_get(d, DictPath("data#net-conf.json"), "")
+            data = data.replace("10.244.0.0/16", pod_network_cidr)
+            deep_set(d, DictPath("data#net-conf.json"), data)
+        dl_mod.append(d)
+
+    secure_write_yaml(cni_path, dl_mod, sort_keys=False, permissions=0o644)
+    return True
 
 
 def __patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> bool:
@@ -91,12 +102,19 @@ def __patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> bool:
         violations_joined = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
 
-    # Ideally we should patch this using a round-trip capable YAML parser,
-    # such as ruamel
-    sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$' \
-             fr'#\1Network": "{pod_network_cidr}",#'
-    args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-    return execute_command(args)
+    dl: Generator = secure_read_yaml_all(cni_path)
+    dl_mod: list[Any] = []
+
+    for d in dl:
+        if deep_get(d, DictPath("kind"), "") == "ConfigMap" \
+                and deep_get(d, DictPath("metadata#name"), "") == "kube-flannel-cfg":
+            data = deep_get(d, DictPath("data#net-conf.json"), "")
+            data = data.replace("10.244.0.0/16", pod_network_cidr)
+            deep_set(d, DictPath("data#net-conf.json"), data)
+        dl_mod.append(d)
+
+    secure_write_yaml(cni_path, dl_mod, sort_keys=False, permissions=0o644)
+    return True
 
 
 def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
@@ -116,13 +134,27 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
         violations_joined: str = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
 
-    # Ideally we should patch this using a round-trip capable YAML parser,
-    # such as ruamel
-    sedstr = r'/^                - name: IPALLOC_RANGE$/,+1d;' \
-             fr's#^\(.*\)\(- name: INIT_CONTAINER\)$' \
-             fr'#\1- name: IPALLOC_RANGE\n\1  value: {pod_network_cidr}\n\1\2#'
-    args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-    return execute_command(args)
+    d: Any = secure_read_yaml(cni_path)
+
+    for item in deep_get(d, DictPath("items"), []):
+        if deep_get(item, DictPath("kind"), "") == "DaemonSet" \
+                and deep_get(item, DictPath("metadata#name"), "") == "weave-net":
+            for container in deep_get(item, DictPath("spec#template#spec#containers"), []):
+                if deep_get(container, DictPath("name"), "") == "weave":
+                    env = deep_get(container, DictPath("env"), [])
+                    for var in env:
+                        if deep_get(var, DictPath("name"), "") == "IPALLOC_RANGE":
+                            deep_set(var, DictPath("value"), pod_network_cidr)
+                            break
+                    else:
+                        # OK, there isn't any IPALLOC_RANGE entry; prepend it
+                        env.insert(0,
+                                   {
+                                       "name": "IPALLOC_RANGE",
+                                       "value": pod_network_cidr,
+                                   })
+    secure_write_yaml(cni_path, d, sort_keys=False, permissions=0o644)
+    return True
 
 
 class URLTypeOptional(TypedDict, total=False):

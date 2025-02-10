@@ -499,7 +499,7 @@ def listgetter_files(**kwargs: Any) -> tuple[list[Union[str, dict[str, Any]]],
 
         try:
             if filetype == "yaml":
-                d = secure_read_yaml(filepath)
+                d = dict(secure_read_yaml(filepath))
             else:
                 d = secure_read_string(filepath)
         except FilePathAuditError as e:

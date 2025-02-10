@@ -11,7 +11,7 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import Any, cast, Optional, TypedDict
+from typing import Any, Optional, TypedDict
 from collections.abc import Callable
 
 from clustermanagementtoolkit import about
@@ -130,7 +130,7 @@ class CommandTypeOptional(TypedDict, total=False):
         Parameters:
             command_alias (str): A string with an alias for the command
             values ([ANSIThemeStr]): An ANSIThemeArray with ARGUMENTs to the command
-            options (dict[str, OptionType]): A dict of command options
+            options (dict[str, Optional[OptionType]]): A dict of command options
             implicit_options: ([(str, Any)]): A list of implicit options
             extended_description ([[ANSIThemeStr]]): A multi-line description of the command
     """
@@ -717,7 +717,7 @@ def parse_commandline(__programname: str, __programversion: str,
     if theme is not None:
         init_ansithemeprint(theme)
 
-    commandname = None
+    commandname = ""
     command = None
     key = None
     options: list[tuple[str, str]] = []
@@ -792,15 +792,13 @@ def parse_commandline(__programname: str, __programversion: str,
                 match = None
                 __key = key
                 for opt in deep_get(commandline, DictPath(f"{__key}#options"), {}):
-                    if isinstance(opt, str) and argv[i] == opt or \
-                            isinstance(opt, tuple) and argv[i] in opt:
+                    if isinstance(argv[i], str) and argv[i] == opt:
                         match = opt
                         break
                 # Check global options
                 if match is None:
                     for opt in deep_get(commandline, DictPath("__global_options#options"), {}):
-                        if isinstance(opt, str) and \
-                                argv[i] == opt or isinstance(opt, tuple) and argv[i] in opt:
+                        if isinstance(argv[i], str) and argv[i] == opt:
                             __key = "__global_options"
                             match = opt
                             break
@@ -819,8 +817,8 @@ def parse_commandline(__programname: str, __programversion: str,
                                    stderr=True)
                     sys.exit(errno.EINVAL)
                 else:
-                    arg = None
-                    option = match
+                    arg: str = ""
+                    option: str = match
 
                     # Does this option require arguments?
                     requires_arg = deep_get(commandline,
@@ -921,16 +919,16 @@ def parse_commandline(__programname: str, __programversion: str,
         options += deep_get(commandline, DictPath(f"{key}#implicit_options"), [])
 
     # Validate the args against required_args and optional_args
-    for i, arg in enumerate(required_args + optional_args):
+    for i, argdict in enumerate(required_args + optional_args):
         if i >= len(args):
             break
 
         # Validate the argument
-        validator_options = deep_get(arg, DictPath("validation"), {})
+        validator_options = deep_get(argdict, DictPath("validation"), {})
 
         # validate_argument() will terminate by default if validation fails
-        _result = cmtvalidators.validate_argument(args[i], arg["string"], validator_options)
+        _result = cmtvalidators.validate_argument(args[i], argdict["string"], validator_options)
 
-    options.append(("__commandname", cast(str, commandname)))
+    options.append(("__commandname", commandname))
 
     return command, options, args

@@ -52,10 +52,18 @@ import re
 import sys
 from typing import Any, cast, Optional, Union
 try:
-    import yaml
+    import ruyaml
+    ryaml = ruyaml.YAML()
+    sryaml = ruyaml.YAML(typ="safe")
 except ModuleNotFoundError:  # pragma: no cover
-    sys.exit("ModuleNotFoundError: Could not import yaml; "
-             "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
+    try:
+        import ruamel.yaml as ruyaml
+        ryaml = ruyaml.YAML()
+        sryaml = ruyaml.YAML(typ="safe")
+    except ModuleNotFoundError:  # pragma: no cover
+        sys.exit("ModuleNotFoundError: Could not import ruyaml/ruamel.yaml; "
+                 "you may need to (re-)run `cmt-install` or `pip3 install ruyaml/ruamel.yaml`; "
+                 "aborting.")
 
 try:
     from natsort import natsorted
@@ -4068,24 +4076,19 @@ def init_parser_list() -> None:
         if parser_file.endswith("BUNDLE.yaml"):
             temp_dl = secure_read_yaml_all(parser_file, directory_is_symlink=True)
             try:
-                # This validates everything in one go
-                dl = list(temp_dl)
-            except yaml.composer.ComposerError as e:
-                raise yaml.composer.ComposerError(f"{parser_file} is not valid YAML; "
-                                                  "aborting.") from e
-            except yaml.parser.ParserError as e:
-                raise yaml.parser.ParserError(f"{parser_file} is not valid YAML; "
-                                              "aborting.") from e
+                dl = [list(d) for d in temp_dl]
+            except (ruyaml.composer.ComposerError,
+                    ruyaml.parser.ParserError,
+                    ruyaml.scanner.ScannerError) as e:
+                raise Exception(f"{parser_file} is not valid YAML; aborting.") from e
             LogparserConfiguration.using_bundles = True
         else:
             try:
-                d = secure_read_yaml(parser_file, directory_is_symlink=True)
-            except yaml.composer.ComposerError as e:
-                raise yaml.composer.ComposerError(f"{parser_file} is not valid YAML; "
-                                                  "aborting.") from e
-            except yaml.parser.ParserError as e:
-                raise yaml.parser.ParserError(f"{parser_file} is not valid YAML; "
-                                              "aborting.") from e
+                d = list(secure_read_yaml(parser_file, directory_is_symlink=True))
+            except (ruyaml.composer.ComposerError,
+                    ruyaml.parser.ParserError,
+                    ruyaml.scanner.ScannerError) as e:
+                raise Exception(f"{parser_file} is not valid YAML; aborting.") from e
             dl = [d]
 
         for parser_dict in dl:

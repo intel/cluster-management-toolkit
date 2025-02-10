@@ -842,7 +842,7 @@ def test_ansible_set_groupvars(verbose: bool = False) -> tuple[str, bool]:
         with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
             # __ansible_create_inventory() will open the file
             tf.close()
-            d = {
+            d1 = {
                 "foo": {
                     "hosts": {
                     },
@@ -851,29 +851,39 @@ def test_ansible_set_groupvars(verbose: bool = False) -> tuple[str, bool]:
                 },
                 "bar": None,
             }
-            secure_write_yaml(tf.name, d, temporary=True)
+            d2 = {
+                "foo": {
+                    "hosts": {
+                    },
+                    "vars": None,
+                },
+                "bar": None,
+            }
 
             # Indata format:
             # (path, groups, values, expected_content, expected_result, expected_exception)
             testdata: tuple[Any, ...] = (
-                (tf.name, ["foo"], [("bar", 1), ("baz", "text")],
+                (d1, tf.name, ["foo"], [("bar", 1), ("baz", "text")],
                  {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
-                (tf.name, ["foo"], [("bar", 1), ("baz", "text")],
+                (d2, tf.name, ["foo"], [("bar", 1), ("baz", "text")],
                  {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
-                (tf.name, ["bar"], [("meaning", 42)],
+                (d1, tf.name, ["foo"], [("bar", 1), ("baz", "text")],
+                 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
+                (d1, tf.name, ["bar"], [("meaning", 42)],
                  {"foo": {"hosts": {}, "vars": {}}, "bar": {"vars": {"meaning": 42}}}, True, None),
-                (tf.name, ["nonexisting"], [("bar", 1), ("baz", "text")],
+                (d1, tf.name, ["nonexisting"], [("bar", 1), ("baz", "text")],
                  {}, True, None),
-                (f"{td}/TemporaryFile", ["foo", "bar"], [("bar", 1), ("baz", "text")],
+                (d1, f"{td}/TemporaryFile", ["foo", "bar"], [("bar", 1), ("baz", "text")],
                  {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}},
                   "bar": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}},
                  None, FilePathAuditError),
-                ("", ["foo"], [("bar", 1), ("baz", "text")], None, None, ArgumentValidationError),
-                (None, ["foo"], [("bar", 1), ("baz", "text")], None, True, ArgumentValidationError),
+                (d1, "", ["foo"], [("bar", 1), ("baz", "text")], None, None, ArgumentValidationError),
+                (d1, None, ["foo"], [("bar", 1), ("baz", "text")], None, True, ArgumentValidationError),
             )
+
             for indata in testdata:
+                d, path, groups, values, expected_content, expected_result, expected_exception = indata
                 secure_write_yaml(tf.name, copy.deepcopy(d), temporary=True)
-                path, groups, values, expected_content, expected_result, expected_exception = indata
                 try:
                     if (tmp := fun(path, groups, values, temporary=True)) != expected_result:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -886,7 +896,8 @@ def test_ansible_set_groupvars(verbose: bool = False) -> tuple[str, bool]:
                     if not expected_result or groups is None \
                             or not groups or values is None or not values:
                         continue
-                    output_d = secure_read_yaml(path, temporary=True)
+                    output_d = dict(secure_read_yaml(path, temporary=True))
+
                     found = True
                     for key, value in expected_content.items():
                         if key not in output_d:
@@ -1094,7 +1105,8 @@ def test_ansible_unset_groupvars(verbose: bool = False) -> tuple[str, bool]:
                     if not expected_result or groups is None \
                             or not groups or values is None or not values:
                         continue
-                    output_d = secure_read_yaml(path, temporary=True)
+                    output_d = dict(secure_read_yaml(path, temporary=True))
+
                     found = True
                     for key, value in expected_content.items():
                         if key not in output_d:
@@ -1207,7 +1219,8 @@ def test_ansible_unset_hostvars(verbose: bool = False) -> tuple[str, bool]:
                     if not expected_result or groups is None \
                             or len(groups) == 0 or values is None or len(values) == 0:
                         continue
-                    output_d = secure_read_yaml(path, temporary=True)
+                    output_d = dict(secure_read_yaml(path, temporary=True))
+
                     found = True
                     for key, value in expected_content.items():
                         if key not in output_d:
@@ -1322,7 +1335,8 @@ def test_ansible_add_hosts(verbose: bool = False) -> tuple[str, bool]:
                     # We expect not to write anything, we didn't, so we continue
                     if not expected_result or hosts is None or not hosts:
                         continue
-                    output_d = secure_read_yaml(path, temporary=True)
+                    output_d = dict(secure_read_yaml(path, temporary=True))
+
                     found = True
                     for key, value in expected_content.items():
                         if key not in output_d:
@@ -1416,7 +1430,8 @@ def test_ansible_remove_hosts(verbose: bool = False) -> tuple[str, bool]:
                     # We expect not to write anything, we didn't, so we continue
                     if not expected_result or hosts is None or not hosts:
                         continue
-                    output_d = secure_read_yaml(path, temporary=True)
+                    output_d = dict(secure_read_yaml(path, temporary=True))
+
                     found = True
                     for key, value in expected_content.items():
                         if key not in output_d:
@@ -1515,7 +1530,8 @@ def test_ansible_remove_groups(verbose: bool = False) -> tuple[str, bool]:
                     # We expect not to write anything, we didn't, so we continue
                     if not expected_result or groups is None or not groups:
                         continue
-                    output_d = secure_read_yaml(path, temporary=True)
+                    output_d = dict(secure_read_yaml(path, temporary=True))
+
                     found = True
                     for key, value in expected_content.items():
                         if key not in output_d:

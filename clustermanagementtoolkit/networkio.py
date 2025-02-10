@@ -452,6 +452,7 @@ def download_files(directory: str,
                 retval = False
                 break
 
+            fname: str = ""
             # NamedTemporaryFile with delete = False will create a temporary file
             # owned by user with 0o600 permissions.
             with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -472,10 +473,11 @@ def download_files(directory: str,
                             f.write(tff.read())
                 else:
                     f.write(r1.data)
-                # Here we change to the permissions we are supposed to use
-                os.chmod(f.name, permissions)
-                # Here we atomically move it in place
-                shutil.move(f.name, f"{directory}/{filename}")
+                fname = f.name
+            # Here we change to the permissions we are supposed to use
+            os.chmod(fname, permissions)
+            # Here we atomically move it in place
+            shutil.move(fname, f"{directory}/{filename}")
         else:
             reason = []
             if r1.reason is not None:
@@ -509,14 +511,14 @@ def get_github_version(url: str, version_regex: str) -> Optional[tuple[list[str]
                 (str): The release data
                 (str): The release page body
     """
-    compiled_version_regex = re.compile(version_regex)
     versions: list[tuple[list[str], str, str]] = []
 
-    if url is not None:
+    if url is not None and url and version_regex is not None and version_regex:
+        compiled_version_regex = re.compile(version_regex)
         with tempfile.TemporaryDirectory() as td:
             if not download_files(td, [(url, "releases.yaml", None, None)], permissions=0o600):
                 return None
-            tmp = secure_read_yaml(FilePath(f"{td}/releases.yaml"))
+            tmp = list(secure_read_yaml(FilePath(f"{td}/releases.yaml")))
             for release in tmp:
                 prerelease = deep_get(release, DictPath("prerelease"), False)
                 draft = deep_get(release, DictPath("draft"), False)
@@ -570,7 +572,7 @@ def update_version_cache(**kwargs: Any) -> None:
             path = str(path)
             if not path.endswith((".yml", ".yaml")):
                 continue
-            source = secure_read_yaml(FilePath(path), directory_is_symlink=True)
+            source = dict(secure_read_yaml(FilePath(path), directory_is_symlink=True))
             for key, data in source.items():
                 if verbose and key in sources:
                     old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
@@ -591,7 +593,7 @@ def update_version_cache(**kwargs: Any) -> None:
             path = str(path)
             if not path.endswith((".yml", ".yaml")):
                 continue
-            source = secure_read_yaml(FilePath(path), directory_is_symlink=True)
+            source = dict(secure_read_yaml(FilePath(path), directory_is_symlink=True))
             for key, data in source.items():
                 if verbose and key in sources:
                     old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
@@ -608,14 +610,14 @@ def update_version_cache(**kwargs: Any) -> None:
         pass
 
     if Path(VERSION_CACHE_LAST_UPDATED_PATH).is_file():
-        last_update_data = secure_read_yaml(VERSION_CACHE_LAST_UPDATED_PATH)
+        last_update_data = dict(secure_read_yaml(VERSION_CACHE_LAST_UPDATED_PATH))
     else:
         last_update_data = {}
     if last_update_data is None:
         last_update_data = {}
 
     try:
-        candidate_versions: dict = secure_read_yaml(VERSION_CANDIDATES_FILE)
+        candidate_versions = dict(secure_read_yaml(VERSION_CANDIDATES_FILE))
     except FilePathAuditError as e:
         if "DOES_NOT_EXIST" in str(e):
             candidate_versions = {}

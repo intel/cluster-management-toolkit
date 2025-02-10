@@ -79,9 +79,9 @@ def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
         Returns:
             (yaml.Node): Opaque type internal to python-yaml
     """
-    if "\n" in data:
+    if "\n" in data:  # pragma: nocover
         return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
-    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)  # pragma: nocover
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements

@@ -2332,13 +2332,15 @@ def read_file_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGr
     filetype: str = deep_get(kwargs, DictPath("filetype"), "string")
 
     status: StatusGroup = StatusGroup.OK
-    result: list[Any] = []
+    result: Union[dict, list[str]] = []
 
     try:
         if filetype == "string":
-            result = secure_read_string(path, directory_is_symlink=True)
+            result = secure_read_string(FilePath(path), directory_is_symlink=True).splitlines()
         elif filetype == "yaml":
-            result = secure_read_yaml(path, directory_is_symlink=True)
+            result = secure_read_yaml(FilePath(path),
+                                      directory_is_symlink=True,
+                                      asynchronous=True)
     except FilePathAuditError as e:
         if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e) \
                 or "SecurityStatus.DOES_NOT_EXIST" in str(e):
@@ -4117,7 +4119,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 if infogetter is not None:
                     tmp = infogetter(formatted_obj, **infogetter_args)
                     timestamps: list[datetime] = []
-                    facilities: list[str] = []
+                    facilities: list[Union[str, tuple[str, str]]] = []
                     severities: list[LogLevel] = []
                     if isinstance(tmp, tuple):
                         timestamps, facilities, severities, messages = tmp
@@ -4792,20 +4794,21 @@ def eventdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-def log_add_line(timestamps: list[datetime], facilities: list[str],
+def log_add_line(timestamps: list[datetime],
+                 facilities: list[Union[str, tuple[str, str]]],
                  severities: list[LogLevel],
                  messages: list[Union[list[Union[ThemeRef, ThemeStr]], str]],
                  timestamp: Optional[datetime], facility: str,
                  severity: LogLevel, message: list[Union[ThemeRef, ThemeStr]],
                  facility_extended: list[Union[ThemeRef, ThemeStr]]) \
-        -> tuple[list[datetime], list[str], list[LogLevel],
+        -> tuple[list[datetime], list[Union[str, tuple[str, str]]], list[LogLevel],
                  list[Union[list[Union[ThemeRef, ThemeStr]], str]]]:
     """
     Add a new line to the log.
 
         Parameters:
             timestamps ([datetime]): The list of timestamps
-            facilities ([str]): The list of facilities
+            facilities ([str|(str, str)]): The list of facilities
             severities ([LogLevel]): The list of severities
             messages ([[ThemeRef|ThemeStr]|str]): The list of log messages
             timestamp (Optional[datetime]): The timestamp of the message to add
@@ -4817,7 +4820,7 @@ def log_add_line(timestamps: list[datetime], facilities: list[str],
         Returns:
             (([datetime], [str], [LogLevel], [ThemeRef|ThemeStr])):
                 ([datetime]): The updated list of timestamps
-                ([str]): The updated list of facilities
+                ([str|(str, str)]): The updated list of facilities
                 ([LogLevel]): The updated list of severities
                 ([[ThemeRef|ThemeStr]|str]): The updated list of log messages
     """
@@ -5036,7 +5039,7 @@ def containerinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             curses.doupdate()
 
             timestamps: list[datetime] = []
-            facilities: list[str] = []
+            facilities: list[Union[str, tuple[str, str]]] = []
             severities: list[LogLevel] = []
             messages: list[Union[list[Union[ThemeRef, ThemeStr]], str]] = []
             parser = None
@@ -8089,7 +8092,7 @@ def __populate_playbooklist(path: FilePath, action_list: dict) -> dict:
         description = None
 
         try:
-            d = secure_read_yaml(FilePath(playbookpath), directory_is_symlink=True)
+            d = list(secure_read_yaml(FilePath(playbookpath), directory_is_symlink=True))
         except yaml.YAMLError:
             # This entry could not be parsed; add a dummy entry
             action_list[playbookname] = {
@@ -8963,7 +8966,7 @@ def populate_views(force_refresh: bool = False) -> None:
         has_infoview: bool = False
 
         try:
-            d = secure_read_yaml(FilePath(view_file), directory_is_symlink=True)
+            d = dict(secure_read_yaml(FilePath(view_file), directory_is_symlink=True))
         except yaml.parser.ParserError:
             sys.exit(f"View-file {view_file} is invalid; aborting.")
 

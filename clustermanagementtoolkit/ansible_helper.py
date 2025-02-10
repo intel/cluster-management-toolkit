@@ -18,18 +18,13 @@ import re
 import sys
 from typing import Any, cast, Optional, Union
 from collections.abc import Sequence
-try:
-    import yaml
-except ModuleNotFoundError:  # pragma: no cover
-    # This is acceptable; we don't benefit from a backtrace or log message
-    sys.exit("ModuleNotFoundError: Could not import yaml; "
-             "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from clustermanagementtoolkit import cmtlib
 
 from clustermanagementtoolkit.cmtio import check_path, join_securitystatus_set
 from clustermanagementtoolkit.cmtio import secure_mkdir, secure_rm, secure_rmdir
 
+from clustermanagementtoolkit.cmtio_yaml import ruyaml_dump_to_string
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
 
 from clustermanagementtoolkit.cmtpaths import HOMEDIR
@@ -313,7 +308,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
     include_hostvars: bool = deep_get(kwargs, DictPath("include_hostvars"), False)
     include_hosts: bool = deep_get(kwargs, DictPath("include_hosts"), True)
 
-    tmp = {}
+    tmp: dict[str, Any] = {}
 
     if not Path(ANSIBLE_INVENTORY).is_file():
         return []
@@ -358,8 +353,8 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
                 for host in deep_get(tmp, DictPath(f"{group}#hosts"), {}):
                     deep_set(tmp, DictPath(f"{group}#hosts#{host}"), None)
 
-    tmp_dump = yaml.safe_dump(tmp, default_flow_style=False)
-    tmp_dump = tmp_dump.replace(r"''", "").replace("null", "").replace("{}", "")
+    tmp_dump = ruyaml_dump_to_string(tmp, replace_null=True, replace_empty=True,
+                                     replace_empty_dict=True)
     dump: list[Union[list[ANSIThemeStr], str]] = []
     cast(list[Union[list[ANSIThemeStr], str]], tmp_dump.splitlines())
 

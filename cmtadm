@@ -571,7 +571,7 @@ def get_installation_info(cluster_name: Optional[str] = None,
     ]
 
     try:
-        info = secure_read_yaml(CMT_INSTALLATION_INFO_FILE, checks=security_checks)
+        info = dict(secure_read_yaml(CMT_INSTALLATION_INFO_FILE, checks=security_checks))
     except FileNotFoundError:
         if not ignore_non_existing:
             ansithemeprint([ANSIThemeStr("Error", "error"),
@@ -715,7 +715,8 @@ def check_version_from_url(url: str, version_regex: str) -> list[str]:
 
     if url is not None:
         with tempfile.TemporaryDirectory() as td:
-            check_and_print_status(download_files(td, [(url, "version.txt", None, None)],
+            check_and_print_status(download_files(td,
+                                                  [(url, "version.txt", None, None)],
                                                   permissions=0o600))
             tmp = secure_read_string(FilePath(f"{td}/version.txt"))
             versionoutput = tmp.splitlines()
@@ -907,8 +908,9 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                                 ANSIThemeStr("Downloading ", "subaction"),
                                 ANSIThemeStr(f"{filename}", "version")])
                 check_and_print_status(download_files(directory,
-                                       [(download_url, filename, checksum_url, checksum_type)],
-                                       permissions=permissions))
+                                                      [(download_url, filename,
+                                                        checksum_url, checksum_type)],
+                                                      permissions=permissions))
 
                 if upgradetype == "CNI":
                     new_path = FilePath(directory).joinpath(filename)
@@ -2344,7 +2346,7 @@ def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> 
     context_name = f"{admin_name}@{cluster_name}"
 
     # This read must not fail, so no exceptions
-    d2 = secure_read_yaml(config_file_name)
+    d2 = dict(secure_read_yaml(config_file_name))
 
     # This file will not exist if this is the first cluster
     security_checks = [
@@ -2357,7 +2359,7 @@ def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> 
     ]
 
     try:
-        d1 = secure_read_yaml(KUBE_CONFIG_FILE, checks=security_checks)
+        d1 = dict(secure_read_yaml(KUBE_CONFIG_FILE, checks=security_checks))
     except FileNotFoundError:
         d1 = dict(d2)
         # We will be renaming things anyway,

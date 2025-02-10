@@ -548,10 +548,9 @@ def transform_list(vlist: Union[list, dict], transform: dict) -> list[Any]:
                 else:
                     tmp3.append(tuple(value_data))
         if len(tmp3) == 1:
-            tmp3 = tmp3[0]
+            result.append(tmp3[0])
         else:
-            tmp3 = tuple(tmp3)
-        result.append(tmp3)
+            result.append(tuple(tmp3))
 
     if sort:
         return cast(list[Any], natsorted(result))
@@ -1394,7 +1393,7 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
     return entry
 
 
-def generic_infogetter(**kwargs: Any) -> list[dict]:
+def generic_infogetter(**kwargs: Any) -> list[Type]:
     """
     Generic getter for information from an object.
 
@@ -1417,7 +1416,7 @@ def generic_infogetter(**kwargs: Any) -> list[dict]:
         raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
-    info = []
+    info: list[Type] = []
 
     # Generate an empty entry
     if not (vlist := deep_get(kwargs, DictPath("_vlist"), [])):
@@ -2353,7 +2352,7 @@ def get_themearrays(obj: dict, **kwargs: Any) -> dict:
 
 # pylint: disable-next=unused-argument,too-many-locals
 def get_traceflow(obj: dict, **kwargs: Any) -> \
-        tuple[list[datetime], list[str], list[LogLevel],
+        tuple[list[datetime], list[Union[str, tuple[str, str]]], list[LogLevel],
               list[Union[list[Union[ThemeRef, ThemeStr]], str]]]:
     """
     Extract log entries from a traceflow.
@@ -2364,12 +2363,12 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
         Returns:
             (([datetime], [str], [str], [str])):
                 ([str]): A list of timestamps
-                ([str]): A list of facilities
+                ([str|(str, str)]): A list of facilities
                 ([str]): A list of severities
                 ([ThemeArray]|str): A list of ThemeArrays
     """
     timestamps: list[datetime] = []
-    facilities: list[str] = []
+    facilities: list[Union[str, tuple[str, str]]] = []
     severities: list[LogLevel] = []
     messages: list[Union[list[Union[ThemeRef, ThemeStr]], str]] = []
 
@@ -2408,7 +2407,7 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
 
 # pylint: disable-next=too-many-locals,too-many-branches
 def get_journalctl_log(obj: dict, **kwargs: Any) -> \
-        tuple[list[datetime], list[str], list[LogLevel],
+        tuple[list[datetime], list[Union[str, tuple[str, str]]], list[LogLevel],
               list[Union[list[Union[ThemeRef, ThemeStr]], str]]]:
     """
     Extract log entries from journalctl.
@@ -2420,12 +2419,12 @@ def get_journalctl_log(obj: dict, **kwargs: Any) -> \
         Returns:
             (([datetime], [str], [LogLevel], [ThemeRef|ThemeStr])):
                 ([datetime]): A list of timestamps
-                ([str]): A list of facilities
+                ([str|(str, str)]): A list of facilities
                 ([LogLevel]): A list of severities
                 ([[ThemeRef|ThemeStr]|str]): A list of messages
     """
     timestamps: list[datetime] = []
-    facilities: list[str] = []
+    facilities: list[Union[str, tuple[str, str]]] = []
     severities: list[LogLevel] = []
     messages: list[Union[list[Union[ThemeRef, ThemeStr]], str]] = []
 
@@ -2605,7 +2604,7 @@ def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, Them
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def get_cmt_log(obj: dict, **kwargs: Any) -> \
-        tuple[list[datetime], list[str], list[LogLevel],
+        tuple[list[datetime], list[Union[str, tuple[str, str]]], list[LogLevel],
               list[Union[list[Union[ThemeRef, ThemeStr]], str]]]:
     """
     Extract log entries from CMT log.
@@ -2616,17 +2615,22 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
         Returns:
             (([str], [str], [str], [str])):
                 ([datetime]): A list of timestamps
-                ([str]): A list of facilities
+                ([str|(str, str)]): A list of facilities
                 ([LogLevel]): A list of severities
                 ([ThemeArray]): A list of ThemeArrays
     """
     filepath = deep_get(obj, DictPath("filepath"), "")
     timestamps: list[datetime] = []
-    facilities: list[str] = []
+    facilities: list[Union[str, tuple[str, str]]] = []
     severities: list[LogLevel] = []
     messages: list[Union[list[Union[ThemeRef, ThemeStr]], str]] = []
 
-    d = secure_read_yaml(filepath)
+    d = []
+
+    try:
+        d = list(secure_read_yaml(filepath))
+    except FileNotFoundError:
+        pass
 
     if not d or not isinstance(d, list):
         return timestamps, facilities, severities, messages

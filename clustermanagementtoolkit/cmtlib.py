@@ -1285,7 +1285,7 @@ def get_latest_upstream_version(component: str) -> str:
 
     try:
         candidate_versions = \
-            secure_read_yaml(cmtpaths.VERSION_CANDIDATES_FILE, checks=security_checks)
+            dict(secure_read_yaml(cmtpaths.VERSION_CANDIDATES_FILE, checks=security_checks))
     except FileNotFoundError:
         candidate_versions = {}
 

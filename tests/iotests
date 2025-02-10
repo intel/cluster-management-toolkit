@@ -18,7 +18,21 @@ import re
 import sys
 from types import GeneratorType
 from typing import Any, cast
-import yaml
+try:
+    import ruyaml
+    ryaml = ruyaml.YAML()
+    sryaml = ruyaml.YAML(typ="safe")
+    CustomParserError = ruyaml.scanner.ScannerError
+except ModuleNotFoundError:  # pragma: no cover
+    try:
+        import ruamel.yaml as ruyaml
+        ryaml = ruyaml.YAML()
+        sryaml = ruyaml.YAML(typ="safe")
+        CustomParserError = ruyaml.parser.ParserError
+    except ModuleNotFoundError:  # pragma: no cover
+        sys.exit("ModuleNotFoundError: Could not import ruyaml/ruamel.yaml; "
+                 "you may need to (re-)run `cmt-install` or `pip3 install ruyaml/ruamel.yaml`; "
+                 "aborting.")
 
 from clustermanagementtoolkit.cmtio import check_path, expand_path, join_securitystatus_set
 from clustermanagementtoolkit.cmtio import execute_command, execute_command_with_response
@@ -1083,12 +1097,12 @@ testcases: dict[str, dict[str, Any]] = {
     "Invalid single YAML (secure_read_yaml)": {
         "path": FilePath(f"{TEST_DIR}/09-this_is_not_valid.yaml"),
         "test": test_secure_read_yaml,
-        "expect": yaml.parser.ParserError,
+        "expect": CustomParserError,
     },
     "Valid multi YAML (secure_read_yaml)": {
         "path": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
         "test": test_secure_read_yaml,
-        "expect": yaml.composer.ComposerError,
+        "expect": ruyaml.composer.ComposerError,
     },
     "Valid single YAML (secure_read_yaml_all)": {
         "path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),

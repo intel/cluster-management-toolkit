@@ -52,18 +52,36 @@ def test___patch_cni_calico(verbose: bool = False) -> tuple[str, bool]:
         #  expected_retval, expected_result, expected_exception)
         testdata: tuple[Any, ...] = (
             (
-                "cidr: 192.168.0.0/16\n",
+                "---\n"
+                "kind: Installation\n"
+                "spec:\n"
+                "  calicoNetwork:\n"
+                "    ipPools:\n"
+                "    - name: default-ipv4-ippool\n"
+                "      cidr: 192.168.0.0/16\n",
                 "10.244.0.0/16",
                 [SecurityStatus.OK],
                 True,
-                "cidr: 10.244.0.0/16\n",
+                "---\n"
+                "kind: Installation\n"
+                "spec:\n"
+                "  calicoNetwork:\n"
+                "    ipPools:\n"
+                "    - name: default-ipv4-ippool\n"
+                "      cidr: 10.244.0.0/16\n",
                 None,
             ),
             (
-                "cidr: 192.168.0.0/16\n",
+                "---\n"
+                "kind: Installation\n"
+                "spec:\n"
+                "  calicoNetwork:\n"
+                "    ipPools:\n"
+                "    - name: default-ipv4-ippool\n"
+                "      cidr: 192.168.0.0/16\n",
                 "10.244.0.0/16",
                 [SecurityStatus.PERMISSIONS],
-                None,
+                True,
                 None,
                 FilePathAuditError,
             ),
@@ -130,24 +148,42 @@ def test___patch_cni_canal(verbose: bool = False) -> tuple[str, bool]:
         #  expected_retval, expected_result, expected_exception)
         testdata: tuple[Any, ...] = (
             (
-                '      "Network": "10.244.0.0/16",\n'
-                '            # - name: CALICO_IPV4POOL_CIDR\n'
-                '            #   value: "192.168.0.0/16"\n',
+                "---\n"
+                "kind: ConfigMap\n"
+                "metadata:\n"
+                "  name: canal-config\n"
+                "data:\n"
+                "  net-conf.json: |\n"
+                "    {\n"
+                "      \"Network\": \"10.244.0.0/16\",\n"
+                "    }\n",
                 "10.246.0.0/16",
                 [SecurityStatus.OK],
                 True,
-                '      "Network": "10.246.0.0/16",\n'
-                '            - name: CALICO_IPV4POOL_CIDR\n'
-                '              value: "10.246.0.0/16"\n',
+                "---\n"
+                "kind: ConfigMap\n"
+                "metadata:\n"
+                "  name: canal-config\n"
+                "data:\n"
+                "  net-conf.json: |\n"
+                "    {\n"
+                "      \"Network\": \"10.246.0.0/16\",\n"
+                "    }\n",
                 None,
             ),
             (
-                '      "Network": "10.244.0.0/16",\n'
-                '            # - name: CALICO_IPV4POOL_CIDR\n'
-                '            #   value: "192.168.0.0/16"\n',
+                "---\n"
+                "kind: ConfigMap\n"
+                "metadata:\n"
+                "  name: canal-config\n"
+                "data:\n"
+                "  net-conf.json: |\n"
+                "    {\n"
+                "      \"Network\": \"10.244.0.0/16\",\n"
+                "    }\n",
                 "10.246.0.0/16",
                 [SecurityStatus.PERMISSIONS],
-                None,
+                True,
                 None,
                 FilePathAuditError,
             ),
@@ -218,18 +254,42 @@ def test___patch_cni_flannel(verbose: bool = False) -> tuple[str, bool]:
         #  expected_retval, expected_result, expected_exception)
         testdata: tuple[Any, ...] = (
             (
-                '      "Network": "10.244.0.0/16",\n',
+                "---\n"
+                "kind: ConfigMap\n"
+                "metadata:\n"
+                "  name: kube-flannel-cfg\n"
+                "data:\n"
+                "  net-conf.json: |\n"
+                "    {\n"
+                "      \"Network\": \"10.244.0.0/16\",\n"
+                "    }\n",
                 "10.246.0.0/16",
                 [SecurityStatus.OK],
                 True,
-                '      "Network": "10.246.0.0/16",\n',
+                "---\n"
+                "kind: ConfigMap\n"
+                "metadata:\n"
+                "  name: kube-flannel-cfg\n"
+                "data:\n"
+                "  net-conf.json: |\n"
+                "    {\n"
+                "      \"Network\": \"10.246.0.0/16\",\n"
+                "    }\n",
                 None,
             ),
             (
-                '      "Network": "10.244.0.0/16",\n',
+                "---\n"
+                "kind: ConfigMap\n"
+                "metadata:\n"
+                "  name: kube-flannel-cfg\n"
+                "data:\n"
+                "  net-conf.json: |\n"
+                "    {\n"
+                "      \"Network\": \"10.244.0.0/16\",\n"
+                "    }\n",
                 "10.246.0.0/16",
                 [SecurityStatus.PERMISSIONS],
-                None,
+                True,
                 None,
                 FilePathAuditError,
             ),
@@ -296,27 +356,51 @@ def test___patch_cni_weave(verbose: bool = False) -> tuple[str, bool]:
         #  mock_execute_command, expected_retval, expected_result, expected_exception)
         testdata: tuple[Any, ...] = (
             (
-                '                - name: IPALLOC_RANGE\n'
-                '                  value: 10.244.0.0/16\n'
-                '                - name: INIT_CONTAINER\n'
-                '                  value: "true"\n',
+                "items:\n"
+                "- kind: DaemonSet\n"
+                "  metadata:\n"
+                "    name: weave-net\n"
+                "  spec:\n"
+                "    template:\n"
+                "      spec:\n"
+                "        containers:\n"
+                "        - name: weave\n"
+                "          env:\n"
+                "          - name: IPALLOC_RANGE\n"
+                "            value: 10.244.0.0/16\n",
                 "10.246.0.0/16",
                 [SecurityStatus.OK],
                 True,
-                '                - name: IPALLOC_RANGE\n'
-                '                  value: 10.246.0.0/16\n'
-                '                - name: INIT_CONTAINER\n'
-                '                  value: "true"\n',
+                "items:\n"
+                "- kind: DaemonSet\n"
+                "  metadata:\n"
+                "    name: weave-net\n"
+                "  spec:\n"
+                "    template:\n"
+                "      spec:\n"
+                "        containers:\n"
+                "        - name: weave\n"
+                "          env:\n"
+                "          - name: IPALLOC_RANGE\n"
+                "            value: 10.246.0.0/16\n",
                 None,
             ),
             (
-                '                - name: IPALLOC_RANGE\n'
-                '                  value: 10.244.0.0/16\n'
-                '                - name: INIT_CONTAINER\n'
-                '                  value: "true"\n',
+                "items:\n"
+                "- kind: DaemonSet\n"
+                "  metadata:\n"
+                "    name: weave-net\n"
+                "  spec:\n"
+                "    template:\n"
+                "      spec:\n"
+                "        containers:\n"
+                "        - name: weave\n"
+                "          env:\n"
+                "          - name: IPALLOC_RANGE\n"
+                "            value: 10.244.0.0/16\n",
                 "10.246.0.0/16",
                 [SecurityStatus.PERMISSIONS],
-                None,
+                True,
                 None,
                 FilePathAuditError,
             ),
