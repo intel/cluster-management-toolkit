@@ -518,19 +518,22 @@ def get_github_version(url: str, version_regex: str) -> Optional[tuple[list[str]
         with tempfile.TemporaryDirectory() as td:
             if not download_files(td, [(url, "releases.yaml", None, None)], permissions=0o600):
                 return None
-            tmp = list(secure_read_yaml(FilePath(f"{td}/releases.yaml")))
+            try:
+                tmp = list(secure_read_yaml(FilePath(f"{td}/releases.yaml")))
+            except TypeError:
+                tmp = []
             for release in tmp:
                 prerelease = deep_get(release, DictPath("prerelease"), False)
                 draft = deep_get(release, DictPath("draft"), False)
                 if prerelease or draft:
                     continue
                 name = deep_get(release, DictPath("tag_name"), "")
-                if (tmp := compiled_version_regex.match(name)) is None:
+                if (tmp_match := compiled_version_regex.match(name)) is None:
                     continue
                 created_at = deep_get(release, DictPath("created_at"), "<unknown>")
                 published_at = deep_get(release, DictPath("published_at"), created_at)
                 body = deep_get(release, DictPath("body"), "")
-                versions.append((list(tmp.groups()), published_at, body))
+                versions.append((list(tmp_match.groups()), published_at, body))
     if versions:
         return cast(tuple[list[str], str, str], natsorted(versions, reverse=True)[0])
 
@@ -585,7 +588,7 @@ def update_version_cache(**kwargs: Any) -> None:
                                     ANSIThemeStr(f"{path}", "path")])
                     sources.pop(key)
                 sources[key] = data
-    except FileNotFoundError:
+    except (FileNotFoundError, TypeError):
         pass
 
     try:
@@ -606,11 +609,14 @@ def update_version_cache(**kwargs: Any) -> None:
                                     ANSIThemeStr(f"{path}", "path")])
                     sources.pop(key)
                 sources[key] = data
-    except FileNotFoundError:
+    except (FileNotFoundError, TypeError):
         pass
 
     if Path(VERSION_CACHE_LAST_UPDATED_PATH).is_file():
-        last_update_data = dict(secure_read_yaml(VERSION_CACHE_LAST_UPDATED_PATH))
+        try:
+            last_update_data = dict(secure_read_yaml(VERSION_CACHE_LAST_UPDATED_PATH))
+        except TypeError:
+            last_update_data = {}
     else:
         last_update_data = {}
     if last_update_data is None:
@@ -618,6 +624,8 @@ def update_version_cache(**kwargs: Any) -> None:
 
     try:
         candidate_versions = dict(secure_read_yaml(VERSION_CANDIDATES_FILE))
+    except TypeError:
+        candidate_versions = {}
     except FilePathAuditError as e:
         if "DOES_NOT_EXIST" in str(e):
             candidate_versions = {}

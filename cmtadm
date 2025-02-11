@@ -83,14 +83,14 @@ from clustermanagementtoolkit.networkio import scan_and_add_ssh_keys, update_ver
 from clustermanagementtoolkit import cmtlib
 from clustermanagementtoolkit.cmtlib import check_versions_apt
 from clustermanagementtoolkit.cmtlib import check_versions_yum, check_versions_zypper
-from clustermanagementtoolkit.cmtlib import get_latest_upstream_version, get_cluster_name
+from clustermanagementtoolkit.cmtlib import get_latest_upstream_version
 from clustermanagementtoolkit.cmtlib import identify_distro, read_cmtconfig
 from clustermanagementtoolkit.cmtlib import substitute_list, substitute_string
 
 from clustermanagementtoolkit.cni_data import cni_data
 
 from clustermanagementtoolkit import kubernetes_helper
-from clustermanagementtoolkit.kubernetes_helper import get_node_roles
+from clustermanagementtoolkit.kubernetes_helper import get_node_roles, get_cluster_name
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeinput
 from clustermanagementtoolkit.ansithemeprint import ansithemeinput_password, ansithemeprint
@@ -579,6 +579,13 @@ def get_installation_info(cluster_name: Optional[str] = None,
                             ANSIThemeStr(f"{CMT_INSTALLATION_INFO_FILE}", "path"),
                             ANSIThemeStr("; aborting.", "default")], stderr=True)
             sys.exit(errno.ENOENT)
+    except TypeError:
+        if not ignore_non_existing:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": ", "default"),
+                            ANSIThemeStr(f"{CMT_INSTALLATION_INFO_FILE}", "path"),
+                            ANSIThemeStr("is invalid; aborting.", "default")], stderr=True)
+            sys.exit(errno.EINVAL)
 
     if info is None or info.get("installation_target") is None \
             or (info.get("installation_target") is not None
@@ -2360,7 +2367,7 @@ def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> 
 
     try:
         d1 = dict(secure_read_yaml(KUBE_CONFIG_FILE, checks=security_checks))
-    except FileNotFoundError:
+    except (FileNotFoundError, TypeError):
         d1 = dict(d2)
         # We will be renaming things anyway,
         # so instead of using a lot of special casing below we just empty these fields
@@ -2468,6 +2475,12 @@ def __task_adjust_kubeconfig_server_address(installation_info: dict, verbose: bo
                         ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path"),
                         ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
+    except TypeError:
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path"),
+                        ANSIThemeStr("is invalid; aborting.", "default")], stderr=True)
+        sys.exit(errno.EINVAL)
 
     for i, cluster in enumerate(deep_get(d, DictPath("clusters"), [])):
         if deep_get(cluster, DictPath("name"), "") == cluster_name:
@@ -6583,7 +6596,7 @@ def run_checks(checks: list[dict], **kwargs: Any) -> bool:
 
     user = ""
     cluster_name = ""
-    kubeconfig: dict = {}
+    kubeconfig: Any = {}
 
     for check in checks:
         preconditions = deep_get(check, DictPath("preconditions"), [])

@@ -33,9 +33,8 @@ from clustermanagementtoolkit import cmtio
 
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
-from clustermanagementtoolkit import kubernetes_helper
 
-cmtconfig = {}
+cmtconfig: dict[str, Any] = {}
 
 
 def decode_value(value: Union[str, bytes]) -> tuple[str, Union[str, bytes]]:
@@ -386,6 +385,7 @@ def strip_ansicodes(message: str) -> str:
     return message
 
 
+# pylint: disable-next=too-many-branches
 def read_cmtconfig() -> dict:
     """
     Read cmt.yaml and cmt.yaml.d/*.yaml and update the global cmtconfig dict.
@@ -402,23 +402,26 @@ def read_cmtconfig() -> dict:
                  "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
     global cmtconfig  # pylint: disable=global-statement
+    # Start with an empty base configuration
+    cmtconfig = {}
 
     if Path(cmtpaths.SYSTEM_CMT_CONFIG_FILE).is_file():
         # Read the base configuration file from /etc (if available)
-        cmtconfig = secure_read_yaml(cmtpaths.SYSTEM_CMT_CONFIG_FILE)
+        tmp_cmtconfig = secure_read_yaml(cmtpaths.SYSTEM_CMT_CONFIG_FILE)
+        if tmp_cmtconfig is not None:
+            cmtconfig = dict(tmp_cmtconfig)
     elif Path(cmtpaths.CMT_CONFIG_FILE).is_file():
         # Read the base configuration file from /home/.cmt (if available)
-        cmtconfig = secure_read_yaml(cmtpaths.CMT_CONFIG_FILE)
-    else:
-        # Use an empty base configuration
-        cmtconfig = {}
+        tmp_cmtconfig = secure_read_yaml(cmtpaths.CMT_CONFIG_FILE)
+        if tmp_cmtconfig is not None:
+            cmtconfig = dict(tmp_cmtconfig)
 
     # Now read /etc/cmt.yaml.d/*
     system_config_dir = Path(cmtpaths.SYSTEM_CMT_CONFIG_FILE_DIR)
     if system_config_dir.is_dir():
         for path in natsorted(system_config_dir.iterdir()):
-            path = cast(str, path)
-            filename = PurePath(str(path)).name
+            path = str(path)
+            filename = PurePath(path).name
 
             # Skip tempfiles and only read entries that end with .y{,a}ml
             if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
@@ -429,7 +432,7 @@ def read_cmtconfig() -> dict:
 
             # Handle config files without any values defined
             if morecmtconfig is not None:
-                cmtconfig = {**cmtconfig, **morecmtconfig}
+                cmtconfig = {**cmtconfig, **dict(morecmtconfig)}
 
     # Finally {HOMEDIR}/cmt.yaml.d/*
     config_dir = Path(cmtpaths.CMT_CONFIG_FILE_DIR)
@@ -447,7 +450,7 @@ def read_cmtconfig() -> dict:
 
             # Handle config files without any values defined
             if morecmtconfig is not None:
-                cmtconfig = {**cmtconfig, **morecmtconfig}
+                cmtconfig = {**cmtconfig, **dict(morecmtconfig)}
 
     return cmtconfig
 
@@ -1069,135 +1072,12 @@ def check_versions_zypper(packages: list[str]) -> list[tuple[str, str, str, list
     return versions
 
 
-# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def identify_k8s_distro(**kwargs: Any) -> tuple[str, int]:
-    """
-    Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use.
-
-        Parameters:
-            kwargs (dict): Additional parameters
-        Returns:
-            (str, int):
-                (str): The identified Kubernetes distro; empty if no distro could be identified
-                (int): API-server retval
-    """
-    k8s_distro = None
-    exit_on_failure = deep_get(kwargs, DictPath("exit_on_failure"), True)
-    error_on_failure = deep_get(kwargs, DictPath("error_on_failure"), True)
-
-    # This will only work for running clusters
-    if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("identify_k8s_distro() called without kubernetes_helper")
-
-    vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
-    if status != 200:
-        if error_on_failure:
-            ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": API-server returned ", "default"),
-                            ANSIThemeStr(f"{status}", "errorvalue")], stderr=True)
-        if exit_on_failure:  # pragma: no cover
-            sys.exit(errno.EINVAL)
-        return "<unknown>", status
-    if vlist is None:
-        if error_on_failure:
-            ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": API-server did not return any data", "default")],
-                           stderr=True)
-        if exit_on_failure:  # pragma: no cover
-            sys.exit(errno.EINVAL)
-        return "<unknown>", status
-
-    tmp_k8s_distro = None
-    for node in vlist:
-        node_roles = kubernetes_helper.get_node_roles(cast(dict, node))
-        labels = deep_get(node, DictPath("metadata#labels"), {})
-        if "control-plane" in node_roles or "master" in node_roles:
-            cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
-            if cri is not None:
-                cri = cri.split(":")[0]
-            ipaddresses = []
-            for address in deep_get(node, DictPath("status#addresses")):
-                if deep_get(address, DictPath("type"), "") == "InternalIP":
-                    ipaddresses.append(deep_get(address, DictPath("address")))
-            tmp_k8s_distro = None
-            minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
-            os_image = deep_get(node, DictPath("status#nodeInfo#osImage"), "")
-            images = deep_get(node, DictPath("status#images"), [])
-            for image in images:
-                names = deep_get(image, DictPath("names"), [])
-                for name in names:
-                    if "openshift-crc-cluster" in name:
-                        tmp_k8s_distro = "crc"
-                        break
-                    if "openshift-" in name and "ocp-" in name:
-                        tmp_k8s_distro = "openshift"
-                        break
-                if tmp_k8s_distro is not None:
-                    break
-            if minikube_name != "":
-                tmp_k8s_distro = "minikube"
-            elif deep_get(labels, DictPath("microk8s.io/cluster"), False):
-                tmp_k8s_distro = "microk8s"
-            elif deep_get(node, DictPath("spec#providerID"), "").startswith("kind://"):
-                tmp_k8s_distro = "kind"
-            elif os_image.startswith("Talos"):
-                tmp_k8s_distro = "talos"
-            else:
-                managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
-                for managed_field in managed_fields:
-                    manager = deep_get(managed_field, DictPath("manager"), "")
-                    if manager == "rke2":
-                        tmp_k8s_distro = "rke2"
-                        break
-                    if manager == "k0s":
-                        tmp_k8s_distro = "k0s"
-                        break
-                    if manager.startswith("deploy@k3d"):
-                        tmp_k8s_distro = "k3d"
-                        break
-                    if manager == "k3s":
-                        tmp_k8s_distro = "k3s"
-                        break
-                    if manager == "kubeadm":
-                        tmp_k8s_distro = "kubeadm"
-                        break
-            if tmp_k8s_distro is None:
-                # Older versions of Kubernetes doesn't have managedFields;
-                # fall back to checking whether the annotation
-                # kubeadm.alpha.kubernetes.io/cri-socket exists if we cannot
-                # find any managedFields
-                if deep_get(node, DictPath("metadata#annotations#"
-                                           "kubeadm.alpha.kubernetes.io/cri-socket"), ""):
-                    tmp_k8s_distro = "kubeadm"
-            if tmp_k8s_distro is not None:
-                if k8s_distro is not None:
-                    ansithemeprint([ANSIThemeStr("Critical", "critical"),
-                                    ANSIThemeStr(": The control planes are reporting "
-                                                 "conflicting Kubernetes distros; "
-                                                 "aborting.", "default")], stderr=True)
-                    sys.exit(errno.EINVAL)
-                else:
-                    k8s_distro = tmp_k8s_distro
-        else:
-            # This isn't a control plane; but this might still be vcluster
-            if deep_get(labels, DictPath("vcluster.loft.sh/fake-node"), 'false') == "true":
-                if k8s_distro is None and tmp_k8s_distro is None:
-                    tmp_k8s_distro = "vcluster"
-    if k8s_distro is None and tmp_k8s_distro is not None:
-        k8s_distro = tmp_k8s_distro
-
-    if k8s_distro is None:
-        k8s_distro = "<unknown>"
-
-    return k8s_distro, status
-
-
 def identify_distro(**kwargs: Any) -> str:
     """
     Identify what distro (Debian, Red Hat, SUSE, etc.) is in use.
 
         Parameters:
-            kwargs (dict): Additional parameters
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             (str): The identified distro; empty if no distro could be identified
     """
@@ -1265,7 +1145,7 @@ def get_latest_upstream_version(component: str) -> str:
 
         Parameters:
             component (str): The component to return the latest version for
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             (str): The latest upstream Kubernetes version;
                    or an empty string if the version could not be determined
@@ -1286,36 +1166,10 @@ def get_latest_upstream_version(component: str) -> str:
     try:
         candidate_versions = \
             dict(secure_read_yaml(cmtpaths.VERSION_CANDIDATES_FILE, checks=security_checks))
-    except FileNotFoundError:
+    except (FileNotFoundError, TypeError):
         candidate_versions = {}
 
     return deep_get(candidate_versions, DictPath(f"{component}#release"), "")
-
-
-def get_cluster_name() -> Optional[str]:
-    """
-    Return the name of the cluster.
-
-        Returns:
-            (str): The name of the cluster
-    """
-    try:
-        d1 = secure_read_yaml(cmtpaths.KUBE_CONFIG_FILE)
-    except FileNotFoundError:
-        return None
-
-    current_context = d1.get("current-context", None)
-    if current_context is None:
-        return None
-
-    cluster_name = None
-
-    for context in d1.get("contexts", []):
-        if context.get("name", "") == current_context:
-            cluster_name = context["context"].get("cluster", None)
-            break
-
-    return cluster_name
 
 
 # The following paths are necessary:

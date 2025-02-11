@@ -14,6 +14,7 @@ Kubernetes helpers used by CMT
 import base64
 import copy
 from datetime import datetime
+import errno
 import hashlib
 # ujson is much faster than json,
 # but it might not be available
@@ -202,6 +203,32 @@ def get_node_roles(node: dict) -> list[str]:
             roles.append(role)
 
     return roles
+
+
+def get_cluster_name() -> Optional[str]:
+    """
+    Return the name of the cluster.
+
+        Returns:
+            (str): The name of the cluster
+    """
+    try:
+        d1 = dict(secure_read_yaml(KUBE_CONFIG_FILE))
+    except (FileNotFoundError, TypeError):
+        return None
+
+    current_context = d1.get("current-context", None)
+    if current_context is None:
+        return None
+
+    cluster_name = None
+
+    for context in d1.get("contexts", []):
+        if context.get("name", "") == current_context:
+            cluster_name = context["context"].get("cluster", None)
+            break
+
+    return cluster_name
 
 
 # We could probably merge this into kubernetes_resources?
@@ -1569,6 +1596,113 @@ class KubernetesHelper:
             raise ValueError(f"Kind {kind} not known; "
                              "this is likely a programming error (possibly a typo)")
         return deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
+
+    # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+    def identify_k8s_distro(self, **kwargs: Any) -> tuple[str, int]:
+        """
+        Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use.
+
+            Parameters:
+                **kwargs (dict[str, Any]): Keyword arguments
+                    exit_on_failure (bool): Exit on failure
+            Returns:
+                (str, int):
+                    (str): The identified Kubernetes distro; empty if no distro could be identified
+                    (int): API-server retval
+        """
+        k8s_distro = None
+        exit_on_failure = deep_get(kwargs, DictPath("exit_on_failure"), True)
+
+        vlist, status = self.get_list_by_kind_namespace(("Node", ""), "")
+        if status != 200:
+            if exit_on_failure:  # pragma: no cover
+                sys.exit(errno.EINVAL)
+            return "<unknown>", status
+        if vlist is None:
+            if exit_on_failure:  # pragma: no cover
+                sys.exit(errno.EINVAL)
+            return "<unknown>", status
+
+        tmp_k8s_distro = None
+        for node in vlist:
+            node_roles = get_node_roles(cast(dict, node))
+            labels = deep_get(node, DictPath("metadata#labels"), {})
+            if "control-plane" in node_roles or "master" in node_roles:
+                cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
+                if cri is not None:
+                    cri = cri.split(":")[0]
+                ipaddresses = []
+                for address in deep_get(node, DictPath("status#addresses")):
+                    if deep_get(address, DictPath("type"), "") == "InternalIP":
+                        ipaddresses.append(deep_get(address, DictPath("address")))
+                tmp_k8s_distro = None
+                minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
+                os_image = deep_get(node, DictPath("status#nodeInfo#osImage"), "")
+                images = deep_get(node, DictPath("status#images"), [])
+                for image in images:
+                    names = deep_get(image, DictPath("names"), [])
+                    for name in names:
+                        if "openshift-crc-cluster" in name:
+                            tmp_k8s_distro = "crc"
+                            break
+                        if "openshift-" in name and "ocp-" in name:
+                            tmp_k8s_distro = "openshift"
+                            break
+                    if tmp_k8s_distro is not None:
+                        break
+                if minikube_name != "":
+                    tmp_k8s_distro = "minikube"
+                elif deep_get(labels, DictPath("microk8s.io/cluster"), False):
+                    tmp_k8s_distro = "microk8s"
+                elif deep_get(node, DictPath("spec#providerID"), "").startswith("kind://"):
+                    tmp_k8s_distro = "kind"
+                elif os_image.startswith("Talos"):
+                    tmp_k8s_distro = "talos"
+                else:
+                    managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
+                    for managed_field in managed_fields:
+                        manager = deep_get(managed_field, DictPath("manager"), "")
+                        if manager == "rke2":
+                            tmp_k8s_distro = "rke2"
+                            break
+                        if manager == "k0s":
+                            tmp_k8s_distro = "k0s"
+                            break
+                        if manager.startswith("deploy@k3d"):
+                            tmp_k8s_distro = "k3d"
+                            break
+                        if manager == "k3s":
+                            tmp_k8s_distro = "k3s"
+                            break
+                        if manager == "kubeadm":
+                            tmp_k8s_distro = "kubeadm"
+                            break
+                if tmp_k8s_distro is None:
+                    # Older versions of Kubernetes doesn't have managedFields;
+                    # fall back to checking whether the annotation
+                    # kubeadm.alpha.kubernetes.io/cri-socket exists if we cannot
+                    # find any managedFields
+                    if deep_get(node, DictPath("metadata#annotations#"
+                                               "kubeadm.alpha.kubernetes.io/cri-socket"), ""):
+                        tmp_k8s_distro = "kubeadm"
+                if tmp_k8s_distro is not None:
+                    if k8s_distro is not None:
+                        if exit_on_failure:
+                            sys.exit(errno.EINVAL)
+                        return "<unknown>", status
+                    k8s_distro = tmp_k8s_distro
+            else:
+                # This isn't a control plane; but this might still be vcluster
+                if deep_get(labels, DictPath("vcluster.loft.sh/fake-node"), 'false') == "true":
+                    if k8s_distro is None and tmp_k8s_distro is None:
+                        tmp_k8s_distro = "vcluster"
+        if k8s_distro is None and tmp_k8s_distro is not None:
+            k8s_distro = tmp_k8s_distro
+
+        if k8s_distro is None:
+            k8s_distro = "<unknown>"
+
+        return k8s_distro, status
 
     def kind_api_version_to_kind(self, kind: str, api_version: str) -> tuple[str, str]:
         """
@@ -2952,7 +3086,7 @@ class KubernetesHelper:
                 if deep_get(tmp, DictPath("kind")) == "List":
                     d = deep_get(tmp, DictPath("items"), [])
                 else:
-                    d = [tmp]
+                    d = [tmp]  # type: ignore
             if d is None:
                 d = []
             for item in d:

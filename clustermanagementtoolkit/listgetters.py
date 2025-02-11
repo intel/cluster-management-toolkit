@@ -497,9 +497,14 @@ def listgetter_files(**kwargs: Any) -> tuple[list[Union[str, dict[str, Any]]],
         if filepath.startswith(("{HOME}/", "{HOME}\\")):
             filepath = HOMEDIR.joinpath(filepath[len('{HOME}/'):])
 
+        d: Any = ""
+
         try:
             if filetype == "yaml":
-                d = dict(secure_read_yaml(filepath))
+                try:
+                    d = dict(secure_read_yaml(filepath))
+                except TypeError:
+                    d = {}
             else:
                 d = secure_read_string(filepath)
         except FilePathAuditError as e:

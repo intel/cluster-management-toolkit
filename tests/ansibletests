@@ -877,12 +877,15 @@ def test_ansible_set_groupvars(verbose: bool = False) -> tuple[str, bool]:
                  {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}},
                   "bar": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}},
                  None, FilePathAuditError),
-                (d1, "", ["foo"], [("bar", 1), ("baz", "text")], None, None, ArgumentValidationError),
-                (d1, None, ["foo"], [("bar", 1), ("baz", "text")], None, True, ArgumentValidationError),
+                (d1, "", ["foo"], [("bar", 1), ("baz", "text")], None,
+                 None, ArgumentValidationError),
+                (d1, None, ["foo"], [("bar", 1), ("baz", "text")], None,
+                 True, ArgumentValidationError),
             )
 
             for indata in testdata:
-                d, path, groups, values, expected_content, expected_result, expected_exception = indata
+                d, path, groups, values, expected_content, \
+                    expected_result, expected_exception = indata
                 secure_write_yaml(tf.name, copy.deepcopy(d), temporary=True)
                 try:
                     if (tmp := fun(path, groups, values, temporary=True)) != expected_result:

@@ -57,7 +57,7 @@ try:
     sryaml = ruyaml.YAML(typ="safe")
 except ModuleNotFoundError:  # pragma: no cover
     try:
-        import ruamel.yaml as ruyaml
+        import ruamel.yaml as ruyaml  # type: ignore
         ryaml = ruyaml.YAML()
         sryaml = ruyaml.YAML(typ="safe")
     except ModuleNotFoundError:  # pragma: no cover
@@ -4079,16 +4079,17 @@ def init_parser_list() -> None:
                 dl = [list(d) for d in temp_dl]
             except (ruyaml.composer.ComposerError,
                     ruyaml.parser.ParserError,
-                    ruyaml.scanner.ScannerError) as e:
-                raise Exception(f"{parser_file} is not valid YAML; aborting.") from e
+                    ruyaml.scanner.ScannerError):
+                sys.exit(f"{parser_file} is not valid YAML; aborting.")
             LogparserConfiguration.using_bundles = True
         else:
             try:
                 d = list(secure_read_yaml(parser_file, directory_is_symlink=True))
             except (ruyaml.composer.ComposerError,
                     ruyaml.parser.ParserError,
-                    ruyaml.scanner.ScannerError) as e:
-                raise Exception(f"{parser_file} is not valid YAML; aborting.") from e
+                    ruyaml.scanner.ScannerError,
+                    TypeError):
+                sys.exit(f"{parser_file} is not valid YAML; aborting.")
             dl = [d]
 
         for parser_dict in dl:

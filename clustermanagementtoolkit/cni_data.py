@@ -136,6 +136,7 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
 
     d: Any = secure_read_yaml(cni_path)
 
+    # pylint: disable=too-many-nested-blocks
     for item in deep_get(d, DictPath("items"), []):
         if deep_get(item, DictPath("kind"), "") == "DaemonSet" \
                 and deep_get(item, DictPath("metadata#name"), "") == "weave-net":

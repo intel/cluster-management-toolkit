@@ -99,7 +99,6 @@ from clustermanagementtoolkit import curses_helper
 
 from clustermanagementtoolkit import cmtlib
 from clustermanagementtoolkit.cmtlib import decode_value, clamp, get_package_versions
-from clustermanagementtoolkit.cmtlib import identify_k8s_distro
 from clustermanagementtoolkit.cmtlib import make_label_selector
 from clustermanagementtoolkit.cmtlib import none_timestamp, timestamp_to_datetime
 from clustermanagementtoolkit.cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
@@ -2611,7 +2610,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             node_heatmap_width = ((uip.maxx - uip.minx - 1) // 5) - 2
             pod_heatmap_width = ((uip.maxx - uip.minx - 1) * 4 // 5) - 1
 
-        k8s_distro, _status = identify_k8s_distro(kubernetes_helper=kh)
+        k8s_distro, _status = kh.identify_k8s_distro()
 
         if k8s_distro is not None:
             k8s_distro_string = ThemeStr(f"{k8s_distro}", ThemeAttr("types", "generic"))
@@ -8093,7 +8092,7 @@ def __populate_playbooklist(path: FilePath, action_list: dict) -> dict:
 
         try:
             d = list(secure_read_yaml(FilePath(playbookpath), directory_is_symlink=True))
-        except yaml.YAMLError:
+        except (yaml.YAMLError, TypeError):
             # This entry could not be parsed; add a dummy entry
             action_list[playbookname] = {
                 "description": playbookpath,
@@ -8967,7 +8966,7 @@ def populate_views(force_refresh: bool = False) -> None:
 
         try:
             d = dict(secure_read_yaml(FilePath(view_file), directory_is_symlink=True))
-        except yaml.parser.ParserError:
+        except (yaml.parser.ParserError, TypeError):
             sys.exit(f"View-file {view_file} is invalid; aborting.")
 
         kind = deep_get(d, DictPath("kind"), "<missing>")

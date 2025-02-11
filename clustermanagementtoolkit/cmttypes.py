@@ -90,12 +90,12 @@ def reformat_msg(msg: list[list[tuple[str, str]]]) -> str:
 
 
 # Keep this first so we can use it in the exceptions
-def deep_get(dictionary: Optional[dict], path: DictPath, default: Any = None) -> Any:
+def deep_get(dictionary: Optional[Any], path: DictPath, default: Any = None) -> Any:
     """
     Given a dictionary and a path into that dictionary, get the value.
 
         Parameters:
-            dictionary (dict): The dict to get the value from
+            dictionary (dict|CommentedMap): The dict to get the value from
             path (DictPath): A dict path
             default (Any): The value to return if the dictionary, path, or result is None
         Returns:
@@ -917,7 +917,7 @@ stgroup_mapping = {
 }
 
 
-def deep_set(dictionary: dict, path: DictPath, value: Any, create_path: bool = False) -> None:
+def deep_set(dictionary: Any, path: DictPath, value: Any, create_path: bool = False) -> None:
     """
     Given a dictionary, a path into that dictionary, and a value, set the path to that value.
 
@@ -975,7 +975,7 @@ def __deep_get_recursive(dictionary: dict,
     return result
 
 
-def deep_get_list(dictionary: dict,
+def deep_get_list(dictionary: Any,
                   paths: list[DictPath],
                   default: Optional[list[Any]] = None,
                   fallback_on_empty: bool = False) -> Optional[list[Any]]:
@@ -1007,7 +1007,7 @@ def deep_get_list(dictionary: dict,
     return result
 
 
-def deep_get_with_fallback(obj: dict,
+def deep_get_with_fallback(obj: Any,
                            paths: list[DictPath],
                            default: Optional[Any] = None, fallback_on_empty: bool = False) -> Any:
     """
@@ -1036,7 +1036,7 @@ def deep_get_with_fallback(obj: dict,
     return result
 
 
-def deep_get_str_tuple_paths(obj: dict,
+def deep_get_str_tuple_paths(obj: Any,
                              paths: list[Union[str, list[DictPath]]],
                              default: str = "", fallback_on_empty: bool = False) -> str:
     """

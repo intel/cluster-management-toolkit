@@ -24,7 +24,7 @@ try:
     sryaml = ruyaml.YAML(typ="safe")
 except ModuleNotFoundError:  # pragma: no cover
     try:
-        import ruamel.yaml as ruyaml
+        import ruamel.yaml as ruyaml  # type: ignore
         ryaml = ruyaml.YAML()
         sryaml = ruyaml.YAML(typ="safe")
     except ModuleNotFoundError:  # pragma: no cover
@@ -37,6 +37,7 @@ from clustermanagementtoolkit import cmtio
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityChecks
 
 
+# pylint: disable=unused-argument
 def __representer_none(self: Any, data: None) -> Any:
     return self.represent_scalar("tag:yaml.org,2002:null", "null")  # pragma: nocover
 
@@ -155,7 +156,8 @@ def secure_read_yaml(path: FilePath, **kwargs: Any) -> Union[dict,
     _d2 = sryaml.load(string)
 
     # If nothing went wrong, we import the round-trip formatted data
-    return ryaml.load(string)
+    tmp = ryaml.load(string)
+    return tmp
 
 
 def secure_read_yaml_all(path: FilePath, **kwargs: Any) -> Generator:

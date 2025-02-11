@@ -689,6 +689,57 @@ def test_get_image_version(verbose: bool = False) -> tuple[str, bool]:
     return message, result
 
 
+def test_identify_k8s_distro(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = kh.identify_k8s_distro
+    k8s_distros = ("crc", "k0s", "k3d", "k3s", "kind", "kubeadm",
+                   "minikube", "microk8s", "openshift", "rke2", "talos", "vcluster")
+
+    if result:
+        ansithemeprint([ANSIThemeStr("  Note", "note"),
+                        ANSIThemeStr(": Cannot get full coverage without testing "
+                                     "on multiple Kubernetes distros:\n", "default")])
+        try:
+            tmp, status = fun(kubernetes_helper=kh, exit_on_failure=False)
+            if tmp not in k8s_distros:
+                message = f"{fun.__name__}() did not yield expected type:\n" \
+                          f"         output: {tmp}\n" \
+                          f"         status: {status}\n" \
+                          f"       expected: one of {', '.join(k8s_distros)}"
+                result = False
+            else:
+                ansithemeprint([ANSIThemeStr("  Note", "note"),
+                                ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+                ansithemeprint([ANSIThemeStr("    Identified k8s distro: ", "default"),
+                                ANSIThemeStr(f"{tmp}", "programname")])
+        except Exception as e:
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"      exception: {type(e)}\n"
+            result = False
+    if result:
+        with mock.patch("clustermanagementtoolkit.kubernetes_helper."
+                        "KubernetesHelper.get_list_by_kind_namespace",
+                        return_value=([], 404)):
+            try:
+                tmp, status = fun(kubernetes_helper=kh, exit_on_failure=False)
+                if status != 404 or tmp != "<unknown>":
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"         output: {tmp}\n" \
+                              f"         status: {status}\n" \
+                              f"       expected: <unknown>" \
+                              f"expected status: 404"
+                    result = False
+            except Exception as e:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: <unknown>" \
+                          f"expected status: 404"
+                result = False
+    return message, result
+
+
 def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -955,6 +1006,10 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
 }
 
 tests_with_cluster: dict[tuple[str], dict[str, Any]] = {
+    ("identify_k8s_distro()",): {
+        "callable": test_identify_k8s_distro,
+        "result": None,
+    },
     ("get_ref_by_kind_name_namespace() (Developer mode)",): {
         "callable": test_get_ref_by_kind_name_namespace,
         "result": None,

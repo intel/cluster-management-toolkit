@@ -15,7 +15,6 @@
 
 import builtins
 import errno
-import importlib
 import os
 import sys
 from typing import Any, cast, Optional
@@ -72,38 +71,6 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> tuple[
             result = False
         except ProgrammingError:
             pass
-
-    return message, result
-
-
-# pylint: disable-next=unused-argument
-def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> tuple[str, bool]:
-    global import_override
-
-    message = ""
-    result = True
-
-    fun = ansithemeprint.init_ansithemeprint
-
-    import_override = {"yaml": (None, ModuleNotFoundError)}
-    try:
-        with mock.patch("builtins.__import__", side_effect=override_import):
-            fun()
-            importlib.reload(ansithemeprint)
-            if not ansithemeprint.USE_FALLBACK_THEME:
-                message = f"{fun.__name__} did not set USE_FALLBACK_THEME " \
-                          "when importing yaml failed"
-                result = False
-    except Exception as e:  # pylint: disable=broad-except
-        message = f"{fun.__name__} did not use the fallback theme " \
-                  f"when no themepath was passed; exception {e}"
-        result = False
-
-    import_override = {}
-
-    importlib.reload(ansithemeprint)
-    global ANSIThemeStr
-    ANSIThemeStr = importlib.reload(ansithemeprint).ANSIThemeStr  # type: ignore
 
     return message, result
 
@@ -775,10 +742,6 @@ def test_clear_screen(verbose: bool = False) -> tuple[str, bool]:
 tests: dict[tuple[str, ...], dict[str, Any]] = {
     ("uninitialized ansithemeprint functions",): {
         "callable": test_uninitialized_ansithemeprint_functions,
-        "result": None,
-    },
-    ("init_ansithemeprint_use_fallback_theme",): {
-        "callable": test_init_ansithemeprint_use_fallback_theme,
         "result": None,
     },
     ("init_ansithemeprint",): {

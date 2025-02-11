@@ -18,15 +18,6 @@ import sys
 from typing import Any, Optional, Union
 from collections.abc import Sequence
 
-try:
-    # python3-yaml is installed by cmt-install; thus we cannot rely on yaml being importable
-    # pylint: disable-next=unused-import
-    import yaml  # noqa
-    from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
-    USE_FALLBACK_THEME = False
-except ModuleNotFoundError:
-    USE_FALLBACK_THEME = True
-
 from clustermanagementtoolkit.cmtpaths import SYSTEM_DEFAULT_THEME_FILE
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
@@ -656,10 +647,14 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
     global themepath  # pylint: disable=global-statement
 
     # If we get None as theme we use the builtin fallback theme
-    if themefile is None:
+    if themefile is None or not themefile:
         theme = FALLBACK_THEME
         themepath = FilePath("<built-in default>")
         return
+
+    # This is to allow use of ansithemeprint from cmt-install.
+    # pylint: disable-next=import-outside-toplevel
+    from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
     # If we get a theme but it doesn't exist we use the system theme file
     if themefile and not Path(themefile).is_file():
@@ -700,20 +695,23 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
         SecurityChecks.IS_FILE,
     ]
 
-    if USE_FALLBACK_THEME:  # pragma: no cover
+    try:
+        theme = dict(secure_read_yaml(themefile, checks=checks))
+    except TypeError:
         theme = FALLBACK_THEME
-        themepath = FilePath("<built-in default>")
-    else:
-        try:
-            theme = secure_read_yaml(themefile, checks=checks)
-        except (FileNotFoundError, FilePathAuditError) as e:
-            # This is equivalent to FileNotFoundError
-            if "SecurityStatus.DOES_NOT_EXIST" not in str(e):
-                raise
-            # In practice this shouldn't happen since check_path should cover this
-            theme = FALLBACK_THEME
-            ansithemeprint([ANSIThemeStr("Warning", "warning"),
-                            ANSIThemeStr(": themefile ”", "default"),
-                            ANSIThemeStr(f"{themefile}", "path"),
-                            ANSIThemeStr("” does not exist; "
-                                         "using built-in fallback theme.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                        ANSIThemeStr(": themefile ”", "default"),
+                        ANSIThemeStr(f"{themefile}", "path"),
+                        ANSIThemeStr("” is invalid; "
+                                     "using built-in fallback theme.", "default")], stderr=True)
+    except (FileNotFoundError, FilePathAuditError) as e:
+        # This is equivalent to FileNotFoundError
+        if "SecurityStatus.DOES_NOT_EXIST" not in str(e):
+            raise
+        # In practice this shouldn't happen since check_path should cover this
+        theme = FALLBACK_THEME
+        ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                        ANSIThemeStr(": themefile ”", "default"),
+                        ANSIThemeStr(f"{themefile}", "path"),
+                        ANSIThemeStr("” does not exist; "
+                                     "using built-in fallback theme.", "default")], stderr=True)

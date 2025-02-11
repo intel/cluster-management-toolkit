@@ -2629,7 +2629,7 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
 
     try:
         d = list(secure_read_yaml(filepath))
-    except FileNotFoundError:
+    except (FileNotFoundError, TypeError):
         pass
 
     if not d or not isinstance(d, list):

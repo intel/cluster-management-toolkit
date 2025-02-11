@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import cast, Optional, Union
+from typing import cast, Union
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -41,7 +41,7 @@ from clustermanagementtoolkit.cmttypes import SecurityStatus
 
 from clustermanagementtoolkit.cmtpaths import SYSTEM_ANSIBLE_PLAYBOOK_DIR, ANSIBLE_PLAYBOOK_DIR
 from clustermanagementtoolkit.cmtpaths import HOMEDIR, SSH_DIR
-from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
 
 from clustermanagementtoolkit import cmtio
 
@@ -68,6 +68,7 @@ from clustermanagementtoolkit import cmtlib
 from clustermanagementtoolkit.cmtlib import read_cmtconfig, get_latest_upstream_version
 
 from clustermanagementtoolkit import kubernetes_helper
+from clustermanagementtoolkit.kubernetes_helper import get_cluster_name
 
 from clustermanagementtoolkit import checks
 
@@ -448,32 +449,6 @@ def remove_groups(options: list[tuple[str, str]], args: list[str]) -> int:
         raise ProgrammingError(f"Failed to remove {groups}")
 
     return 0
-
-
-def get_cluster_name() -> Optional[str]:
-    """
-    Return the name of the cluster
-        Returns:
-            cluster_name (str): On success
-            None (None): On failure
-    """
-    try:
-        d1 = cmtio_yaml.secure_read_yaml(KUBE_CONFIG_FILE)
-    except FileNotFoundError:
-        return None
-
-    current_context = d1.get("current-context", None)
-    if current_context is None:
-        return None
-
-    cluster_name = None
-
-    for context in d1.get("contexts", []):
-        if context.get("name", "") == current_context:
-            cluster_name = context["context"].get("cluster", None)
-            break
-
-    return cluster_name
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches

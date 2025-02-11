@@ -179,8 +179,6 @@ coverage-cluster: setup_tests
 	$$cmd run --branch --append tests/lgtests --include-cluster || exit 1 ;\
 	printf -- "\n\n  Running: tests/khtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/khtests --include-cluster || exit 1 ;\
-	printf -- "\n\n  Running: tests/cmtlibtests --include-cluster\n\n" ;\
-	$$cmd run --branch --append tests/cmtlibtests --include-cluster || exit 1 ;\
 	printf -- "\n\n  Running: tests/itemgtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/itemgtests --include-cluster || exit 1 ;\
 	$$cmd report --sort cover --precision 1 ;\

@@ -38,6 +38,20 @@ from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
 from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityStatus, validate_args
 
+try:
+    import ruyaml
+    ryaml = ruyaml.YAML()
+    sryaml = ruyaml.YAML(typ="safe")
+except ModuleNotFoundError:  # pragma: no cover
+    try:
+        import ruamel.yaml as ruyaml  # type: ignore
+        ryaml = ruyaml.YAML()
+        sryaml = ruyaml.YAML(typ="safe")
+    except ModuleNotFoundError:  # pragma: no cover
+        sys.exit("ModuleNotFoundError: Could not import ruyaml/ruamel.yaml; "
+                 "you may need to (re-)run `cmt-install` or `pip3 install ruyaml/ruamel.yaml`; "
+                 "aborting.")
+
 ansible_configuration: dict = {
     "ansible_forks": 10,
     "ansible_password": None,
@@ -164,9 +178,12 @@ def populate_playbooks_from_paths(paths: list[FilePath]) -> list[tuple[list[ANSI
             SecurityChecks.IS_FILE,
         ]
 
-        d = secure_read_yaml(playbookpath, checks=checks)
+        try:
+            dl = list(secure_read_yaml(playbookpath, checks=checks))
+        except TypeError:
+            dl = []
         description = None
-        if (t_description := deep_get(d[0], DictPath("vars#metadata#description"), "")):
+        if (t_description := deep_get(dl[0], DictPath("vars#metadata#description"), "")):
             description = [ANSIThemeStr(t_description, "play")]
 
         if description is None or not description:
@@ -257,31 +274,30 @@ def ansible_print_action_summary(playbooks: list[tuple[list[ANSIThemeStr], FileP
                 ansithemeprint([ANSIThemeStr(f"        {description}", "default")])
 
 
-def ansible_get_inventory_dict() -> dict:
+def ansible_get_inventory_dict() -> Union[dict[str, Any], ruyaml.CommentedMap]:
     """
         Get the Ansible inventory and return it as a dict
 
         Returns:
             (dict): A dictionary with an Ansible inventory
     """
-    if not Path(ANSIBLE_INVENTORY).is_file():
-        return {
-            "all": {
-                "hosts": {},
-                "vars": {},
-            }}
-
-    d = secure_read_yaml(ANSIBLE_INVENTORY)
-    if d.get("all") is None:
-        d["all"] = {
+    d: Union[dict[str, Any], ruyaml.CommentedMap] = {
+        "all": {
             "hosts": {},
-            "vars": {}
-        }
-    else:
-        if d["all"].get("hosts") is None:
-            d["all"]["hosts"] = {}
-        if d["all"].get("vars") is None:
-            d["all"]["vars"] = {}
+            "vars": {},
+        },
+    }
+
+    if not Path(ANSIBLE_INVENTORY).is_file():
+        return d
+
+    tmp_d: Any = secure_read_yaml(ANSIBLE_INVENTORY)
+    if tmp_d is not None and isinstance(d, (dict, ruyaml.CommentedMap)):
+        deep_set(tmp_d, DictPath("all#hosts"),
+                 deep_get(tmp_d, DictPath("all#hosts"), {}), create_path=True)
+        deep_set(tmp_d, DictPath("all#vars"),
+                 deep_get(tmp_d, DictPath("all#vars"), {}), create_path=True)
+        d = tmp_d
 
     return d
 
@@ -308,22 +324,24 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
     include_hostvars: bool = deep_get(kwargs, DictPath("include_hostvars"), False)
     include_hosts: bool = deep_get(kwargs, DictPath("include_hosts"), True)
 
-    tmp: dict[str, Any] = {}
+    tmp: Union[dict[str, Any], ruyaml.CommentedMap] = {}
 
     if not Path(ANSIBLE_INVENTORY).is_file():
         return []
 
-    d = secure_read_yaml(ANSIBLE_INVENTORY)
+    try:
+        d = dict(secure_read_yaml(ANSIBLE_INVENTORY))
+    except TypeError:
+        d = {}
 
     # We want the entire inventory
     if not groups:
-        tmp = d
+        tmp = dict(d)
     else:
         if not (isinstance(groups, list) and groups and isinstance(groups[0], str)):
             raise TypeError(f"groups is type: {type(groups)}, expected {list}")
         for group in groups:
-            item = d.pop(group, None)
-            if item is not None:
+            if (item := deep_get(d, DictPath(group))) is not None:
                 tmp[group] = item
 
     # OK, now we have a dict with only the groups we are interested in;
@@ -335,7 +353,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
             tmp[group].pop("vars", None)
     else:
         for group in tmp:
-            if tmp[group].get("vars") is None or not tmp[group].get("vars"):
+            if not deep_get(tmp, DictPath(f"{group}#vars"), {}):
                 tmp[group].pop("vars", None)
 
     # Do we want hosts?
@@ -409,9 +427,8 @@ def ansible_get_hosts_by_group(inventory: FilePath, group: str) -> list[str]:
 
     d = secure_read_yaml(inventory)
 
-    if d.get(group) is not None and d[group].get("hosts") is not None:
-        for host in d[group]["hosts"]:
-            hosts.append(host)
+    for host in deep_get(d, DictPath(f"{group}#hosts"), []):
+        hosts.append(host)
 
     return hosts
 
@@ -428,7 +445,10 @@ def ansible_get_groups(inventory: FilePath) -> list[str]:
     if not Path(inventory).exists():
         return []
 
-    d = secure_read_yaml(inventory)
+    try:
+        d = dict(secure_read_yaml(inventory))
+    except TypeError:
+        d = {}
     return list(d.keys())
 
 
@@ -594,18 +614,17 @@ def ansible_set_vars(inventory: FilePath, group: str, values: dict, **kwargs: An
     d = secure_read_yaml(inventory, temporary=temporary)
 
     # If the group does not exist we create it
-    if d.get(group) is None:
-        d[group] = {}
-
-    if d[group].get("vars") is None:
-        d[group]["vars"] = {}
+    deep_set(d, DictPath(f"{group}#vars"),
+             deep_get(d, DictPath(f"{group}#vars"), {}), create_path=True)
 
     for key in values:
-        if key in d[group]["vars"] and d[group]["vars"].get(key) == values[key]:
+        value_key = deep_get(values, DictPath(key))
+        if key in deep_get(d, DictPath(f"{group}#vars"), {}) \
+                and deep_get(d, DictPath(f"{group}#vars#{key}"), {}) == value_key:
             continue
 
         # Set the variable (overwriting previous value)
-        d[group]["vars"][key] = values[key]
+        deep_set(d, DictPath(f"{group}#vars#{key}"), value_key)
         changed = True
 
     if changed:
@@ -842,7 +861,6 @@ def ansible_unset_hostvars(inventory: FilePath,
     return True
 
 
-# pylint: disable-next=too-many-branches
 def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> bool:
     """
     Add hosts to the ansible inventory; if the inventory does not exist, create it
@@ -877,7 +895,9 @@ def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> b
                           "skip_all": skip_all,
                           "temporary": temporary})
 
-    d: dict[str, Any] = {}
+    d: Union[dict[str, Any], ruyaml.CommentedMap] = {}
+
+    tmp_d: Any = None
 
     # The inventory does not exist; if the user specified skip_all
     # we do not mind, otherwise we need to create it
@@ -886,9 +906,11 @@ def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> b
             changed = True
         else:
             __ansible_create_inventory(inventory, overwrite=False)
-            d = secure_read_yaml(inventory, temporary=temporary)
+            tmp_d = secure_read_yaml(inventory, temporary=temporary)
     else:
-        d = secure_read_yaml(inventory, temporary=temporary)
+        tmp_d = secure_read_yaml(inventory, temporary=temporary)
+    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.CommentedMap)):
+        d = tmp_d
 
     for host in hosts:
         # Kubernetes doesn't like uppercase hostnames
@@ -915,16 +937,8 @@ def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> b
         #
         # We do not want to overwrite groups
         if group not in ("", "all"):
-            if d.get(group) is None:
-                d[group] = {}
-                changed = True
-
-            if d[group].get("hosts") is None:
-                changed = True
-                d[group]["hosts"] = {}
-
-            if host not in d[group]["hosts"]:
-                d[group]["hosts"][host] = {}
+            if host not in deep_get(d, DictPath(f"{group}#hosts"), {}):
+                deep_set(d, DictPath(f"{group}#hosts#{host}"), {}, create_path=True)
                 changed = True
 
     if changed:
@@ -1013,13 +1027,16 @@ def ansible_remove_groups(inventory: FilePath, groups: list[str], **kwargs: Any)
     if not Path(inventory).is_file():
         return False
 
-    d = secure_read_yaml(inventory, temporary=temporary)
+    d: Union[dict[str, Any], ruyaml.CommentedMap] = {}
+    tmp_d: Any = secure_read_yaml(inventory, temporary=temporary)
+    if tmp_d is not None and isinstance(d, (dict, ruyaml.CommentedMap)):
+        d = tmp_d
 
     for group in groups:
-        if d.get(group) is None:
+        if deep_get(d, DictPath(group)) is None:
             continue
 
-        if d[group].get("hosts") is not None and not force:
+        if deep_get(d, DictPath(f"{group}#hosts")) is not None and not force:
             continue
 
         d.pop(group)
