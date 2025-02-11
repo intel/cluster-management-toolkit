@@ -1290,6 +1290,10 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/config.nri/v1alpha1/"],
         "api": "balloonspolicies",
     },
+    ("TopologyAwarePolicy", "config.nri"): {
+        "api_paths": ["apis/config.nri/v1alpha1/"],
+        "api": "topologyawarepolicies",
+    },
     # configuration.konghq.com
     ("KongClusterPlugin", "configuration.konghq.com"): {
         "api_paths": ["apis/configuration.konghq.com/v1/"],
@@ -1959,6 +1963,20 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/gateway.networking.k8s.io/v1alpha2/"],
         "api": "udproutes",
     },
+    # gaudi.resource.intel.com
+    ("GaudiAllocationState", "gaudi.resource.intel.com"): {
+        "api_paths": ["apis/gaudi.resource.intel.com/v1alpha1/"],
+        "api": "gaudiallocationstates",
+    },
+    ("GaudiClaimParameters", "gaudi.resource.intel.com"): {
+        "api_paths": ["apis/gaudi.resource.intel.com/v1alpha1/"],
+        "api": "gaudiclaimparameters",
+    },
+    ("GaudiClassParameters", "gaudi.resource.intel.com"): {
+        "api_paths": ["apis/gaudi.resource.intel.com/v1alpha1/"],
+        "api": "gaudiclassparameters",
+        "namespaced": False,
+    },
     # getambassador.io
     ("AuthService", "getambassador.io"): {
         "api_paths": ["apis/getambassador.io/v2/"],
@@ -2015,6 +2033,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("Listener", "getambassador.io"): {
         "api_paths": ["apis/getambassador.io/v3alpha1/"],
         "api": "listeners",
+    },
+    # gmc.opea.io
+    ("GMConnector", "gmc.opea.io"): {
+        "api_paths": ["apis/gmc.opea.io/v1alpha3/"],
+        "api": "gmconnectors",
     },
     # gpu.resource.intel.com
     ("DeviceClassParameters", "gpu.resource.intel.com"): {
@@ -2520,6 +2543,27 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("IPAMClaim", "k8s.cni.cncf.io"): {
         "api_paths": ["apis/k8s.cni.cncf.io/v1alpha1/"],
         "api": "ipamclaims",
+    },
+    # k8s.nginx.org
+    ("Policy", "k8s.nginx.org"): {
+        "api_paths": ["apis/k8s.nginx.org/v1/"],
+        "api": "policies",
+    },
+    ("VirtualServerRoute", "k8s.nginx.org"): {
+        "api_paths": ["apis/k8s.nginx.org/v1/"],
+        "api": "virtualserverroutes",
+    },
+    ("VirtualServer", "k8s.nginx.org"): {
+        "api_paths": ["apis/k8s.nginx.org/v1/"],
+        "api": "virtualservers",
+    },
+    ("GlobalConfiguration", "k8s.nginx.org"): {
+        "api_paths": ["apis/k8s.nginx.org/v1alpha1/"],
+        "api": "globalconfigurations",
+    },
+    ("TransportServer", "k8s.nginx.org"): {
+        "api_paths": ["apis/k8s.nginx.org/v1alpha1/"],
+        "api": "transportservers",
     },
     # k8s.otterize.com
     ("ClientIntents", "k8s.otterize.com"): {
@@ -4953,8 +4997,10 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     },
     # topology.node.k8s.io
     ("NodeResourceTopology", "topology.node.k8s.io"): {
-        "api_paths": ["apis/topology.node.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/topology.node.k8s.io/v1alpha2/",
+                      "apis/topology.node.k8s.io/v1alpha1/"],
         "api": "noderesourcetopologies",
+        "namespaced": False,
     },
     # topolvm.io
     ("LogicalVolume", "topolvm.io"): {
