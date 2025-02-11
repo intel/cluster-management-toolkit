@@ -1049,8 +1049,7 @@ def main() -> int:
     command, options, args = \
         parse_commandline(about.INSTALL_PROGRAM_NAME, about.INSTALL_PROGRAM_VERSION,
                           PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, COMMANDLINE,
-                          default_command="__default",
-                          theme=FilePath(os.path.join(os.getcwd(), "themes", "")))
+                          default_command="__default", theme="")
 
     return command(options, args)
 
