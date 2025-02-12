@@ -1,0 +1,89 @@
+---
+kind: "__PodMonitorEndpoint"
+api_family: "monitoring.coreos.com"
+default_command: "__"
+infoview:
+  name: "Pod Monitor Endpoint Info"
+  infopad:
+    name_path: null
+    row_indexes:
+      Normal:
+        fields: ["enable_http2", "filter_running", "follow_redirects",
+                 "honor_labels", "honor_timestamps",
+                 "path", "port", "scheme", "interval"]
+    rows:
+      enable_http2:
+        header: [["Enable HTTP2:", ["main", "infoheader"]]]
+        path: "enableHttp2"
+        default: "<unset>"
+        type: "bool"
+      filter_running:
+        header: [["Filter Running:", ["main", "infoheader"]]]
+        path: "filterRunning"
+        default: "<unset>"
+        type: "bool"
+      follow_redirects:
+        header: [["Follow Redirects:", ["main", "infoheader"]]]
+        path: "followRedirects"
+        default: "<unset>"
+        type: "bool"
+      honor_labels:
+        header: [["Honor Labels:", ["main", "infoheader"]]]
+        path: "honorLabels"
+        default: "<unset>"
+        type: "bool"
+      honor_timestamps:
+        header: [["Honor Timestamps:", ["main", "infoheader"]]]
+        path: "honorLabels"
+        default: "<unset>"
+        type: "bool"
+      interval:
+        header: [["Interval:", ["main", "infoheader"]]]
+        path: "interval"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      path:
+        header: [["Path:", ["main", "infoheader"]]]
+        path: "path"
+        default: "<unset>"
+        type: "str"
+      port:
+        header: [["Port:", ["main", "infoheader"]]]
+        path: "port"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "service"
+      scheme:
+        header: [["Scheme:", ["main", "infoheader"]]]
+        path: "scheme"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "service"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "relabelings"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["action", "source_labels", "target_label"]
+        sortcolumn: "action"
+    fields:
+      action:
+        header: "Action:"
+        path: "action"
+        type: "str"
+      source_labels:
+        header: "Source Labels:"
+        path: "sourceLabels"
+        type: "raw"
+        formatter: "list"
+      target_label:
+        header: "Target Label:"
+        path: "targetLabel"
+        type: "str"

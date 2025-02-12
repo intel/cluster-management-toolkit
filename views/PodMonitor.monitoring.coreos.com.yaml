@@ -12,3 +12,74 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Pod Monitor Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["job_label", "label_selector", "set_based_selector",
+                 "attach_metadata_header", "attach_metadata_node"]
+    rows:
+      attach_metadata_header:
+        header: [["Attach Metadata:", ["main", "infoheader"]]]
+      attach_metadata_node:
+        header: [["  Node:", ["main", "infoheader"]]]
+        path: "spec#attachMetadata#node"
+        type: "bool"
+        default: False
+      job_label:
+        header: [["Job Label:", ["main", "infoheader"]]]
+        path: "spec#jobLabel"
+        default: "<unset>"
+        type: "str"
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      set_based_selector:
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#selector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "operator"
+            - type: "value"
+          field_separators:
+            - type: "space"
+            - type: "no_pad"
+  shortcuts:
+    "Pod Monitor Endpoints":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Pod Monitor endpoints"
+      widget: "windowwidget"
+      title: "Pod Monitor Endpoints:"
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#podMetricsEndpoints"
+        fields:
+          - value: "index"
+            index_template: "endpoint-<<<index>>>"
+        pass_ref: true
+      # This isn't supported for now
+      sortcolumn: "namespace"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_from_selection"
+      action_args:
+        kind: "__PodMonitorEndpoint"
+        api_family: "monitoring.coreos.com"
