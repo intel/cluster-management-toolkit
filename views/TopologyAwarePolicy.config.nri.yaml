@@ -1,0 +1,112 @@
+---
+kind: "TopologyAwarePolicy"
+api_family: "config.nri"
+default_command: "topologyawarepolicies"
+command:
+  - "topawarepols"
+  - "topawarepol"
+  - "tapols"
+  - "tapol"
+listview:
+  name: "Topology Aware Policies"
+  group: "Policy"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Topology Aware Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields:
+          - "default_cpu_priority"
+          - "prefer_isolated_cpus"
+          - "pin_cpu"
+          - "pin_memory"
+          - "reserved_resources"
+          - "instrumentation_header"
+          - "instrumentation_report_period"
+          - "instrumentation_sampling_rate_per_million"
+          - "log_header"
+          - "log_source"
+          - "log_klog_header"
+          - "log_klog_skip_headers"
+    rows:
+      default_cpu_priority:
+        header: [["Default CPU Priority:", ["main", "infoheader"]]]
+        path: "spec#defaultCPUPriority"
+        type: "raw"
+        default: "<unset>"
+        formatter: "numerical"
+      instrumentation_header:
+        header: [["Instrumentation:", ["main", "infoheader"]]]
+      instrumentation_report_period:
+        header: [["  Report Period:", ["main", "infoheader"]]]
+        path: "spec#instrumentation#reportPeriod"
+        type: "str"
+        formatter: "numerical"
+      instrumentation_sampling_rate_per_million:
+        header: [["  Sampling Rate Per Million:", ["main", "infoheader"]]]
+        path: "spec#instrumentation#samplingRatePerMillion"
+        type: "str"
+        formatter: "numerical"
+      log_header:
+        header: [["Log:", ["main", "infoheader"]]]
+      log_klog_header:
+        header: [["  klog:", ["main", "infoheader"]]]
+      log_klog_skip_headers:
+        header: [["    Skip Headers:", ["main", "infoheader"]]]
+        path: "spec#log#klog#skip_headers"
+        type: "bool"
+        default: "<unset>"
+      log_source:
+        header: [["  Source:", ["main", "infoheader"]]]
+        path: "spec#log#source"
+        type: "bool"
+        default: "<unset>"
+      pin_cpu:
+        header: [["Pin CPU:", ["main", "infoheader"]]]
+        path: "spec#pinCPU"
+        type: "bool"
+        default: "<unset>"
+      pin_memory:
+        header: [["Pin Memory:", ["main", "infoheader"]]]
+        path: "spec#pinMemory"
+        type: "bool"
+        default: "<unset>"
+      prefer_isolated_cpus:
+        header: [["Prefer Isolated CPUs:", ["main", "infoheader"]]]
+        path: "spec#preferIsolatedCPUs"
+        type: "bool"
+        default: "<unset>"
+      reserved_resources:
+        header: [["Reserved Resources:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#reservedResources"
+            pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "numerical"
+          field_separators:
+            - type: "keyvalue"
+  shortcuts:
+    "Show Node status":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show node status"
+      widget: "windowwidget"
+      title: "Node Status:"
+      headers: ["Node:", "Status:", "Timestamp:", "Errors:"]
+      itemgetter: "get_dict_list"
+      itemgetter_args:
+        path: "status#nodes"
+        fields:
+          - "key"
+          - "value#status"
+          - "value#timestamp"
+          - "value#errors"
+      sortcolumn: "status"
