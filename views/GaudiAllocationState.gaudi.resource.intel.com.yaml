@@ -1,0 +1,116 @@
+---
+kind: "GaudiAllocationState"
+api_family: "gaudi.resource.intel.com"
+default_command: "gaudiallocationstates"
+command:
+  - "gaudiallocstates"
+  - "gaudiallocstate"
+listview:
+  name: "Gaudi Allocation States"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "allocatable",
+               "allocated_claims", "status", "age"]
+      sortcolumn: "namespace"
+  fields:
+    allocatable:
+      header: "Allocatable:"
+      paths:
+        - path: "spec#allocatableDevices"
+          pathtype: "count"
+          type: "raw"
+      formatter: "numerical"
+      align: "right"
+    allocated_claims:
+      header: "Allocated Claims:"
+      paths:
+        - path: "spec#allocatedClaims"
+          pathtype: "count"
+          type: "raw"
+      formatter: "numerical"
+      align: "right"
+    status:
+      header: "Status:"
+      path: "status"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Ready:
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            NotReady:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+infoview:
+  name: "Gaudi Allocation State Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_name", "status"]
+    rows:
+      node_name:
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
+        paths:
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Node"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "host"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Ready:
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              NotReady:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+  listpad:
+    listgetter: "listgetter_dict_list"
+    listgetter_args:
+      path: "spec#allocatableDevices"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["uid", "model"]
+        sortcolumn: "uid"
+    fields:
+      model:
+        header: "Model:"
+        path: "value#model"
+        type: "str"
+      uid:
+        header: "UID:"
+        path: "value#uid"
+        type: "str"
+  shortcuts:
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        owner_reference_path: "metadata#ownerReferences"

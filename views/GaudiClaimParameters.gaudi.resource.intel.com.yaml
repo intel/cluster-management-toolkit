@@ -1,0 +1,32 @@
+---
+kind: "GaudiClaimParameters"
+api_family: "gaudi.resource.intel.com"
+default_command: "gaudiclaimparameters"
+command:
+  - "gaudiclaimparams"
+listview:
+  name: "Gaudi Claim Parameters"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "count", "age"]
+      sortcolumn: "namespace"
+  fields:
+    count:
+      header: "Count:"
+      path: "spec#count"
+      type: "numerical"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Gaudi Claim Parameter Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["count"]
+    rows:
+      count:
+        header: [["Count:", ["main", "infoheader"]]]
+        path: "spec#count"
+        type: "numerical"
+        formatter: "numerical"

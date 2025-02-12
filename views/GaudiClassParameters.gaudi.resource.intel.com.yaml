@@ -1,0 +1,30 @@
+---
+kind: "GaudiClassParameters"
+api_family: "gaudi.resource.intel.com"
+default_command: "gaudiclassparameters"
+command:
+  - "gaudiclassparams"
+listview:
+  name: "Gaudi Class Parameters"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["name", "monitor", "age"]
+  fields:
+    monitor:
+      header: "Monitor:"
+      path: "spec#monitor"
+      type: "str"
+      default: false
+infoview:
+  name: "Gaudi Class Parameter Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["monitor"]
+    rows:
+      monitor:
+        header: [["Monitor:", ["main", "infoheader"]]]
+        path: "spec#monitor"
+        type: "str"
+        default: false
