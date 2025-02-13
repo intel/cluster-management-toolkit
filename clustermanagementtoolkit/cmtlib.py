@@ -31,8 +31,6 @@ from clustermanagementtoolkit import cmtpaths
 
 from clustermanagementtoolkit import cmtio
 
-from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
-
 
 cmtconfig: dict[str, Any] = {}
 
@@ -404,6 +402,10 @@ def read_cmtconfig() -> dict:
     global cmtconfig  # pylint: disable=global-statement
     # Start with an empty base configuration
     cmtconfig = {}
+
+    # This is to allow use of ansithemeprint from cmt-install.
+    # pylint: disable-next=import-outside-toplevel
+    from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
     if Path(cmtpaths.SYSTEM_CMT_CONFIG_FILE).is_file():
         # Read the base configuration file from /etc (if available)
@@ -1152,6 +1154,10 @@ def get_latest_upstream_version(component: str) -> str:
     """
     if not component:
         return ""
+
+    # This is to allow use of ansithemeprint from cmt-install.
+    # pylint: disable-next=import-outside-toplevel
+    from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
     # We are OK with the file not existing
     security_checks = [

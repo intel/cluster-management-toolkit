@@ -16,7 +16,7 @@ from collections.abc import Callable
 
 from clustermanagementtoolkit import about
 
-from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmtlib import lstrip_count, rstrip_count
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
@@ -526,14 +526,14 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
                 string = string.replace(">", "\\>")
                 string = string.replace("`", "\\`")
                 if themeref in ("option", "emphasis"):
-                    stripped, lcount = cmtlib.lstrip_count(string, " ")
-                    stripped, rcount = cmtlib.rstrip_count(stripped, " ")
+                    stripped, lcount = lstrip_count(string, " ")
+                    stripped, rcount = rstrip_count(stripped, " ")
                     if stripped and not stripped.startswith("__") and not stripped.endswith("__"):
                         string = "".ljust(lcount) + f"__{stripped}__" + "".ljust(rcount)
                         segment = ANSIThemeStr(string, themeref)
                 elif themeref in ("argument", "note", "path", "version"):
-                    stripped, lcount = cmtlib.lstrip_count(string, " ")
-                    stripped, rcount = cmtlib.rstrip_count(stripped, " ")
+                    stripped, lcount = lstrip_count(string, " ")
+                    stripped, rcount = rstrip_count(stripped, " ")
                     if stripped and not stripped.startswith("_") and not stripped.endswith("_"):
                         string = "".ljust(lcount) + f"_{stripped}_" + "".ljust(rcount)
                         segment = ANSIThemeStr(string, themeref)
