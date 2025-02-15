@@ -7,7 +7,11 @@ kind: "ClusterDeployment"
 # Note: templated installs are only supported for kubeadm and rke2 at the moment
 # This configuration uses:
 #   ClusterConfiguration kubeadm.k8s.io/v1beta3 [Kubernetes 1.23+]
+#   ClusterConfiguration kubeadm.k8s.io/v1beta4 [Kubernetes 1.31+]
 #   InitConfiguration kubeadm.k8s.io/v1beta3 [Kubernetes 1.23+]
+#   InitConfiguration kubeadm.k8s.io/v1beta4 [Kubernetes 1.31+]
+#   JoinConfiguration kubeadm.k8s.io/v1beta3 [Kubernetes 1.23+]
+#   JoinConfiguration kubeadm.k8s.io/v1beta4 [Kubernetes 1.31+]
 #   KubeletConfiguration kubelet.config.k8s.io/v1beta1 [Kubernetes 1.10+]
 #   KubeProxyConfiguration kubeproxy.config.k8s.io/v1alpha1 [Kubernetes 1.12+]
 options:
@@ -179,7 +183,7 @@ cluster:
     clusterConfiguration:
       # Embedded cluster configuration template:
       data: |
-        apiVersion: kubeadm.k8s.io/v1beta3
+        apiVersion: "{{ cluster_configuration_api_version }}"
         kind: ClusterConfiguration
         apiServer:
           extraArgs:
@@ -226,7 +230,7 @@ cluster:
     initConfiguration:
       # Embedded cluster configuration template:
       data: |
-        apiVersion: kubeadm.k8s.io/v1beta3
+        apiVersion: "{{ init_configuration_api_version }}"
         kind: InitConfiguration
         nodeRegistration:
           # This will be auto-populated from the cluster settings
@@ -363,7 +367,7 @@ nodes:
         # Embedded node configuration template:
         # yamllint disable rule:line-length
         data: |
-          apiVersion: kubeadm.k8s.io/v1beta3
+          apiVersion: "{{ join_configuration_api_version }}"
           kind: JoinConfiguration
           nodeRegistration:
             # This will be auto-populated from the node settings; only change
@@ -560,7 +564,7 @@ nodes:
     #         # Embedded node configuration template:
               # yamllint disable rule:line-length
     #         data: |
-    #           apiVersion: kubeadm.k8s.io/v1beta3
+    #           apiVersion: "{{ join_configuration_api_version }}"
     #           kind: JoinConfiguration
     #           nodeRegistration:
     #             # This will be auto-populated from the node group settings;

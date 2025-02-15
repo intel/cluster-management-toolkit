@@ -1487,8 +1487,10 @@ def add_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
             FilePath("kubeadm_join_node.yaml"),
         ]
 
-        # Currently we only support v1beta3 (kubeadm >= 1.24).
-        join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        if int(version_minor) < 31:
+            join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        else:
+            join_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
         tmp_crio_version = get_crio_version((int(version_major), int(version_minor)))
         if tmp_crio_version is None:

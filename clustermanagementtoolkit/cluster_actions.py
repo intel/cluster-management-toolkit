@@ -457,6 +457,11 @@ def join_nodes(hosts: list[str], **kwargs: Any) -> int:
 
     # Currently we only support kubeadm
     if k8s_distro == "kubeadm":
+        if int(version_minor) < 31:
+            join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        else:
+            join_configuration_api_version = "kubeadm.k8s.io/v1beta4"
+
         extra_values = {
             **extra_values,
             "control_plane_ip": control_plane_ip,
@@ -468,7 +473,7 @@ def join_nodes(hosts: list[str], **kwargs: Any) -> int:
             "control_plane_k8s_version": version,
             "cri_socket": cri_socket,
             "kubernetes_major_minor_version": f"{version_major}.{version_minor}",
-            "join_configuration_api_version": "kubeadm.k8s.io/v1beta3",
+            "join_configuration_api_version": join_configuration_api_version,
         }
 
     # Now join the hosts
