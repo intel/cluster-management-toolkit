@@ -1,0 +1,33 @@
+---
+kind: "AuthConfig"
+api_family: "management.cattle.io"
+default_command: "authconfigs.management.cattle.io"
+command:
+  - "authconfigs.cattle"
+  - "authconfig.cattle"
+  - "authconfs.cattle"
+  - "authconf.cattle"
+listview:
+  name: "Auth Configs"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "type", "age"]
+  fields:
+    type:
+      header: "Type:"
+      path: "type"
+      type: "str"
+      default: "<unset>"
+infoview:
+  name: "Auth Config Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["type"]
+    rows:
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "type"
+        type: "str"
+        default: "<unset>"

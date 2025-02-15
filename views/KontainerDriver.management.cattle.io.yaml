@@ -1,0 +1,94 @@
+---
+kind: "KontainerDriver"
+api_family: "management.cattle.io"
+default_command: "kontainerdrivers.management.cattle.io"
+command:
+  - "kontainerdrivers.cattle"
+  - "kontainerdriver.cattle"
+  - "kontainerdrvs.cattle"
+  - "kontainerdrv.cattle"
+listview:
+  name: "Kontainer Drivers"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "display_name", "active", "builtin", "age"]
+  fields:
+    active:
+      header: "Active:"
+      path: "spec#active"
+      type: "bool"
+      default: "<unset>"
+    builtin:
+      header: "Built-in:"
+      path: "spec#builtIn"
+      type: "bool"
+      default: "<unset>"
+    display_name:
+      header: "Display Name:"
+      path: "status#displayName"
+      type: "str"
+      default: "<unset>"
+infoview:
+  name: "Kontainer Driver Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "active", "builtin", "checksum",
+                 "url", "ui_url", "whitelist_domains"]
+    rows:
+      active:
+        header: [["Active:", ["main", "infoheader"]]]
+        path: "spec#active"
+        type: "bool"
+        default: "<unset>"
+      builtin:
+        header: [["Built-in:", ["main", "infoheader"]]]
+        path: "spec#builtIn"
+        type: "bool"
+        default: "<unset>"
+      checksum:
+        header: [["Checksum:", ["main", "infoheader"]]]
+        path: "spec#checksum"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "status#displayName"
+        type: "str"
+        default: "<unset>"
+      ui_url:
+        header: [["UI URL:", ["main", "infoheader"]]]
+        path: "spec#uiUrl"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      url:
+        header: [["URL:", ["main", "infoheader"]]]
+        path: "spec#url"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      whitelist_domains:
+        header: [["Whitelist ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["omains:", ["main", "infoheader"]]]
+        path: "spec#whitelistDomains"
+        type: "raw"
+        default: ["<none>"]
+        formatter: "list"
+  shortcuts:
+    "List Whitelist Domains":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "List whitelist domains"
+      widget: "windowwidget"
+      title: "Whitelist Domains:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#whitelistDomains"
+      # Not supported for now
+      sortcolumn: "domain"
