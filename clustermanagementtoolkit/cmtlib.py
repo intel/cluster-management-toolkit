@@ -524,6 +524,9 @@ def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
         Raises:
             TypeError: The input was not an integer
     """
+    if isinstance(seconds, str) and seconds == "":
+        return ""
+
     if not isinstance(seconds, int):
         raise TypeError(f"age {seconds} is type {type(seconds)}, expected int")
 

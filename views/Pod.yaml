@@ -280,6 +280,8 @@ infoview:
           - path: "status#hostIPs"
             pathtype: "items"
             subpath: "ip"
+        default: ["<unset>"]
+        fallback_on_empty: true
         unique: true
         formatter: "address"
       phase:
@@ -329,6 +331,8 @@ infoview:
             pathtype: "items"
             subpath: "ip"
         unique: true
+        default: ["<unset>"]
+        fallback_on_empty: true
         formatter: "address"
       preemption_policy:
         header: [["Preemption Policy:", ["main", "infoheader"]]]

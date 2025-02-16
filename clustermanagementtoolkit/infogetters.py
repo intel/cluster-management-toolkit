@@ -1309,7 +1309,8 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                 else:
                     value = deep_get_with_fallback(obj, path, default,
                                                    fallback_on_empty=fallback_on_empty)
-                    _values.append((value, vtype))
+                    if value is not None:
+                        _values.append((value, vtype))
             values = []
 
             processor_args = {

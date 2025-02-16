@@ -748,7 +748,6 @@ def get_pod_tolerations(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, s
     return tolerations
 
 
-# pylint: disable-next=unused-argument
 def get_resource_list(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
     """
     Get a list of resources.
