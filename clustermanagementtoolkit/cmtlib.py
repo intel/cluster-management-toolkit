@@ -687,8 +687,13 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 
     rtimestamp = timestamp
 
+    # Timestamps that has both a numerical timezone offset and a timezone name do not make sense
+    tmp = re.match(r"^(.+ [+-]\d{4}) [A-Z]{3}$", timestamp)
+    if tmp is not None:
+        timestamp = f"{tmp[1]}"
+
     # Some timestamps are weird
-    tmp = re.match(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6})\d* ([+-]\d{4}) [A-Z]{3}$", timestamp)
+    tmp = re.match(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6})\d* ([+-]\d{4})$", timestamp)
     if tmp is not None:
         timestamp = f"{tmp[1]}{tmp[2]}"
 
