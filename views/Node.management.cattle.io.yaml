@@ -1,0 +1,248 @@
+---
+kind: "Node"
+api_family: "management.cattle.io"
+default_command: "nodes.management.cattle.io"
+command:
+  - "nodes.cattle"
+  - "node.cattle"
+listview:
+  name: "Nodes"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "node_name", "age"]
+  fields:
+    node_name:
+      header: "Node Name:"
+      path: "status#nodeName"
+      type: "str"
+      default: "<unset>"
+infoview:
+  name: "Node Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_name", "requested_hostname",
+                 "display_name", "node_pool_name",
+                 "control_plane", "worker",
+                 "etcd", "imported",
+                 "internal_node_status_header",
+                 "internal_node_status_internal_ips",
+                 "internal_node_status_architecture",
+                 "internal_node_status_kernel_version",
+                 "internal_node_status_os",
+                 "internal_node_status_os_image",
+                 "internal_node_status_kube_proxy_version",
+                 "internal_node_status_kubelet_version",
+                 "internal_node_status_kubelet_endpoint",
+                 "internal_node_status_container_runtime",
+                 "internal_node_spec_header",
+                 "internal_node_spec_pod_cidrs",
+                 "internal_node_spec_provider",
+                 "desired_node_taints"]
+    rows:
+      control_plane:
+        header: [["Control Plane:", ["main", "infoheader"]]]
+        path: "spec#controlPlane"
+        type: "bool"
+        default: "<unset>"
+      desired_node_taints:
+        header: [["Desired Node Taints:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#desiredNodeTaints"
+            pathtype: "items"
+            subpaths:
+              - "key"
+              - "value"
+              - "effect"
+        default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+            - type: "generic"
+          field_separators:
+            - type: "keyvalue"
+            - type: "keyvalue_taint"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+        default: "<unset>"
+        fallback_on_empty: true
+      etcd:
+        header: [["etcd:", ["main", "infoheader"]]]
+        path: "spec#etcd"
+        type: "bool"
+        default: "<unset>"
+      imported:
+        header: [["Imported:", ["main", "infoheader"]]]
+        path: "spec#imported"
+        type: "bool"
+        default: "<unset>"
+      internal_node_spec_header:
+        header: [["Internal Node Spec:", ["main", "infoheader"]]]
+      internal_node_spec_pod_cidrs:
+        header: [["  Pod CIDRs:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#internalNodeSpec#podCIDRs", "spec#podCIDR"]
+            default: "<none>"
+        formatter: "address"
+      internal_node_spec_provider:
+        header: [["  Provider:", ["main", "infoheader"]]]
+        path: "spec#internalNodeSpec#providerID"
+        type: "str"
+        default: "<unset>"
+      internal_node_status_architecture:
+        header: [["  Architecture:", ["main", "infoheader"]]]
+        path: "status#internalNodeStatus#nodeInfo#architecture"
+        type: "str"
+      internal_node_status_container_runtime:
+        header: [["  Container Runtime:", ["main", "infoheader"]]]
+        path: "status#internalNodeStatus#nodeInfo#containerRuntimeVersion"
+        type: "str"
+      internal_node_status_internal_ips:
+        header: [["  Internal IPs:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#internalNodeStatus#addresses"
+            pathtype: "items"
+            subpaths:
+              - "address"
+            when:
+              - key: "type"
+                eq: "InternalIP"
+            default: ["<unset>"]
+        formatter: "address"
+      internal_node_status_header:
+        header: [["Internal Node Status:", ["main", "infoheader"]]]
+      internal_node_status_kernel_version:
+        header: [["  Kernel Version:", ["main", "infoheader"]]]
+        path: "status#internalNodeStatus#nodeInfo#kernelVersion"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      internal_node_status_kubelet_endpoint:
+        header: [["  kubelet Endpoint:", ["main", "infoheader"]]]
+        path: "status#internalNodeStatus#daemonEndpoints#kubeletEndpoint#Port"
+        type: "raw"
+        formatting:
+          field_colors:
+            - type: "port"
+      internal_node_status_kubelet_version:
+        header: [["  kubelet Version:", ["main", "infoheader"]]]
+        path: "status#internalNodeStatus#nodeInfo#kubeletVersion"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      internal_node_status_kube_proxy_version:
+        header: [["  kube-proxy Version:", ["main", "infoheader"]]]
+        path: "status#internalNodeStatus#nodeInfo#kubeProxyVersion"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      internal_node_status_os:
+        header: [["  Operating System:", ["main", "infoheader"]]]
+        path: "status#internalNodeStatus#nodeInfo#operatingSystem"
+        type: "str"
+      internal_node_status_os_image:
+        header: [["  OS Image:", ["main", "infoheader"]]]
+        path: "status#internalNodeStatus#nodeInfo#osImage"
+        type: "str"
+      node_name:
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
+        path: "status#nodeName"
+        type: "str"
+        default: "<unset>"
+      node_pool_name:
+        header: [["Node Pool Name:", ["main", "infoheader"]]]
+        path: "spec#nodePoolName"
+        type: "str"
+        default: "<unset>"
+        fallback_on_empty: true
+      requested_hostname:
+        header: [["Requested Hostname:", ["main", "infoheader"]]]
+        path: "spec#requestedHostname"
+        type: "str"
+        default: "<unset>"
+      worker:
+        header: [["Worker:", ["main", "infoheader"]]]
+        path: "spec#worker"
+        type: "bool"
+        default: "<unset>"
+  shortcuts:
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: "status#nodeName"
+    "Show Node Annotations":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show node annotations"
+      widget: "windowwidget"
+      title: "Node Annotations:"
+      headers: ["Annotation:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "status#nodeAnnotations"
+      # This isn't supported for now
+      sortcolumn: "annotation"
+    "Show Node Labels":
+      key: "o"
+      read_only: true
+      helptext: "Show node labels"
+      widget: "windowwidget"
+      title: "Node Labels:"
+      headers: ["Label:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "status#nodeLabels"
+      # This isn't supported for now
+      sortcolumn: "label"
+    "Show Requests":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show requests"
+      title: "Requests:"
+      widget: "windowwidget"
+      headers: ["Resource:", "Request:", "Limit:"]
+      itemgetter: "get_resource_list"
+      itemgetter_args:
+        capacity_path: "status#requested"
+        allocatable_path: "status#limits"
+      formatting: [["windowwidget", "default"],
+                   ["windowwidget", "highlight"],
+                   ["windowwidget", "highlight"]]
+      # Not supported for now
+      # This isn't supported for now
+      sortcolumn: "requests"
+    "Show Resources":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show resources"
+      widget: "windowwidget"
+      title: "Resources:"
+      itemgetter: "get_resource_list"
+      itemgetter_args:
+        capacity_path: "status#internalNodeStatus#capacity"
+        allocatable_path: "status#internalNodeStatus#allocatable"
+      headers: ["Resource:", "Allocatable:", "Capacity:"]
+      formatting: [["windowwidget", "default"],
+                   ["windowwidget", "highlight"],
+                   ["windowwidget", "highlight"]]
+      # Not supported for now
+      sortcolumn: "resource"
