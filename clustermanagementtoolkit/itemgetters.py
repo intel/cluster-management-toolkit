@@ -763,10 +763,14 @@ def get_resource_list(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
                 (str): Capacity
     """
     vlist: list[tuple[str, str, str]] = []
+    capacity_path: str = deep_get(kwargs, DictPath("capacity_path"),
+                                  "status#capacity")
+    allocatable_path: str = deep_get(kwargs, DictPath("allocatable_path"),
+                                     "status#allocatable")
 
-    for res in deep_get(obj, DictPath("status#capacity"), {}):
-        capacity = deep_get(obj, DictPath(f"status#capacity#{res}"), "")
-        allocatable = deep_get(obj, DictPath(f"status#allocatable#{res}"), "")
+    for res in deep_get(obj, DictPath(capacity_path), {}):
+        capacity = deep_get(obj, DictPath(f"{capacity_path}#{res}"), "")
+        allocatable = deep_get(obj, DictPath(f"{allocatable_path}#{res}"), "")
         vlist.append((res, allocatable, capacity))
     return vlist
 
