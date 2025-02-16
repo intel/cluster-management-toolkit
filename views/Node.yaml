@@ -9,14 +9,14 @@ listview:
   field_indexes:
     Wide:
       fields: ["name", "status", "roles", "age", "kubelet_version",
-               "internal_ips", "os", "kernel_version", "container_runtime",
-               "cpu", "mem", "taints"]
+               "internal_ips", "os_image", "kernel_version",
+               "container_runtime", "cpu", "mem", "taints"]
     Normal:
       fields: ["name", "status", "roles", "age", "kubelet_version",
                "internal_ips", "cpu", "mem", "taints"]
   fields:
     container_runtime:
-      header: "Container-Runtime:"
+      header: "Container Runtime:"
       path: "status#nodeInfo#containerRuntimeVersion"
       type: "str"
     cpu:
@@ -34,7 +34,7 @@ listview:
           type: "fraction"
       align: "right"
     internal_ips:
-      header: "Internal-IPs:"
+      header: "Internal IPs:"
       paths:
         - path: "status#addresses"
           pathtype: "items"
@@ -60,8 +60,8 @@ listview:
       formatting:
         field_colors:
           - type: "version"
-    os:
-      header: "OS-Image:"
+    os_image:
+      header: "OS Image:"
       path: "status#nodeInfo#osImage"
       type: "str"
     roles:
@@ -117,6 +117,7 @@ listview:
                 "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
               regex: ["^[^/]*/(.*)", "(.*)"]
             - "effect"
+      default: ["<none>"]
       formatter: "list"
       formatting:
         field_colors:
@@ -179,18 +180,18 @@ infoview:
     row_indexes:
       Normal:
         fields: ["csi_node", "status", "internal_ips", "external_ips",
-                 "architecture", "kernel_version", "kube_proxy_version",
-                 "kubelet_version", "kubelet_endpoint", "pod_cidrs",
-                 "allocatable_pods", "taints"]
+                 "architecture", "kernel_version", "os", "os_image",
+                 "kube_proxy_version", "kubelet_version",
+                 "kubelet_endpoint", "container_runtime",
+                 "pod_cidrs", "taints"]
     rows:
-      allocatable_pods:
-        header: [["Allocatable Pods:", ["main", "infoheader"]]]
-        path: "status#allocatable#pods"
-        type: "str"
-        formatter: "numerical"
       architecture:
         header: [["Architecture:", ["main", "infoheader"]]]
         path: "status#nodeInfo#architecture"
+        type: "str"
+      container_runtime:
+        header: [["Container Runtime:", ["main", "infoheader"]]]
+        path: "status#nodeInfo#containerRuntimeVersion"
         type: "str"
       csi_node:
         header: [["C", ["main", "infoheader_shortcut"]],
@@ -206,7 +207,7 @@ infoview:
           field_colors:
             - type: "generic"
       external_ips:
-        header: [["External-IPs:", ["main", "infoheader"]]]
+        header: [["External IPs:", ["main", "infoheader"]]]
         paths:
           - path: "status#addresses"
             pathtype: "items"
@@ -218,7 +219,7 @@ infoview:
             default: ["<none>"]
         formatter: "address"
       internal_ips:
-        header: [["Internal-IPs:", ["main", "infoheader"]]]
+        header: [["Internal IPs:", ["main", "infoheader"]]]
         paths:
           - path: "status#addresses"
             pathtype: "items"
@@ -257,6 +258,14 @@ infoview:
         formatting:
           field_colors:
             - type: "version"
+      os:
+        header: [["Operating System:", ["main", "infoheader"]]]
+        path: "status#nodeInfo#operatingSystem"
+        type: "str"
+      os_image:
+        header: [["OS Image:", ["main", "infoheader"]]]
+        path: "status#nodeInfo#osImage"
+        type: "str"
       pod_cidrs:
         header: [["Pod CIDRs:", ["main", "infoheader"]]]
         paths:
@@ -324,6 +333,7 @@ infoview:
               - "key"
               - "value"
               - "effect"
+        default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
@@ -461,7 +471,7 @@ infoview:
       widget_args:
         kinds: ["<native>"]
         command: ["<dnsutils>"]
-    "Show package versions":
+    "Show Package Versions":
       key: "v"
       modifier: "shift"
       read_only: true
@@ -476,7 +486,7 @@ infoview:
       formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
       # Not supported for now
       sortcolumn: "package"
-    "Show resources":
+    "Show Resources":
       key: "r"
       modifier: "shift"
       read_only: true
