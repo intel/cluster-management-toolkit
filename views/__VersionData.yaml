@@ -13,20 +13,22 @@ listview:
     file_not_found_status: "No version data found"
     skip_empty_paths: true
     paths:
-      - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/latest.yaml"
+      - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
         filetype: "yaml"
-        pathtype: "raw"
+        path: "cmt"
+        pathtype: "dict"
         _extra_data:
           name: "Cluster Management Toolkit"
           installed_version:
-            fieldgetter: "fieldgetter_cmt_version"
+            fieldgetter: "fieldgetter_executable_version"
             fieldgetter_args:
-              fields:
-                - 0
+              executable: "cmt"
+              args: ["version"]
+              version_regex: '^Cluster Management Toolkit for Kubernetes \(CMT\) (\d+)(\.)(\d+)(\.)(\d+)$'
           file_not_found_status: "No changelog found"
           paths:
             # yamllint disable-line rule:line-length
-            - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/<<<changelog>>>"
+            - filepath: "{HOME}/.cmt/version-cache/cmt_changelog.md"
               filetype: "text"
               pathtype: "raw"
               substitutions:

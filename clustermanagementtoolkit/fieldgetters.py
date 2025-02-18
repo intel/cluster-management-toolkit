@@ -62,32 +62,6 @@ def fieldgetter_executable_version(**kwargs: Any) -> list[Any]:
     return ["".join(version)]
 
 
-def fieldgetter_cmt_version(**kwargs: Any) -> list[Any]:
-    """
-    A fieldgetter that provides the version of the Cluster Version Toolkit.
-
-        Parameters:
-            **kwargs (dict[str, Any]): Keyword arguments
-                fields ([int]): The indexes of the CMT version fields to return
-        Returns:
-            [str]: The list of cmt versions
-    """
-    fields: list[Any] = deep_get(kwargs, DictPath("fields"), [])
-    versions = [
-        about.PROGRAM_SUITE_VERSION,
-        about.UI_PROGRAM_VERSION,
-        about.TOOL_PROGRAM_VERSION,
-        about.ADMIN_PROGRAM_VERSION,
-        about.INVENTORY_PROGRAM_VERSION,
-        about.INSTALL_PROGRAM_VERSION,
-    ]
-    version_strings = []
-    for field in fields:
-        if field < len(versions):
-            version_strings.append(versions[field])
-    return version_strings
-
-
 # pylint: disable-next=too-many-branches
 def fieldgetter_crc_version(**kwargs: Any) -> list[Any]:
     """
@@ -174,7 +148,6 @@ def fieldgetter_api_server_version(**kwargs: Any) -> list[Any]:
 # Fieldgetters acceptable for direct use in view files
 fieldgetter_allowlist: dict[str, Callable] = {
     "fieldgetter_api_server_version": fieldgetter_api_server_version,
-    "fieldgetter_cmt_version": fieldgetter_cmt_version,
     "fieldgetter_crc_version": fieldgetter_crc_version,
     "fieldgetter_executable_version": fieldgetter_executable_version,
 }

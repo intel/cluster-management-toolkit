@@ -1,0 +1,16 @@
+---
+cmt:
+  description: "Cluster Management Toolkit"
+  installed_version:
+    function: "get_executable_version"
+    executable: "cmt"
+    args: ["version"]
+    version_regex: '^Cluster Management Toolkit for Kubernetes \(CMT\) (\d+)(\.)(\d+)(\.)(\d+)$'
+  candidate_version:
+    function: "get_github_version"
+    args:
+      url: "https://api.github.com/repos/intel/cluster-management-toolkit/releases"
+      version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)$'
+  changelog:
+    from_body: true
+    dest: "cmt_changelog.md"
