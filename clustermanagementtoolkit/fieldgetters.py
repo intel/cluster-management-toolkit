@@ -14,8 +14,6 @@ import re
 from typing import Any, Optional
 from collections.abc import Callable
 
-from clustermanagementtoolkit import about
-
 from clustermanagementtoolkit.cmtio import execute_command_with_response, secure_which
 
 from clustermanagementtoolkit.cmtpaths import HOMEDIR
