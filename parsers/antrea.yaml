@@ -7,9 +7,11 @@
   parser_rules:
     - name: "strip_ansicodes"
     - name: "substitute_bullets"
-      prefix: " * "
+      options:
+        prefix: " * "
     - name: "bracketed_timestamp_severity_facility"
-      default_loglevel: "info"
+      options:
+        default_loglevel: "info"
 - name: "antrea-agent"
   show_in_selector: false
   matchkeys:
