@@ -334,12 +334,13 @@ def generic_split_severity(valid_indata: tuple[str], fun: Callable,
                            verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
-    default = LogLevel.INFO
+    options = {"default": LogLevel.INFO}
 
     for indata in valid_indata:
         # indata is just a prefix; we want to test with a string prefixed by that prefix"
         indata = f"{indata} something or another"
-        tmp = fun(indata, default=default)
+        tmp = fun(indata, options=options)
+        default = deep_get(options, DictPath("default"))
         if tmp is None:
             message = f"{fun.__name__}() returned None with valid indata {indata}"
             result = False
@@ -357,14 +358,14 @@ def generic_split_severity(valid_indata: tuple[str], fun: Callable,
             result = False
         else:
             if verbose:
-                print(f"<{indata}, default = {default}>: {fun(indata, default=default)}")
+                print(f"<{indata}, options = {options}>: {fun(indata, options=options)}")
 
     if result:
         indata = "NOT A VALID PREFIX"
-        tmp = fun(indata, default=default)
+        tmp = fun(indata, options=options)
         if tmp is None:
             message = f"{fun.__name__}() returned None for invalid indata {indata}, " \
-                      f"expected ({indata}, {default})"
+                      f"expected ({indata}, {options})"
             result = False
         elif not isinstance(tmp, tuple):
             message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for invalid indata " \
@@ -380,7 +381,7 @@ def generic_split_severity(valid_indata: tuple[str], fun: Callable,
             result = False
         elif tmp[0] != indata or tmp[1] != default:
             message = f"{fun.__name__}() returned wrong result ({tmp}) for invalid indata " \
-                      f"{indata}, expected ({indata}, {default})"
+                      f"{indata}, expected ({indata}, {options})"
             result = False
 
     return message, result
@@ -412,21 +413,21 @@ def test_substitute_bullets(verbose: bool = False) -> tuple[str, bool]:
     if result:
         testdata: tuple[Any, ...] = (
             # Indata format:
-            # (string, prefix, expected_result, expected_exception)
-            ("*Bulleted message", "* ", "*Bulleted message", None),
-            ("*Bulleted message", "*", "•Bulleted message", None),
-            ("* Bulleted message", "* ", "• Bulleted message", None),
-            ("* * Bulleted message", "* ", "• * Bulleted message", None),
-            ("Non-Bulleted message", "* ", "Non-Bulleted message", None),
-            ("Bullet * inside * message", "* ", "Bullet * inside * message", None),
+            # (string, options, expected_result, expected_exception)
+            ("*Bulleted message", {"prefix": "* "}, "*Bulleted message", None),
+            ("*Bulleted message", {"prefix": "*"}, "•Bulleted message", None),
+            ("* Bulleted message", {"prefix": "* "}, "• Bulleted message", None),
+            ("* * Bulleted message", {"prefix": "* "}, "• * Bulleted message", None),
+            ("Non-Bulleted message", {"prefix": "* "}, "Non-Bulleted message", None),
+            ("Bullet * inside * message", {"prefix": "* "}, "Bullet * inside * message", None),
         )
 
-        for indata, prefix, expected_result, expected_exception in testdata:
+        for indata, options, expected_result, expected_exception in testdata:
             try:
-                if (tmp := fun(indata, prefix)) != expected_result:
+                if (tmp := fun(indata, options=options)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                              f"         prefix: {prefix}\n" \
+                              f"        options: {options}\n" \
                               f"         output: {tmp}\n" \
                               f"       expected: {expected_result}"
                     result = False
@@ -438,7 +439,7 @@ def test_substitute_bullets(verbose: bool = False) -> tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                                  f"         prefix: {prefix}\n" \
+                                  f"        options: {options}\n" \
                                   f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
@@ -446,7 +447,7 @@ def test_substitute_bullets(verbose: bool = False) -> tuple[str, bool]:
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                              f"         prefix: {prefix}\n" \
+                              f"        options: {options}\n" \
                               f"      exception: {type(e)}\n" \
                               f"       expected: {expected_result}"
                     result = False

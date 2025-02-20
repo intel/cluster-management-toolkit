@@ -242,7 +242,7 @@ def format_binary(lines: bytes, **kwargs: Any) -> list[list[Union[ThemeRef, Them
     Binary "formatter"; Just returns a message saying that binary views cannot be viewed.
 
         Parameters:
-            lines (bytes): Unused
+            lines (bytes): [unused]
             **kwargs (dict[str, Any]): Keyword arguments
         Returns:
             ([themearray]): A list of themearrays
@@ -1825,7 +1825,7 @@ def identify_formatter(dataformat: str,
     Identify what formatter to use for an object.
 
         Parameters:
-            dataformat (str): Unused
+            dataformat (str): [unused]
             kind ((str, str)): The kind of data
             obj (dict): The object to fetch the data from
             path (str): The path to the data to identify the formatter for

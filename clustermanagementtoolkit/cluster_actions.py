@@ -254,7 +254,7 @@ def run_playbook(playbookpath: FilePath, hosts: list[str], extra_values: Optiona
             playbookpath (FilePath): A path to the playbook to run
             hosts ([str]): A list of hosts to run the playbook on
             extra_values (dict): A dict of values to set before running the playbook
-            quiet (bool): Should the results of the run be printed? (Unused)
+            quiet (bool): Should the results of the run be printed? [unused]
             verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
             (int): The return value from ansible_run_playbook_on_selection()

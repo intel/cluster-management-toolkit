@@ -221,7 +221,7 @@ def populate_playbooks_from_filenames(playbooks: list[FilePath]) -> list[tuple[l
 
 def ansible_print_action_summary(playbooks: list[tuple[list[ANSIThemeStr], FilePath]]) -> None:
     """
-    Given a list of playbook paths, print a summary of the actions that will be performed
+    Given a list of playbook paths, print a summary of the actions that will be performed.
 
         Parameters:
             playbook (str): The name of the playbook to print a summary for
@@ -233,7 +233,7 @@ def ansible_print_action_summary(playbooks: list[tuple[list[ANSIThemeStr], FileP
         raise ValueError("playbooks is empty")
 
     if not (isinstance(playbooks[0], tuple) and len(playbooks[0]) == 2
-            and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], str)):
+            and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], FilePath)):
         raise TypeError("playbooks[] is wrong type; "
                         f"expected: [([{ANSIThemeStr}], {FilePath})]")
 
@@ -292,7 +292,7 @@ def ansible_get_inventory_dict() -> Union[dict[str, Any], ruyaml.CommentedMap]:
         return d
 
     tmp_d: Any = secure_read_yaml(ANSIBLE_INVENTORY)
-    if tmp_d is not None and isinstance(d, (dict, ruyaml.CommentedMap)):
+    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.CommentedMap)):
         deep_set(tmp_d, DictPath("all#hosts"),
                  deep_get(tmp_d, DictPath("all#hosts"), {}), create_path=True)
         deep_set(tmp_d, DictPath("all#vars"),
@@ -374,7 +374,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
     tmp_dump = ruyaml_dump_to_string(tmp, replace_null=True, replace_empty=True,
                                      replace_empty_dict=True)
     dump: list[Union[list[ANSIThemeStr], str]] = []
-    cast(list[Union[list[ANSIThemeStr], str]], tmp_dump.splitlines())
+    dump = cast(list[Union[list[ANSIThemeStr], str]], tmp_dump.splitlines())
 
     if highlight and tmp_dump:
         list_regex = re.compile(r"^(\s*)((- )+)(.*)")
@@ -493,7 +493,7 @@ def __ansible_create_inventory(inventory: FilePath, **kwargs: Any) -> bool:
     overwrite: bool = deep_get(kwargs, DictPath("overwrite"), False)
     temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
-    if not isinstance(inventory, str):
+    if not isinstance(inventory, FilePath):
         raise TypeError(f"inventory is type: {type(inventory)}, expected str")
     if not isinstance(overwrite, bool):
         raise TypeError(f"inventory is type: {type(overwrite)}, expected bool")
@@ -1029,7 +1029,7 @@ def ansible_remove_groups(inventory: FilePath, groups: list[str], **kwargs: Any)
 
     d: Union[dict[str, Any], ruyaml.CommentedMap] = {}
     tmp_d: Any = secure_read_yaml(inventory, temporary=temporary)
-    if tmp_d is not None and isinstance(d, (dict, ruyaml.CommentedMap)):
+    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.CommentedMap)):
         d = tmp_d
 
     for group in groups:
@@ -1342,8 +1342,8 @@ def ansible_write_log(start_date: datetime, playbook: FilePath, events: list[dic
 
         stdout = deep_get(event, DictPath("event_data#res#stdout"), "")
         stderr = deep_get(event, DictPath("event_data#res#stderr"), "")
-        stdout_lines = deep_get(event, DictPath("event_data#res#stdout_lines"), "")
-        stderr_lines = deep_get(event, DictPath("event_data#res#stderr_lines"), "")
+        stdout_lines = deep_get(event, DictPath("event_data#res#stdout_lines"), [])
+        stderr_lines = deep_get(event, DictPath("event_data#res#stderr_lines"), [])
 
         if not stdout_lines and stdout:
             stdout_lines = stdout.split("\n")
@@ -1522,8 +1522,8 @@ def ansible_print_play_results(retval: int, ansible_results: dict, **kwargs: Any
 
                 if not no_hosts_matched:
                     msg_lines = deep_get(play, DictPath("msg_lines"), "")
-                    stdout_lines = deep_get(play, DictPath("stdout_lines"), "")
-                    stderr_lines = deep_get(play, DictPath("stderr_lines"), "")
+                    stdout_lines = deep_get(play, DictPath("stdout_lines"), [])
+                    stderr_lines = deep_get(play, DictPath("stderr_lines"), [])
                     ansible_print_task_results(task,
                                                msg_lines,
                                                stdout_lines,
@@ -1683,9 +1683,6 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     quiet: bool = deep_get(kwargs, DictPath("quiet"), True)
 
-    if values is None:
-        values = {}
-
     if "ansible_sudo_pass" in values and "ansible_become_pass" not in values:
         values["ansible_become_pass"] = values["ansible_sudo_pass"]
     if "ansible_become_pass" in values and "ansible_ssh_pass" not in d["all"]["vars"]:
@@ -1706,7 +1703,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
     return ansible_run_playbook(playbook, inventory=d, verbose=verbose, quiet=quiet)
 
 
-def ansible_ping(selection: list[str]) -> list[tuple[str, str]]:
+def ansible_ping(selection: Optional[list[str]] = None) -> list[tuple[str, str]]:
     """
     Ping all selected hosts
 

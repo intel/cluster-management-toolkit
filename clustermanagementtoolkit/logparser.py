@@ -144,7 +144,7 @@ class LogparserConfiguration:
 if json_is_ujson:
     def json_dumps(obj: dict[str, Any]) -> str:
         """
-        Dump JSON object to text format; ujson version
+        Dump JSON object to text format; ujson version.
 
             Parameters:
                 obj (dict): The JSON object to dump
@@ -156,7 +156,7 @@ if json_is_ujson:
 else:
     def json_dumps(obj: dict[str, Any]) -> str:
         """
-        Dump JSON object to text format; json version
+        Dump JSON object to text format; json version.
 
             Parameters:
                 obj (dict): The JSON object to dump
@@ -1217,7 +1217,7 @@ def split_json_style(message: str, **kwargs: Any) \
             **kwargs (dict[str, Any]): Keyword arguments
                 severity (LogLevel): The log severity
                 facility (str): The log facility
-                fold_msg (bool): Unused
+                fold_msg (bool): [unused]
                 options (dict): Additional, rule specific, options
         Returns:
             (str|ThemeArray, LogLevel, str, [(ThemeArray, LogLevel)]):
@@ -1510,7 +1510,7 @@ def split_json_style_raw(message: str, **kwargs: Any) \
             **kwargs (dict[str, Any]): Keyword arguments
                 severity (LogLevel): The log severity
                 facility (str): The log facility
-                fold_msg (bool): Unused
+                fold_msg (bool): [unused]
                 options (dict): Additional, rule specific, options
         Returns:
             (str|ThemeArray, LogLevel, str, [(ThemeArray, LogLevel)]):
@@ -2060,7 +2060,7 @@ def key_value(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
                                                     list[tuple[list[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
     """
-    Format a key=value message
+    Format a key=value message.
 
         Parameters:
             message (str): The string to format
@@ -2448,11 +2448,11 @@ def modinfo(message: str, **kwargs: Any) \
         -> tuple[str, LogLevel, Union[str, list[Union[ThemeRef, ThemeStr]]],
                  list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Format the output from the Linux modinfo command
+    Format the output from the Linux modinfo command.
 
         Parameters:
             message (str): The message to format
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             ((str, LogLevel, str, [(ThemeArray, LogLevel)]))):
                 (str): The log facility
@@ -2460,7 +2460,7 @@ def modinfo(message: str, **kwargs: Any) \
                 (LogLevel): The LogLevel of the message
                 (str|ThemeArray): The unchanged message if nothing matched,
                                   or the formatted themearray
-                ([(ThemeArray, LogLevel)]): Unused
+                ([(ThemeArray, LogLevel)]): [unused]
     """
     facility = ""
     severity = LogLevel.INFO
@@ -2485,16 +2485,16 @@ def modinfo(message: str, **kwargs: Any) \
 def bracketed_timestamp_severity(message: str, **kwargs: Any) \
         -> tuple[str, LogLevel, str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Split a message of the type [timestamp] [severity] message
+    Split a message of the type [timestamp] [severity] message.
 
         Parameters:
             message (str): The log message
             **kwargs (dict[str, Any]): Keyword arguments
         Returns:
             (str, LogLevel, str, [(ThemeArray, LogLevel)]):
-                (str): The extracted facility (Unused)
+                (str): The extracted facility [unused]
                 (str): The processed message
-                remnants (list[(themearray, LogLevel)]): Remnants with message preprended (Unused)
+                remnants (list[(themearray, LogLevel)]): Remnants with message preprended [unused]
     """
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
@@ -2516,18 +2516,18 @@ def directory(message: str,
                                       Union[str, list[Union[ThemeRef, ThemeStr]]],
                                       list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Format the output from "ls -alF --color" command
+    Format the output from "ls -alF --color" command.
 
         Parameters:
             message (str): The message to format
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             ((str, LogLevel, str|ThemeArray, [(ThemeArray, LogLevel)]))):
                 (str): The log facility
                 (LogLevel): The LogLevel of the message
                 (str|ThemeArray): The unchanged message if nothing matched,
                                   or the formatted themearray
-                ([(ThemeArray, LogLevel)]): Unused
+                ([(ThemeArray, LogLevel)]): [unused]
     """
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
@@ -2698,18 +2698,18 @@ def seconds_severity_facility(message: str, **kwargs: Any) \
         -> tuple[str, LogLevel, Union[str, list[Union[ThemeRef, ThemeStr]]],
                  list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
-    Convert messages in [seconds] SEVERITY facility message format
+    Convert messages in [seconds] SEVERITY facility message format.
 
         Parameters:
             message (str): The message to format
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             ((str, LogLevel, str|ThemeArray, [(ThemeArray, LogLevel)]))):
                 (str): The log facility
                 (LogLevel): The LogLevel of the message
                 (str|ThemeArray): The unchanged message if nothing matched,
                                   or the formatted themearray
-                ([(ThemeArray, LogLevel)]): Unused
+                ([(ThemeArray, LogLevel)]): [unused]
     """
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
@@ -2730,13 +2730,13 @@ def seconds_severity_facility(message: str, **kwargs: Any) \
 
 def substitute_bullets(message: str, **kwargs: Any) -> str:
     """
-    Replace '*' with actual bullet characters
+    Replace a prefix (by default "* ") with actual bullet characters.
 
         Parameters:
             message (str): The message to process
             **kwargs (dict[str, Any]): Keyword arguments
-                prefix (str): The prefix to use to detect
-                              whether or not the bullets should be substituted
+                options (dict[str, Any]): options
+                    prefix (str): The prefix to use to substitute for "proper" bullets
         Returns:
             message (str): The message with bullets substituted
     """
@@ -4043,7 +4043,7 @@ parsers = []
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def init_parser_list() -> None:
     """
-    Initialise the list of parsers
+    Initialise the list of parsers.
     """
     # This pylint warning seems incorrect--does it not handle namedtuple.append()?
     # pylint: disable-next=global-variable-not-assigned

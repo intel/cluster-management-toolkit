@@ -11,7 +11,7 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import Any, Optional, TypedDict
+from typing import Any, cast, Optional, TypedDict
 from collections.abc import Callable
 
 from clustermanagementtoolkit import about
@@ -325,8 +325,7 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
         else:
             commandcount += 1
 
-        key_options = deep_get(commandline, DictPath(f"{key}#options"))
-        if key_options is not None and key not in ("Help", "Help2"):
+        if deep_get(value, DictPath("options"), {}) and key not in ("Help", "Help2"):
             has_options = True
 
     # Do we have any commands?
@@ -555,7 +554,7 @@ def __command_usage(options: list[tuple[str, str]], args: list[str]) -> int:
             options ([(str, str)]): [unused]
             args ([str]): The command to show help for
         Returns:
-            (int): 0
+            (int): The return value from __usage()/__sub_usage()
     """
     assert commandline is not None
 
@@ -565,15 +564,30 @@ def __command_usage(options: list[tuple[str, str]], args: list[str]) -> int:
 
 
 def __find_command(__commandline: dict[str, Any], arg: str) -> \
-        tuple[str, Optional[Callable[[tuple[str, str], list[str]], None]],
-              str, int, int, list[dict], list[dict]]:
-    command = None
-    commandname = ""
-    required_args = []
-    optional_args = []
-    min_args = 0
-    max_args = 0
-    key = ""
+        tuple[str,
+              Optional[Callable[[tuple[str, str], list[str]], None]],
+              str,
+              list[ArgumentType],
+              list[ArgumentWithOptionalDefaultType]]:
+    """
+    Find the command that matches the string, if any.
+
+        Parameters:
+            __commandline (dict[str, Any]: The command-line dict
+            arg (str): The string to check for a matching command
+        Returns:
+            ((str, Callable, str, [dict], [dict])):
+                (str): The name of the matched command; empty if no match was found
+                (Callable): The callback for the matched command; None if no match was found
+                (str): The matching key in the command-line dict; empty if no match was found
+                ([ArgumentType]): The dict of required arguments for the command
+                ([ArgumentWithOptionalDefaultType]): The dict of optional arguments for the command
+    """
+    callback: Optional[Callable[[tuple[str, str], list[str]], None]] = None
+    commandname: str = ""
+    required_args: list[ArgumentType] = []
+    optional_args: list[ArgumentWithOptionalDefaultType] = []
+    key: str = ""
 
     for key, value in __commandline.items():
         if key == "extended_description":
@@ -582,16 +596,14 @@ def __find_command(__commandline: dict[str, Any], arg: str) -> \
         for cmd in deep_get(value, DictPath("command"), []):
             if cmd == arg:
                 commandname = cmd
-                command = deep_get(value, DictPath("callback"))
+                callback = deep_get(value, DictPath("callback"))
                 required_args = deep_get(value, DictPath("required_args"), [])
                 optional_args = deep_get(value, DictPath("optional_args"), [])
-                min_args = len(required_args)
-                max_args = min_args + len(optional_args)
                 break
-        if command is not None:
+        if callback is not None:
             break
 
-    return commandname, command, key, min_args, max_args, required_args, optional_args
+    return commandname, callback, key, required_args, optional_args
 
 
 COMMANDLINEDEFAULTS: dict[str, CommandType] = {
@@ -720,6 +732,9 @@ def parse_commandline(__programname: str, __programversion: str,
     commandname = ""
     command = None
     key = None
+    required_args: list[ArgumentType] = []
+    optional_args: list[ArgumentWithOptionalDefaultType] = []
+
     options: list[tuple[str, str]] = []
     args: list[str] = []
     min_args = 0
@@ -740,16 +755,16 @@ def parse_commandline(__programname: str, __programversion: str,
 
         # Have we got a command to execute?
         if command is None:
-            commandname, command, key, min_args, max_args, \
+            commandname, command, key, \
                 required_args, optional_args = __find_command(commandline, argv[i])
 
             if command is None:
                 if default_command is not None:
-                    commandname, command, key, min_args, max_args, required_args, \
-                        optional_args = __find_command(commandline, default_command)
+                    commandname, command, key, \
+                        required_args, optional_args = __find_command(commandline, default_command)
                 elif "__*" in commandline:
-                    commandname, command, key, min_args, max_args, required_args, \
-                        optional_args = __find_command(commandline, "*")
+                    commandname, command, key, \
+                        required_args, optional_args = __find_command(commandline, "*")
 
                 if command is None:
                     ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
@@ -857,8 +872,11 @@ def parse_commandline(__programname: str, __programversion: str,
         i += 1
 
     if command is None and default_command is not None:
-        commandname, command, key, min_args, max_args, required_args, \
-            optional_args = __find_command(commandline, default_command)
+        commandname, command, key, \
+            required_args, optional_args = __find_command(commandline, default_command)
+
+    min_args = len(required_args)
+    max_args = min_args + len(optional_args)
 
     if not max_args and args:
         ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
@@ -919,7 +937,7 @@ def parse_commandline(__programname: str, __programversion: str,
         options += deep_get(commandline, DictPath(f"{key}#implicit_options"), [])
 
     # Validate the args against required_args and optional_args
-    for i, argdict in enumerate(required_args + optional_args):
+    for i, argdict in enumerate(cast(list[dict], required_args) + cast(list[dict], optional_args)):
         if i >= len(args):
             break
 

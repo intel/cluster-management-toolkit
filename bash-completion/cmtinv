@@ -22,7 +22,7 @@ add_option_if_not_in_list() {
 
 _cmtinv() {
 	commands=""
-	all_commands_help="add-group add-groups add-host add-hosts inventory inv list-groups list-hosts ping rebuild-inventory remove-group remove-groups remove-host remove-hosts set-group-var set-group-vars set-host-var set-host-vars set-var set-vars unset-group-var unset-group-vars unset-host-var unset-host-vars unset-var unset-vars run list-playbooks --help help --version version"
+	all_commands_help="add-group add-groups add-host add-hosts inventory inv list-groups list-hosts ping rebuild-inventory remove-group remove-groups remove-host remove-hosts set-group-var set-group-vars set-host-var set-host-vars set-var set-vars unset-group-var unset-group-vars unset-host-var unset-host-vars unset-var unset-vars explain run list-playbooks --help help --version version"
 
 	non_options=0
 	skip_optargs=0
@@ -197,6 +197,10 @@ _cmtinv() {
 	esac
 
 	case "${COMP_WORDS[1]}" in
+	explain)
+		available_playbooks=$(cmtinv list-playbooks --color never --format ssv 2> /dev/null)
+		commands="${commands} ${available_playbooks}"
+		;;
 	run)
 		if [ ${non_options} -eq 0 ]; then
 			available_playbooks=$(cmtinv list-playbooks --color never --format ssv 2> /dev/null)
@@ -210,7 +214,7 @@ _cmtinv() {
 	esac
 
 	case "${COMP_WORDS[1]}" in
-	add-group|add-groups|add-host|add-hosts|inventory|inv|list-groups|list-hosts|ping|rebuild-inventory|remove-group|remove-groups|remove-host|remove-hosts|set-group-var|set-group-vars|set-host-var|set-host-vars|set-var|set-vars|unset-group-var|unset-group-vars|unset-host-var|unset-host-vars|unset-var|unset-vars|run|list-playbooks)
+	add-group|add-groups|add-host|add-hosts|inventory|inv|list-groups|list-hosts|ping|rebuild-inventory|remove-group|remove-groups|remove-host|remove-hosts|set-group-var|set-group-vars|set-host-var|set-host-vars|set-var|set-vars|unset-group-var|unset-group-vars|unset-host-var|unset-host-vars|unset-var|unset-vars|explain|run|list-playbooks)
 		COMPREPLY=( $(compgen -W "${commands}" -- "$2") )
 		return
 		;;

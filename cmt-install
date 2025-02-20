@@ -259,8 +259,8 @@ CONFIGURATION_FILES = [
 
 def create_directories(directories: list[tuple[FilePath, int]], verbose: bool = False) -> None:
     """
-    Batch create directories
-    If a directory already exists it is silently ignored
+    Batch create directories.
+    If a directory already exists it is silently ignored.
 
         Parameters:
             directories ([(FilePath, int)]): A list of directories (path, permissions) to create
@@ -272,8 +272,8 @@ def create_directories(directories: list[tuple[FilePath, int]], verbose: bool = 
 
 def create_symlinks(symlinks: list[tuple[FilePath, FilePath]], verbose: bool = False) -> None:
     """
-    Batch create symlinks
-    If a symlink already exists it is *replaced*
+    Batch create symlinks.
+    If a symlink already exists it is *replaced*.
 
         Parameters:
             symlinks ([(FilePath, FilePath)]): A list of symlinks (full path) to create;
@@ -295,8 +295,8 @@ def create_symlinks(symlinks: list[tuple[FilePath, FilePath]], verbose: bool = F
 
 def copy_files(files: list[tuple[FilePath, FilePath, int]], verbose: bool = False) -> None:
     """
-    Batch copy files
-    If a file already exists it is silently ignored
+    Batch copy files.
+    If a file already exists it is silently ignored.
 
         Parameters:
             files ([(FilePath, FilePath, int)]): A list of files (full path) to copy;
@@ -310,11 +310,11 @@ def copy_files(files: list[tuple[FilePath, FilePath, int]], verbose: bool = Fals
 # pylint: disable-next=unused-argument
 def install_software_suse(packages: Union[dict, set], verbose: bool = False) -> None:
     """
-    Batch install SUSE packages
+    Batch install SUSE packages.
 
         Parameters:
             packages (union(dict, set)): A dict or set of packages to install
-            verbose (bool): Unused
+            verbose (bool): [unused]
     """
     try:
         sudo_path = secure_which(FilePath("/usr/bin/sudo"),
@@ -381,11 +381,11 @@ def install_software_suse(packages: Union[dict, set], verbose: bool = False) -> 
 # pylint: disable-next=unused-argument,too-many-locals
 def install_software_fedora(packages: Union[dict, set], verbose: bool = False) -> None:
     """
-    Batch install Red Hat (Fedora) packages
+    Batch install Red Hat (Fedora) packages.
 
         Parameters:
             packages (union(dict, set)): A dict or set of packages to install
-            verbose (bool): Unused
+            verbose (bool): [unused]
     """
     try:
         sudo_path = secure_which(FilePath("/usr/bin/sudo"),
@@ -466,11 +466,11 @@ def install_software_fedora(packages: Union[dict, set], verbose: bool = False) -
 # pylint: disable-next=unused-argument,too-many-locals
 def install_software_deb(packages: dict, verbose: bool = False) -> None:
     """
-    Batch install Debian packages
+    Batch install Debian packages.
 
         Parameters:
             packages (union(dict, set)): A dict or set of packages to install
-            verbose (bool): Unused
+            verbose (bool): [unused]
     """
     try:
         sudo_path = secure_which(FilePath("/usr/bin/sudo"),
@@ -555,7 +555,7 @@ def install_software_deb(packages: dict, verbose: bool = False) -> None:
 
 def trim_package_list(packages: dict, distro: str = "", fallback: bool = False) -> dict:
     """
-    Given a dict of packages, remove any that shouldn't be installed
+    Given a dict of packages, remove any that shouldn't be installed.
 
         Parameters:
             packages (union(dict, set)): A dict of packages to install
@@ -581,11 +581,11 @@ def trim_package_list(packages: dict, distro: str = "", fallback: bool = False) 
 
 def install_software(packages: dict, verbose: bool = False, distro: str = "") -> None:
     """
-    Batch install packages
+    Batch install packages.
 
         Parameters:
             packages (union(dict, set)): A dict of packages to install
-            verbose (bool): Unused
+            verbose (bool): [unused]
             distro (str): Supported options "debian", "suse"
     """
     if distro == "debian":
@@ -600,12 +600,12 @@ def install_software_with_pip(packages: list[str],
                               pip_proxy: str = "",
                               verbose: bool = False) -> None:  # pylint: disable=unused-argument
     """
-    Installs Python modules using pip
+    Installs Python modules using pip.
 
         Parameters:
             packages ([str]): A list of packages to install
             pip_proxy (str): A proxy to use when installing packages
-            verbose (bool): Unused
+            verbose (bool): [unused]
     """
     try:
         pip3_path = secure_which(FilePath("pip3"),
@@ -630,14 +630,14 @@ def install_software_with_pip_fallback(packages: dict, pip_proxy: str = "",
                                        dryrun: bool = False,
                                        distro: str = "") -> tuple[list[str], list[str]]:
     """
-    Batch install packages with pip fallback
+    Batch install packages with pip fallback.
     This function tries to install a Python module from a package;
-    if that package does not exist it installs the pip version of the module instead
+    if that package does not exist it installs the pip version of the module instead.
 
         Parameters:
             packages (union(dict, set)): A dict of packages to install
             pip_proxy (str): A proxy to use when installing packages
-            verbose (bool): Unused
+            verbose (bool): [unused]
             dryrun (bool): Simulate a run without installing packages
             distro (str): Supported options "debian", "suse"
         Returns:
@@ -762,7 +762,7 @@ def install_software_with_pip_fallback(packages: dict, pip_proxy: str = "",
 def install(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Create directories, install configuration files, create symlinks,
-    and optionally install packages necessary to run CMT
+    and optionally install packages necessary to run CMT.
 
         Parameters:
             options ([(opt, optarg)]): Options to use when executing this action
@@ -1032,7 +1032,7 @@ COMMANDLINE: dict[str, CommandType] = {
 
 def main() -> int:
     """
-    Main function for the program
+    Main function for the program.
 
         Returns:
            (int): 0 on success, non-zero on failure

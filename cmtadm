@@ -1069,7 +1069,7 @@ def teardown_cni(options: list[tuple[str, str]], args: list[str]) -> None:
 
         Parameters:
             options ([(opt, optarg)]): Options to use when executing this action
-            args ([str]): Unused
+            args ([str]): [unused]
     """
     global kh  # pylint: disable=global-statement
 
@@ -1482,7 +1482,7 @@ def __task_check_and_create_ssh_key(installation_info: dict, verbose: bool = Fal
     and creates one if not.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     # FIXME
     confirm: bool = True
@@ -1511,7 +1511,7 @@ def __task_scan_and_add_ssh_keys(installation_info: dict, verbose: bool = False)
     and adds them to known hosts.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     cluster_name = installation_info["installation_target"]
     nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"), [])
@@ -1533,7 +1533,7 @@ def __task_add_ssh_keys_to_inventory(installation_info: dict, verbose: bool = Fa
     An installer task that adds SSH keys to the Ansible inventory.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     pubkey = None
     d = ansible_get_inventory_dict()
@@ -1618,7 +1618,7 @@ def __task_check_and_install_ansible_posix(installation_info: dict, verbose: boo
     An installer task that installs Ansible-posix.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     check_and_print_status(install_ansible_posix())
 
@@ -1937,7 +1937,7 @@ def __task_request_ansible_password(installation_info: dict, verbose: bool = Fal
     An installer task that requests the ansible password.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     # Check whether ansible_password is defined or not
     if deep_get(ansible_configuration, DictPath("ansible_password")) is None and not no_password:
@@ -2052,7 +2052,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: dict,
     An installer task that runs preparation playbooks on localhost.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
             verbose (bool): If the results are printed, should skipped tasks be printed too?
     """
     os_distro = identify_distro()
@@ -2189,7 +2189,7 @@ def __task_setup_bash_completion(installation_info: dict, verbose: bool = False)
     An installer task that sets up bash completion.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     secure_mkdir(FilePath(HOMEDIR).joinpath(".local"), verbose=True)
     secure_mkdir(FilePath(HOMEDIR).joinpath(".local", "share"), verbose=True)
@@ -2553,7 +2553,7 @@ def __task_drain_control_planes(installation_info: dict, verbose: bool = False) 
     An installer task that drains control plains.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     controlplanes = __selection_control_planes()
 
@@ -2599,7 +2599,7 @@ def __task_uncordon_control_planes(installation_info: dict, verbose: bool = Fals
     An installer task that uncordons control planes.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     global kh  # pylint: disable=global-statement
 
@@ -2716,7 +2716,7 @@ def __task_run_postupgrade_playbooks(installation_info: dict, verbose: bool = Fa
     A task that runs post-upgrade playbooks.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
             verbose (bool): If the results are printed, should skipped tasks be printed too?
     """
     # The default selection is control planes;
@@ -2738,7 +2738,7 @@ def __task_verify_that_cluster_has_no_nodes(installation_info: dict, verbose: bo
     A task that verifies that no non-control plane nodes remain in the cluster.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
     """
     node_statuses = __get_node_info()
 
@@ -2800,7 +2800,7 @@ def __task_run_postteardown_playbooks(installation_info: dict, verbose: bool = F
     A task that runs post-teardown playbooks.
 
         Parameters:
-            installation_info (dict): A dict with installation information (Unused)
+            installation_info (dict): A dict with installation information [unused]
             verbose (bool): If the results are printed, should skipped tasks be printed too?
     """
     # The default selection is control planes;

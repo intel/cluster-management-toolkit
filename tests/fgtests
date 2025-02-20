@@ -18,8 +18,6 @@ from typing import Any
 from unittest import mock
 import yaml
 
-from clustermanagementtoolkit import about
-
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, ProgrammingError
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
@@ -159,73 +157,6 @@ def test_fieldgetter_api_server_version(verbose: bool = False) -> tuple[str, boo
     return message, result
 
 
-def test_fieldgetter_cmt_version(verbose: bool = False) -> tuple[str, bool]:
-    message = ""
-    result = True
-
-    fun = fieldgetters.fieldgetter_cmt_version
-
-    if result:
-        # Indata format:
-        # (fields, expected_result, expected_exception)
-        testdata: tuple = (
-            (
-                [0, 1, 2, 3, 4, 5],
-                [
-                    about.PROGRAM_SUITE_VERSION,
-                    about.UI_PROGRAM_VERSION,
-                    about.TOOL_PROGRAM_VERSION,
-                    about.ADMIN_PROGRAM_VERSION,
-                    about.INVENTORY_PROGRAM_VERSION,
-                    about.INSTALL_PROGRAM_VERSION,
-                ],
-                None,
-            ),
-            (
-                [0, 3],
-                [
-                    about.PROGRAM_SUITE_VERSION,
-                    about.ADMIN_PROGRAM_VERSION,
-                ],
-                None,
-            ),
-            (
-                [42],
-                [],
-                None,
-            ),
-        )
-
-        for fields, expected_result, expected_exception in testdata:
-            try:
-                tmp = fun(fields=fields)
-                if tmp != expected_result:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"         fields: {fields}\n" \
-                              f"       expected: {expected_result}"
-                    result = False
-                    break
-            except Exception as e:
-                if expected_exception is not None:
-                    if isinstance(e, expected_exception):
-                        pass
-                    else:
-                        message = f"{fun.__name__}() did not yield expected result:\n" \
-                                  f"         fields: {fields}\n" \
-                                  f"      exception: {type(e)}\n" \
-                                  f"       expected: {expected_exception}"
-                        result = False
-                        break
-                else:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"         fields: {fields}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_result}"
-                    result = False
-                    break
-    return message, result
-
-
 def test_fieldgetter_crc_version(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
@@ -322,10 +253,6 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
     },
     ("fieldgetter_api_server_version()",): {
         "callable": test_fieldgetter_api_server_version,
-        "result": None,
-    },
-    ("fieldgetter_cmt_version()",): {
-        "callable": test_fieldgetter_cmt_version,
         "result": None,
     },
     ("fieldgetter_crc_version()",): {

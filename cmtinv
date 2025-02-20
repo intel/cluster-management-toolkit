@@ -60,8 +60,10 @@ from clustermanagementtoolkit.ansible_helper import ansible_set_vars
 from clustermanagementtoolkit.ansible_helper import ansible_set_hostvars, ansible_unset_hostvars
 from clustermanagementtoolkit.ansible_helper import ansible_set_groupvars, ansible_unset_groupvars
 from clustermanagementtoolkit.ansible_helper import ansible_ping
+from clustermanagementtoolkit.ansible_helper import ansible_print_action_summary
 from clustermanagementtoolkit.ansible_helper import ansible_print_play_results
 from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
+from clustermanagementtoolkit.ansible_helper import populate_playbooks_from_filenames
 from clustermanagementtoolkit.ansible_helper import ANSIBLE_INVENTORY
 
 from clustermanagementtoolkit import cmtlib
@@ -84,10 +86,10 @@ PROGRAMAUTHORS = "Written by David Weinehall."
 # pylint: disable-next=unused-argument
 def set_host_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Set host-specific variables
+    Set host-specific variables.
 
         Parameters:
-            options ([(str, str)]): Unused
+            options ([(str, str)]): [unused]
             args ([str,str]):
                 (str): Comma-separated list of key:value pairs
                 (str): Comma-separated list of hosts
@@ -129,10 +131,10 @@ def set_host_vars(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=unused-argument
 def set_group_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Set group-specific variables
+    Set group-specific variables.
 
         Parameters:
-            options ([(str, str)]): Unused
+            options ([(str, str)]): [unused]
             args ([str,str]):
                 (str): Comma-separated list of key:value pairs
                 (str): Comma-separated list of groups
@@ -173,10 +175,10 @@ def set_group_vars(options: list[tuple[str, str]], args: list[str]) -> int:
 
 def set_global_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Set global variables
+    Set global variables.
 
         Parameters:
-            options ([(str, str)]): Unused
+            options ([(str, str)]): [unused]
             args ([str]): Comma-separated list of key:value pairs
         Returns:
             Return value from set_group_vars()
@@ -187,10 +189,10 @@ def set_global_vars(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=unused-argument
 def unset_host_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Unset host-specific variables
+    Unset host-specific variables.
 
         Parameters:
-            options ([(str, str)]): Unused
+            options ([(str, str)]): [unused]
             args ([str]):
                 (str): Comma-separated list of keys
                 (str): Comma-separated list of hosts
@@ -213,10 +215,10 @@ def unset_host_vars(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=unused-argument
 def unset_group_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Unset group-specific variables
+    Unset group-specific variables.
 
         Parameters:
-            options ([(str, str)]): Unused
+            options ([(str, str)]): [unused]
             args ([str]):
                 (str): Comma-separated list of keys
                 (str): Comma-separated list of groups
@@ -238,10 +240,10 @@ def unset_group_vars(options: list[tuple[str, str]], args: list[str]) -> int:
 
 def unset_global_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Unset global variables
+    Unset global variables.
 
         Parameters:
-            options ([(str, str)]): Unused
+            options ([(str, str)]): [unused]
             args ([str]): Comma-separated list of keys
         Returns:
             Return value from unset_group_vars()
@@ -251,7 +253,7 @@ def unset_global_vars(options: list[tuple[str, str]], args: list[str]) -> int:
 
 def add_groups(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Add groups
+    Add groups.
 
         Parameters:
             options ([(str, str)]): List of opt, optarg
@@ -298,7 +300,7 @@ def add_groups(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=too-many-branches
 def add_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Add hosts
+    Add hosts.
 
         Parameters:
             options ([(str, str)]): List of opt, optarg
@@ -367,7 +369,7 @@ def add_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
 
 def format_members(group: str, members: list[str]) -> list[ANSIThemeStr]:
     """
-    Format a list of group members as a themearray
+    Format a list of group members as a themearray.
 
         Parameters:
             group (str): The name of the group
@@ -389,7 +391,7 @@ def format_members(group: str, members: list[str]) -> list[ANSIThemeStr]:
 
 def remove_groups(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Remove groups
+    Remove groups.
 
         Parameters:
             options ([(str, str)]): List of opt, optarg
@@ -454,11 +456,11 @@ def remove_groups(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def rebuild_inventory(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Build an inventory based on information from Kubernetes
+    Build an inventory based on information from Kubernetes.
 
         Parameters:
             options ([(opt, optarg)]): A list of opt, optarg
-            args ([str]): Unused
+            args ([str]): [unused]
         Returns:
             (int): 0
     """
@@ -555,7 +557,7 @@ def rebuild_inventory(options: list[tuple[str, str]], args: list[str]) -> int:
 
 def remove_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Remove hosts
+    Remove hosts.
 
         Parameters:
             options ([(str, str)]): List of opt, optarg
@@ -639,11 +641,11 @@ def remove_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
 
 def inventory(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Show the inventory
+    Show the inventory.
 
         Parameters:
             options ([(str, str)]): List of opt, optarg
-            args ([str]): Comma-separated list of groups (optional)
+            args ([str]): Comma-separated list of groups [optional]
         Returns:
             (int): 0
     """
@@ -675,11 +677,11 @@ def inventory(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=unused-argument
 def list_groups(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    List groups
+    List groups.
 
         Parameters:
             options (list[(str, str)]): List of opt, optarg
-            args (list[str]): Unused
+            args (list[str]): [unused]
         Returns:
             (int): 0
     """
@@ -728,11 +730,11 @@ def list_groups(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=unused-argument
 def list_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    List hosts
+    List hosts.
 
         Parameters:
             options (list[(str, str)]): List of opt, optarg
-            args (list[str]): Unused
+            args (list[str]): [unused]
         Returns:
             (int): 0
     """
@@ -785,7 +787,7 @@ def list_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=too-many-branches
 def populate_playbooks() -> dict:
     """
-    Populate the list of playbooks runnable from the command line
+    Populate the list of playbooks runnable from the command line.
 
         Returns:
             (dict): The dict of playbooks
@@ -893,11 +895,11 @@ def populate_playbooks() -> dict:
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def list_playbooks(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    List playbooks
+    List playbooks.
 
         Parameters:
             options (list[(str, str)]): List of opt, optarg
-            args (list[str]): Unused
+            args (list[str]): [unused]
         Returns:
             (int): 0
     """
@@ -965,17 +967,62 @@ def list_playbooks(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
+# pylint: disable-next=unused-argument
+def explain_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
+    """
+    Print a summary of the actions thhat the playbook will perform.
+
+        Parameters:
+            options (list[(str, str)]): List of opt, optarg [unused]
+            args (list[str]): The playbook to explain
+        Returns:
+            (int): 0
+    """
+    playbook = args[0]
+
+    valid_playbooks = populate_playbooks()
+    if playbook not in valid_playbooks:
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": “", "default"),
+                        ANSIThemeStr(f"{playbook}", "argument"),
+                        ANSIThemeStr("“ is not a valid playbook; use “", "default"),
+                        ANSIThemeStr(f"{about.INVENTORY_PROGRAM_NAME}", "programname"),
+                        ANSIThemeStr(" list-playbooks", "command"),
+                        ANSIThemeStr("“ to list valid playbooks.", "default")], stderr=True)
+        sys.exit(errno.ENOENT)
+
+    if deep_get(valid_playbooks,
+                DictPath(f"{playbook}#category"), "") in ("__DISABLED__", "__INVALID__"):
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": The playbook “", "default"),
+                        ANSIThemeStr(f"{playbook}", "argument"),
+                        ANSIThemeStr("“ is either disabled or invalid; use “", "default"),
+                        ANSIThemeStr(f"{about.INVENTORY_PROGRAM_NAME}", "programname"),
+                        ANSIThemeStr(" list-playbooks", "command"),
+                        ANSIThemeStr("“ to list valid playbooks.", "default")], stderr=True)
+        sys.exit(errno.EINVAL)
+
+    playbook_path = deep_get(valid_playbooks, DictPath(f"{playbook}#playbook"), "")
+    playbook_name = FilePath(playbook_path).basename()
+    playbooks = populate_playbooks_from_filenames(playbooks=[FilePath(playbook_name)])
+    ansible_print_action_summary(playbooks)
+
+    return 0
+
+
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Run playbook on host(s) or group(s)
-    A well-formed inventory should not have groups with the same name as any of the hosts,
+    Run playbook on host(s) or group(s).
+    Note: A well-formed inventory should not have groups with the same name as any of the hosts,
     thus mixing group and host names should be OK; but if there are overlaps the group
-    are prioritised over the hostname
+    are prioritised over the hostname.
 
         Parameters:
             options (list[(str, str)]): List of opt, optarg
-            args (list[str]): Unused
+            args (list[str]):
+                (str): The name of the playbook to run
+                (str): A comma-separated list of groups or hostnames to run
         Returns:
             (int): 0
     """
@@ -1089,15 +1136,15 @@ def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
 # pylint: disable-next=unused-argument,too-many-branches
 def ping(options: list[tuple[str, str]], args: list[str]) -> int:
     """
-    Ping hosts or groups of hosts
-    Default: ping all hosts
-    A well-formed inventory should not have groups with the same name as any of the hosts,
+    Ping hosts or groups of hosts.
+    Default: ping all hosts.
+    Note: A well-formed inventory should not have groups with the same name as any of the hosts,
     thus mixing group and host names should be OK; but if there are overlaps the group
-    are prioritised over the hostname
+    are prioritised over the hostname.
 
         Parameters:
-            options (list[(str, str)]): Unused
-            args (list[str]): list of hosts or groups (optional)
+            options (list[(str, str)]): [unused]
+            args (list[str]): list of hosts or groups [optional]
         Returns:
             (int): 0
     """
@@ -1758,6 +1805,28 @@ COMMANDLINE: dict[str, CommandType] = {
         "optional_args": [],
         "callback": list_playbooks,
     },
+    "Explain Playbook": {
+        "command": ["explain"],
+        "values": [
+            ANSIThemeStr("PLAYBOOK ", "argument")],
+        "description": [
+            ANSIThemeStr("Explain what actions ", "description"),
+            ANSIThemeStr("PLAYBOOK", "argument"),
+            ANSIThemeStr(" will perform", "description")],
+        "required_args": [
+            {
+                "name": "playbook",
+                "string": [
+                    ANSIThemeStr("PLAYBOOK", "argument")],
+                "validation": {
+                    "validator": "regex",
+                    "regex": r"^[a-z0-9][a-z0-9_-]*[a-z0-9]$",
+                },
+            },
+        ],
+        "optional_args": [],
+        "callback": explain_playbook,
+    },
     "Run Playbook": {
         "command": ["run"],
         "values": [
@@ -2096,7 +2165,7 @@ COMMANDLINE: dict[str, CommandType] = {
 
 def main() -> int:
     """
-    Main function for the program
+    Main function for the program.
     """
     # Before doing anything else, make sure that the user is not running as root
     if os.geteuid() == 0:

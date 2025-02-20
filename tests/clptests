@@ -1349,7 +1349,7 @@ def test___find_command(verbose: bool = False) -> tuple[str, bool]:
                     },
                 },
                 "hello",
-                ("hello", test_callback, "Hello World", 0, 0, [], []),
+                ("hello", test_callback, "Hello World", [], []),
                 None,
             ),
             # Valid commandline, non-existing command
@@ -1371,14 +1371,14 @@ def test___find_command(verbose: bool = False) -> tuple[str, bool]:
                     },
                 },
                 "foo",
-                ("", None, "Hello World", 0, 0, [], []),
+                ("", None, "Hello World", [], []),
                 None,
             ),
             # Empty commandline
             (
                 {},
                 "foo",
-                ("", None, "", 0, 0, [], []),
+                ("", None, "", [], []),
                 None,
             ),
         )

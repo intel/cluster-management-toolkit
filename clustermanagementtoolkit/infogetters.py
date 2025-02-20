@@ -560,7 +560,7 @@ def transform_list(vlist: Union[list, dict], transform: dict) -> list[Any]:
 
 def format_controller(controller: tuple[tuple[str, str], str], show_kind: str) -> tuple[str, str]:
     """
-    Reformat a controller kind + name tuple
+    Reformat a controller kind + name tuple.
 
         Parameters:
             controller ((str, str), str): The controller kind
@@ -1456,7 +1456,7 @@ def generic_infogetter(**kwargs: Any) -> list[Type]:
 # pylint: disable-next=too-many-locals
 def get_pod_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Pods
+    Infogetter for Pods.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1572,7 +1572,7 @@ def get_pod_info(**kwargs: Any) -> list[Type]:
 # pylint: disable-next=too-many-locals
 def get_node_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Nodes
+    Infogetter for Nodes.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1627,7 +1627,7 @@ def get_node_info(**kwargs: Any) -> list[Type]:
 
 def get_node_addresses(addresses: list[dict]) -> tuple[str, list[str], list[str]]:
     """
-    Given the addresses list return all internal/external IPs and the hostname
+    Given the addresses list return all internal/external IPs and the hostname.
 
         Parameters:
             addresses ([dict]): A list of address objects
@@ -1676,7 +1676,7 @@ def get_node_addresses(addresses: list[dict]) -> tuple[str, list[str], list[str]
 # pylint: disable-next=too-many-locals
 def get_auth_rule_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Istio Authorization Policy Rules
+    Infogetter for Istio Authorization Policy Rules.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1742,7 +1742,7 @@ def get_auth_rule_info(**kwargs: Any) -> list[Type]:
 
 def get_eps_subsets_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for EndpointSlice subsets
+    Infogetter for EndpointSlice subsets.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1811,7 +1811,7 @@ def get_eps_subsets_info(**kwargs: Any) -> list[Type]:
 
 def get_key_value_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for key/value-based information
+    Infogetter for key/value-based information.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1867,7 +1867,7 @@ def get_key_value_info(**kwargs: Any) -> list[Type]:
 
 def get_limit_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Limits
+    Infogetter for Limits.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1918,7 +1918,7 @@ def get_limit_info(**kwargs: Any) -> list[Type]:
 
 def get_promrules_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Prometheus Rules
+    Infogetter for Prometheus Rules.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1971,7 +1971,7 @@ def get_promrules_info(**kwargs: Any) -> list[Type]:
 
 def get_rq_item_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Resource Quotas
+    Infogetter for Resource Quotas.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -2002,7 +2002,7 @@ def get_rq_item_info(**kwargs: Any) -> list[Type]:
 # pylint: disable-next=too-many-locals,too-many-statements
 def get_sas_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Service Account secrets
+    Infogetter for Service Account secrets.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -2150,7 +2150,7 @@ def get_sas_info(**kwargs: Any) -> list[Type]:
 
 def get_strategy_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Telemetry Aware Scheduling policies
+    Infogetter for Telemetry Aware Scheduling policies.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -2258,7 +2258,7 @@ def get_strategy_info(**kwargs: Any) -> list[Type]:
 # pylint: disable-next=too-many-locals,too-many-branches
 def get_subsets_info(**kwargs: Any) -> list[Type]:
     """
-    Infogetter for Endpoint subsets
+    Infogetter for Endpoint subsets.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -2340,11 +2340,11 @@ def get_subsets_info(**kwargs: Any) -> list[Type]:
 # pylint: disable-next=unused-argument
 def get_themearrays(obj: dict, **kwargs: Any) -> dict:
     """
-    This is effectively a noop, but we need to have an infogetter
+    This is effectively a noop, but we need to have an infogetter.
 
         Parameters:
             obj (dict): The themearrays object
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             (dict): The themearrays
     """
@@ -2495,6 +2495,8 @@ def get_journalctl_log(obj: dict, **kwargs: Any) -> \
 # pylint: disable-next=unused-argument
 def get_task_log(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, ThemeStr]]]:
     """
+    Get logs from Ansible tasks.
+
         Parameters:
             obj (dict): The object to extract data from
             **kwargs (dict[str, Any]): Keyword arguments

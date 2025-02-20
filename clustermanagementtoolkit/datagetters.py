@@ -27,7 +27,7 @@ from clustermanagementtoolkit.kubernetes_helper import kind_tuple_to_name, guess
 def get_container_status(src_statuses: list[dict],
                          container: str) -> tuple[str, StatusGroup, int, str, int]:
     """
-    Return the status for a container
+    Return the status for a container.
 
         Parameters:
             src_statuses (dict): A reference to either
@@ -110,11 +110,11 @@ def get_container_status(src_statuses: list[dict],
 # pylint: disable-next=unused-argument
 def datagetter_container_status(obj: dict[str, Any], **kwargs: Any) -> tuple[StatusGroup, dict]:
     """
-    A datagetter that returns the status of a container
+    A datagetter that returns the status of a container.
 
         Parameters:
             obj (dict): The container object to get status for
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
     """
     if obj is None:
         return "UNKNOWN", {"status_group": StatusGroup.UNKNOWN}
@@ -129,11 +129,11 @@ def datagetter_container_status(obj: dict[str, Any], **kwargs: Any) -> tuple[Sta
 def get_endpointslices_endpoints(obj: dict[str, Any],
                                  **kwargs: Any) -> list[tuple[str, StatusGroup]]:
     """
-    Get the endpoints for an endpoint slice
+    Get the endpoints for an endpoint slice.
 
         Parameters:
             obj (dict): The endpoint slice object to return endpoints for
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             ([(str, StatusGroup)]): A list of (address, status) for each endpoint
     """
@@ -155,11 +155,11 @@ def get_endpointslices_endpoints(obj: dict[str, Any],
 def datagetter_eps_endpoints(obj: dict[str, Any],
                              **kwargs: Any) -> tuple[list[tuple[str, StatusGroup]], dict]:
     """
-    A datagetter that returns the endpoints for an endpoint slice
+    A datagetter that returns the endpoints for an endpoint slice.
 
         Parameters:
             obj (dict): The endpoint slice object to return endpoints for
-            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+            **kwargs (dict[str, Any]): Keyword arguments [unused]
         Returns:
             The return value from get_endpointslices_endpoints and an empty dict
     """
@@ -168,7 +168,7 @@ def datagetter_eps_endpoints(obj: dict[str, Any],
 
 def datagetter_metrics(obj: dict[str, Any], **kwargs: Any) -> tuple[list[str], dict]:
     """
-    A datagetter that returns metrics for the specified path
+    A datagetter that returns metrics for the specified path.
 
         Parameters:
             obj (dict): The object with metrics
@@ -195,7 +195,7 @@ def datagetter_metrics(obj: dict[str, Any], **kwargs: Any) -> tuple[list[str], d
 def datagetter_deprecated_api(obj: dict[str, Any],
                               **kwargs: Any) -> tuple[tuple[str, str, str], dict]:
     """
-    A datagetter that returns deprecated API information for the specified path
+    A datagetter that returns deprecated API information for the specified path.
 
         Parameters:
             obj (dict): The object with metrics
@@ -222,7 +222,7 @@ def datagetter_deprecated_api(obj: dict[str, Any],
 def datagetter_latest_version(obj: dict[str, Any],
                               **kwargs: Any) -> tuple[tuple[str, str, str], dict]:
     """
-    A datagetter that returns the latest available API for kind as passed in path
+    A datagetter that returns the latest available API for kind as passed in path.
 
         Parameters:
             obj (dict): The object to get the old API information from
@@ -337,7 +337,7 @@ def datagetter_latest_version(obj: dict[str, Any],
 
 def get_endpoint_endpoints(subsets: list[dict]) -> list[tuple[str, StatusGroup]]:
     """
-    Get the endpoints for an endpoint
+    Get the endpoints for an endpoint.
 
         Parameters:
             subsets ([subset]): The subsets to return endpoints for
@@ -364,7 +364,7 @@ def get_endpoint_endpoints(subsets: list[dict]) -> list[tuple[str, StatusGroup]]
 def datagetter_endpoint_ips(obj: dict[str, Any],
                             **kwargs: Any) -> tuple[list[tuple[str, StatusGroup]], dict]:
     """
-    A datagetter that returns the endpoints for an endpoint
+    A datagetter that returns the endpoints for an endpoint.
 
         Parameters:
             obj (dict): The endpoint object to return endpoints for
@@ -385,7 +385,7 @@ def datagetter_endpoint_ips(obj: dict[str, Any],
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def get_pod_status(obj: dict[str, Any], **kwargs: Any) -> tuple[str, StatusGroup]:
     """
-    Get status for a Pod
+    Get status for a Pod.
 
         Parameters:
             obj (dict): The pod object to return status for
@@ -510,14 +510,14 @@ def get_pod_status(obj: dict[str, Any], **kwargs: Any) -> tuple[str, StatusGroup
 
 def datagetter_pod_status(obj: dict[str, Any], **kwargs: Any) -> tuple[str, dict]:
     """
-    A datagetter that returns the status for a pod
+    A datagetter that returns the status for a pod.
 
         Parameters:
             obj (dict): The pod object to return pod status for
             **kwargs (dict[str, Any]): Keyword arguments
                 kh (KubernetesHelper): A reference to a KubernetesHelper object
                 kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
-                default (Any): Unused
+                default (Any): [unused]
         Returns:
             The return value from get_endpointslices_endpoints and an empty dict
     """
@@ -547,7 +547,7 @@ def datagetter_api_support(obj: dict[str, Any], **kwargs: Any) -> tuple[list[str
             obj (dict): The object to get the API-name from
             kwargs (dict):
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
-                default (opaque): Unused
+                default (Any): [unused]
         Returns:
             ([str], dict):
                 ([str]): A list with zero or more of "Known", "List", "Info"
