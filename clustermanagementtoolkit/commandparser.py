@@ -168,8 +168,8 @@ def __version(options: list[tuple[str, str]], args: list[str]) -> int:
     Display version information.
 
         Parameters:
-            options ([(str, str)]): Unused
-            args (dict): Unused
+            options ([(str, str)]): [unused]
+            args ([str]): [unused]
         Returns:
             (int): 0
     """
@@ -284,7 +284,7 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
 
         Parameters:
             options ([(str, str)]): Options to use when executing this action
-            args (dict): Unused
+            args ([str]): [unused]
         Returns:
             (int): 0
     """
@@ -552,8 +552,8 @@ def __command_usage(options: list[tuple[str, str]], args: list[str]) -> int:
     Display usage information for a single command.
 
         Parameters:
-            options ([(str, str)]): Unused
-            args (dict): The command to show help for
+            options ([(str, str)]): [unused]
+            args ([str]): The command to show help for
         Returns:
             (int): 0
     """
