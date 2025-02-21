@@ -17,7 +17,7 @@ KNOWN_PV_TYPES = {
             "Volume ID:": {"path": "volumeID"},
             "Partition #:": {"path": "partition"},
             "Filesystem Type:": {"path": "fsType", "default": "ext4"},
-            "Read Only:": {"path": "readyOnly", "default": False},
+            "Read Only:": {"path": "readOnly", "default": False},
         },
     },
     "azureDisk": {
@@ -27,7 +27,7 @@ KNOWN_PV_TYPES = {
             "Disk Name:": {"path": "diskName"},
             "Disk URI:": {"path": "diskURI"},
             "Filesystem Type:": {"path": "fsType", "default": "ext4"},
-            "Read Only:": {"path": "readyOnly", "default": False},
+            "Read Only:": {"path": "readOnly", "default": False},
             "Caching Mode:": {"path": "cachingMode"},
             "Kind:": {"path": "kind", "default": "shared"},
         },
@@ -37,7 +37,7 @@ KNOWN_PV_TYPES = {
         "description": "Azure File Service mount on the host and bind mount to the pod",
         "properties": {
             "Share Name:": {"path": "shareName"},
-            "Read Only:": {"path": "readyOnly", "default": False},
+            "Read Only:": {"path": "readOnly", "default": False},
             # These two should combine to a shortcut to a secret; needs formatting + helper
             "Secret Name:": {"path": "secretName"},
             "Secret Namespace:": {"path": "secretNamespace", "default": "<pod namespace>"},
