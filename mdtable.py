@@ -24,7 +24,7 @@ PROGRAMVERSION = "v0.0.4"
 PROGRAMDESCRIPTION = "Reformat tabulated data to Markdown"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
-COPYRIGHT = "Copyright © 2024 David Weinehall"
+COPYRIGHT = "Copyright © 2024-2025 David Weinehall"
 
 LICENSE = "This is free software; see the source for copying conditions.  There is NO\n"
 LICENSE += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -37,7 +37,7 @@ def format_table(file: str, separator: str, headers: list[str], **kwargs: Any) -
 
         Parameters:
             file (str): The name of the file to read data from
-            separator (str): The separator that separates te field
+            separator (str): The separator that separates the fields
             headers ([str]): The field headers
             **kwargs (dict[str, Any]): Keyword arguments
                 bold_regex (str): A regular expression to check for matches to apply bold to
@@ -81,7 +81,7 @@ def format_table(file: str, separator: str, headers: list[str], **kwargs: Any) -
                       f"while line {i} has {len(columns)} columns.")
             sys.exit(errno.EINVAL)
 
-        for i, column in enumerate(columns):
+        for j, column in enumerate(columns):
             adjust = 0
             if bold_regex:
                 if re.match(bold_regex, column) is not None:
@@ -89,8 +89,8 @@ def format_table(file: str, separator: str, headers: list[str], **kwargs: Any) -
             if italics_regex and not adjust:
                 if re.match(italics_regex, column) is not None:
                     adjust = 1
-            adjusts[i] = max(adjusts[i], adjust)
-            widths[i] = max(widths[i], len(column.strip()) + adjust)
+            adjusts[j] = max(adjusts[j], adjust)
+            widths[j] = max(widths[j], len(column.strip()) + adjust)
 
     table: str = "|"
 
