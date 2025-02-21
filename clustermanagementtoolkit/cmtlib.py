@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Helpers used by various components of CMT
+Helpers used by various components of CMT.
 """
 
 # pylint: disable=too-many-lines

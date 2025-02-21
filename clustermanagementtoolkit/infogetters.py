@@ -2691,8 +2691,8 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
                     fmt = ThemeAttr("main", "highlight")
                 elif themeref == "argument":
                     fmt = ThemeAttr("main", "infoheader")
-                elif themeref == "error":
-                    fmt = ThemeAttr("logview", "severity_error")
+                elif themeref in ("debug", "info", "warning", "error", "critical"):
+                    fmt = ThemeAttr("logview", f"severity_{themeref}")
                 # Insert more here when necessary
                 else:
                     fmt = ThemeAttr("main", "default")

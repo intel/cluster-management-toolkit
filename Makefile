@@ -247,7 +247,7 @@ ruff:
 	printf -- "\n\nRunning $$cmd to check Python code quality\n\n" ;\
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
-		'cmtlog.py'|'noxfile.py') \
+		'noxfile.py') \
 			continue;; \
 		esac ;\
 		printf -- "File: $$file\n" ;\
@@ -275,7 +275,7 @@ pylint:
 	printf -- "\n\nRunning pylint to check Python code quality\n\n" ;\
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
-		'cmtlog.py'|'noxfile.py') \
+		'noxfile.py') \
 			continue;; \
 		esac ;\
 		printf -- "File: $$file\n" ;\
@@ -291,7 +291,7 @@ pylint-markdown:
 	tmpfile=$$(mktemp); \
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
-		'cmtlog.py'|'noxfile.py') \
+		'noxfile.py') \
 			continue;; \
 		esac ;\
 		result=$$(PYTHONPATH=. $$cmd --py-version $(PYLINT_PYTHON_VERSION) --disable $(PYLINT_DISABLE) --enable $(PYLINT_ENABLE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
@@ -384,7 +384,7 @@ mypy-markdown:
 	tmpfile=$$(mktemp); \
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
-		'cmtlog.py'|'noxfile.py') \
+		'noxfile.py') \
 			continue;; \
 		esac ;\
 		result=$$($$cmd $(MYPY_FLAGS) $$file | grep -E "^Found|^Success") ;\
