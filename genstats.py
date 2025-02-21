@@ -94,10 +94,10 @@ def main() -> None:
     file_stats = {}
     file_properties = {}
 
+    numstat_regex = re.compile(r"(\d+)\s+(\d+)\s+(.*)")
     for line in output.splitlines():
         # numstat format: added, removed, filename (might include rename)
-        tmp = re.match(r"(\d+)\s+(\d+)\s+(.*)", line)
-        if tmp is None:
+        if (tmp := numstat_regex.match(line)) is None:
             continue
 
         path = tmp[3]
@@ -116,7 +116,7 @@ def main() -> None:
         if path.startswith("views/"):
             if len(path.split(".")) > 2:
                 api = ".".join(path.split(".")[1:-1])
-                if not api in api_stats:
+                if api not in api_stats:
                     api_stats[api] = 1
                 else:
                     api_stats[api] += 1
@@ -131,9 +131,9 @@ def main() -> None:
 
     output = result.stdout.decode("utf-8", errors="replace")
 
+    property_regex = re.compile(r"(\S+?)\s+(.*)")
     for line in output.splitlines():
-        tmp = re.match(r"(\S+?)\s+(.*)", line)
-        if tmp is None:
+        if (tmp := property_regex.match(line)) is None:
             continue
         path = tmp[2]
         if tmp[1].startswith("R"):
