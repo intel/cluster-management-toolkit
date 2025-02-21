@@ -76,7 +76,7 @@ class ANSIThemeStr:
         Apply new formatting to the ANSIThemeStr
 
             Parameters:
-                (str): The reference to the formatting part of the ANSIThemeStr
+                themeref (str): The reference to the formatting part of the ANSIThemeStr
             Returns:
                 (ANSIThemeStr): The ANSIThemeStr with new formatting applied
         """
@@ -131,7 +131,9 @@ class ANSIThemeStr:
             Returns:
                 (bool): True if the strings match, False if not
         """
-        return self.string == themestring.string and self.themeref == themestring.themeref
+        return isinstance(themestring, ANSIThemeStr) \
+                and self.string == themestring.string \
+                and self.themeref == themestring.themeref
 
     @classmethod
     def tuplelist_to_ansithemearray(cls, msg: list[tuple[str, str]]) -> list["ANSIThemeStr"]:
@@ -348,7 +350,7 @@ def __themearray_to_raw_string(themearray: list[ANSIThemeStr]) -> str:
     for themestring in themearray:
         if not isinstance(themestring, ANSIThemeStr):
             raise TypeError("__themarray_to_string() only accepts arrays "
-                            f"of AnsiThemeStr; this themearray consists of:\n{themearray}")
+                            f"of ANSIThemeStr; this themearray consists of:\n{themearray}")
 
         theme_string = str(themestring)
         string += theme_string
@@ -378,7 +380,7 @@ def ansithemearray_to_str(themearray: list[ANSIThemeStr], **kwargs: Any) -> str:
     string: str = ""
     for themestring in themearray:
         if not isinstance(themestring, ANSIThemeStr):
-            raise TypeError("ansithemearray_to_str() only accepts arrays of AnsiThemeStr; "
+            raise TypeError("ansithemearray_to_str() only accepts arrays of ANSIThemeStr; "
                             f"this themearray consists of:\n{themearray}")
 
         theme_attr_ref = themestring.themeref

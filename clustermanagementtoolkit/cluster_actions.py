@@ -343,7 +343,7 @@ def prepare_nodes(hosts: list[str], **kwargs: Any) -> int:
         Parameters:
             hosts ([str]): A list of hosts to prepare as nodes
             **kwargs (dict[str, Any]): Keyword arguments
-                extra_values (dict): Extra valeus to pass to Ansible
+                extra_values (dict): Extra values to pass to Ansible
                 verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
             (int): 0 on success, non-zero on failure
@@ -375,7 +375,7 @@ def setup_nodes(hosts: list[str], **kwargs: Any) -> int:
             **kwargs (dict[str, Any]): Keyword arguments
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 k8s_distro (str): The Kubernetes distribution
-                extra_values (dict): Extra valeus to pass to Ansible
+                extra_values (dict): Extra values to pass to Ansible
                 verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
             (int): 0 on success, non-zero on failure
@@ -417,12 +417,12 @@ def join_nodes(hosts: list[str], **kwargs: Any) -> int:
     """
     Given a list of hostnames join them as worker nodes to the cluster.
 
-        earameters:
+        Parameters:
             hosts ([str]): A list of hosts to join to the cluster
             **kwargs (dict[str, Any]): Keyword arguments
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 k8s_distro (str): The Kubernetes distribution
-                extra_values (dict): Extra valeus to pass to Ansible
+                extra_values (dict): Extra values to pass to Ansible
                 verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
             (int): 0 on success, non-zero on failure
@@ -492,7 +492,7 @@ def prepare_vm_template(vmhost: str, hosts: list[tuple[str, str, str]], **kwargs
                 os_image (FilePath): The local path to the OS image to use
                 template_name (str): The name of the template image
                 template_balloon_size (str): The ballooned size of the template image
-                extra_values (dict): Extra valeus to pass to Ansible
+                extra_values (dict): Extra values to pass to Ansible
                 verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
             (int): 0 on success, non-zero on failure
@@ -543,7 +543,7 @@ def prepare_vm_template(vmhost: str, hosts: list[tuple[str, str, str]], **kwargs
 
     if not retval:
         # The template image is no longer running as a VM.
-        # Time to commit the changes to the backing mimage.
+        # Time to commit the changes to the backing image.
         playbooks = populate_playbooks_from_filenames(vm_commit_template_playbooks)
         ansible_print_action_summary(playbooks)
         print()
@@ -564,7 +564,7 @@ def create_vm_hosts(vmhost: str, hosts: list[tuple[str, str, str]], **kwargs: An
                 os_image (FilePath): The local path to the OS image to use
                 os_variant (str): The OS variant for the OS image
                 template_name (str): The name of the template image
-                extra_values (dict): Extra valeus to pass to Ansible
+                extra_values (dict): Extra values to pass to Ansible
                 verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
             (int): 0 on success, non-zero on failure

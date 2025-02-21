@@ -47,7 +47,7 @@ def ruyaml_dump_to_string(obj: Any, **kwargs: Any) -> str:
     Dump a dict to a YAML-string
 
         Parameters:
-            data (dict|[dict]): The dict to dump
+            obj (dict|[dict]): The dict to dump
             **kwargs (dict[str, Any]): Keyword arguments
                 replace_empty (bool): True strips empty strings
                 replace_empty_dict (bool): True strips empty dicts
@@ -102,7 +102,6 @@ def secure_write_yaml(path: FilePath,
     replace_empty: bool = deep_get(kwargs, DictPath("replace_empty"), False)
     replace_empty_dict: bool = deep_get(kwargs, DictPath("replace_empty_dict"), False)
     replace_null: bool = deep_get(kwargs, DictPath("replace_null"), False)
-    sort_keys: bool = deep_get(kwargs, DictPath("sort_keys"), True)
     write_mode: str = deep_get(kwargs, DictPath("write_mode"), "w")
     temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
@@ -110,7 +109,7 @@ def secure_write_yaml(path: FilePath,
         raise ValueError(f"Invalid write mode “{write_mode}“; "
                          "permitted modes: “a“ (append), “w“ (write) and “x“ (exclusive write)")
 
-    yaml_str = ruyaml_dump_to_string(data, default_flow_style=False, sort_keys=sort_keys,
+    yaml_str = ruyaml_dump_to_string(data, default_flow_style=False,
                                      replace_null=replace_null,
                                      replace_empty=replace_empty,
                                      replace_empty_dict=replace_empty_dict)
@@ -179,6 +178,8 @@ def secure_read_yaml_all(path: FilePath, **kwargs: Any) -> Generator:
         Raises:
             FileNotFoundError
             cmttypes.FilePathAuditError
+            ruyaml.composer.ComposerError
+            ruyaml.scanner.ScannerError
     """
     checks: Optional[list[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
     directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), False)

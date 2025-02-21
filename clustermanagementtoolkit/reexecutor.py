@@ -120,7 +120,7 @@ class ReExecutor:
             Parameters:
                 key (str): The identifier for the callable to update parameters for
             Returns:
-                (dict[str, Any]|[Any], [Any]): (data, status) or ([], []) if no data is available
+                ((dict[str, Any]|[Any], [Any])): (data, status) or ([], []) if no data is available
         """
         info = []
         status = []

@@ -55,7 +55,7 @@ def check_disable_strict_host_key_checking(**kwargs: Any) -> tuple[bool, int, in
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
-                cmtconfig_dict (dict): The cmtconfig file
+                cmtconfig_dict (dict[str, Any]): The cmtconfig file
                 critical (int): The current count of critical severity security issues
                 error (int): The current count of error severity security issues
                 warning (int): The current count of warning severity security issues
@@ -68,7 +68,7 @@ def check_disable_strict_host_key_checking(**kwargs: Any) -> tuple[bool, int, in
                 (int): The new count of warning severity security issues
                 (int): The new count of note severity security issues
     """
-    cmtconfig_dict: dict = deep_get(kwargs, DictPath("cmtconfig_dict"), {})
+    cmtconfig_dict: dict[str, Any] = deep_get(kwargs, DictPath("cmtconfig_dict"), {})
     critical: int = deep_get(kwargs, DictPath("critical"), 0)
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
@@ -127,7 +127,7 @@ def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
                 (int): The new count of warning severity security issues
                 (int): The new count of note severity security issues
     """
-    user: str = deep_get(kwargs, DictPath("user"))
+    user: str = deep_get(kwargs, DictPath("user"), "")
     critical: int = deep_get(kwargs, DictPath("critical"), 0)
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
@@ -137,7 +137,7 @@ def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
 
     abort = False
 
-    if user is None:
+    if not user:
         raise ProgrammingError(f"{__name__}() called without user")
 
     if verbose:
@@ -232,7 +232,7 @@ def check_ansible_dir_permissions(**kwargs: Any) -> tuple[bool, int, int, int, i
                 (int): The new count of warning severity security issues
                 (int): The new count of note severity security issues
     """
-    user: str = deep_get(kwargs, DictPath("user"))
+    user: str = deep_get(kwargs, DictPath("user"), "")
     critical: int = deep_get(kwargs, DictPath("critical"), 0)
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
@@ -243,7 +243,7 @@ def check_ansible_dir_permissions(**kwargs: Any) -> tuple[bool, int, int, int, i
 
     abort = False
 
-    if user is None:
+    if not user:
         raise ProgrammingError(f"{__name__}() called without user")
 
     if verbose:
@@ -473,7 +473,7 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
                 (int): The new count of warning severity security issues
                 (int): The new count of note severity security issues
     """
-    cluster_name: str = deep_get(kwargs, DictPath("cluster_name"))
+    cluster_name: str = deep_get(kwargs, DictPath("cluster_name"), "")
     kubeconfig: dict = deep_get(kwargs, DictPath("kubeconfig"), {})
     critical: int = deep_get(kwargs, DictPath("critical"), 0)
     error: int = deep_get(kwargs, DictPath("error"), 0)
@@ -483,6 +483,9 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
     quiet_on_ok = deep_get(kwargs, DictPath("quiet_on_ok"), False)
 
     abort = False
+
+    if not cluster_name:
+        raise ProgrammingError(f"{__name__}() called without cluster_name")
 
     if verbose:
         ansithemeprint([ANSIThemeStr("[Checking for insecure ", "phase"),
@@ -935,7 +938,7 @@ class PodListType(TypedDict, total=False):
     that can be used to explain special cases, exceptions, etc.
 
         Parameters:
-            any_of ([(str, str)]): At least one of these must exist
+            any_of ([(str, str)]): At least one of these pods must exist
             all_of ([(str, str)]): All of these pods must exist
             note ([ANSIThemeStr]): Additional notes
     """
@@ -1271,8 +1274,8 @@ def __check_permissions(recommended_permissions: list[dict], pathtype: str,
                 (int): The new count of warning severity security issues
                 (int): The new count of note severity security issues
     """
-    user: str = deep_get(kwargs, DictPath("user"))
-    usergroup: str = deep_get(kwargs, DictPath("usergroup"))
+    user: str = deep_get(kwargs, DictPath("user"), "")
+    usergroup: str = deep_get(kwargs, DictPath("usergroup"), "")
     critical: int = deep_get(kwargs, DictPath("critical"), 0)
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
@@ -1448,7 +1451,6 @@ def check_file_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
             **kwargs (dict[str, Any]): Keyword arguments
                 user (str): Username of the executing user
                 usergroup (str): The usergroup of the user
-                cluster_name (str): The name of the cluster
                 kubeconfig (dict)): The kubeconfig file
                 cmtconfig_dict (dict): The cmtconfig file
                 critical (int): The current count of critical severity security issues

@@ -35,7 +35,7 @@ def __patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> bool:
         Raises:
             FilePathAuditError
     """
-    violations = check_path(cni_path)
+    violations: list[SecurityStatus] = check_path(cni_path)
     if violations != [SecurityStatus.OK]:
         violations_joined = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
@@ -65,7 +65,7 @@ def __patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> bool:
         Raises:
             FilePathAuditError
     """
-    violations = check_path(cni_path)
+    violations: list[SecurityStatus] = check_path(cni_path)
     if violations != [SecurityStatus.OK]:
         violations_joined = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
@@ -97,7 +97,7 @@ def __patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> bool:
         Raises:
             FilePathAuditError
     """
-    violations = check_path(cni_path)
+    violations: list[SecurityStatus] = check_path(cni_path)
     if violations != [SecurityStatus.OK]:
         violations_joined = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
@@ -131,7 +131,7 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
     """
     violations: list[SecurityStatus] = check_path(cni_path)
     if violations != [SecurityStatus.OK]:
-        violations_joined: str = join_securitystatus_set(",", set(violations))
+        violations_joined = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
 
     d: Any = secure_read_yaml(cni_path)
@@ -198,8 +198,8 @@ class CNIDataTypeOptional(TypedDict, total=False):
             version_regex (str): A regex to use with version_command
             urls ([URLType]): A list of URLs to download
             upgrade ([str]): The command to use to upgrade the CNI
-            upgrade ([str]): The command to use to install the CNI
-            upgrade ([str]): The command to use to uninstall the CNI
+            install ([str]): The command to use to install the CNI
+            uninstall ([str]): The command to use to uninstall the CNI
     """
     candidate_version_command: list[str]
     candidate_version_function: Callable
