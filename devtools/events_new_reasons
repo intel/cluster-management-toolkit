@@ -1,0 +1,85 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 9 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+
+# Requires: python3 (>= 3.9)
+
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+import yaml
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+
+from clustermanagementtoolkit.kubernetes_helper import KubernetesHelper, KubernetesResourceCache
+
+from clustermanagementtoolkit.cmtpaths import KUBE_CONFIG_FILE
+
+from clustermanagementtoolkit import about
+
+"""
+This program takes the output from kubectl get events -A -oyaml and finds unknown event reasons
+"""
+
+
+def main() -> None:
+    """
+    Main function for the program.
+    """
+
+    kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION,
+                          config_path=KUBE_CONFIG_FILE)
+    kh_cache = KubernetesResourceCache()
+
+    events, status = kh.get_list_by_kind_namespace(("Event", ""), "", resource_cache=kh_cache)
+    if status in (42503, 42504):
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": API-server unavailable", "default")], stderr=True)
+        sys.exit(errno.ENOENT)
+    elif status != 200:
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": API-server returned ", "default"),
+                        ANSIThemeStr(f"{status}", "errorvalue")], stderr=True)
+        sys.exit(errno.EINVAL)
+
+    reasons = set()
+
+    for ev in events:
+        reason = deep_get(ev, DictPath("reason"), "")
+        if not reason:
+            continue
+        reasons.add(reason)
+
+    known_reasons = set()
+
+    d: dict[str, Any] = {}
+    tmp: str = ""
+
+    # Get the list of known reasons
+    with open("views/variables/event_reasons.var") as f:
+        tmp = f.read()
+
+    d = yaml.safe_load(tmp)
+
+    for key in d.keys():
+        if key:
+            known_reasons.add(key)
+
+    new_reasons = reasons - known_reasons
+
+    if new_reasons:
+        print("New Event reasons:")
+        for reason in sorted(new_reasons):
+            print(reason)
+    else:
+        print("No new Event reasons found.")
+
+
+if __name__ == "__main__":
+    main()
