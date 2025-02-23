@@ -2695,6 +2695,12 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "preflightvalidationsocp",
         "namespaced": False,
     },
+    # kro.run
+    ("ResourceGraphDefinition", "kro.run"): {
+        "api_paths": ["apis/kro.run/v1alpha1/"],
+        "api": "resourcegraphdefinitions",
+        "namespaced": False,
+    },
     # kubeapps.com
     ("AppRepository", "kubeapps.com"): {
         "api_paths": ["apis/kubeapps.com/v1alpha1/"],
