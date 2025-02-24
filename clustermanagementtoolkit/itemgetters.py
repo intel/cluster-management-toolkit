@@ -32,6 +32,8 @@ from clustermanagementtoolkit.cmtlib import split_msg, timestamp_to_datetime
 
 from clustermanagementtoolkit import kubernetes_helper
 
+from clustermanagementtoolkit.kubernetes_resources import kubernetes_resources
+
 from clustermanagementtoolkit.pvtypes import KNOWN_PV_TYPES
 
 
@@ -110,9 +112,17 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
     api_family = deep_get(kwargs, DictPath("api_family"), "")
     api_family = deep_get(obj, DictPath(api_family_path), api_family)
 
+    api_version_path = deep_get(kwargs, DictPath("api_version_path"))
+    api_version = deep_get(kwargs, DictPath("api_version"), "")
+    api_version = deep_get(obj, DictPath(api_version_path), api_version)
+
+    guess_kind = deep_get(kwargs, DictPath("guess_kind"), True)
+    remove_after_use = False
+
     namespace_path = deep_get(kwargs, DictPath("namespace_path"))
     namespace = deep_get(kwargs, DictPath("namespace"), "")
     namespace = deep_get(obj, DictPath(namespace_path), namespace)
+    namespaced_resource = deep_get(kwargs, DictPath("namespaced_resource"), True)
 
     name_path = deep_get(kwargs, DictPath("name_path"))
     name = deep_get(kwargs, DictPath("name"))
@@ -135,6 +145,22 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
         else:
             field_selector = selector
 
+    if not guess_kind:
+        lkind = kind.lower()
+        if not lkind.endswith("s"):
+            lkind = f"{lkind}s"
+        lapi_family = f"apis/{api_family}/"
+        if api_version:
+            lapi_family = f"{lapi_family}{api_version}/"
+        # Create a temporary Kubernetes resource
+        if (kind, api_family) not in kubernetes_resources:
+            kubernetes_resources[(kind, api_family)] = {
+                "api_paths": [lapi_family],
+                "api": lkind,
+                "namespaced": namespaced_resource,
+            }
+            remove_after_use = True
+
     vlist, status = \
         kh.get_list_by_kind_namespace((kind, api_family),
                                       namespace,
@@ -142,7 +168,7 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
                                       field_selector=field_selector,
                                       resource_cache=kh_cache)
 
-    tmp: list[tuple[str, ...]] = []
+    tmp: list[Any] = []
     if vlist is None or status != 200:
         return tmp
 
@@ -150,7 +176,10 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
         entry = []
         for field_path in field_paths:
             entry.append(deep_get(item, DictPath(field_path)))
-        tmp.append(tuple(entry))
+        tmp.append({"fields": tuple(entry), "ref": item})
+
+    if remove_after_use:
+        kubernetes_resources.pop((kind, api_family), None)
 
     return tmp
 

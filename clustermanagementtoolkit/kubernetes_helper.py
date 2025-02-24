@@ -2534,8 +2534,8 @@ class KubernetesHelper:
         return message, status
 
     # On failure this function should always return [] for list requests,
-    # and None for other requests; this way lists the result can be handled
-    # unconditionally in for loops
+    # and None for other requests; this way the result can be handled
+    # unconditionally in for loops.
 
     # pylint: disable-next=too-many-locals,too-many-branches
     def __rest_helper_get(self, **kwargs: Any) -> \
@@ -2573,8 +2573,7 @@ class KubernetesHelper:
             namespace_part = f"namespaces/{namespace}/"
 
         if raw_path is None:
-            kind = guess_kind(cast(tuple[str, str], kind))
-            if kind in kubernetes_resources:
+            if (kind := guess_kind(cast(tuple[str, str], kind))) in kubernetes_resources:
                 api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
                 api = deep_get(kubernetes_resources[kind], DictPath("api"))
                 namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)

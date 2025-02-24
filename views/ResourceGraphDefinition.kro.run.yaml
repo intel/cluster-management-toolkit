@@ -19,7 +19,7 @@ listview:
       paths:
         - path: [["spec#schema#kind"], ["spec#schema#group"]]
           pathtype: "tuple"
-          type: ["kind", "api_group"]
+          type: ["kind", "kind"]
           default: ["<none>", ""]
       formatter: "list"
       formatting:
@@ -44,6 +44,11 @@ listview:
               field_colors:
                 - context: "main"
                   type: "status_pending"
+    topological_order:
+      header: "Topological Order:"
+      path: "status#topologicalOrder"
+      type: "raw"
+      formatter: "list"
 infoview:
   name: "Resource Graph Definition Info"
   infopad:
@@ -52,11 +57,12 @@ infoview:
         fields: ["kind", "state"]
     rows:
       kind:
-        header: [["Kind:", ["main", "infoheader"]]]
+        header: [["K", ["main", "infoheader_shortcut"]],
+                 ["ind:", ["main", "infoheader"]]]
         paths:
           - path: [["spec#schema#kind"], ["spec#schema#group"]]
             pathtype: "tuple"
-            type: ["kind", "api_group"]
+            type: ["kind", "kind"]
             default: ["<none>", ""]
         formatter: "list"
         formatting:
@@ -69,6 +75,18 @@ infoview:
         header: [["State:", ["main", "infoheader"]]]
         path: "status#state"
         type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Active":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "Inactive":
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -106,6 +124,32 @@ infoview:
         path: "template#metadata#name"
         type: "str"
   shortcuts:
+    "Show Instances":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show instances"
+      widget: "windowwidget"
+      title: "Instances:"
+      selectable: true
+      headers: ["Namespace:", "Name:", "State:", "Age:"]
+      itemgetter: "get_kubernetes_objects"
+      itemgetter_args:
+        field_paths:
+          - "metadata#namespace"
+          - "metadata#name"
+          - "status#state"
+          - "metadata#creationTimestamp"
+        kind_path: "spec#schema#kind"
+        api_family_path: "spec#schema#group"
+        api_version_path: "spec#schema#apiVersion"
+        namespaced_resource: true
+        guess_kind: false
+      action: "call"
+      action_call: "resourceinfodispatch_from_selection"
+      action_args:
+        kind: "__KROInstance"
+        api_family: "kro.run"
     "Show Schema":
       key: "s"
       modifier: "shift"

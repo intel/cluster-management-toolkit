@@ -69,6 +69,9 @@ infoview:
                     type: "status_pending"
   listpad:
     listgetter: "listgetter_namespaced_resources"
+    listgetter_args:
+      message: "Fetching all resources for Namespace"
+      namespace_path: "metadata#name"
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch_with_lookup"

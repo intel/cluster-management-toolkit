@@ -2260,6 +2260,10 @@ def listgetter_namespaced_resources(obj: dict, **kwargs: Any) -> \
                 kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
                 resources ([(str, str)]): A list of Kinds; if resources is not provided
                                           all namespaced resources will be searched
+                label_selector (str): A label selector (optional)
+                namespace (str): The name of the namespace to fetch namespaced resources for
+                namespace_path (str): The path to get the name
+                                      of the namespace to fetch namespaced resources for
         Returns:
             (([dict[str, Any]], int)): A list of Kubernetes objects of various Kinds
     """
@@ -2272,9 +2276,12 @@ def listgetter_namespaced_resources(obj: dict, **kwargs: Any) -> \
 
     namespaced_resources = deep_get(kwargs, DictPath("resources"),
                                     kh.get_list_of_namespaced_resources())
+    label_selector = deep_get(kwargs, DictPath("label_selector"), "")
 
     kind = ("Namespace", "")
-    namespace = deep_get(obj, DictPath("metadata#name"))
+    namespace_path = deep_get(kwargs, DictPath("namespace_path"), "")
+    namespace = deep_get(kwargs, DictPath("namespace"), "")
+    namespace = deep_get(obj, DictPath(namespace_path), namespace)
 
     # We'll be one-shotting all of these, so we won't use reexecutor
     executor_ = concurrent.futures.ThreadPoolExecutor()
@@ -2282,11 +2289,14 @@ def listgetter_namespaced_resources(obj: dict, **kwargs: Any) -> \
     for kind in namespaced_resources:
         executors[kind] = executor_.submit(listgetters_async.get_kubernetes_list,
                                            kind=kind, namespace=namespace,
-                                           kubernetes_helper=kh, kh_cache=kh_cache)
+                                           kubernetes_helper=kh, kh_cache=kh_cache,
+                                           label_selector=label_selector)
     for kind, ex in executors.items():
         vlist_, status_ = ex.result()
         if status_ != 200:
-            status = status_
+            # 404 means no resources found; this is OK
+            if status_ != 404:
+                status = status_
             continue
         if not vlist_:
             continue

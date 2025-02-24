@@ -3982,6 +3982,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 _api_family = deep_get(listgetter_args, DictPath("_api_family"))
                 _api_family_path = deep_get(listgetter_args, DictPath("_api_family_path"))
                 _label_selector_path = deep_get(listgetter_args, DictPath("_label_selector_path"))
+                _label_selector_key = deep_get(listgetter_args, DictPath("_label_selector_key"), "")
                 _label_selector_key_values = \
                     deep_get(listgetter_args, DictPath("_label_selector_key_values"))
                 if _label_selector_path is not None:
@@ -3989,7 +3990,11 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                         _label_selector_path = [DictPath(_label_selector_path)]
                     _label_selector_data = deep_get_with_fallback(obj, _label_selector_path)
                     if isinstance(_label_selector_data, str):
-                        listgetter_args["label_selector"] = _label_selector_data
+                        if _label_selector_key:
+                            listgetter_args["label_selector"] = \
+                                make_label_selector({_label_selector_key: _label_selector_data})
+                        else:
+                            listgetter_args["label_selector"] = _label_selector_data
                     else:
                         listgetter_args["label_selector"] = \
                             make_label_selector(_label_selector_data)

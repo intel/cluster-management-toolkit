@@ -1,0 +1,108 @@
+---
+kind: "__KROInstance"
+api_family: "kro.run"
+default_command: "__"
+infoview:
+  name: "KRO Instance"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["kind", "state", "synced"]
+    rows:
+      kind:
+        header: [["Kind:", ["main", "infoheader"]]]
+        paths:
+          - path: [["kind"], ["apiVersion"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group"]
+            default: ["<none>", ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+          field_separators:
+            - type: "kind_api_group"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        type: "str"
+      # The documentation for kro seems to claim that all instances
+      # includes status#state and that they have one of the values
+      # below; this doesn't seem to be the case though. Testing yielded
+      # "ACTIVE". Disabling this for now.
+      #
+      # formatter: "value_mapper"
+      # formatting:
+      #   mapping:
+      #     mappings:
+      #       "Failed":
+      #         field_colors:
+      #           - context: "main"
+      #             type: "status_not_ok"
+      #       "Progressing":
+      #         field_colors:
+      #           - context: "main"
+      #             type: "status_pending"
+      #       "Running":
+      #         field_colors:
+      #           - context: "main"
+      #             type: "status_ok"
+      #       "Terminating":
+      #         field_colors:
+      #           - context: "main"
+      #             type: "status_pending"
+      synced:
+        header: [["Synced:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "InstanceSynced"
+            default: ["<unknown>"]
+        type: "str"
+  listpad:
+    listgetter: "listgetter_namespaced_resources"
+    listgetter_args:
+      message: "Fetching all objects belong to instance"
+      _namespace_path: "metadata#namespace"
+      # yamllint disable-line rule:line-length
+      _label_selector_path: "metadata#labels#kro.run/resource-graph-definition-id"
+      _label_selector_key: "kro.run/resource-graph-definition-id"
+      _none_on_empty_selector: true
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch_with_lookup"
+      kind_path: "__kind_tuple"
+      name_path: "metadata#name"
+      namespace_path: "metadata#namespace"
+    field_indexes:
+      Normal:
+        fields: ["kind", "namespace", "name", "age"]
+        sortcolumn: "namespace"
+    fields:
+      kind:
+        header: "Kind:"
+        path: "__kind_tuple"
+        type: "str"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+          field_separators:
+            - type: "kind_api_group"
+  shortcuts:
+    "View Spec":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show instance spec"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Instance spec"
+        _pass_obj: true
+        path: "spec"
