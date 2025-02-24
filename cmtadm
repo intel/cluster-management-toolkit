@@ -6382,17 +6382,11 @@ def upgrade_control_plane(options: list[tuple[str, str]], args: list[str]) -> No
         requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
 
         if int(requested_minor) < 31:
-            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-            init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
             upgrade_configuration_api_version = "<unused>"
         else:
-            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta4"
-            init_configuration_api_version = "kubeadm.k8s.io/v1beta4"
             upgrade_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
         upgrade_control_plane_targets[k8s_distro]["extra_values"] = {
-            "cluster_configuration_api_version": cluster_configuration_api_version,
-            "init_configuration_api_version": init_configuration_api_version,
             "upgrade_configuration_api_version": upgrade_configuration_api_version,
             # Add major/minor to extra_values
             "kubernetes_major_minor_version": f"{requested_major}.{requested_minor}",

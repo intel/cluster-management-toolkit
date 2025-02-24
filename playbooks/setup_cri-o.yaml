@@ -14,16 +14,16 @@
           - description: "/etc/systemd/system/cri-o.service.d"
           - description: "/etc/systemd/system/kubelet.service.d"
         "Created files":
-          - description: "/etc/apt/keyrings/cri-o-keyring.asc (GPG key for CRI-O APT repository)"
+          - description: "/etc/apt/keyrings/cri-o-obs-keyring.asc (GPG key for CRI-O OBS APT repository)"
             conditions:
               - "Debian and derivatives"
-          - description: "/etc/apt/sources.list.d/cri-o.list (APT repository for CRI-O)"
+          - description: "/etc/apt/sources.list.d/cri-o.list (OBS APT repository for CRI-O)"
             conditions:
               - "Debian and derivatives"
-          - description: "/etc/apt/apt.conf.d/01proxy-cri-o (Proxy settings for CRI-O APT repository)"
+          - description: "/etc/apt/apt.conf.d/01proxy-cri-o (Proxy settings for CRI-O OBS APT repository)"
             conditions:
               - "Debian and derivatives"
-          - description: "/etc/apt/preferences.d/cri-o (APT pinning for CRI-O APT repository)"
+          - description: "/etc/apt/preferences.d/cri-o (APT pinning for CRI-O OBS APT repository)"
             conditions:
               - "Debian and derivatives"
           - description: "/etc/crictl.yaml.d/crio.conf.d/01-apparmor-profile.conf (Use default apparmor profile)"
@@ -122,13 +122,6 @@
       environment:
         https_proxy: "{{ https_proxy | default('') }}"
       when: "ansible_os_family == 'Suse'"
-    - name: "Copying CRI-O key to /etc/apt/keyrings"
-      ansible.builtin.copy:
-        remote_src: true
-        src: "{{ tempdir.path }}/kubic.key"
-        dest: "/etc/apt/keyrings/cri-o-keyring.asc"
-        mode: "0644"
-      when: "ansible_os_family == 'Debian'"
     - name: "Importing repository keys"  # noqa: command-instead-of-module
       ansible.builtin.shell: |
         rpm --import "{{ tempdir.path }}/kubic.key"

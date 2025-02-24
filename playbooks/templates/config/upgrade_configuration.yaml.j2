@@ -1,0 +1,9 @@
+apiVersion: "{{ upgrade_configuration_api_version }}"
+kind: UpgradeConfiguration
+apply:
+  kubernetesVersion: "{{ requested_control_plane_k8s_version.split('-')[0] }}"
+  ignorePreflightErrors: ["CreateJob"]
+  forceUpgrade: true
+plan:
+  kubernetesVersion: "{{ requested_control_plane_k8s_version.split('-')[0] }}"
+  ignorePreflightErrors: ["CreateJob"]
