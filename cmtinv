@@ -954,7 +954,7 @@ def list_playbooks(options: list[tuple[str, str]], args: list[str]) -> int:
             header_array.append(ANSIThemeStr(header, "header"))
             header_array.append(ANSIThemeStr("".ljust(maxlengths[i] - len(header) + 2), "default"))
         ansithemeprint(header_array)
-        for row in rows:
+        for row in sorted(rows):
             row_array = []
             for i, field in enumerate(row):
                 row_array.append(ANSIThemeStr(field, "default"))
