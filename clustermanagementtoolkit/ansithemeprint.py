@@ -132,8 +132,8 @@ class ANSIThemeStr:
                 (bool): True if the strings match, False if not
         """
         return isinstance(themestring, ANSIThemeStr) \
-                and self.string == themestring.string \
-                and self.themeref == themestring.themeref
+            and self.string == themestring.string \
+            and self.themeref == themestring.themeref
 
     @classmethod
     def tuplelist_to_ansithemearray(cls, msg: list[tuple[str, str]]) -> list["ANSIThemeStr"]:
