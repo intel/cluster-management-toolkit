@@ -1,0 +1,21 @@
+---
+- name: "List USB devices"
+  hosts: "selection"
+  vars:
+    metadata:
+      description: "List USB devices"
+      playbook_types:
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
+      category: "Information"
+      summary:
+        "Information gathering":
+          - description: "Lists USB devices"
+      read_only: true
+  gather_facts: false
+  tasks:
+    - name: "Listing USB devices"
+      ansible.builtin.shell: |
+        lsusb || printf -- "Error: lsusb not installed\n"
+      changed_when: false

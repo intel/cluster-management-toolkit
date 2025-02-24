@@ -1,0 +1,21 @@
+---
+- name: "List PCI devices"
+  hosts: "selection"
+  vars:
+    metadata:
+      description: "List PCI devices"
+      playbook_types:
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
+      category: "Information"
+      summary:
+        "Information gathering":
+          - description: "Lists PCI devices"
+      read_only: true
+  gather_facts: false
+  tasks:
+    - name: "Listing PCI devices"
+      ansible.builtin.shell: |
+        lspci -n -n || printf -- "Error: lspci not installed\n"
+      changed_when: false
