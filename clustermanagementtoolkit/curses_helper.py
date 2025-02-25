@@ -2075,7 +2075,12 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
     padwidth = 2
     listpadheight = len(items)
 
+    if items is None or not items:
+        # FIXME: cmtlog here
+        return None
+
     if isinstance(items[0], tuple):
+        # FIXME: cmtlog here
         raise ValueError("The text passed to windowwidget() is invalid; "
                          f"please report this!\n\n{items}")
 
