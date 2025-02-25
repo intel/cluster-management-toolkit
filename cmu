@@ -229,7 +229,18 @@ def gather_cluster_info(**kwargs: Any) -> None:
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
     """
     if (kh_ := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("gather_cluster_info() called without kubernetes_helper")
+        msg = [
+            [("gather_cluster_info()", "emphasis"),
+             (" called without ", "error"),
+             ("kubernetes_helper", "argument")],
+        ]
+
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+
+        cmtlog.log(program_log.error, msg=unformatted_msg, messages=formatted_msg)
+        raise ProgrammingError(unformatted_msg,
+                               severity=LogLevel.ERR,
+                               formatted_msg=formatted_msg)
 
     # Set global variables that need to be available when executing playbooks
     join_token = kh_.get_join_token()
@@ -746,10 +757,10 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
              (" (type: ", "default"),
              (f"{type(stdscr)}", "argument"),
              (", expected: ", "default"),
-             ("{curses.window}", "argument"),
+             (f"{curses.window}", "argument"),
              (")", "default")],
             [("view = ", "default"),
-             (f"{yaml.dump(view)}", "argument"),
+             (f"{view}", "argument"),
              (" (type: ", "default"),
              (f"{type(view)}", "argument"),
              (", expected: ", "default"),
@@ -759,6 +770,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+        cmtlog.log(program_log.error, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
                                formatted_msg=formatted_msg)
@@ -770,17 +782,20 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         msg = [
             [("genericlistloop()", "emphasis"),
              (" called with invalid argument(s):", "error")],
-            [("field_indexes = ", "default")],
-            [(f"{yaml.dump(field_indexes)}", "argument"),
+            [("field_indexes = ", "default"),
+             (f"{field_indexes}", "argument"),
              (" (type: ", "default"),
              (f"{type(field_indexes)}", "argument"),
              (", expected: ", "default"),
              (f"{dict}", "argument"),
-             (") with at least one element", "default")],
+             (" with at least one element)", "default")],
         ]
 
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+        cmtlog.log(program_log.error,
+                   msg=unformatted_msg,
+                   messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
                                formatted_msg=formatted_msg)
@@ -911,6 +926,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     if kind[0].startswith("__"):
                         vlist, status = listgetter(**listgetter_args)
                     else:
+                        # FIXME
                         raise ProgrammingError("We don't know how to handle this")
                     # else:
                     #     vlist, status = \
@@ -1343,7 +1359,29 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                 elif ptype == "<dir>":
                                     fmt = ThemeAttr("windowwidget", "highlight")
                                 else:
-                                    raise ValueError(f"Unknown ptype {ptype}")
+                                    msg = [
+                                        [("filechooser", "emphasis"),
+                                         (" called with invalid argument(s):", "error")],
+                                        [("ptype = ", "default"),
+                                         (f"{ptype}", "argument"),
+                                         (" (expected one of: ", "default"),
+                                         (f"File", "argument"),
+                                         (", ", "default"),
+                                         (f"Configuration File", "argument"),
+                                         (", ", "default"),
+                                         (f"Kustomization", "argument"),
+                                         (", or ", "default"),
+                                         (f"<dir>", "argument"),
+                                         (")", "default")],
+                                    ]
+
+                                    unformatted_msg, formatted_msg = \
+                                        ANSIThemeStr.format_error_msg(msg)
+
+                                    cmtlog.log(program_log.error,
+                                               msg=unformatted_msg,
+                                               messages=formatted_msg)
+                                    continue
                                 file_list.append({
                                     "lineattrs": WidgetLineAttrs.NORMAL,
                                     "columns": [[ThemeStr(f"{filename}", fmt)],
@@ -1889,7 +1927,30 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                 elif ptype == "<dir>":
                                     fmt = ThemeAttr("windowwidget", "highlight")
                                 else:
-                                    raise ValueError(f"Unknown ptype {ptype}")
+                                    msg = [
+                                        [("filechooser", "emphasis"),
+                                         (" called with invalid argument(s):", "error")],
+                                        [("ptype = ", "default"),
+                                         (f"{ptype}", "argument"),
+                                         (" (expected one of: ", "default"),
+                                         (f"File", "argument"),
+                                         (", ", "default"),
+                                         (f"Configuration File", "argument"),
+                                         (", ", "default"),
+                                         (f"Kustomization", "argument"),
+                                         (", or ", "default"),
+                                         (f"<dir>", "argument"),
+                                         (")", "default")],
+                                    ]
+
+                                    unformatted_msg, formatted_msg = \
+                                        ANSIThemeStr.format_error_msg(msg)
+
+                                    cmtlog.log(program_log.error,
+                                               msg=unformatted_msg,
+                                               messages=formatted_msg)
+                                    continue
+
                                 file_list.append({
                                     "lineattrs": WidgetLineAttrs.NORMAL,
                                     "columns": [[ThemeStr(f"{filename}", fmt)],
@@ -3344,7 +3405,42 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     elif vtype.startswith("base64-utf-8"):
         obj = base64.b64decode(value).decode("utf-8")
     else:
-        raise TypeError(f"Trying to export unknown vtype: {vtype}")
+        msg = [
+            [("decode_and_view_data()", "emphasis"),
+             (" could not identify vtype:", "error")],
+            [("vtype = ", "default"),
+             (f"{vtype}", "argument"),
+             (" (expected one of ", "default"),
+             ("empty", "argument"),
+             (", ", "default"),
+             ("base64-binary", "argument"),
+             (", ", "default"),
+             ("gzip", "argument"),
+             (", ", "default"),
+             ("string", "argument"),
+             (", ", "default"),
+             ("base64-utf-8", "argument"),
+             (")", "default")],
+        ]
+
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+
+        cmtlog.log(program_log.error,
+                   msg=unformatted_msg,
+                   messages=formatted_msg)
+
+        maxy, maxx = stdscr.getmaxyx()
+        win = curses_helper.alert(stdscr, maxy // 2, maxx // 2,
+                                  message=f"Failed to decode data; unsupported format {vtype}")
+        # Wait for a keypress
+        while True:
+            stdscr.timeout(100)
+            c = stdscr.getch()
+            if c != -1:
+                del win
+                break
+
+        return Retval.RETURNDONE
     if title.endswith((".crt", "tls.key", ".pem", "CAKey")) \
             or isinstance(obj, str) and obj.startswith(("-----BEGIN", "-----END")):
         formatter = formatters.format_crt
@@ -3463,7 +3559,40 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
         tmp = base64.b64decode(value)
         secure_write_string(filename, tmp, write_mode="wb")
     else:
-        raise TypeError(f"Trying to export unknown vtype: {vtype}")
+        msg = [
+            [("export_data()", "emphasis"),
+             (" could not identify vtype:", "error")],
+            [("vtype = ", "default"),
+             (f"{vtype}", "argument"),
+             (" (expected one of ", "default"),
+             ("base64-binary", "argument"),
+             (", ", "default"),
+             ("gzip", "argument"),
+             (", ", "default"),
+             ("string", "argument"),
+             (", ", "default"),
+             ("base64-utf-8", "argument"),
+             (")", "default")],
+        ]
+
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+
+        cmtlog.log(program_log.error,
+                   msg=unformatted_msg,
+                   messages=formatted_msg)
+
+        maxy, maxx = stdscr.getmaxyx()
+        win = curses_helper.alert(stdscr, maxy // 2, maxx // 2,
+                                  message=f"Failed to export data; unsupported format {vtype}")
+        # Wait for a keypress
+        while True:
+            stdscr.timeout(100)
+            c = stdscr.getch()
+            if c != -1:
+                del win
+                break
+
+        return Retval.RETURNDONE
     return Retval.RETURNDONE
 
 

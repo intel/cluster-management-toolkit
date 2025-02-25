@@ -9,8 +9,11 @@
 Structured log module for CMT.
 """
 
+from datetime import datetime
 import logging
 import logging.handlers
+import os
+import sys
 from typing import Any, cast, Union
 from collections.abc import Callable
 
@@ -59,9 +62,9 @@ def get_logger(name: str) -> logging.Logger:
     """
     formatter = \
         logging.Formatter('- {'
-                          '"timestamp": %(asctime)s, "severity": "%(levelname)s", '
+                          '"timestamp": "%(timestamp)s", "severity": "%(levelname)s", '
                           '"facility": "%(name)s", "message": "%(message)s", '
-                          '"file": "%(filename)s", "function": "%(funcName)s", '
+                          '"file": "%(file)s", "function": "%(function)s", '
                           '"lineno": "%(lineno)s", "ppid": "%(process)s", %(messages)s'
                           '}')
     handler = \
@@ -98,4 +101,19 @@ def log(logger: Callable, **kwargs: Any) -> None:
         else:
             msg = messages[0]
     messages_joined = log_array_to_string(messages)
-    logger(msg, extra={"messages": messages_joined})
+    timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S%z}"
+    try:
+        # This is to get the necessary stack info
+        raise UserWarning
+    except UserWarning:
+        frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+        file = str(frame.f_code.co_filename)  # type: ignore
+        function = str(frame.f_code.co_name)  # type: ignore
+
+    extra = {
+        "messages": messages_joined,
+        "timestamp": timestamp,
+        "function": function,
+        "file": f"{os.path.basename(file)}",
+    }
+    logger(msg, extra=extra)

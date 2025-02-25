@@ -2607,7 +2607,7 @@ def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, Them
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def get_cmt_log(obj: dict, **kwargs: Any) -> \
-        tuple[list[datetime], list[Union[str, tuple[str, str]]], list[LogLevel],
+        tuple[list[str], list[Union[str, tuple[str, str]]], list[LogLevel],
               list[Union[list[Union[ThemeRef, ThemeStr]], str]]]:
     """
     Extract log entries from CMT log.
@@ -2617,13 +2617,13 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
             **kwargs (dict[str, Any]): Keyword arguments
         Returns:
             (([str], [str], [str], [str])):
-                ([datetime]): A list of timestamps
+                ([str]): A list of formatted timestamps
                 ([str|(str, str)]): A list of facilities
                 ([LogLevel]): A list of severities
                 ([ThemeArray]): A list of ThemeArrays
     """
     filepath = deep_get(obj, DictPath("filepath"), "")
-    timestamps: list[datetime] = []
+    timestamps: list[str] = []
     facilities: list[Union[str, tuple[str, str]]] = []
     severities: list[LogLevel] = []
     messages: list[Union[list[Union[ThemeRef, ThemeStr]], str]] = []
@@ -2656,9 +2656,10 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
 
         first = True
 
+        d_timestamp = timestamp_to_datetime(timestamp)
         for msg in msgs:
             if first:
-                timestamps.append(timestamp.astimezone())
+                timestamps.append(d_timestamp.astimezone())
                 if facility:
                     facilities.append((facilitystr, facility))
                 else:
