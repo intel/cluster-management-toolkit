@@ -1166,8 +1166,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         uip.refresh_listpad()
         uip.refresh_statusbar()
         if first_fetch:
-            __win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2,
-                                         message="Checking for data")
+            __win = curses_helper.notice(uip.listpad, message="Checking for data")
         curses.doupdate()
 
         uip.stdscr.timeout(100)
@@ -1323,14 +1322,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                 string = int(string)
                             except ValueError:
                                 message = f"{queryval} is not an integer"
-                                win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
-                                                          message=message)
-                                while True:
-                                    uip.stdscr.timeout(100)
-                                    c = uip.stdscr.getch()
-                                    if c != -1:
-                                        del win
-                                        break
+                                curses_helper.alert(uip.stdscr, message=message,
+                                                    wait_for_keypress=True)
                                 continue
                         selection_vars[queryval] = string
                         deep_set(selection_vars, DictPath(f"values#{queryval}"), string,
@@ -1365,13 +1358,13 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                         [("ptype = ", "default"),
                                          (f"{ptype}", "argument"),
                                          (" (expected one of: ", "default"),
-                                         (f"File", "argument"),
+                                         ("File", "argument"),
                                          (", ", "default"),
-                                         (f"Configuration File", "argument"),
+                                         ("Configuration File", "argument"),
                                          (", ", "default"),
-                                         (f"Kustomization", "argument"),
+                                         ("Kustomization", "argument"),
                                          (", or ", "default"),
-                                         (f"<dir>", "argument"),
+                                         ("<dir>", "argument"),
                                          (")", "default")],
                                     ]
 
@@ -1382,6 +1375,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                                msg=unformatted_msg,
                                                messages=formatted_msg)
                                     continue
+
                                 file_list.append({
                                     "lineattrs": WidgetLineAttrs.NORMAL,
                                     "columns": [[ThemeStr(f"{filename}", fmt)],
@@ -1891,14 +1885,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                 string = int(string)
                             except ValueError:
                                 message = f"{queryval} is not an integer"
-                                win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
-                                                          message=message)
-                                while True:
-                                    uip.stdscr.timeout(100)
-                                    c = uip.stdscr.getch()
-                                    if c != -1:
-                                        del win
-                                        break
+                                curses_helper.alert(uip.stdscr, message=message,
+                                                    wait_for_keypress=True)
                                 continue
                         selection_vars[queryval] = string
                         deep_set(selection_vars, DictPath(f"values#{queryval}"), string,
@@ -1933,13 +1921,13 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                         [("ptype = ", "default"),
                                          (f"{ptype}", "argument"),
                                          (" (expected one of: ", "default"),
-                                         (f"File", "argument"),
+                                         ("File", "argument"),
                                          (", ", "default"),
-                                         (f"Configuration File", "argument"),
+                                         ("Configuration File", "argument"),
                                          (", ", "default"),
-                                         (f"Kustomization", "argument"),
+                                         ("Kustomization", "argument"),
                                          (", or ", "default"),
-                                         (f"<dir>", "argument"),
+                                         ("<dir>", "argument"),
                                          (")", "default")],
                                     ]
 
@@ -2227,8 +2215,7 @@ def __fetch_package_versions(**kwargs: Any) -> tuple[Retval, dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     hostname = deep_get(kwargs, DictPath("hostname"))
 
-    _win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
-                                message="Fetching package versions...")
+    _win = curses_helper.notice(uip.stdscr, message="Fetching package versions...")
     _package_versions = get_package_versions(hostname)
     package_versions = []
     for package, version in _package_versions:
@@ -3429,17 +3416,8 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
                    msg=unformatted_msg,
                    messages=formatted_msg)
 
-        maxy, maxx = stdscr.getmaxyx()
-        win = curses_helper.alert(stdscr, maxy // 2, maxx // 2,
-                                  message=f"Failed to decode data; unsupported format {vtype}")
-        # Wait for a keypress
-        while True:
-            stdscr.timeout(100)
-            c = stdscr.getch()
-            if c != -1:
-                del win
-                break
-
+        curses_helper.alert(stdscr, message=f"Failed to decode data; unsupported format {vtype}",
+                            wait_for_keypress=True)
         return Retval.RETURNDONE
     if title.endswith((".crt", "tls.key", ".pem", "CAKey")) \
             or isinstance(obj, str) and obj.startswith(("-----BEGIN", "-----END")):
@@ -3581,18 +3559,8 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
                    msg=unformatted_msg,
                    messages=formatted_msg)
 
-        maxy, maxx = stdscr.getmaxyx()
-        win = curses_helper.alert(stdscr, maxy // 2, maxx // 2,
-                                  message=f"Failed to export data; unsupported format {vtype}")
-        # Wait for a keypress
-        while True:
-            stdscr.timeout(100)
-            c = stdscr.getch()
-            if c != -1:
-                del win
-                break
-
-        return Retval.RETURNDONE
+        curses_helper.alert(stdscr, message=f"Failed to export data; unsupported format {vtype}",
+                            wait_for_keypress=True)
     return Retval.RETURNDONE
 
 
@@ -3891,14 +3859,29 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             "force_update": False,
         }
 
+    # FIXME: Maybe this should be moved to populated_views() instead?
     if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False):
         _shortcuts: dict[int, str] = {}
         for shortcut in shortcuts:
             _shortcut = shortcuts[shortcut].get("shortcut", [])
             for _sc in _shortcut:
                 if _sc in _shortcuts:
-                    sys.exit(f"infoview {view}: The same keypress ({_sc}) is used for both "
-                             f"“{shortcut}“ and “{_shortcuts[_sc]}“; aborting.")
+                    msg = [
+                        [("Infoview ", "error"),
+                         (f"{view}", "argument"),
+                         (": The same keypress (", "error"),
+                         (f"{_sc}", "argument"),
+                         (") is used for both “", "error"),
+                         (f"{shortcut}", "argument"),
+                         ("“ and “", "error"),
+                         (f"{_shortcuts[_sc]}", "argument"),
+                         ("“; aborting.", "error")],
+                    ]
+
+                    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+
+                    cmtlog.log(program_log.error, msg=unformatted_msg, messages=formatted_msg)
+                    sys.exit(unformatted_msg)
                 else:
                     _shortcuts[_sc] = shortcut
 
@@ -4166,8 +4149,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 uip.refresh_statusbar()
                 if first_fetch or uip.update_forced:
                     fetch_message = deep_get(listgetter_args, DictPath("message"), "Fetching data")
-                    _win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2,
-                                                message=fetch_message)
+                    _win = curses_helper.notice(uip.listpad, message=fetch_message)
                     curses.doupdate()
                     if "kubernetes_helper" not in listgetter_args:
                         listgetter_args["kubernetes_helper"] = kh
@@ -4576,7 +4558,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 w_selectable = deep_get(sc_value, DictPath("selectable"), False)
                 # w_kind = deep_get(sc_value, DictPath("kind"), view)
                 if "_slow_task_msg" in w_itemgetter_args:
-                    _w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
+                    _w_win = curses_helper.notice(uip.stdscr,
                                                   message=deep_get(w_itemgetter_args,
                                                                    DictPath("_slow_task_msg")))
 
@@ -4647,7 +4629,9 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 uip.refresh_statusbar()
                 curses.doupdate()
                 # Check this condition before confirming
-                w_confirm = deep_get(sc_value, DictPath("confirm"), False)
+                # FIXME: This should probably be moved to populate_views()
+                w_confirm: Union[str, bool, Callable] = \
+                    deep_get(sc_value, DictPath("confirm"), False)
                 if isinstance(w_confirm, str):
                     if w_confirm == "path_exists":
                         w_confirm = os.path.exists(w_result)
@@ -6223,12 +6207,9 @@ def executecommand(stdscr: curses.window,
                                     fallback_allowlist=["/etc/alternatives"],
                                     security_policy=SecurityPolicy.ALLOWLIST_RELAXED)
     except FileNotFoundError:
-        curses.endwin()
-        ansithemeprint([ANSIThemeStr("Critical", "critical"),
-                        ANSIThemeStr(": Could not find ", "default"),
-                        ANSIThemeStr("kubectl", "path"),
-                        ANSIThemeStr("; aborting.", "default")], stderr=True)
-        sys.exit(errno.ENOENT)
+        curses_helper.alert(stdscr, message="Could not find kubectl; is it installed?",
+                            wait_for_keypress=True)
+        return
 
     # This should probably be done using connect_get_namespaced_pod_exec()
     curses.endwin()
@@ -7076,8 +7057,7 @@ def delete_resource(**kwargs: Any) -> Retval:
                     tmp = re.match(r"^(.+?), URL:.*", message)
                     if tmp is not None:
                         message = tmp[1]
-                    win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
-                                              message=message)
+                    win = curses_helper.alert(uip.stdscr, message=message)
                     success = False
                     break
 
@@ -7087,14 +7067,13 @@ def delete_resource(**kwargs: Any) -> Retval:
             tmp = re.match(r"^(.+?), URL:.*", message)
             if tmp is not None:
                 message = tmp[1]
-            win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
-                                      message=message)
+            win = curses_helper.alert(uip.stdscr, message=message)
             success = False
             break
 
     # We successfully deleted everything
     if success:
-        win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
+        win = curses_helper.notice(uip.stdscr,
                                    message="Successfully deleted all specified resources")
 
     # Wait for a keypress
@@ -8475,8 +8454,7 @@ def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> list[dict
         sys.exit(f"Invalid sortcolumn {sortcolumn} for Selector; aborting.")
 
     if refresh_apis:
-        _notice = curses_helper.notice(None, y=uip.maxy // 2, x=uip.maxx // 2,
-                                       message="Refreshing list of available APIs")
+        _notice = curses_helper.notice(None, message="Refreshing list of available APIs")
         # Repopulate the list of views, on the offhand chance that a view file has been added
         populate_views(force_refresh=refresh_apis)
         curses.doupdate()

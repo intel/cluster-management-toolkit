@@ -1206,8 +1206,7 @@ def percentagebar(minx: int, maxx: int, total: int,
 
 
 # pylint: disable=unused-argument
-def __notification(stdscr: Optional[curses.window], y: int, x: int,
-                   message: str, formatting: ThemeAttr) -> curses.window:
+def __notification(y: int, x: int, message: str, formatting: ThemeAttr) -> curses.window:
     height = 3
     width = 2 + len(message)
     ypos = y - height // 2
@@ -1224,34 +1223,90 @@ def __notification(stdscr: Optional[curses.window], y: int, x: int,
     return win
 
 
-def notice(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curses.window:
+def notice(stdscr: Optional[curses.window], message: str, **kwargs: Any) -> Optional[curses.window]:
     """
     Show a notification.
 
         Parameters:
             stdscr (curses.window): The curses window to operate on
-            y (int): the y-coordinate of the window centre point
-            x (int): the x-coordinate of the window centre point
+                                    (only needed when auto-generating x/y height or
+                                     when wait_for_keypress=True)
             message (str): The message to show
+            **kwargs (dict[str, Any]): Keyword arguments
+                y (int): the y-coordinate of the window centre point (default: maxy // 2)
+                x (int): the x-coordinate of the window centre point (default: maxx // 2)
+                wait_for_keypress (bool): Wait for keypress before returning?
         Returns:
             (curses.window): A reference to the notification window
     """
-    return __notification(stdscr, y, x, message, ThemeAttr("windowwidget", "notice"))
+    wait_for_keypress: bool = deep_get(kwargs, DictPath("wait_for_keypress"), False)
+    tmp_y: int = deep_get(kwargs, DictPath("y"))
+    tmp_x: int = deep_get(kwargs, DictPath("x"))
+    if stdscr:
+        maxy, maxx = stdscr.getmaxyx()
+        if not tmp_y:
+            tmp_y = maxy // 2
+        if not tmp_x:
+            tmp_x = maxx // 2
+    elif not tmp_y or not tmp_x:
+        raise ProgrammingError("When using notice() without stdscr passing y & x is mandatory")
+
+    y = tmp_y
+    x = tmp_x
+
+    win: Optional[curses.window] = \
+        __notification(y, x, message, ThemeAttr("windowwidget", "notice"))
+    if stdscr and wait_for_keypress:
+        while True:
+            stdscr.timeout(100)
+            c = stdscr.getch()
+            if c != -1:
+                del win
+                win = None
+                break
+    return win
 
 
-def alert(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curses.window:
+def alert(stdscr: Optional[curses.window], message: str, **kwargs: Any) -> Optional[curses.window]:
     """
     Show an alert.
 
         Parameters:
-            win (curses.window): The curses window to operate on
-            y (int): the y-coordinate of the window centre point
-            x (int): the x-coordinate of the window centre point
+            stdscr (curses.window): The curses window to operate on
             message (str): The message to show
+            **kwargs (dict[str, Any]): Keyword arguments
+                y (int): the y-coordinate of the window centre point (default: maxy // 2)
+                x (int): the x-coordinate of the window centre point (default: maxx // 2)
+                wait_for_keypress (bool): Wait for keypress before returning?
         Returns:
             (curses.window): A reference to the notification window
     """
-    return __notification(stdscr, y, x, message, ThemeAttr("windowwidget", "alert"))
+    wait_for_keypress: bool = deep_get(kwargs, DictPath("wait_for_keypress"), False)
+    tmp_y: int = deep_get(kwargs, DictPath("y"))
+    tmp_x: int = deep_get(kwargs, DictPath("x"))
+    if stdscr:
+        maxy, maxx = stdscr.getmaxyx()
+        if not tmp_y:
+            tmp_y = maxy // 2
+        if not tmp_x:
+            tmp_x = maxx // 2
+    elif not tmp_y or not tmp_x:
+        raise ProgrammingError("When using notice() without stdscr passing y & x is mandatory")
+
+    y = tmp_y
+    x = tmp_x
+
+    win: Optional[curses.window] = \
+        __notification(y, x, message, ThemeAttr("windowwidget", "alert"))
+    if stdscr and wait_for_keypress:
+        while True:
+            stdscr.timeout(100)
+            c = stdscr.getch()
+            if c != -1:
+                del win
+                win = None
+                break
+    return win
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
