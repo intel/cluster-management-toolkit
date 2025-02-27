@@ -136,6 +136,57 @@ class ANSIThemeStr:
             and self.themeref == themestring.themeref
 
     @classmethod
+    def ansithemearray_to_tuplelist(cls, msg: list["ANSIThemeStr"]) -> list[tuple[str, str]]:
+        """
+        Given an ANSIThemeArray return its tuple representation
+
+            Parameters:
+                msg ([ANSIThemeStr]): An ANSIThemeArray to reformat
+            Returns:
+                ([(str, str)]): A list of tuples representing the ANSIThemeArray
+        """
+        tuplelist = []
+
+        if not isinstance(msg, list):
+            raise ProgrammingError("ANSIThemeStr.ansithemearray_to_tuplelist() "
+                                   "called with invalid argument(s):\n"
+                                   f"msg={msg} (type: {type(msg)}, expected: list)",
+                                   subexception=TypeError,
+                                   severity=LogLevel.ERR,
+                                   formatted_msg=[[("ANSIThemeStr.ansithemearray_to_tuplelist()",
+                                                    "emphasis"),
+                                                   (" called with invalid argument(s):", "error")],
+                                                  [("msg = ", "default"),
+                                                   (f"{msg}", "argument"),
+                                                   (" (type: ", "default"),
+                                                   (f"{type(msg)}", "argument"),
+                                                   (", expected: ", "default"),
+                                                   ("list", "argument"),
+                                                   (")", "default")]])
+
+        for item in msg:
+            if not isinstance(item, ANSIThemeStr):
+                raise ProgrammingError("ANSIThemeStr.ansithemearray_to_tuplelist() "
+                                       "called with invalid argument(s):\n"
+                                       f"msg={msg} (type: {type(msg)}, "
+                                       "expected: list[ANSIThemeStr])",
+                                       subexception=TypeError,
+                                       severity=LogLevel.ERR,
+                                       formatted_msg=[
+                                           [("ANSIThemeStr.ansithemearray_to_tuplelist()",
+                                             "emphasis"),
+                                            (" called with invalid argument(s):", "error")],
+                                           [("msg = ", "default"),
+                                            (f"{msg}", "argument"),
+                                            (" (type: ", "default"),
+                                            (f"{type(msg)}", "argument"),
+                                            (", expected: ", "default"),
+                                            ("list", "argument"),
+                                            (")", "default")]])
+            tuplelist.append((str(item), item.themeref))
+        return tuplelist
+
+    @classmethod
     def tuplelist_to_ansithemearray(cls, msg: list[tuple[str, str]]) -> list["ANSIThemeStr"]:
         """
         Given a structured message return its ANSIThemeArray representation

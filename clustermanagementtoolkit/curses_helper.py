@@ -36,6 +36,8 @@ from clustermanagementtoolkit.cmtio import check_path, join_securitystatus_set
 
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
+from clustermanagementtoolkit import cmtlog
+
 from clustermanagementtoolkit.cmtpaths import SYSTEM_DEFAULT_THEME_FILE
 
 from clustermanagementtoolkit.cmttypes import DictPath, FilePath, LogLevel, StatusGroup, Retval
@@ -44,6 +46,7 @@ from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityStatus
 from clustermanagementtoolkit.cmttypes import deep_get, loglevel_to_name, stgroup_mapping
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
+from clustermanagementtoolkit.ansithemeprint import ansithemestr_join_list
 
 from clustermanagementtoolkit import cmtlib
 
@@ -85,6 +88,8 @@ class ThemeStr:
             msg = [
                 [("ThemeStr()", "emphasis"),
                  (" initialised with invalid argument(s):", "error")],
+                [("themefile = ", "default"),
+                 (f"{themefile}", "path")],
                 [("string = ", "default"),
                  (f"{string}", "argument"),
                  (" (type: ", "default"),
@@ -110,6 +115,7 @@ class ThemeStr:
 
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    subexception=TypeError,
                                    severity=LogLevel.ERR,
@@ -179,6 +185,8 @@ class ThemeRef:
             msg = [
                 [("ThemeRef()", "emphasis"),
                  (" initialised with invalid argument(s):", "error")],
+                [("themefile = ", "default"),
+                 (f"{themefile}", "path")],
                 [("context = ", "default"),
                  (f"{context}", "argument"),
                  (" (type: ", "default"),
@@ -201,8 +209,10 @@ class ThemeRef:
                  ("bool", "argument"),
                  (")", "default")],
             ]
+
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
@@ -225,6 +235,7 @@ class ThemeRef:
 
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
@@ -275,6 +286,7 @@ class ThemeRef:
 
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
@@ -321,6 +333,7 @@ class ThemeArray:
 
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
@@ -348,6 +361,7 @@ class ThemeArray:
 
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
@@ -372,6 +386,7 @@ class ThemeArray:
 
                 unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
                 raise ProgrammingError(unformatted_msg,
                                        severity=LogLevel.ERR,
                                        facility=str(themefile),
@@ -409,6 +424,7 @@ class ThemeArray:
 
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
@@ -436,6 +452,7 @@ class ThemeArray:
 
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
@@ -583,66 +600,92 @@ def get_theme_ref() -> dict:
 
 
 def __color_name_to_curses_color(color: tuple[str, str], color_type: str) -> int:
-    col, attr = color
+    try:
+        col, attr = color
+    except (TypeError, ValueError):
+        msg = [
+            [("Invalid color pair used in theme ", "warning"),
+             (f"{themefile}", "path"),
+             (":", "warning")],
+            [("color = ", "default"),
+             (f"{color}", "argument"),
+             (" (type: ", "default"),
+             (f"{type(color)}", "argument"),
+             (", expected: ", "default"),
+             ("(str, str)", "argument")],
+            [("Defaulting to ", "default"),
+             ("(white, normal)", "argument"),
+             (".", "default")],
+        ]
 
-    if not isinstance(attr, str):
-        # debuglog.add([
-        #         [ANSIThemeStr("Invalid color attribute used in theme; "
-        #                          "attribute has to be a string and one of:", "default")],
-        #         [ANSIThemeStr("“", "default"),
-        #          ANSIThemeStr("normal", "emphasis"),
-        #          ANSIThemeStr("“, “", "default"),
-        #          ANSIThemeStr("bright", "emphasis"),
-        #          ANSIThemeStr("“.", "default")],
-        #         [ANSIThemeStr("Using “", "default"),
-        #          ANSIThemeStr("normal", "emphasis"),
-        #          ANSIThemeStr("“ as fallback.", "default")],
-        #        ], severity = LogLevel.ERR, facility = str(themefile))
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        cmtlog.log(LogLevel.INFO, msg=unformatted_msg, messages=formatted_msg)
+
+        col = "white"
         attr = "normal"
-    elif attr not in ["normal", "bright"]:
-        # debuglog.add([
-        #         [ANSIThemeStr("Invalid color attribute “", "default"),
-        #          ANSIThemeStr(f"{attr}", "emphasis"),
-        #          ANSIThemeStr("“ used in theme; "
-        #                          "attribute has to be a string and one of:", "default")],
-        #         [ANSIThemeStr("“", "default"),
-        #          ANSIThemeStr("normal", "emphasis"),
-        #          ANSIThemeStr("“, “", "default"),
-        #          ANSIThemeStr("bright", "emphasis"),
-        #          ANSIThemeStr("“.", "default")],
-        #         [ANSIThemeStr("Using “", "default"),
-        #          ANSIThemeStr("normal", "emphasis"),
-        #          ANSIThemeStr("“ as fallback.", "default")],
-        #        ], severity = LogLevel.ERR, facility = str(themefile))
+
+    if not isinstance(attr, str) or attr not in ("normal", "bright"):
+        tmp_attr_list = ansithemestr_join_list(("normal", "bright"),
+                                               formatting="argument",
+                                               separator=ANSIThemeStr(", ", "separator"))
+        attr_list = ANSIThemeStr.ansithemearray_to_tuplelist(tmp_attr_list)
+        msg = [
+            [("Invalid color attribute used in theme ", "warning"),
+             (f"{themefile}", "path"),
+             (":", "warning")],
+            [("attr = ", "default"),
+             (f"{attr}", "argument"),
+             (" (type: ", "default"),
+             (f"{type(attr)}", "argument"),
+             (", expected: ", "default"),
+             ("str", "argument"),
+             (", with attr being one of ", "default")] + attr_list,
+            [("Defaulting to ", "default"),
+             ("normal", "argument"),
+             (".", "default")],
+        ]
+
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
+
         attr = "normal"
+
     if isinstance(col, str):
         col = col.lower()
 
     if not isinstance(col, str) or col not in color_map:
-        # debuglog.add([
-        #         [ANSIThemeStr("Invalid color type “", "default"),
-        #          ANSIThemeStr(f"{col}", "emphasis"),
-        #          ANSIThemeStr("“ used in theme; "
-        #                          "color has to be a string and one of:", "default"),
-        #          ANSIThemeStr("“" + "“, ".join(color_map.keys()) +  "“", "default")],
-        #        ], severity = LogLevel.ERR, facility = str(themefile))
-        raise ValueError("Invalid color type used in theme; "
-                         f"color has to be a string and one of: {', '.join(color_map.keys())}")
+        tmp_color_list = ansithemestr_join_list(list(color_map.keys()),
+                                                formatting="argument",
+                                                separator=ANSIThemeStr(", ", "separator"))
+        color_list = ANSIThemeStr.ansithemearray_to_tuplelist(tmp_color_list)
+        msg = [
+            [(f"Invalid {color_type} color used in theme ", "warning"),
+             (f"{themefile}", "path"),
+             (":", "warning")],
+            [("color = ", "default"),
+             (f"{col}", "argument"),
+             (" (type: ", "default"),
+             (f"{type(col)}", "argument"),
+             (", expected: ", "default"),
+             ("str", "argument"),
+             (", with color being one of ", "default")] + color_list,
+            [("Defaulting to ", "default"),
+             ("white", "argument"),
+             (".", "default")],
+        ]
+
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
+
+        col = "white"
 
     if attr == "bright":
         curses_attr = 8
     else:
         curses_attr = 0
 
-    if (curses_color := deep_get(color_map, DictPath(col))) is None:
-        # debuglog.add([
-        #         [ANSIThemeStr("Invalid {color_type} color “", "default"),
-        #          ANSIThemeStr(f"{col}", "emphasis"),
-        #          ANSIThemeStr("“ used in theme; valid colors are:", "default"),
-        #          ANSIThemeStr("“" + "“, ".join(color_map.keys()) +  "“", "default")],
-        #        ], severity = LogLevel.ERR, facility = str(themefile))
-        raise ValueError(f"Invalid {color_type} color {col} used in theme; "
-                         f"valid colors are: {', '.join(color_map.keys())}")
+    curses_color = deep_get(color_map, DictPath(col))
+
     return curses_color + curses_attr
 
 
@@ -658,22 +701,33 @@ def __convert_color_pair(color_pair: tuple[tuple[str, str], tuple[str, str]]) ->
 def __init_pair(pair: str, color_pair: tuple[int, int], color_nr: int) -> None:
     if not curses.has_colors():  # pragma: no cover
         term = os.getenv("TERM", "<unknown>")
-        sys.exit(f"Error: Your terminal environment TERM={term} reports that it doesn't\n"
+        sys.exit(f"Error: Your terminal environment TERM={term} reports that it does not\n"
                  "support colors; at least currently cmu requires color support; exiting.")
 
     fg, bg = color_pair
     bright_black_remapped = False
 
     if fg == bg:
-        # debuglog.add([
-        #         [ANSIThemeStr("__init_pair()", "emphasis"),
-        #          ANSIThemeStr(" called with a color pair where fg == bg (", "error"),
-        #          ANSIThemeStr(f"{fg}", "argument"),
-        #          ANSIThemeStr(",", "error"),
-        #          ANSIThemeStr(f"{bg}", "argument"),
-        #          ANSIThemeStr(")", "error")],
-        #        ], severity = LogLevel.ERR, facility = str(themefile))
-        raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
+        msg = [
+            [("Themefile ", "error"),
+             (f"{themefile}", "path"),
+             (" contains a color pair where fg == bg:", "error")],
+            [("fg = ", "default"),
+             (f"{fg}", "argument")],
+            [("bg = ", "default"),
+             (f"{bg}", "argument")],
+            [("Defaulting to ", "default"),
+             ("white", "argument"),
+             (" on ", "default"),
+             ("black", "argument"),
+             (".", "default")],
+        ]
+
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+
+        fg = curses.COLOR_WHITE
+        bg = curses.COLOR_BLACK
 
     try:
         curses.init_pair(color_nr, fg, bg)
@@ -2130,14 +2184,41 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
     padwidth = 2
     listpadheight = len(items)
 
-    if items is None or not items:
-        # FIXME: cmtlog here
-        return None
+    if items is None or not isinstance(items, list) or not items:
+        msg = [
+            [("windowwidget()", "emphasis"),
+             (" called with invalid argument(s):", "error")],
+            [("items = ", "default"),
+             (f"{items}", "argument"),
+             (" (type:", "default"),
+             (f"{type(items)}", "argument"),
+             (", expected: ", "default"),
+             (f"{list}", "argument"),
+             (" with at least one element)", "default")],
+        ]
 
-    if isinstance(items[0], tuple):
-        # FIXME: cmtlog here
-        raise ValueError("The text passed to windowwidget() is invalid; "
-                         f"please report this!\n\n{items}")
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+        raise TypeError(unformatted_msg)
+
+    if not isinstance(items[0], dict):
+        msg = [
+            [("windowwidget()", "emphasis"),
+             (" called with invalid argument(s):", "error")],
+            [("items = ", "default"),
+             (f"{items[0]}", "argument"),
+             (" (type:", "default"),
+             (f"{type(items[0])}", "argument"),
+             (", expected: ", "default"),
+             (f"{dict}", "argument"),
+             (")", "default")],
+        ]
+
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+        raise TypeError(unformatted_msg)
 
     columns = len(items[0]["columns"])
     lengths = [0] * columns

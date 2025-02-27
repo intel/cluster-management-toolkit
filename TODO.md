@@ -26,6 +26,8 @@
 
 ## cmu
 
+* "A" in Inventory view is not listed in the helptext. Fix this and check if there are
+  other built-ins that need helptext or (preferably) moved to be defined in the view-files.
 * Divide ping (inventory & context views) into 2 different categories;
   normal and slow; slow to use with hosts that responded with
   "NO ROUTE TO HOST", "CONNECTION TIMED OUT", or "COULD NOT RESOLVE";

@@ -14,14 +14,16 @@ import logging
 import logging.handlers
 import os
 import sys
-from typing import Any, cast, Union
+from typing import Any, cast, Optional, Union
 from collections.abc import Callable
 
 from clustermanagementtoolkit import cmtpaths
 
-from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, LogLevel
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+
+logger: Optional[logging.Logger] = None
 
 
 def log_array_to_string(msglist: list[Union[str, list[ANSIThemeStr]]]) -> str:
@@ -51,15 +53,16 @@ def log_array_to_string(msglist: list[Union[str, list[ANSIThemeStr]]]) -> str:
     return f'"themearray": [{", ".join(loglines)}]'
 
 
-def get_logger(name: str) -> logging.Logger:
+def set_logger(name: str, loglevel: LogLevel) -> None:
     """
     Return a logger that generates log messages as YAML-list entries.
 
         Parameters:
             name (str): The name of the module that the logger is to be used in
-        Returns:
-            (logging.Logger): A logger configured to generate YAML-list entries
+            loglevel (LogLevel): Logging threshold
     """
+    global logger  # pylint: disable=global-statement
+
     formatter = \
         logging.Formatter('- {'
                           '"timestamp": "%(timestamp)s", "severity": "%(levelname)s", '
@@ -74,20 +77,42 @@ def get_logger(name: str) -> logging.Logger:
 
     logger = logging.getLogger(name)
     logger.addHandler(handler)
-    return logger
+    set_level(loglevel)
 
 
-def log(logger: Callable, **kwargs: Any) -> None:
+def __loglevel_to_logger(loglevel: LogLevel) -> Callable:
+    if logger is None:
+        raise ValueError("cmtlog.__loglevel_to_logger() "
+                         "called without being initialized; aborting.")
+
+    if loglevel == LogLevel.DEBUG:
+        return logger.debug
+    if loglevel == LogLevel.INFO:
+        return logger.info
+    if loglevel == LogLevel.WARNING:
+        return logger.warning
+    if loglevel == LogLevel.ERR:
+        return logger.error
+    if loglevel == LogLevel.CRIT:
+        return logger.critical
+    raise ValueError(f"Unsupported LogLevel: {loglevel}")
+
+
+def log(loglevel: LogLevel, **kwargs: Any) -> None:
     """
     Log a message.
 
         Parameters:
-            logger (Logger.severity()): The logger to use
             msg (str): An unformatted log message
             messages ([str|[ANSIThemeStr]]): A list of unformatted strings or formatted strings
     """
     msg = deep_get(kwargs, DictPath("msg"), "")
     messages = deep_get(kwargs, DictPath("messages"), [])
+
+    if logger is None:
+        # If an exception occurs before the logger has been initialised we do not want
+        # the program to abort without a chance to raise an exception, so just return here.
+        return
 
     if not messages and not msg:
         messages = ["Attempted to log without log message"]
@@ -113,7 +138,32 @@ def log(logger: Callable, **kwargs: Any) -> None:
     extra = {
         "messages": messages_joined,
         "timestamp": timestamp,
-        "function": function,
-        "file": f"{os.path.basename(file)}",
+        "function": function,  # pylint: disable=used-before-assignment
+        "file": f"{os.path.basename(file)}",  # pylint: disable=used-before-assignment
     }
-    logger(msg, extra=extra)
+    __loglevel_to_logger(loglevel)(msg, extra=extra)
+
+
+def set_level(loglevel: LogLevel) -> None:
+    """
+    Set logging threshold.
+
+        Parameters:
+            loglevel (LogLevel): One of LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARNING,
+                                 LogLevel.ERR, LogLevel.CRIT
+    """
+    if logger is None:
+        raise TypeError("cmtlog.log() called without being initialized; aborting.")
+
+    if loglevel == LogLevel.DEBUG:
+        logger.setLevel(logging.DEBUG)
+    elif loglevel == LogLevel.INFO:
+        logger.setLevel(logging.INFO)
+    elif loglevel == LogLevel.WARNING:
+        logger.setLevel(logging.WARNING)
+    elif loglevel == LogLevel.ERR:
+        logger.setLevel(logging.ERROR)
+    elif loglevel == LogLevel.CRIT:
+        logger.setLevel(logging.CRITICAL)
+    else:
+        raise ValueError(f"cmtlog.set_level() called with invalid loglevel {loglevel}")

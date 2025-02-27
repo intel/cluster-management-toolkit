@@ -39,7 +39,6 @@ try:  # pragma: no cover
 except ModuleNotFoundError:  # pragma: no cover
     import json  # type: ignore
     DecodeException = json.decoder.JSONDecodeError  # type: ignore
-import logging
 from operator import itemgetter
 import os
 from pathlib import Path
@@ -202,9 +201,6 @@ force_refresh_apis = False  # pylint: disable=invalid-name
 views: dict[str, dict[str, Any]] = {}
 infoviews: dict[tuple[str, str], Any] = {}
 
-program_log = cmtlog.get_logger(about.UI_PROGRAM_NAME)
-program_log.setLevel(logging.DEBUG)
-
 
 def init_kubernetes_client() -> None:
     """
@@ -237,7 +233,7 @@ def gather_cluster_info(**kwargs: Any) -> None:
 
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
-        cmtlog.log(program_log.error, msg=unformatted_msg, messages=formatted_msg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
                                formatted_msg=formatted_msg)
@@ -770,7 +766,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
-        cmtlog.log(program_log.error, msg=unformatted_msg, messages=formatted_msg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
                                formatted_msg=formatted_msg)
@@ -793,9 +789,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
-        cmtlog.log(program_log.error,
-                   msg=unformatted_msg,
-                   messages=formatted_msg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
                                formatted_msg=formatted_msg)
@@ -1371,7 +1365,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                     unformatted_msg, formatted_msg = \
                                         ANSIThemeStr.format_error_msg(msg)
 
-                                    cmtlog.log(program_log.error,
+                                    cmtlog.log(LogLevel.ERR,
                                                msg=unformatted_msg,
                                                messages=formatted_msg)
                                     continue
@@ -1934,7 +1928,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                     unformatted_msg, formatted_msg = \
                                         ANSIThemeStr.format_error_msg(msg)
 
-                                    cmtlog.log(program_log.error,
+                                    cmtlog.log(LogLevel.ERR,
                                                msg=unformatted_msg,
                                                messages=formatted_msg)
                                     continue
@@ -3412,9 +3406,7 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
-        cmtlog.log(program_log.error,
-                   msg=unformatted_msg,
-                   messages=formatted_msg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
 
         curses_helper.alert(stdscr, message=f"Failed to decode data; unsupported format {vtype}",
                             wait_for_keypress=True)
@@ -3481,7 +3473,7 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retv
                                 title=title, formatter=formatter)
 
 
-# pylint: disable-next=unused-argument,too-many-branches
+# pylint: disable-next=too-many-branches
 def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Export data to a file.
@@ -3555,9 +3547,7 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
-        cmtlog.log(program_log.error,
-                   msg=unformatted_msg,
-                   messages=formatted_msg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
 
         curses_helper.alert(stdscr, message=f"Failed to export data; unsupported format {vtype}",
                             wait_for_keypress=True)
@@ -3880,7 +3870,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
                     unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
-                    cmtlog.log(program_log.error, msg=unformatted_msg, messages=formatted_msg)
+                    cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
                     sys.exit(unformatted_msg)
                 else:
                     _shortcuts[_sc] = shortcut
@@ -8454,7 +8444,7 @@ def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> list[dict
         sys.exit(f"Invalid sortcolumn {sortcolumn} for Selector; aborting.")
 
     if refresh_apis:
-        _notice = curses_helper.notice(None, message="Refreshing list of available APIs")
+        _notice = curses_helper.notice(uip.stdscr, message="Refreshing list of available APIs")
         # Repopulate the list of views, on the offhand chance that a view file has been added
         populate_views(force_refresh=refresh_apis)
         curses.doupdate()
@@ -8582,9 +8572,10 @@ def selectwindow(uip: UIProps, **kwargs: Any) -> Retval:
 
     while selection is None:
         extra_args = {"KEY_F6": True}
-        tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2,
-                                                  uip.maxx // 2, items, title=title,
-                                                  preselection=defaultview, **extra_args)
+        tmpselection = \
+            curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2,
+                                       uip.maxx // 2, items, title=title,
+                                       preselection=defaultview, **extra_args)
         if tmpselection is not None:
             # pylint: disable-next=unidiomatic-typecheck
             if type(tmpselection) == int and tmpselection < 0:  # noqa: E721
@@ -10482,6 +10473,47 @@ def main() -> None:
             print("Error: could not find a valid theme file; aborting.", file=sys.stderr)
             sys.exit(errno.ENOENT)
         raise
+
+    # Initialise the logging subsystem
+    tmp_loglevel = deep_get(cmtlib.cmtconfig, DictPath("Debug#loglevel"), "warning")
+    loglevel = LogLevel.WARNING
+    invalid_loglevel = False
+    try:
+        loglevel = name_to_loglevel(tmp_loglevel)
+    except ProgrammingError:
+        loglevel = LogLevel.WARNING
+        invalid_loglevel = True
+
+    cmtlog.set_logger(about.UI_PROGRAM_NAME, loglevel)
+
+    if invalid_loglevel:
+        msg = [
+            [("cmtconfig:Debug#loglevel", "emphasis")],
+            [("loglevel = ", "default"),
+             (f"{loglevel}", "argument"),
+             (" (type:", "default"),
+             (f"{type(loglevel)}", "argument"),
+             (", expected: ", "default"),
+             (f"{LogLevel}", "argument"),
+             (", with value being one of ", "default"),
+             ("debug", "argument"),
+             (", ", "default"),
+             ("info", "argument"),
+             (", ", "default"),
+             ("warning", "argument"),
+             (", ", "default"),
+             ("error", "argument"),
+             (", or ", "default"),
+             ("critical", "argument"),
+             (")", "default")],
+            [("Defaulting to ", "default"),
+             ("info", "argument"),
+             (".", "default")],
+        ]
+
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+
+        cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
 
     CursesConfiguration.abouttext = helptexts.about
     CursesConfiguration.mousescroll_enable = \

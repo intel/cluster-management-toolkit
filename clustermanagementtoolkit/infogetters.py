@@ -2690,6 +2690,8 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
                     fmt = ThemeAttr("main", "default")
                 elif themeref == "emphasis":
                     fmt = ThemeAttr("main", "highlight")
+                elif themeref == "path":
+                    fmt = ThemeAttr("types", "path")
                 elif themeref == "argument":
                     fmt = ThemeAttr("main", "infoheader")
                 elif themeref in ("debug", "info", "warning", "error", "critical"):
