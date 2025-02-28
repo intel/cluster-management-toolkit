@@ -22,6 +22,7 @@ import errno
 from operator import attrgetter
 import os
 from pathlib import Path, PurePath
+import re
 import sys
 from typing import Any, cast, NamedTuple, NoReturn, Optional, Type, Union
 from collections.abc import Callable, Sequence
@@ -112,9 +113,7 @@ class ThemeStr:
                  ("bool", "argument"),
                  (")", "default")],
             ]
-
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    subexception=TypeError,
@@ -209,9 +208,7 @@ class ThemeRef:
                  ("bool", "argument"),
                  (")", "default")],
             ]
-
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -232,9 +229,7 @@ class ThemeRef:
                  (f"'{self.key}'", "argument"),
                  (") does not exist.", "error")],
             ]
-
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -283,9 +278,7 @@ class ThemeRef:
                  (f"'{self.key}'", "argument"),
                  (") does not exist.", "error")],
             ]
-
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -330,9 +323,7 @@ class ThemeArray:
                 [("ThemeArray()", "emphasis"),
                  (" initialised with an empty array", "error")],
             ]
-
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -358,9 +349,7 @@ class ThemeArray:
                  ("bool", "argument"),
                  (")", "default")],
             ]
-
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -383,9 +372,7 @@ class ThemeArray:
                      ("ThemeStr", "argument"),
                      (")", "default")],
                 ]
-
                 unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
                 cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
                 raise ProgrammingError(unformatted_msg,
                                        severity=LogLevel.ERR,
@@ -421,9 +408,7 @@ class ThemeArray:
                  ("ThemeStr", "argument"),
                  (")", "default")],
             ]
-
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -449,9 +434,7 @@ class ThemeArray:
                  ("[ThemeRef|ThemeStr]", "argument"),
                  (")", "default")],
             ]
-
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -617,7 +600,6 @@ def __color_name_to_curses_color(color: tuple[str, str], color_type: str) -> int
              ("(white, normal)", "argument"),
              (".", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
         cmtlog.log(LogLevel.INFO, msg=unformatted_msg, messages=formatted_msg)
 
@@ -644,7 +626,6 @@ def __color_name_to_curses_color(color: tuple[str, str], color_type: str) -> int
              ("normal", "argument"),
              (".", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
         cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
 
@@ -673,7 +654,6 @@ def __color_name_to_curses_color(color: tuple[str, str], color_type: str) -> int
              ("white", "argument"),
              (".", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
         cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
 
@@ -711,7 +691,9 @@ def __init_pair(pair: str, color_pair: tuple[int, int], color_nr: int) -> None:
         msg = [
             [("Themefile ", "error"),
              (f"{themefile}", "path"),
-             (" contains a color pair where fg == bg:", "error")],
+             (" contains a color pair ", "error"),
+             (f"{pair}", "argument"),
+             (" where fg == bg:", "error")],
             [("fg = ", "default"),
              (f"{fg}", "argument")],
             [("bg = ", "default"),
@@ -722,7 +704,6 @@ def __init_pair(pair: str, color_pair: tuple[int, int], color_nr: int) -> None:
              ("black", "argument"),
              (".", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
 
@@ -732,35 +713,75 @@ def __init_pair(pair: str, color_pair: tuple[int, int], color_nr: int) -> None:
     try:
         curses.init_pair(color_nr, fg, bg)
     except (curses.error, ValueError) as e:
-        if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
-            # debuglog.add([
-            #         [ANSIThemeStr("init_pair()", "emphasis"),
-            #          ANSIThemeStr(" failed; attempting to limit fg & bg to ", "error"),
-            #          ANSIThemeStr("0", "argument"),
-            #          ANSIThemeStr("-", "error"),
-            #          ANSIThemeStr("7", "argument"),
-            #          ANSIThemeStr(")", "error")],
-            #        ], severity = LogLevel.DEBUG, facility = str(themefile))
+        tmp = re.match(r"^Color number is greater than COLORS-1 \((\d+)\).*", str(e))
+        if str(e).startswith("init_pair() returned ERR") or tmp is not None:
+            mask = 7
+            if tmp is not None:
+                mask = int(tmp[1])
+
+            msg = [
+                [("Initialising color pair ", "warning"),
+                 (f"{pair}", "argument"),
+                 (" (", "warning"),
+                 (f"{fg}", "argument"),
+                 (", ", "warning"),
+                 (f"{bg}", "argument"),
+                 (") failed.", "warning")],
+                [("Attempting to limit fg & bg to [", "warning"),
+                 ("0", "argument"),
+                 ("-", "warning"),
+                 (f"{mask}", "argument"),
+                 ("]", "warning")],
+                [("themefile = ", "default"),
+                 (f"{themefile}", "path")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+            cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
 
             # Most likely we failed due to the terminal only
             # supporting colours 0-7. If "bright black" was
             # requested, we need to remap it. Fallback to blue;
             # hopefully there are no cases of bright black on blue.
-            if fg & 7 == curses.COLOR_BLACK:
+            fg_old = fg
+            if fg & mask == curses.COLOR_BLACK:
                 fg = curses.COLOR_BLUE
                 bright_black_remapped = True
-            if fg & 7 == bg & 7:
-                # debuglog.add([
-                #         [ANSIThemeStr("__init_pair()", "emphasis"),
-                #          ANSIThemeStr(" called with a color pair where fg == bg (", "error"),
-                #          ANSIThemeStr(f"{fg}", "argument"),
-                #          ANSIThemeStr(",", "error"),
-                #          ANSIThemeStr(f"{bg}", "argument"),
-                #          ANSIThemeStr(f"{bright_black_remapped}", "argument")],
-                #        ], severity = LogLevel.ERR, facility = str(themefile))
-                raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; "
-                                 f"bright black remapped: {bright_black_remapped})") from e
-            curses.init_pair(color_nr, fg & 7, bg & 7)
+            if fg & mask == bg & mask:
+                msg = [
+                    [("Initialising color pair ", "error"),
+                     (f"{pair}", "argument"),
+                     (" (", "warning"),
+                     (f"{fg & mask}", "argument"),
+                     (", ", "error"),
+                     (f"{bg & mask}", "argument"),
+                     (") failed; fg == bg (bright black remapped: ", "error"),
+                     (f"{bright_black_remapped}", "argument"),
+                     (")", "error")],
+                    [("themefile = ", "default"),
+                     (f"{themefile}", "path")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                raise ValueError(unformatted_msg) from e
+            curses.init_pair(color_nr, fg & mask, bg & mask)
+
+            msg = [
+                [("Remapped the color pair ", "debug"),
+                 (f"{pair}", "argument"),
+                 (" (", "warning"),
+                 (f"{fg_old}", "argument"),
+                 (", ", "debug"),
+                 (f"{bg}", "argument"),
+                 (") to (", "debug"),
+                 (f"{fg & mask}", "argument"),
+                 (", ", "debug"),
+                 (f"{bg & mask}", "argument"),
+                 ("; bright black remapped: ", "debug"),
+                 (f"{bright_black_remapped}", "argument"),
+                 (")", "error")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+            cmtlog.log(LogLevel.DEBUG, msg=unformatted_msg, messages=formatted_msg)
         else:
             raise
 
@@ -785,27 +806,23 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
     if themefile is None:
         if configthemefile:
             msg = [
-                [("curses_helper.read_theme()", "emphasis"),
-                 (" failed to load ", "error"),
+                [("Failed to load themefile ", "error"),
                  (f"{configthemefile}", "path"),
-                 ("; file not found", "error")],
+                 ("; file not found.", "error")],
             ]
         elif defaultthemefile:
             msg = [
-                [("curses_helper.read_theme()", "emphasis"),
-                 (" failed to load ", "error"),
+                [("Failed to load default themefile ", "error"),
                  (f"{defaultthemefile}", "path"),
-                 ("; file not found", "error")],
+                 ("; file not found.", "error")],
             ]
         else:
             msg = [
-                [("curses_helper.read_theme()", "emphasis"),
-                 (" failed to load theme; both the themefile "
+                [("Failed to load themefile; both the configthemefile "
                   "and the defaultthemefile paths are empty", "error")],
             ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                subexception=FileNotFoundError,
                                severity=LogLevel.ERR,
@@ -829,6 +846,14 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
     violations = check_path(theme_dir, checks=checks)
     if violations != [SecurityStatus.OK]:
         violations_joined = join_securitystatus_set(",", set(violations))
+        msg = [
+            [("FilePathAuditError: ", "emphasis")],
+            [(f"Violated rules: {violations_joined}", "error")],
+            [("Path: ", "error"),
+             (f"{theme_dir}", "path")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=theme_dir)
 
     # We do not want to check that parent resolves to itself,
@@ -945,7 +970,7 @@ def color_status_group(status_group: StatusGroup) -> ThemeAttr:
     """
     try:
         return ThemeAttr("main", stgroup_mapping[status_group])
-    except KeyError as e:
+    except KeyError:
         msg = [
             [("color_status_group()", "emphasis"),
              (" called with invalid argument(s):", "error")],
@@ -956,11 +981,12 @@ def color_status_group(status_group: StatusGroup) -> ThemeAttr:
              (", expected: ", "default"),
              (f"{repr(StatusGroup)}", "argument"),
              (")", "default")],
+            [("Defaulting to: ", "default"),
+             (f"{repr(StatusGroup.UNKNOWN)}", "argument")],
         ]
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-        raise ProgrammingError(unformatted_msg,
-                               severity=LogLevel.ERR,
-                               formatted_msg=formatted_msg) from e
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+        return ThemeAttr("main", stgroup_mapping[StatusGroup.UNKNOWN])
 
 
 def window_tee_hline(win: curses.window, y: int,

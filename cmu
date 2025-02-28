@@ -9547,7 +9547,7 @@ def populate_views(force_refresh: bool = False) -> None:
             _shortcuts = deep_get(d, DictPath("infoview#shortcuts"), {})
 
             # Always include the shortcuts for YAML dump and JSON dump, unless overridden
-            if "YAML" not in _shortcuts:
+            if "View YAML dump" not in _shortcuts:
                 _shortcuts["View JSON dump of resource"] = {
                     "key": "j",
                     "read_only": True,

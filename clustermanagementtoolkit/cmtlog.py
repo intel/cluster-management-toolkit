@@ -72,7 +72,7 @@ def set_logger(name: str, loglevel: LogLevel) -> None:
                           '}')
     handler = \
         logging.handlers.RotatingFileHandler(cmtpaths.CMT_LOGS_DIR.joinpath(f"{name}.log.yaml"),
-                                             backupCount=100)
+                                             maxBytes=1_000_000, backupCount=10)
     handler.setFormatter(formatter)
 
     logger = logging.getLogger(name)
