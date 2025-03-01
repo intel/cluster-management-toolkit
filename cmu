@@ -2162,6 +2162,13 @@ def __resource_map_cursor(**kwargs: Any) -> tuple[Retval, dict]:
     }
 
 
+def __open_listview(**kwargs: Any) -> tuple[Retval, dict]:
+    uip = deep_get(kwargs, DictPath("uip"))
+    kind = deep_get(kwargs, DictPath("kind"), "")
+    api_family = deep_get(kwargs, DictPath("api_family"), "")
+    return listviewdispatch(uip.stdscr, obj={}, kind=(kind, api_family), root=True), {}
+
+
 def __open_reference(**kwargs: Any) -> tuple[Retval, dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
@@ -2235,6 +2242,16 @@ clusteroverview_shortcuts = {
         "Switch main view (recheck available API resources)",
         "Show information about the program",
     ],
+    "Open list page for Events": {
+        "helptext": ("[Shift] + E", "Open list page for Events"),
+        "shortcut": [ord("E")],
+        "helpgroup": 2,
+        "action": "key_callback",
+        "action_call": __open_listview,
+        "action_args": {
+            "kind": "Event",
+        },
+    },
     "Open info page for Node": {
         "helptext": ("D", "Open info page for Node"),
         "shortcut": [ord("d")],
@@ -2448,7 +2465,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     sortcolumn=sortcolumn, sortorder_reverse=sortorder_reverse,
                     activatedfun=activatedfun, on_activation=on_activation)
 
-    infopadheight = 11
+    infopadheight = 10
     eventpadheight = 7
 
     # For generic information
@@ -2795,7 +2812,8 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
         # Draw the events over the bottom of the visible area of the listpad
         eventarrays: list[list[Union[ThemeRef, ThemeStr]]] = [
-            [ThemeStr("Events:", ThemeAttr("main", "listheader_compact"))],
+            [ThemeStr("E", ThemeAttr("main", "listheader_compact_shortcut")),
+             ThemeStr("vents:", ThemeAttr("main", "listheader_compact"))],
         ]
 
         tmp2: list[Union[ThemeRef, ThemeStr]] = []
@@ -2855,9 +2873,9 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             node_heatmap_xpos = 0
             pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 2
 
+            taints = deep_get(nodeinfo, DictPath(f"{selected_node}#taints"), "<none>")
             selectednodetaints = \
-                generators.format_list(nodeinfo[selected_node].taints, fieldlen=node_heatmap_width,
-                                       pad=False,
+                generators.format_list(taints, fieldlen=node_heatmap_width, pad=False,
                                        field_colors=[ThemeAttr("types", "key"),
                                                      ThemeAttr("types", "value")],
                                        field_separators=[ThemeRef("separators", "keyvalue_taint")])
@@ -3838,7 +3856,8 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     # Should log messages be prefixed with severity (when set)?
     severity_prefixes: bool = deep_get(cmtlib.cmtconfig, DictPath("Log#severity_prefixes"), False)
 
-    # FIXME: Maybe this should be moved to populated_views() instead?
+    # Note: This cannot be moved to populate_views() since there are shortcuts that are
+    # populated conditionally.
     if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False):
         _shortcuts: dict[int, str] = {}
         for shortcut in shortcuts:
@@ -4477,23 +4496,23 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 return retval
             uip.refresh_all()
             continue
-        elif c == curses.KEY_F3:
+        if c == curses.KEY_F3:
             if (retval := selectwindow(uip, refresh_apis=True)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
             continue
-        elif c == ord("^"):
+        if c == ord("^"):
             retval = listviewdispatch(uip.stdscr, obj={}, kind=kind, root=True)
             if retval == Retval.RETURNFULL:
                 return retval
             continue
-        elif c == ord("B"):
+        if c == ord("B"):
             uip.toggle_borders()
             uip.refresh_all()
             uip.update_forced = True
             uip.force_update()
             continue
-        elif c == ord("W") and uip.listpad is not None:
+        if c == ord("W") and uip.listpad is not None:
             if not field_indexes:
                 continue
 
@@ -4518,22 +4537,22 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             uip.update_forced = True
             uip.force_update()
             continue
-        elif c == ord("R") and uip.logpad is not None:
+        if c == ord("R") and uip.logpad is not None:
             raw_output = not raw_output
             uip.refresh_all()
             uip.force_update()
             continue
-        elif c == ord("W") and uip.logpad is not None:
+        if c == ord("W") and uip.logpad is not None:
             wrap_lines = not wrap_lines
             uip.refresh_all()
             uip.force_update()
             continue
-        elif c == ord("S") and uip.logpad is not None and severities:
+        if c == ord("S") and uip.logpad is not None and severities:
             severity_prefixes = not severity_prefixes
             uip.refresh_all()
             uip.force_update()
             continue
-        elif c == ord("T") and uip.logpad is not None and timestamps:
+        if c == ord("T") and uip.logpad is not None and timestamps:
             uip.toggle_timestamps()
             uip.refresh_all()
             uip.force_update()
@@ -8886,7 +8905,7 @@ views_special: dict[str, dict[str, Any]] = {
     "Cluster Overview": {
         "windowheader": "Cluster Overview",
         "kind": ("__ClusterOverview", ""),
-        "commandline": ["clusteroverview", "clusterinfo", "overview", "co", "ci"],
+        "commandline": ["clusteroverview", "co"],
         "group": "Administration",
         "viewfunc": clusteroverviewloop,
         "fields": None,
@@ -10105,7 +10124,7 @@ def open_view(options: list[tuple[str, str]], args: list[str]) -> None:
             sys.exit(errno.EINVAL)
 
     # We do not need escape sequences, so cut down on the delay to 25ms
-    os.environ.setdefault('ESCDELAY', '25')
+    os.environ.setdefault("ESCDELAY", "25")
 
     init_kubernetes_client()
     ansithemeprint([ANSIThemeStr("Checking available Kubernetes APIs\n", "default")])
