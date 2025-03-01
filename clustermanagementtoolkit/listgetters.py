@@ -2248,6 +2248,7 @@ def listgetter_matchrules(obj: dict, **kwargs: Any) -> tuple[list[dict], str]:
     return match_list, status
 
 
+# pylint: disable-next=too-many-locals
 def listgetter_namespaced_resources(obj: dict, **kwargs: Any) -> \
         tuple[list, Union[str, int, list[StatusGroup]]]:
     """

@@ -84,15 +84,14 @@ from clustermanagementtoolkit.cmtpaths import HOMEDIR, SYSTEM_PARSERS_DIR, PARSE
 
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath
-from clustermanagementtoolkit.cmttypes import LogLevel, loglevel_mappings, loglevel_to_name
+from clustermanagementtoolkit.cmttypes import LogLevel
+from clustermanagementtoolkit.cmttypes import loglevel_to_name, name_to_loglevel
 from clustermanagementtoolkit.cmttypes import ProgrammingError
 
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 
 from clustermanagementtoolkit import cmtlib
 from clustermanagementtoolkit.cmtlib import none_timestamp, strip_ansicodes
-
-# from cmtlog import debuglog
 
 from clustermanagementtoolkit import formatters
 
@@ -165,42 +164,6 @@ else:
         """
         indent = 2
         return json.dumps(obj, indent=indent)
-
-
-def get_loglevel_names() -> list[str]:
-    """
-    Ugly way of removing duplicate values from dict.
-
-        Returns:
-            ([str]): The unique severities
-    """
-    return list(dict.fromkeys(list(loglevel_mappings.values())))
-
-
-def name_to_loglevel(severity: str) -> LogLevel:
-    """
-    Given a severity string, return its numerical number.
-
-        Parameters:
-            name  (int): The corresponding numerical loglevel
-        Returns:
-            (str): A severity string
-    """
-    for _severity, _severity_string in loglevel_mappings.items():
-        if _severity_string.lower() == severity.lower():
-            return _severity
-
-    msg = [
-        [("Loglevel ", "error"),
-         (f"{severity}", "argument"),
-         (" does not exist!", "error")]
-    ]
-
-    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
-    raise ProgrammingError(unformatted_msg,
-                           severity=LogLevel.ERR,
-                           formatted_msg=formatted_msg)
 
 
 def month_to_numerical(month: str) -> str:

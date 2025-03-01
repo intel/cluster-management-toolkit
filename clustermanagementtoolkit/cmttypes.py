@@ -867,6 +867,22 @@ loglevel_mappings = {
 }
 
 
+def name_to_loglevel(severity: str) -> LogLevel:
+    """
+    Given a severity string, return its numerical number.
+
+        Parameters:
+            name  (int): The corresponding numerical loglevel
+        Returns:
+            (str): A severity string
+    """
+    for severity_, severity_string_ in loglevel_mappings.items():
+        if severity_string_.lower() == severity.lower():
+            return severity_
+
+    return LogLevel.DEFAULT
+
+
 def loglevel_to_name(loglevel: LogLevel) -> str:
     """
     Given a numerical loglevel, return its severity string.
@@ -877,6 +893,16 @@ def loglevel_to_name(loglevel: LogLevel) -> str:
             (str): A severity string
     """
     return loglevel_mappings[max(LogLevel.EMERG, min(LogLevel.DIFFSAME, loglevel))]
+
+
+def get_loglevel_names() -> list[str]:
+    """
+    Ugly way of removing duplicate values from dict.
+
+        Returns:
+            ([str]): The unique severities
+    """
+    return list(dict.fromkeys(list(loglevel_mappings.values())))
 
 
 class Retval(Enum):

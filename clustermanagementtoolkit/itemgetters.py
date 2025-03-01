@@ -74,7 +74,7 @@ def get_conditions(obj: dict, **kwargs: Any) -> list[dict]:
     return condition_list
 
 
-# pylint: disable-next=too-many-locals
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
     """
     Get a list of fields from Kubernetes objects.

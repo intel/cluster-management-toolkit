@@ -66,6 +66,8 @@ from clustermanagementtoolkit.cmttypes import deep_get_str_tuple_paths, deep_set
 from clustermanagementtoolkit.cmttypes import FilePath, Retval
 from clustermanagementtoolkit.cmttypes import SecurityPolicy, SecurityStatus, StatusGroup
 from clustermanagementtoolkit.cmttypes import ProgrammingError, FilePathAuditError
+from clustermanagementtoolkit.cmttypes import name_to_loglevel, loglevel_to_name
+from clustermanagementtoolkit.cmttypes import get_loglevel_names
 
 from clustermanagementtoolkit import cmtpaths
 from clustermanagementtoolkit.cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR
@@ -92,8 +94,7 @@ from clustermanagementtoolkit.logparser import logparser, logparser_initialised
 from clustermanagementtoolkit.logparser import LogLevel, LogparserConfiguration
 from clustermanagementtoolkit.logparser import lvl_to_letter_severity, lvl_to_4letter_severity
 from clustermanagementtoolkit.logparser import lvl_to_word_severity
-from clustermanagementtoolkit.logparser import loglevel_to_name, get_loglevel_names
-from clustermanagementtoolkit.logparser import name_to_loglevel, get_parser_list
+from clustermanagementtoolkit.logparser import get_parser_list
 
 from clustermanagementtoolkit import curses_helper
 
@@ -226,13 +227,11 @@ def gather_cluster_info(**kwargs: Any) -> None:
     """
     if (kh_ := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         msg = [
-            [("gather_cluster_info()", "emphasis"),
-             (" called without ", "error"),
-             ("kubernetes_helper", "argument")],
+            [("Function called with invalid argument(s):", "default")],
+            [("kubernetes_helper", "argument"),
+             (" is missing or None.", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -746,8 +745,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     if not (isinstance(stdscr, curses.window) and isinstance(view, str)):
         msg = [
-            [("genericlistloop()", "emphasis"),
-             (" called with invalid argument(s):", "error")],
+            [("Function called with invalid argument(s):", "error")],
             [("stdscr = ", "default"),
              (f"{stdscr}", "argument"),
              (" (type: ", "default"),
@@ -761,11 +759,9 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
              (f"{type(view)}", "argument"),
              (", expected: ", "default"),
              ("str", "argument"),
-             (")", "default")],
+             (").", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -786,9 +782,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
              (f"{dict}", "argument"),
              (" with at least one element)", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -1361,10 +1355,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                          ("<dir>", "argument"),
                                          (")", "default")],
                                     ]
-
                                     unformatted_msg, formatted_msg = \
                                         ANSIThemeStr.format_error_msg(msg)
-
                                     cmtlog.log(LogLevel.ERR,
                                                msg=unformatted_msg,
                                                messages=formatted_msg)
@@ -1924,10 +1916,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                          ("<dir>", "argument"),
                                          (")", "default")],
                                     ]
-
                                     unformatted_msg, formatted_msg = \
                                         ANSIThemeStr.format_error_msg(msg)
-
                                     cmtlog.log(LogLevel.ERR,
                                                msg=unformatted_msg,
                                                messages=formatted_msg)
@@ -3403,9 +3393,7 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
              ("base64-utf-8", "argument"),
              (")", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
 
         curses_helper.alert(stdscr, message=f"Failed to decode data; unsupported format {vtype}",
@@ -3473,7 +3461,7 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retv
                                 title=title, formatter=formatter)
 
 
-# pylint: disable-next=too-many-branches
+# pylint: disable-next=too-many-branches,too-many-locals
 def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Export data to a file.
@@ -3544,9 +3532,7 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
              ("base64-utf-8", "argument"),
              (")", "default")],
         ]
-
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
 
         curses_helper.alert(stdscr, message=f"Failed to export data; unsupported format {vtype}",
@@ -3848,6 +3834,9 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             "itemgetter": itemgetters.get_conditions,
             "force_update": False,
         }
+
+    # Should log messages be prefixed with severity (when set)?
+    severity_prefixes: bool = deep_get(cmtlib.cmtconfig, DictPath("Log#severity_prefixes"), False)
 
     # FIXME: Maybe this should be moved to populated_views() instead?
     if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False):
@@ -4224,6 +4213,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 infogetter = deep_get(viewref, DictPath("logpad#infogetter"))
                 infogetter_args = deep_get(viewref, DictPath("logpad#infogetter_args"), {})
                 infogetter_args["_show_raw"] = raw_output
+                infogetter_args["severity_prefixes"] = severity_prefixes
 
                 if infogetter is not None:
                     tmp = infogetter(formatted_obj, **infogetter_args)
@@ -4234,6 +4224,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                         timestamps, facilities, severities, messages = tmp
                     else:
                         messages = tmp
+                        severity_prefixes = False
                     uip.update_log_info(timestamps, facilities, severities, messages)
 
         # Output listpad if we have one
@@ -4322,7 +4313,18 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 else:
                     severity = severities[uip.yoffset + y]
 
-                message = messages[uip.yoffset + y]
+                message = copy.copy(messages[uip.yoffset + y])
+                if isinstance(message, str):
+                    message = [ThemeStr(message, color_log_severity(severity))]
+                if severity_prefixes:
+                    severitystr = loglevel_to_name(severity)
+                    if uip.yoffset + y < len(timestamps) \
+                            and timestamps[uip.yoffset + y] != none_timestamp():
+                        message.insert(0, ThemeStr(f"{severitystr}: ",
+                                                   color_log_severity(severity)))
+                    else:
+                        message.insert(0, ThemeStr("".ljust(len(severitystr) + 2),
+                                                   color_log_severity(severity)))
                 if uip.search_matches:
                     line_match = uip.yoffset + y in uip.search_matches
                     match_prefix: list[Union[ThemeRef, ThemeStr]] = \
@@ -4339,8 +4341,6 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     maxwidth = uip.logpadminwidth + sideadjust
                 else:
                     maxwidth = -1
-                if isinstance(message, str):
-                    message = [ThemeStr(message, color_log_severity(severity))]
                 if facility is not None:
                     message = facility + message
                 untruncated_len = themearray_len(message)
@@ -4476,19 +4476,23 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             if (retval := selectwindow(uip)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
+            continue
         elif c == curses.KEY_F3:
             if (retval := selectwindow(uip, refresh_apis=True)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
+            continue
         elif c == ord("^"):
             retval = listviewdispatch(uip.stdscr, obj={}, kind=kind, root=True)
             if retval == Retval.RETURNFULL:
                 return retval
+            continue
         elif c == ord("B"):
             uip.toggle_borders()
             uip.refresh_all()
             uip.update_forced = True
             uip.force_update()
+            continue
         elif c == ord("W") and uip.listpad is not None:
             if not field_indexes:
                 continue
@@ -4513,18 +4517,27 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             uip.refresh_all()
             uip.update_forced = True
             uip.force_update()
+            continue
         elif c == ord("R") and uip.logpad is not None:
             raw_output = not raw_output
             uip.refresh_all()
             uip.force_update()
+            continue
         elif c == ord("W") and uip.logpad is not None:
             wrap_lines = not wrap_lines
             uip.refresh_all()
             uip.force_update()
-        elif c == ord("T") and uip.logpad is not None:
+            continue
+        elif c == ord("S") and uip.logpad is not None and severities:
+            severity_prefixes = not severity_prefixes
+            uip.refresh_all()
+            uip.force_update()
+            continue
+        elif c == ord("T") and uip.logpad is not None and timestamps:
             uip.toggle_timestamps()
             uip.refresh_all()
             uip.force_update()
+            continue
 
         for _key, sc_value in shortcuts.items():
             if (shortcut_keys := deep_get(sc_value, DictPath("shortcut"))) is None:

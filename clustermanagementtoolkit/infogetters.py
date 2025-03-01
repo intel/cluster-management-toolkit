@@ -36,6 +36,8 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
+from clustermanagementtoolkit import about
+
 from clustermanagementtoolkit.ansible_helper import ansible_get_logs
 
 from clustermanagementtoolkit.cmtio import execute_command_with_response, secure_which
@@ -48,11 +50,13 @@ from clustermanagementtoolkit.cmtlib import normalise_cpu_usage_to_millicores
 from clustermanagementtoolkit.cmtlib import normalise_mem_to_bytes, normalise_mem_bytes_to_str
 from clustermanagementtoolkit.cmtlib import split_msg
 
+from clustermanagementtoolkit import cmtlog
+
 from clustermanagementtoolkit.cmtpaths import BINDIR
 
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_list, deep_get_with_fallback
 from clustermanagementtoolkit.cmttypes import deep_set, DictPath, FilePath, SecurityPolicy
-from clustermanagementtoolkit.cmttypes import ProgrammingError, StatusGroup
+from clustermanagementtoolkit.cmttypes import ProgrammingError, StatusGroup, name_to_loglevel
 
 from clustermanagementtoolkit.curses_helper import color_status_group
 from clustermanagementtoolkit.curses_helper import get_theme_ref, themearray_len
@@ -79,6 +83,8 @@ from clustermanagementtoolkit import listgetters
 
 import clustermanagementtoolkit.logparser as logparsers
 from clustermanagementtoolkit.logparser import LogLevel
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 
 
 def __process_string(value: str, replace_quotes: str) -> str:
@@ -1654,11 +1660,18 @@ def get_node_addresses(addresses: list[dict]) -> tuple[str, list[str], list[str]
             if new_name is None:
                 new_name = address_address
             else:
+                msg = [
+                    [("A host was encountered with multiple hostnames; ", "default"),
+                     (f"{about.UI_PROGRAM_NAME}", "programname"),
+                     (" currently only supports single hostnames.", "default")],
+                    [("Please file a bugreport and include a YAML or JSON-dump "
+                      "for the node ", "default"),
+                     (f"{new_name}", "hostname"),
+                     (".", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
                 pass
-                # debuglog.add([
-                #         [ANSIThemeStr("We need to handle multiple hostnames "
-                #                       "in a better way", "default")],
-                #        ], severity=LogLevel.ERR)
         else:
             continue
 
@@ -2615,6 +2628,10 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
         Parameters:
             obj (dict): The object to extract log entries from
             **kwargs (dict[str, Any]): Keyword arguments
+                severity_prefixes (str): Prefix every message with the severity;
+                                         useful when using a limited terminal,
+                                         for use with CVD, etc.
+                filepath (str): The path to the file to read log messages from
         Returns:
             (([str], [str], [str], [str])):
                 ([str]): A list of formatted timestamps
@@ -2623,6 +2640,7 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
                 ([ThemeArray]): A list of ThemeArrays
     """
     filepath = deep_get(obj, DictPath("filepath"), "")
+    severity_prefixes = deep_get(kwargs, DictPath("severity_prefixes"), False)
     timestamps: list[str] = []
     facilities: list[Union[str, tuple[str, str]]] = []
     severities: list[LogLevel] = []
@@ -2640,7 +2658,8 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
 
     for message in d:
         timestamp = deep_get(message, DictPath("timestamp"), "")
-        severity = deep_get(message, DictPath("severity"), "")
+        severitystr = deep_get(message, DictPath("severity"), "")
+        severity = name_to_loglevel(severitystr)
         facility = deep_get(message, DictPath("facility"), "")
         file = deep_get(message, DictPath("file"), "")
         function = deep_get(message, DictPath("function"), "")
@@ -2686,20 +2705,27 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
                 else:
                     string = substring
                     themeref = "default"
+                fmt = None
                 if themeref == "default":
-                    fmt = ThemeAttr("main", "default")
+                    # When prepending the severity in front of the message we do not need to
+                    # highlight the text, otherwise we use the severity as highlight colour.
+                    if severity_prefixes:
+                        fmt = ThemeAttr("main", "default")
+                    else:
+                        themeref = severitystr.lower()
                 elif themeref == "emphasis":
                     fmt = ThemeAttr("main", "highlight")
-                elif themeref == "path":
-                    fmt = ThemeAttr("types", "path")
+                elif themeref in ("path", "hostname"):
+                    fmt = ThemeAttr("types", themeref)
+                elif themeref == "programname":
+                    fmt = ThemeAttr("main", "highlight")
                 elif themeref == "argument":
                     fmt = ThemeAttr("main", "infoheader")
-                elif themeref in ("debug", "info", "warning", "error", "critical"):
+                if themeref in ("debug", "info", "warning", "error", "critical"):
                     fmt = ThemeAttr("logview", f"severity_{themeref}")
-                # Insert more here when necessary
-                else:
+                if fmt is None:
                     fmt = ThemeAttr("main", "default")
-                reformatted_msg.append(ThemeStr(string, fmt))
+                reformatted_msg.append(ThemeStr(string, cast(ThemeAttr, fmt)))
             messages.append(reformatted_msg)
 
     return timestamps, facilities, severities, messages
