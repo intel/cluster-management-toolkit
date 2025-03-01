@@ -94,6 +94,7 @@ color_pairs_curses:
     unselected: [["black", "bright"], ["black", "normal"]]
     selected: [["black", "normal"], ["white", "normal"]]
   listheader: [["white", "bright"], ["black", "normal"]]
+  listheader_compact: [["white", "bright"], ["black", "normal"]]
   listheader_arrows: [["cyan", "normal"], ["black", "normal"]]
   infoheader: [["white", "bright"], ["black", "normal"]]
   infoheader_note: [["green", "normal"], ["black", "normal"]]
@@ -159,6 +160,9 @@ color_pairs_curses:
   hostname:
     unselected: [["white", "bright"], ["black", "normal"]]
     selected: [["black", "bright"], ["white", "normal"]]
+  programname:
+    unselected: [["cyan", "bright"], ["black", "normal"]]
+    selected: [["cyan", "bright"], ["white", "normal"]]
   http_protocol: [["green", "normal"], ["black", "normal"]]
   url:
     unselected: [["cyan", "normal"], ["black", "normal"]]
@@ -524,8 +528,10 @@ color_pairs_curses:
     unselected: [["white", "normal"], ["black", "normal"]]
     selected: [["black", "normal"], ["white", "normal"]]
   separator_line_break: [["cyan", "normal"], ["black", "normal"]]
-  separator_facility_extended_prefix: [["black", "bright"], ["black", "normal"]]
-  separator_facility_extended_suffix: [["black", "bright"], ["black", "normal"]]
+  separator_facility_extended_prefix: [["black", "bright"],
+                                       ["black", "normal"]]
+  separator_facility_extended_suffix: [["black", "bright"],
+                                       ["black", "normal"]]
   separator_facility_prefix: [["black", "bright"], ["black", "normal"]]
   separator_facility_suffix: [["black", "bright"], ["black", "normal"]]
   type_dir_dev: [["yellow", "normal"], ["black", "bright"]]
@@ -686,11 +692,12 @@ main:
     unselected: ["listheader", "bold"]
   listheader_arrows: "listheader_arrows"
   # headers in info fields
-  listheader_compact: ["listheader", ["underline", "bold"]]
+  listheader_compact: ["listheader_compact", "bold"]
+  listheader_compact_shortcut: ["listheader_compact", ["underline", "bold"]]
   infoheader: ["infoheader", "bold"]
   infoheader_note: "infoheader_note"
   # highlight for shortcut key in info fields
-  infoheader_shortcut: ["infoheader", ["bold", "underline"]]
+  infoheader_shortcut: ["infoheader", ["underline", "bold"]]
   # Box drawing in the main window
   boxdrawing: "boxdrawing"
   # Main window title
@@ -909,6 +916,7 @@ types:
   path: "type_path"
   port: "type_port"
   positive_check: ["type_positive_check", "bold"]
+  programname: ["programname", "bold"]
   protocol: ["type_protocol", "bold"]
   range: "type_range"
   resource: "type_resource"

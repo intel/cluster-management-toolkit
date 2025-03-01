@@ -80,6 +80,8 @@ except ModuleNotFoundError:
     # pylint: disable-next=invalid-name
     validators = None
 
+from clustermanagementtoolkit import cmtlog
+
 from clustermanagementtoolkit.cmtpaths import HOMEDIR, SYSTEM_PARSERS_DIR, PARSER_DIR
 
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
@@ -1622,10 +1624,12 @@ def json_event(message: str,
             new_message = [ThemeStr(f"{tmp[0]} {event}", ThemeAttr("logview", severity_name)),
                            ThemeStr(" [State modified]", ThemeAttr("logview", "modified"))]
     else:
-        # debuglog.add([
-        #         [ANSIThemeStr("Unknown EVENT type: ", "default"),
-        #          ANSIThemeStr(f"{event}", "argument")],
-        #          ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")
+        errmsg = [
+            [("Unknown EVENT type: ", "default"),
+             (f"{event}", "argument")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         return message, severity, facility, remnants
 
     return new_message, severity, facility, remnants

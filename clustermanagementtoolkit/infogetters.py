@@ -1671,7 +1671,6 @@ def get_node_addresses(addresses: list[dict]) -> tuple[str, list[str], list[str]
                 ]
                 unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
                 cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
-                pass
         else:
             continue
 
@@ -2618,7 +2617,7 @@ def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[Union[ThemeRef, Them
     return dump_formatter(deep_get(obj, path, ""))
 
 
-# pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def get_cmt_log(obj: dict, **kwargs: Any) -> \
         tuple[list[str], list[Union[str, tuple[str, str]]], list[LogLevel],
               list[Union[list[Union[ThemeRef, ThemeStr]], str]]]:
@@ -2715,10 +2714,8 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
                         themeref = severitystr.lower()
                 elif themeref == "emphasis":
                     fmt = ThemeAttr("main", "highlight")
-                elif themeref in ("path", "hostname"):
+                elif themeref in ("path", "hostname", "programname"):
                     fmt = ThemeAttr("types", themeref)
-                elif themeref == "programname":
-                    fmt = ThemeAttr("main", "highlight")
                 elif themeref == "argument":
                     fmt = ThemeAttr("main", "infoheader")
                 if themeref in ("debug", "info", "warning", "error", "critical"):

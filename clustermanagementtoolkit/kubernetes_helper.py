@@ -52,13 +52,14 @@ from clustermanagementtoolkit.cmtpaths import HOMEDIR, KUBE_CONFIG_FILE, KUBE_CR
 
 from clustermanagementtoolkit import cmtlib
 
-# from clustermanagementtoolkit.cmtlog import debuglog
+from clustermanagementtoolkit import cmtlog
 
-# from clustermanagementtoolkit.cmttypes import LogLevel
-
+from clustermanagementtoolkit.cmttypes import LogLevel
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, ProgrammingError
 from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, StatusGroup
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 
 from clustermanagementtoolkit.cmtio import execute_command_with_response, secure_which
 from clustermanagementtoolkit.cmtio import secure_read
@@ -2326,18 +2327,20 @@ class KubernetesHelper:
             message = f"No route to host; method: {method}, URL: {url}; " \
                       f"header_params: {header_params}"
         else:
-            # debuglog.add([
-            #        [ANSIThemeStr("__rest_helper_generic_json():", "emphasis")],
-            #        [ANSIThemeStr(f"Unhandled error: {result.status}", "error")],
-            #        [ANSIThemeStr("method: ", "emphasis"),
-            #         ANSIThemeStr(f"{method}", "argument")],
-            #        [ANSIThemeStr("URL: ", "emphasis"),
-            #         ANSIThemeStr(f"{url}", "argument")],
-            #        [ANSIThemeStr("header_params: ", "emphasis"),
-            #         ANSIThemeStr(f"{header_params}", "argument")],
-            #       ], severity=LogLevel.ERR)
-            sys.exit(f"__rest_helper_generic_json():\nUnhandled error: {result.status}\n"
-                     f"method: {method}\nURL: {url}\nheader_params: {header_params}")
+            errmsg = [
+                [("Unhandled HTTP error: ", "default")],
+                [(f"{result.status}", "errorvalue")],
+                [("method: ", "default"),
+                 (f"{method}", "argument")],
+                [("URL: ", "default"),
+                 (f"{url}", "argument")],
+                [("header_params: ", "default"),
+                 (f"{header_params}", "argument")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+
+            sys.exit("__rest_helper_generic_json():\n" + unformatted_msg)
 
         return data, message, status
 
