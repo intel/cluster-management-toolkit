@@ -398,11 +398,22 @@ def test_get_kubernetes_objects(verbose: bool = False) -> tuple[str, bool]:
                     },
                 ], 200),
                 [
-                    (
-                        "default",
-                        "cert-manager",
-                        "2024-10-23T20:24:11Z",
-                    ),
+                    {
+                        "fields": (
+                            "default",
+                            "cert-manager",
+                            "2024-10-23T20:24:11Z",
+                        ),
+                        "ref": {
+                            "kind": "Service",
+                            "apiVersion": "v1",
+                            "metadata": {
+                                "name": "cert-manager",
+                                "namespace": "default",
+                                "creationTimestamp": "2024-10-23T20:24:11Z",
+                            },
+                        },
+                    },
                 ],
                 None,
             ),
@@ -437,11 +448,22 @@ def test_get_kubernetes_objects(verbose: bool = False) -> tuple[str, bool]:
                     },
                 ], 200),
                 [
-                    (
-                        "default",
-                        "cert-manager",
-                        "2024-10-23T20:24:11Z",
-                    ),
+                    {
+                        "fields": (
+                            "default",
+                            "cert-manager",
+                            "2024-10-23T20:24:11Z",
+                        ),
+                        "ref": {
+                            "kind": "Service",
+                            "apiVersion": "v1",
+                            "metadata": {
+                                "name": "cert-manager",
+                                "namespace": "default",
+                                "creationTimestamp": "2024-10-23T20:24:11Z",
+                            },
+                        },
+                    },
                 ],
                 None,
             ),

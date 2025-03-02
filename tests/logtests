@@ -24,7 +24,7 @@ from collections.abc import Callable
 from unittest import mock
 import yaml
 
-from clustermanagementtoolkit.cmttypes import deep_get, DictPath, LogLevel, ProgrammingError
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, LogLevel
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
@@ -116,53 +116,6 @@ def test_import_validators(verbose: bool = False) -> tuple[str, bool]:
             result = False
 
     import_override = {}
-    return message, result
-
-
-# pylint: disable-next=unused-argument
-def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> tuple[str, bool]:
-    message = ""
-    result = True
-    loglevels: list[str] = []
-
-    fun = logparsers.get_loglevel_names
-    tmp = fun()
-    if verbose:
-        print(f"  loglevel_names: {tmp}")
-
-    if tmp is None:
-        message = f"{fun.__name__}() returned None"
-        result = False
-    elif not isinstance(tmp, list):
-        message = f"{fun.__name__}() returned wrong type ({type(tmp)}), expected list"
-        result = False
-    elif not tmp:
-        message = "{fun.__name__}() returned an empty list"
-        result = False
-    else:
-        loglevels = tmp
-        fun = logparsers.name_to_loglevel
-        for indata in loglevels:
-            tmp = fun(indata)
-            if tmp is None:
-                message = f"{fun.__name__}() returned None for valid indata {indata}"
-            elif not isinstance(tmp, LogLevel):
-                message = f"{fun.__name__}() returned wrong type ({type(tmp)}) " \
-                          f"with valid indata {indata}, expected LogLevel"
-                result = False
-                break
-            if verbose:
-                print(f"  <{tmp}>: {indata}")
-
-    if result:
-        try:
-            indata = "NOT A LOGLEVEL"
-            fun(indata)
-            message = f"{fun.__name__}() silently accepted invalid indata {indata}"
-            result = False
-        except ProgrammingError:
-            pass
-
     return message, result
 
 
@@ -1759,10 +1712,6 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
     },
     ("import_validators",): {
         "callable": test_import_validators,
-        "result": None,
-    },
-    ("get_loglevel_names()", "name_to_loglevel()"): {
-        "callable": test_get_loglevel_names_and_name_to_loglevel,
         "result": None,
     },
     ("month_to_numerical()",): {

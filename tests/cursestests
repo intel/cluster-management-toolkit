@@ -1059,19 +1059,19 @@ def test_color_log_severity(verbose: bool = False) -> tuple[str, bool]:
             # Valid
             (
                 LogLevel.ALL,
-                ThemeAttr("logview", "severity_diffsame"),
+                ThemeAttr("logview", "severity_debug"),
                 None,
             ),
             # Out of range negative
             (
                 LogLevel.EMERG - 1,
-                ThemeAttr("logview", "severity_emergency"),
+                ThemeAttr("logview", "severity_info"),
                 None,
             ),
             # Out of range positive
             (
                 LogLevel.ALL + 1,
-                ThemeAttr("logview", "severity_diffsame"),
+                ThemeAttr("logview", "severity_info"),
                 None,
             ),
         )
@@ -1138,14 +1138,14 @@ def test_color_status_group(verbose: bool = False) -> tuple[str, bool]:
             # Out of range negative
             (
                 StatusGroup.CRIT - 1,
+                ThemeAttr("main", "status_unknown"),
                 None,
-                ProgrammingError,
             ),
             # Out of range positive
             (
                 StatusGroup.DONE + 1,
+                ThemeAttr("main", "status_unknown"),
                 None,
-                ProgrammingError,
             ),
         )
 

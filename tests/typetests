@@ -26,7 +26,7 @@ import yaml
 from clustermanagementtoolkit import cmttypes
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_list, deep_get_with_fallback
 from clustermanagementtoolkit.cmttypes import deep_set, DictPath
-from clustermanagementtoolkit.cmttypes import FilePath, LogLevel, loglevel_to_name, validate_args
+from clustermanagementtoolkit.cmttypes import FilePath, LogLevel, validate_args
 from clustermanagementtoolkit.cmttypes import UnknownError, ArgumentValidationError
 from clustermanagementtoolkit.cmttypes import ProgrammingError, FilePathAuditError
 
@@ -1041,17 +1041,188 @@ def test_loglevel_to_name(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
-    indata = LogLevel.ERR
-    expected_result = "Error"
-
-    fun = loglevel_to_name
+    fun = cmttypes.loglevel_to_name
 
     if result:
-        if (tmp := fun(indata)) != expected_result:
-            message = f"{fun.__name__} returned incorrect output:\n" \
-                      f"      output: {tmp}\n" \
-                      f"    expected: {expected_result}"
-            result = False
+        # Indata format:
+        # (indata, expected_result, expected_exception)
+        testdata: tuple[Any, ...] = (
+            (
+                {
+                    "loglevel": LogLevel.ERR,
+                },
+                "Error", None),
+            (
+                {
+                    "loglevel": LogLevel.EMERG,
+                },
+                "Emergency", None),
+            (
+                {
+                    "loglevel": LogLevel.DIFFSAME,
+                },
+                "Diffsame", None),
+            (
+                {
+                    "loglevel": LogLevel.ALL,
+                },
+                "Debug", None),
+            (
+                {
+                    "loglevel": LogLevel.EMERG - 1,
+                },
+                "Info", None),
+            (
+                {
+                    "loglevel": LogLevel.ALL + 1,
+                },
+                "Info", None),
+        )
+
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(**indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: {indata}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           input: {indata}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: {indata}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
+                    result = False
+                    break
+
+    return message, result
+
+
+def test_name_to_loglevel(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = cmttypes.name_to_loglevel
+
+    if result:
+        # Indata format:
+        # (indata, expected_result, expected_exception)
+        testdata: tuple[Any, ...] = (
+            (
+                {
+                    "severity": "ERROR",
+                },
+                LogLevel.ERR, None),
+            (
+                {
+                    "severity": "error",
+                },
+                LogLevel.ERR, None),
+            (
+                {
+                    "severity": "Emergency",
+                },
+                LogLevel.EMERG, None),
+            (
+                {
+                    "severity": "deBUG",
+                },
+                LogLevel.DEBUG, None),
+            (
+                {
+                    "severity": "NOT A VALID SEVERITY",
+                },
+                LogLevel.DEFAULT, None),
+        )
+
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(**indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: {indata}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           input: {indata}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: {indata}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
+                    result = False
+                    break
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
+def test_get_loglevel_names(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = cmttypes.get_loglevel_names
+
+    if result:
+        # Indata format:
+        # (indata, expected_result, expected_exception)
+        testdata: tuple[Any, ...] = (
+            ({},
+             [
+                "Emergency", "Alert", "Critical", "Error", "Warning", "Notice",
+                "Info", "Debug", "Diffplus", "Diffminus", "Diffsame"],
+             None),
+        )
+
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(**indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: {indata}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           input: {indata}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: {indata}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
+                    result = False
+                    break
 
     return message, result
 
@@ -1103,6 +1274,14 @@ tests: dict[tuple[str, ...], dict[str, Any]] = {
     },
     ("loglevel_to_name()", ): {
         "callable": test_loglevel_to_name,
+        "result": None,
+    },
+    ("name_to_loglevel()", ): {
+        "callable": test_name_to_loglevel,
+        "result": None,
+    },
+    ("get_loglevel_names()", ): {
+        "callable": test_get_loglevel_names,
         "result": None,
     },
 }

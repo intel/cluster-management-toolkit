@@ -233,7 +233,7 @@ def ansible_print_action_summary(playbooks: list[tuple[list[ANSIThemeStr], FileP
         raise ValueError("playbooks is empty")
 
     if not (isinstance(playbooks[0], tuple) and len(playbooks[0]) == 2
-            and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], FilePath)):
+            and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], (FilePath, str))):
         raise TypeError("playbooks[] is wrong type; "
                         f"expected: [([{ANSIThemeStr}], {FilePath})]")
 
@@ -493,7 +493,7 @@ def __ansible_create_inventory(inventory: FilePath, **kwargs: Any) -> bool:
     overwrite: bool = deep_get(kwargs, DictPath("overwrite"), False)
     temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
-    if not isinstance(inventory, FilePath):
+    if not isinstance(inventory, (FilePath, str)):
         raise TypeError(f"inventory is type: {type(inventory)}, expected str")
     if not isinstance(overwrite, bool):
         raise TypeError(f"inventory is type: {type(overwrite)}, expected bool")

@@ -892,7 +892,9 @@ def loglevel_to_name(loglevel: LogLevel) -> str:
         Returns:
             (str): A severity string
     """
-    return loglevel_mappings[max(LogLevel.EMERG, min(LogLevel.DIFFSAME, loglevel))]
+    if loglevel < LogLevel.EMERG or loglevel > LogLevel.ALL:
+        loglevel = LogLevel.INFO
+    return loglevel_mappings[loglevel]
 
 
 def get_loglevel_names() -> list[str]:
