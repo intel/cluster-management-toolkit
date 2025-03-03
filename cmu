@@ -226,12 +226,12 @@ def gather_cluster_info(**kwargs: Any) -> None:
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
     """
     if (kh_ := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        msg = [
+        errmsg = [
             [("Function called with invalid argument(s):", "default")],
             [("kubernetes_helper", "argument"),
              (" is missing or None.", "default")],
         ]
-        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -744,7 +744,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     kind = deep_get(viewref, DictPath("kind"))
 
     if not (isinstance(stdscr, curses.window) and isinstance(view, str)):
-        msg = [
+        errmsg = [
             [("Function called with invalid argument(s):", "error")],
             [("stdscr = ", "default"),
              (f"{stdscr}", "argument"),
@@ -761,7 +761,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
              ("str", "argument"),
              (").", "default")],
         ]
-        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -771,7 +771,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     field_indexes = deep_get(viewref, DictPath("field_indexes"), {})
 
     if not (isinstance(field_indexes, dict) and field_indexes):
-        msg = [
+        errmsg = [
             [("genericlistloop()", "emphasis"),
              (" called with invalid argument(s):", "error")],
             [("field_indexes = ", "default"),
@@ -782,7 +782,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
              (f"{dict}", "argument"),
              (" with at least one element)", "default")],
         ]
-        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -1340,7 +1340,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                 elif ptype == "<dir>":
                                     fmt = ThemeAttr("windowwidget", "highlight")
                                 else:
-                                    msg = [
+                                    errmsg = [
                                         [("filechooser", "emphasis"),
                                          (" called with invalid argument(s):", "error")],
                                         [("ptype = ", "default"),
@@ -1356,7 +1356,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                          (")", "default")],
                                     ]
                                     unformatted_msg, formatted_msg = \
-                                        ANSIThemeStr.format_error_msg(msg)
+                                        ANSIThemeStr.format_error_msg(errmsg)
                                     cmtlog.log(LogLevel.ERR,
                                                msg=unformatted_msg,
                                                messages=formatted_msg)
@@ -1901,7 +1901,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                 elif ptype == "<dir>":
                                     fmt = ThemeAttr("windowwidget", "highlight")
                                 else:
-                                    msg = [
+                                    errmsg = [
                                         [("filechooser", "emphasis"),
                                          (" called with invalid argument(s):", "error")],
                                         [("ptype = ", "default"),
@@ -1917,7 +1917,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                          (")", "default")],
                                     ]
                                     unformatted_msg, formatted_msg = \
-                                        ANSIThemeStr.format_error_msg(msg)
+                                        ANSIThemeStr.format_error_msg(errmsg)
                                     cmtlog.log(LogLevel.ERR,
                                                msg=unformatted_msg,
                                                messages=formatted_msg)
@@ -3394,7 +3394,7 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     elif vtype.startswith("base64-utf-8"):
         obj = base64.b64decode(value).decode("utf-8")
     else:
-        msg = [
+        errmsg = [
             [("decode_and_view_data()", "emphasis"),
              (" could not identify vtype:", "error")],
             [("vtype = ", "default"),
@@ -3411,7 +3411,7 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
              ("base64-utf-8", "argument"),
              (")", "default")],
         ]
-        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
 
         curses_helper.alert(stdscr, message=f"Failed to decode data; unsupported format {vtype}",
@@ -3535,7 +3535,7 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
         tmp = base64.b64decode(value)
         secure_write_string(filename, tmp, write_mode="wb")
     else:
-        msg = [
+        errmsg = [
             [("export_data()", "emphasis"),
              (" could not identify vtype:", "error")],
             [("vtype = ", "default"),
@@ -3550,7 +3550,7 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
              ("base64-utf-8", "argument"),
              (")", "default")],
         ]
-        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
 
         curses_helper.alert(stdscr, message=f"Failed to export data; unsupported format {vtype}",
@@ -3864,7 +3864,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             _shortcut = shortcuts[shortcut].get("shortcut", [])
             for _sc in _shortcut:
                 if _sc in _shortcuts:
-                    msg = [
+                    errmsg = [
                         [("Infoview ", "error"),
                          (f"{view}", "argument"),
                          (": The same keypress (", "error"),
@@ -3875,9 +3875,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                          (f"{_shortcuts[_sc]}", "argument"),
                          ("“; aborting.", "error")],
                     ]
-
-                    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
+                    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
                     cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
                     sys.exit(unformatted_msg)
                 else:
@@ -6139,13 +6137,18 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
         Parameters:
             stdscr (opaque): A curses stdscr reference
             **kwargs (dict): Additional parameters
+                obj (dict): An object to get data from
+                command ([str]): The command to execute
+                input_path (str): The path to get input from
+                wait_for_keypress (bool): Wait for a keypress after executing the command
+                msg (str): The message to show before executing the command
     """
-    security_policy = SecurityPolicy.ALLOWLIST_RELAXED
-    fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin",
-                          "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
+    security_policy: SecurityPolicy = SecurityPolicy.ALLOWLIST_RELAXED
+    fallback_allowlist: list[str] = ["/bin", "/sbin", "/usr/bin", "/usr/sbin",
+                                     "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
-    _args = deep_get(kwargs, DictPath("command"))
-    input_path = deep_get(kwargs, DictPath("input_path"))
+    _args: list[Union[str, list[str]]] = deep_get(kwargs, DictPath("command"), [])
+    input_path: str = deep_get(kwargs, DictPath("input_path"))
 
     if not _args:
         return
@@ -6179,15 +6182,13 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
                     sys.exit("widget_args: command requested incorrect data type; "
                              "only str and list are valid")
 
-    waitforkeypress = deep_get(kwargs, DictPath("wait_for_keypress"), False)
+    wait_for_keypress = deep_get(kwargs, DictPath("wait_for_keypress"), False)
 
-    msg = deep_get(kwargs, DictPath("msg"), "")
 
     curses.endwin()
     _retval = clear_screen()
-    if msg:
-        ansithemeprint(msg)
-        print()
+    if (msg := deep_get(kwargs, DictPath("msg"), "")):
+        ansithemeprint([ANSIThemeStr(f"{msg}\n", "action")])
 
     try:
         _cpath = secure_which(FilePath(args[0]),
@@ -6198,11 +6199,11 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
                         ANSIThemeStr(": “", "default"),
                         ANSIThemeStr(f"{args[0]}", "programname"),
                         ANSIThemeStr("“ does not exist.\n", "default")], stderr=True)
-        waitforkeypress = True
+        wait_for_keypress = True
     else:
         _retval = subprocess.run(args, check=False, input=command_input).returncode
 
-    if waitforkeypress:
+    if wait_for_keypress:
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     stdscr.refresh()
 
@@ -6246,55 +6247,85 @@ def executecommand(stdscr: curses.window,
             ephemeral_image = \
                 deep_get(cmtlib.cmtconfig, DictPath("Debug#ephemeral_image"), "busybox")
             args = [kubectl_path, "debug", obj_name, "--target", container, "-n", obj_namespace,
-                    "-i", "-t", "--image", ephemeral_image]
-            _result = subprocess.run(args, check=False)
+                    "--profile", "general", "-i", "-t", "--image", ephemeral_image]
+            result = subprocess.run(args, check=False)
+            if result.returncode != 0:
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": Failed to create debug image", "default")],
+                               stderr=True)
+                waitforkeypress = True
         elif command == ["<dnsutils>"]:
             dnsutils_image = deep_get(cmtlib.cmtconfig, DictPath("Debug#network_image"),
                                       "registry.k8s.io/e2e-test-images/jessie-dnsutils:1.7")
             args = [kubectl_path, "debug", f"node/{obj_name}", "-n", "default", "-i", "-t",
-                    "--image", dnsutils_image, "--attach=false"]
+                    "--profile", "netadmin", "--image", dnsutils_image, "--attach=false"]
             result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
             if result.returncode != 0:
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": Failed to create debug image", "default")],
                                stderr=True)
+                waitforkeypress = True
             else:
                 output = result.stdout.decode("utf-8", errors="replace")
                 tmp = re.match(r"^Creating debugging pod (\S+) with container (\S+) .*", output)
                 if tmp is not None:
                     pod_name = tmp[1]
                     container_name = tmp[2]
-                else:
-                    sys.exit(f"executecommand failed to parse output; {output}; aborting.")
 
-                # Wait for the pod to be ready
-                ansithemeprint([ANSIThemeStr("Waiting for debug pod to be ready "
-                                             "(timeout: 60s).", "default")])
-                args = [kubectl_path, "wait", "--for=condition=ready",
-                        "--timeout=60s", "-n", "default", "pod", pod_name]
-                result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
-                if result.returncode != 0:
-                    ansithemeprint([ANSIThemeStr("Error", "error"),
-                                    ANSIThemeStr(": The pod failed to become ready before "
-                                                 "timeout.", "default")], stderr=True)
+                    # Wait for the pod to be ready
+                    ansithemeprint([ANSIThemeStr("Waiting for debug pod to be ready "
+                                                 "(timeout: 60s).", "default")])
+                    args = [kubectl_path, "wait", "--for=condition=ready",
+                            "--timeout=60s", "-n", "default", "pod", pod_name]
+                    result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
+                    if result.returncode != 0:
+                        ansithemeprint([ANSIThemeStr("Error", "error"),
+                                        ANSIThemeStr(": The pod failed to become ready before "
+                                                     "timeout.", "default")], stderr=True)
+                        waitforkeypress = True
+                    else:
+                        # Attach to the debug container
+                        args = [kubectl_path, "attach", "-n", "default", pod_name,
+                                "-c", container_name,
+                                "-i", "-t", "--pod-running-timeout=1m0s"]
+                        _result = subprocess.run(args, check=False)
                 else:
-                    # Attach to the debug container
-                    args = [kubectl_path, "attach", "-n", "default", pod_name,
-                            "-c", container_name,
-                            "-i", "-t", "--pod-running-timeout=1m0s"]
-                    _result = subprocess.run(args, check=False)
+                    errmsg = [
+                        [("Failed to parse output from kubectl debug; {output}.", "default")]
+                    ]
+                    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                    cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                    formatted_msg[0].insert(0, ANSIThemeStr("Error: ", "error"))
+                    for msg in formatted_msg:
+                        ansithemeprint(msg)
 
                 # Delete the pod
                 ansithemeprint([ANSIThemeStr("Forcibly deleting pod.", "default")])
                 _message, _status = \
                     kh.delete_obj_by_kind_name_namespace(("Pod", ""), pod_name,
                                                          "default", force=True)
+                waitforkeypress = True
         else:
             args = [kubectl_path, "exec", obj_name, "-n", obj_namespace,
                     "-i", "-t", "--container", container, "--"] + command
             _result = subprocess.run(args, check=False).returncode
     else:
-        sys.exit("Called executecommand() with obj == None")
+        errmsg = [
+            [("Function called with invalid argument(s):", "default")],
+            [("obj = ", "default"),
+             (f"{obj}", "argument"),
+             (" (type: ", "default"),
+             (f"{type(obj)}", "argument"),
+             (", expected: ", "default"),
+             (f"{dict}", "argument"),
+             (")", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+        formatted_msg[0].insert(0, ANSIThemeStr("Error: ", "error"))
+        for msg in formatted_msg:
+            ansithemeprint(msg)
+        waitforkeypress = True
 
     if waitforkeypress:
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
@@ -10519,7 +10550,7 @@ def main() -> None:
     cmtlog.set_logger(about.UI_PROGRAM_NAME, loglevel)
 
     if invalid_loglevel:
-        msg = [
+        errmsg = [
             [("cmtconfig:Debug#loglevel", "emphasis")],
             [("loglevel = ", "default"),
              (f"{loglevel}", "argument"),
@@ -10542,9 +10573,7 @@ def main() -> None:
              ("info", "argument"),
              (".", "default")],
         ]
-
-        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
-
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
         cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
 
     CursesConfiguration.abouttext = helptexts.about
