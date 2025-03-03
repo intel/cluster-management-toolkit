@@ -2177,7 +2177,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_UP],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_cur_with_offset,
+        "action_call": __move_cur_with_offset,
         "action_args": {
             "offset": -1,
         },
@@ -2187,7 +2187,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_DOWN],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_cur_with_offset,
+        "action_call": __move_cur_with_offset,
         "action_args": {
             "offset": 1,
         },
@@ -2197,7 +2197,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_RIGHT],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_xoffset,
+        "action_call": __move_xoffset,
         "action_args": {
             "offset": -1,
         },
@@ -2207,19 +2207,9 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_RIGHT],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_xoffset,
+        "action_call": __move_xoffset,
         "action_args": {
             "offset": 1,
-        },
-    },
-    "Scroll 10 lines down": {
-        "helptext": ("[Page Down]", "Scroll 10 lines down"),
-        "shortcut": [curses.KEY_NPAGE],
-        "helpgroup": 3,
-        "action": "key_callback",
-        "action_call":  __move_cur_with_offset,
-        "action_args": {
-            "offset": 10,
         },
     },
     "Scroll 10 lines up": {
@@ -2227,7 +2217,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_PPAGE],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_cur_with_offset,
+        "action_call": __move_cur_with_offset,
         "action_args": {
             "offset": -10,
         },
@@ -2237,7 +2227,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_NPAGE],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_cur_with_offset,
+        "action_call": __move_cur_with_offset,
         "action_args": {
             "offset": 10,
         },
@@ -2247,7 +2237,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_SHOME],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_cur_with_offset,
+        "action_call": __move_cur_with_offset,
         "action_args": {
             "offset": -sys.maxsize,
         },
@@ -2257,7 +2247,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_SEND],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_cur_with_offset,
+        "action_call": __move_cur_with_offset,
         "action_args": {
             "offset": sys.maxsize,
         },
@@ -2267,7 +2257,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_SHOME],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_xoffset,
+        "action_call": __move_xoffset,
         "action_args": {
             "offset": -sys.maxsize,
         },
@@ -2277,7 +2267,7 @@ windowwidget_shortcuts = {
         "shortcut": [curses.KEY_SEND],
         "helpgroup": 3,
         "action": "key_callback",
-        "action_call":  __move_xoffset,
+        "action_call": __move_xoffset,
         "action_args": {
             "offset": sys.maxsize,
         },
@@ -2598,6 +2588,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
             "maxcurypos": maxcurypos,
             "maxyoffset": maxyoffset,
             "xoffset": xoffset,
+            "maxxoffset": maxxoffset,
         }
 
         retval, return_args = uip.generic_inputhandler(windowwidget_shortcuts, **input_args)

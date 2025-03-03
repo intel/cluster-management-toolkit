@@ -551,6 +551,10 @@ def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
     global force_refresh_apis  # pylint: disable=global-statement
 
     selected: Type = deep_get(kwargs, DictPath("selected"))
+    # If we don't have any contexts we won't be able to set the context.
+    if selected is None:
+        return Retval.RETURNDONE
+
     name: str = getattr(selected, "name")
 
     # If we actually changed context we need to force an API reload,
@@ -6184,7 +6188,6 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
 
     wait_for_keypress = deep_get(kwargs, DictPath("wait_for_keypress"), False)
 
-
     curses.endwin()
     _retval = clear_screen()
     if (msg := deep_get(kwargs, DictPath("msg"), "")):
@@ -6208,7 +6211,7 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
     stdscr.refresh()
 
 
-# noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
+# noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments,too-many-statements
 def executecommand(stdscr: curses.window,
                    obj: dict, container: str, msg: list[ANSIThemeStr],
                    command: list[str], waitforkeypress: bool) -> None:
@@ -6296,8 +6299,8 @@ def executecommand(stdscr: curses.window,
                     unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
                     cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
                     formatted_msg[0].insert(0, ANSIThemeStr("Error: ", "error"))
-                    for msg in formatted_msg:
-                        ansithemeprint(msg)
+                    for line in formatted_msg:
+                        ansithemeprint(line)
 
                 # Delete the pod
                 ansithemeprint([ANSIThemeStr("Forcibly deleting pod.", "default")])
@@ -6323,7 +6326,7 @@ def executecommand(stdscr: curses.window,
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
         cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
         formatted_msg[0].insert(0, ANSIThemeStr("Error: ", "error"))
-        for msg in formatted_msg:
+        for line in formatted_msg:
             ansithemeprint(msg)
         waitforkeypress = True
 

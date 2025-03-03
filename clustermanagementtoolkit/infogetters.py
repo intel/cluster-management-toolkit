@@ -2714,7 +2714,7 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
                         themeref = severitystr.lower()
                 elif themeref == "emphasis":
                     fmt = ThemeAttr("main", "highlight")
-                elif themeref in ("path", "hostname", "programname"):
+                elif themeref in ("path", "hostname", "programname", "errorvalue"):
                     fmt = ThemeAttr("types", themeref)
                 elif themeref == "argument":
                     fmt = ThemeAttr("main", "infoheader")

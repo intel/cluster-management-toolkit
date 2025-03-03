@@ -38,6 +38,19 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import yaml; "
              "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
+try:
+    import ruyaml
+    ryaml = ruyaml.YAML()
+    sryaml = ruyaml.YAML(typ="safe")
+except ModuleNotFoundError:  # pragma: no cover
+    try:
+        import ruamel.yaml as ruyaml  # type: ignore
+        ryaml = ruyaml.YAML()
+        sryaml = ruyaml.YAML(typ="safe")
+    except ModuleNotFoundError:  # pragma: no cover
+        sys.exit("ModuleNotFoundError: Could not import ruyaml/ruamel.yaml; "
+                 "you may need to (re-)run `cmt-install` or `pip3 install ruyaml/ruamel.yaml`; "
+                 "aborting.")
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -740,6 +753,70 @@ def get_image_version(image: str, default: str = "<undefined>") -> str:
     return image_version
 
 
+def __read_kubeconfig(config_path: Optional[FilePath] = None) -> dict[str, Any]:
+    if config_path is None:
+        # Read kubeconfig
+        config_path = KUBE_CONFIG_FILE
+
+    kubeconfig: dict = {}
+
+    try:
+        kubeconfig = secure_read_yaml(FilePath(config_path))
+    except FileNotFoundError:
+        errmsg: list[list[tuple[str, str]]] = [
+            [("FileNotFoundError occurred when ", "default"),
+             ("loading file ", "default"),
+             (f"{config_path}", "path"),
+             (".", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
+    except FilePathAuditError as e:
+        # This matches both DOES_NOT_EXIST and PARENT_DOES_NOT_EXIST
+        if "DOES_NOT_EXIST" in str(e):
+            errmsg = [
+                [("FileNotFoundError occurred when ", "default"),
+                 ("loading file ", "default"),
+                 (f"{config_path}", "path"),
+                 (".", "default")],
+            ]
+            severity = LogLevel.WARNING
+        else:
+            errmsg = [
+                [("FilePathAuditError", "critical"),
+                 (": ", "default"),
+                 (f"{e}", "errorvalue"),
+                 (" when loading file ", "default"),
+                 (f"{config_path}", "path"),
+                 (".", "default")],
+                [("Refusing to load file.", "default")],
+            ]
+            severity = LogLevel.ERR
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(severity, msg=unformatted_msg, messages=formatted_msg)
+    except ruyaml.composer.ComposerError as e:
+        errmsg = [
+            [("ruyaml.composer.ComposerError: ", "default"),
+             (f"{e}", "errorvalue"),
+             (" encountered when parsing ", "default"),
+             (f"{config_path}", "path"),
+             (".", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+    except ruyaml.scanner.ScannerError as e:
+        errmsg = [
+            [("ruyaml.scanner.ScannerError: ", "default"),
+             (f"{e}", "errorvalue"),
+             (" encountered when parsing ", "default"),
+             (f"{config_path}", "path"),
+             (".", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+    return kubeconfig
+
+
 def list_contexts(config_path: Optional[FilePath] = None) \
         -> list[tuple[bool, str, str, str, str, str]]:
     """
@@ -758,22 +835,8 @@ def list_contexts(config_path: Optional[FilePath] = None) \
     """
     contexts = []
 
-    if config_path is None:
-        # Read kubeconfig
-        config_path = KUBE_CONFIG_FILE
-
-    try:
-        kubeconfig = secure_read_yaml(FilePath(config_path))
-    except FilePathAuditError as e:
-        if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
-            return []
-    except FileNotFoundError:
-        # We can handle FileNotFoundError and PARENT_DOES_NOT_EXIST;
-        # other exceptions might be security related, so we let them raise
+    if not (kubeconfig := __read_kubeconfig(config_path)):
         return []
-    except yaml.parser.ParserError as e:
-        e.args += (f"{config_path} is not valid YAML; aborting.",)
-        raise
 
     current_context = deep_get(kubeconfig, DictPath("current-context"), "")
 
@@ -811,29 +874,8 @@ def set_context(config_path: Optional[FilePath] = None, name: str = "") -> str:
         # Read kubeconfig
         config_path = KUBE_CONFIG_FILE
 
-    config_path = FilePath(config_path)
-
-    # We are semi-OK with the file not existing
-    checks: list[SecurityChecks] = [
-        SecurityChecks.PARENT_RESOLVES_TO_SELF,
-        SecurityChecks.OWNER_IN_ALLOWLIST,
-        SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-        SecurityChecks.CAN_READ_IF_EXISTS,
-        SecurityChecks.PERMISSIONS,
-        SecurityChecks.PARENT_PERMISSIONS,
-        SecurityChecks.IS_FILE,
-    ]
-
-    try:
-        kubeconfig = secure_read_yaml(config_path, checks=checks)
-    except FileNotFoundError:
+    if not (kubeconfig := __read_kubeconfig(config_path)):
         return ""
-    except FilePathAuditError as e:
-        if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
-            return ""
-        if "SecurityStatus.PERMISSIONS" in str(e):
-            return ""
-        raise
 
     new_context = ""
 
@@ -2327,7 +2369,7 @@ class KubernetesHelper:
             message = f"No route to host; method: {method}, URL: {url}; " \
                       f"header_params: {header_params}"
         else:
-            errmsg = [
+            errmsg: list[list[tuple[str, str]]] = [
                 [("Unhandled HTTP error: ", "default")],
                 [(f"{result.status}", "errorvalue")],
                 [("method: ", "default"),

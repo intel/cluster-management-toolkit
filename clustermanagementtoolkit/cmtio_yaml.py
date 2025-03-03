@@ -135,8 +135,9 @@ def secure_read_yaml(path: FilePath, **kwargs: Any) -> Union[dict,
             yaml_data
                 (dict|ruyaml.comments.CommentedMap|ruyaml.comments.CommentedSeq): The read YAML-data
         Raises:
-            ruyaml.composer.ComposerError
-            ruyaml.scanner.ScannerError
+            ruyaml.composer.ComposerError (synchronous mode)
+            ruyaml.scanner.ScannerError (synchronous mode)
+            yaml.parser.ParserError (asynchronous mode)
             FileNotFoundError
             cmttypes.FilePathAuditError
     """
@@ -151,10 +152,10 @@ def secure_read_yaml(path: FilePath, **kwargs: Any) -> Union[dict,
     if asynchronous:
         return yaml.safe_load(string)
 
-    # First parse the data with safe parser; this will throw an exception if there are issues
+    # First parse the data with safe parser; this will throw an exception if there are issues.
     _d2 = sryaml.load(string)
 
-    # If nothing went wrong, we import the round-trip formatted data
+    # If nothing went wrong, we import the round-trip formatted data.
     tmp = ryaml.load(string)
     return tmp
 
