@@ -1698,7 +1698,7 @@ def move_cur_with_offset(curypos: int, yoffset: int,
             yoffset (int): The offset in the range
             maxcurypos (int): The maximum cursor screen position
             maxyoffset (int): The maximum offset in the range
-            movement (int): The momvent to make
+            movement (int): The movement to make
             **kwargs (dict[str, Any]): Keyword arguments
                 wraparound (bool): Should the list wraparound (default: False)
         Returns:
@@ -2151,6 +2151,140 @@ def themearray_wrap_line(themearray: list[Union[ThemeRef, ThemeStr]],
 ignoreinput: bool = False
 
 
+def __move_xoffset(**kwargs: Any) -> tuple[Retval, dict]:
+    maxxoffset: int = deep_get(kwargs, DictPath("maxxoffset"))
+    xoffset: int = deep_get(kwargs, DictPath("xoffset"))
+    offset: int = deep_get(kwargs, DictPath("offset"))
+    return Retval.MATCH, {"xoffset": max(maxxoffset, min(0, xoffset + offset))}
+
+
+def __move_cur_with_offset(**kwargs: Any) -> tuple[Retval, dict]:
+    curypos: int = deep_get(kwargs, DictPath("curypos"))
+    yoffset: int = deep_get(kwargs, DictPath("yoffset"))
+    maxcurypos: int = deep_get(kwargs, DictPath("maxcurypos"))
+    maxyoffset: int = deep_get(kwargs, DictPath("maxyoffset"))
+    offset: int = deep_get(kwargs, DictPath("offset"))
+    curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, offset)
+    return Retval.MATCH, {"curypos": curypos, "yoffset": yoffset}
+
+
+windowwidget_shortcuts = {
+    # The windowwidget is special;
+    # it doesn't have helptexts, etc.
+    "__common_shortcuts": [],
+    "Scroll one row up": {
+        "helptext": ("[Up]", "Scroll one row up"),
+        "shortcut": [curses.KEY_UP],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_cur_with_offset,
+        "action_args": {
+            "offset": -1,
+        },
+    },
+    "Scroll one row down": {
+        "helptext": ("[Down]", "Scroll one row down"),
+        "shortcut": [curses.KEY_DOWN],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_cur_with_offset,
+        "action_args": {
+            "offset": 1,
+        },
+    },
+    "Scroll one character left": {
+        "helptext": ("[Left]", "Scroll one character left"),
+        "shortcut": [curses.KEY_RIGHT],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_xoffset,
+        "action_args": {
+            "offset": -1,
+        },
+    },
+    "Scroll one character right": {
+        "helptext": ("[Right]", "Scroll one character right"),
+        "shortcut": [curses.KEY_RIGHT],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_xoffset,
+        "action_args": {
+            "offset": 1,
+        },
+    },
+    "Scroll 10 lines down": {
+        "helptext": ("[Page Down]", "Scroll 10 lines down"),
+        "shortcut": [curses.KEY_NPAGE],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_cur_with_offset,
+        "action_args": {
+            "offset": 10,
+        },
+    },
+    "Scroll 10 lines up": {
+        "helptext": ("[Page Up]", "Scroll 10 lines up"),
+        "shortcut": [curses.KEY_PPAGE],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_cur_with_offset,
+        "action_args": {
+            "offset": -10,
+        },
+    },
+    "Scroll 10 lines down": {
+        "helptext": ("[Page Down]", "Scroll 10 lines down"),
+        "shortcut": [curses.KEY_NPAGE],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_cur_with_offset,
+        "action_args": {
+            "offset": 10,
+        },
+    },
+    "Jump to first row": {
+        "helptext": ("[Shift] + [Home]", "Jump to first row"),
+        "shortcut": [curses.KEY_SHOME],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_cur_with_offset,
+        "action_args": {
+            "offset": -sys.maxsize,
+        },
+    },
+    "Jump to last row": {
+        "helptext": ("[Shift] + [End]", "Jump to last row"),
+        "shortcut": [curses.KEY_SEND],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_cur_with_offset,
+        "action_args": {
+            "offset": sys.maxsize,
+        },
+    },
+    "Jump to beginning of row": {
+        "helptext": ("[Home]", "Jump to beginning of row"),
+        "shortcut": [curses.KEY_SHOME],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_xoffset,
+        "action_args": {
+            "offset": -sys.maxsize,
+        },
+    },
+    "Jump to end of row": {
+        "helptext": ("[End]", "Jump to end of row"),
+        "shortcut": [curses.KEY_SEND],
+        "helpgroup": 3,
+        "action": "key_callback",
+        "action_call":  __move_xoffset,
+        "action_args": {
+            "offset": sys.maxsize,
+        },
+    },
+}
+
+
 # A generic window widget
 # items is a list of tuples, like so:
 # (widgetlineattr, strarray, strarray, ...)
@@ -2358,6 +2492,8 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
         raise ValueError("is_taggable() == True, "
                          f"but type(preselection) == {type(preselection)} (must be str or set())")
 
+    uip = UIProps(stdscr)
+
     # pylint: disable-next=too-many-nested-blocks
     while selection is None:
         for y_, item in enumerate(items):
@@ -2453,11 +2589,24 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
         win.noutrefresh()
         curses.doupdate()
 
-        stdscr.timeout(100)
         oldcurypos = curypos
         oldyoffset = yoffset
 
-        c = stdscr.getch()
+        input_args = {
+            "curypos": curypos,
+            "yoffset": yoffset,
+            "maxcurypos": maxcurypos,
+            "maxyoffset": maxyoffset,
+            "xoffset": xoffset,
+        }
+
+        retval, return_args = uip.generic_inputhandler(windowwidget_shortcuts, **input_args)
+        if retval == Retval.MATCH:
+            curypos = deep_get(return_args, DictPath("curypos"), curypos)
+            yoffset = deep_get(return_args, DictPath("yoffset"), yoffset)
+            xoffset = deep_get(return_args, DictPath("xoffset"), xoffset)
+
+        c = deep_get(return_args, DictPath("keypress"), -1)
 
         # The following inputs terminate the loop
         if c == curses.KEY_RESIZE:
@@ -2469,9 +2618,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
         if c == 27:  # ESCAPE
             selection = ""
             break
-        if c == ord("") or c == ord(""):
-            curses.endwin()
-            sys.exit()
         if key_f6 and c == curses.KEY_F6:
             # This is used to toggle categorised list on/off
             selection = -c
@@ -2559,28 +2705,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                     move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1)
                 if (curypos + yoffset) == 0:
                     break
-        elif c == curses.KEY_UP:
-            curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1)
-        elif c == curses.KEY_DOWN:
-            curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +1)
-        elif c == curses.KEY_LEFT:
-            xoffset = max(xoffset - 1, 0)
-        elif c == curses.KEY_RIGHT:
-            xoffset = min(xoffset + 1, maxxoffset)
-        elif c == curses.KEY_HOME:
-            xoffset = 0
-        elif c == curses.KEY_END:
-            xoffset = maxxoffset
-        elif c == curses.KEY_SHOME:
-            curypos = 0
-            yoffset = 0
-        elif c == curses.KEY_SEND:
-            curypos = maxcurypos
-            yoffset = maxyoffset
-        elif c == curses.KEY_PPAGE:
-            curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -10)
-        elif c == curses.KEY_NPAGE:
-            curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +10)
 
         # These only apply if we use a cursor
         if cursor:
@@ -5058,10 +5182,13 @@ class UIProps:
 
         # Default return value if we do not manage to match anything
         retval = Retval.NOMATCH
+        return_data = {
+            "keypress": c
+        }
 
         if c == curses.KEY_RESIZE:
             self.resize_window()
-            return Retval.MATCH, {}
+            return Retval.MATCH, return_data
 
         if c == 27:  # Either ESCAPE or ALT+<key>
             self.stdscr.nodelay(True)
@@ -5070,7 +5197,7 @@ class UIProps:
             # No additional key; this was a real ESCAPE press
             if c2 == -1:
                 del self
-                return Retval.RETURNONE, {}
+                return Retval.RETURNONE, return_data
             # Additional key pressed; this is ALT+<key>
             altkey = True
             c = c2
@@ -5078,11 +5205,11 @@ class UIProps:
         if c == curses.KEY_MOUSE:
             return self.handle_mouse_events(cast(curses.window, self.listpad),
                                             self.sorted_list, activatedfun=self.activatedfun,
-                                            extraref=self.extraref, data=self.data), {}
+                                            extraref=self.extraref, data=self.data), return_data
 
         if c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
             return self.enter_handler(activatedfun=self.activatedfun,
-                                      extraref=self.extraref, data=self.data), {}
+                                      extraref=self.extraref, data=self.data), return_data
 
         # First generate a list of all the shortcuts we should check
         __shortcuts = {}
@@ -5129,4 +5256,4 @@ class UIProps:
                 if action == "key_callback":
                     return action_call(**action_args)
 
-        return retval, {}
+        return retval, return_data
