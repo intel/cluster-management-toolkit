@@ -374,7 +374,6 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
     tmp_dump = ruyaml_dump_to_string(tmp, replace_null=True, replace_empty=True,
                                      replace_empty_dict=True)
     dump: list[Union[list[ANSIThemeStr], str]] = []
-    dump = cast(list[Union[list[ANSIThemeStr], str]], tmp_dump.splitlines())
 
     if highlight and tmp_dump:
         list_regex = re.compile(r"^(\s*)((- )+)(.*)")
