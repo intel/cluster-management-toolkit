@@ -39,6 +39,20 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
+try:
+    import ruyaml
+    ryaml = ruyaml.YAML()
+    sryaml = ruyaml.YAML(typ="safe")
+except ModuleNotFoundError:  # pragma: no cover
+    try:
+        import ruamel.yaml as ruyaml  # type: ignore
+        ryaml = ruyaml.YAML()
+        sryaml = ruyaml.YAML(typ="safe")
+    except ModuleNotFoundError:  # pragma: no cover
+        sys.exit("ModuleNotFoundError: Could not import ruyaml/ruamel.yaml; "
+                 "you may need to (re-)run `cmt-install` or `pip3 install ruyaml/ruamel.yaml`; "
+                 "aborting.")
+
 from clustermanagementtoolkit.cluster_actions import create_vm_hosts, join_nodes, get_crio_version
 from clustermanagementtoolkit.cluster_actions import prepare_nodes, prepare_vm_template
 
@@ -2339,7 +2353,85 @@ def __task_run_postsetup_playbooks(installation_info: dict, verbose: bool = Fals
             raise
 
 
-# pylint: disable-next=unused-argument,too-many-locals
+def merge_kubeconfigs(kubeconfig1: Union[dict[str, Any], ruyaml.comments.CommentedSeq],
+                      kubeconfig2: Union[dict[str, Any], ruyaml.comments.CommentedSeq]) \
+        -> Union[dict[str, Any], ruyaml.comments.CommentedSeq]:
+    """
+    Merge two kubeconfig dicts.
+
+        Parameters:
+            kubeconfig1 (dict[str, Any]): A dict with a kubeconfig (or an empty dict)
+            kubeconfig2 (dict[str, Any]): A dict with a kubeconfig
+        Returns:
+            (dict[str, Any]):
+    """
+    merged_kubeconfig: dict[str, Any] = {}
+
+    # We don't want any duplicates, so until we write the data we can store these
+    # in dicts instead; this simplifies lookups.
+    clusters: dict[str, Any] = {}
+    contexts: dict[str, Any] = {}
+    users: dict[str, Any] = {}
+
+    if kubeconfig1:
+        merged_kubeconfig = dict(kubeconfig1)
+    else:
+        merged_kubeconfig = dict(kubeconfig2)
+        kubeconfig1["clusters"] = []
+        kubeconfig1["contexts"] = []
+        kubeconfig1["users"] = []
+
+    for cluster in deep_get(kubeconfig1, DictPath("clusters"), []) \
+            + deep_get(kubeconfig2, DictPath("clusters"), []):
+        cluster_name = deep_get(cluster, DictPath("name"), "")
+        if cluster_name in clusters:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": A cluster named ", "default"),
+                            ANSIThemeStr(cluster_name, "hostname"),
+                            ANSIThemeStr(" already exists in ", "default"),
+                            ANSIThemeStr(KUBE_CONFIG_FILE, "path"),
+                            ANSIThemeStr("; manual merge is necessary.", "default"),
+                            ANSIThemeStr("Merge aborted.", "default")], stderr=True)
+            return kubeconfig1
+        clusters[cluster_name] = dict(cluster)
+
+    for context in deep_get(kubeconfig1, DictPath("contexts"), []) \
+            + deep_get(kubeconfig2, DictPath("contexts"), []):
+        context_name = deep_get(context, DictPath("name"), "")
+        if context_name in contexts:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": A context named ", "default"),
+                            ANSIThemeStr(context_name, "argument"),
+                            ANSIThemeStr(" already exists in ", "default"),
+                            ANSIThemeStr(KUBE_CONFIG_FILE, "path"),
+                            ANSIThemeStr("; manual merge is necessary.", "default"),
+                            ANSIThemeStr("Merge aborted.", "default")], stderr=True)
+            return kubeconfig1
+        contexts[context_name] = dict(context)
+
+    for user in deep_get(kubeconfig1, DictPath("users"), []) \
+            + deep_get(kubeconfig2, DictPath("users"), []):
+        user_name = deep_get(user, DictPath("name"), "")
+        if user_name in users:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": A user named ", "default"),
+                            ANSIThemeStr(user_name, "argument"),
+                            ANSIThemeStr(" already exists in ", "default"),
+                            ANSIThemeStr(KUBE_CONFIG_FILE, "path"),
+                            ANSIThemeStr("; manual merge is necessary.", "default"),
+                            ANSIThemeStr("Merge aborted.", "default")], stderr=True)
+            return kubeconfig1
+        users[user_name] = dict(user)
+
+    # Now that we've merged the values we update the merged_config
+    merged_kubeconfig["clusters"] = list(clusters.values())
+    merged_kubeconfig["contexts"] = list(contexts.values())
+    merged_kubeconfig["users"] = list(users.values())
+
+    return merged_kubeconfig
+
+
+# pylint: disable-next=unused-argument
 def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that merges a Kube config into ~/.kube/config.
@@ -2349,11 +2441,11 @@ def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> 
     """
     cluster_name = installation_info["installation_target"]
     config_file_name = FilePath(f"{HOMEDIR}/.kube/config.{cluster_name}")
-    admin_name = f"kubernetes-admin+{cluster_name}"
-    context_name = f"{admin_name}@{cluster_name}"
+
+    d1: Union[dict[str, Any], ruyaml.comments.CommentedSeq] = {}
 
     # This read must not fail, so no exceptions
-    d2 = dict(secure_read_yaml(config_file_name))
+    d2: Union[dict[str, Any], ruyaml.comments.CommentedSeq] = secure_read_yaml(config_file_name)
 
     # This file will not exist if this is the first cluster
     security_checks = [
@@ -2366,88 +2458,11 @@ def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> 
     ]
 
     try:
-        d1 = dict(secure_read_yaml(KUBE_CONFIG_FILE, checks=security_checks))
+        d1 = secure_read_yaml(KUBE_CONFIG_FILE, checks=security_checks)
     except (FileNotFoundError, TypeError):
-        d1 = dict(d2)
-        # We will be renaming things anyway,
-        # so instead of using a lot of special casing below we just empty these fields
-        d1["clusters"] = []
-        d1["contexts"] = []
-        d1["current-context"] = context_name
-        d1["users"] = []
+        pass
 
-    for cluster in d1["clusters"]:
-        if cluster_name == cluster["name"]:
-            ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": A cluster named ", "default"),
-                            ANSIThemeStr(cluster_name, "hostname"),
-                            ANSIThemeStr(" already exists in ", "default"),
-                            ANSIThemeStr(f"{HOMEDIR}/.kube/config", "path"),
-                            ANSIThemeStr("; manual merge is necessary.", "default")], stderr=True)
-            return
-
-    for user in d1["users"]:
-        if admin_name == user["name"]:
-            ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": A user named ", "default"),
-                            ANSIThemeStr(admin_name, "hostname"),
-                            ANSIThemeStr(" already exists in ", "default"),
-                            ANSIThemeStr(f"{HOMEDIR}/.kube/config", "path"),
-                            ANSIThemeStr("; manual merge is necessary.", "default")], stderr=True)
-            return
-
-    for context in d1["contexts"]:
-        if context_name == context["name"]:
-            ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": A context named ", "default"),
-                            ANSIThemeStr(context_name, "hostname"),
-                            ANSIThemeStr(" already exists in ", "default"),
-                            ANSIThemeStr(f"{HOMEDIR}/.kube/config", "path"),
-                            ANSIThemeStr("; manual merge is necessary.", "default")], stderr=True)
-            return
-
-    cad = d2["clusters"][0]["cluster"].get("certificate-authority-data")
-    server = d2["clusters"][0]["cluster"]["server"]
-
-    insecure_skip_tls_verify = d2["clusters"][0]["cluster"].get("insecure-skip-tls-verify")
-    cluster = {
-        "cluster": {
-            "server": server,
-        },
-        "name": cluster_name,
-    }
-    if cad is not None:
-        cluster["cluster"]["certificate-authority-data"] = cad
-    if insecure_skip_tls_verify is not None:
-        cluster["cluster"]["insecure-skip-tls-verify"] = insecure_skip_tls_verify
-
-    d1["clusters"].append(cluster)
-
-    context = {
-        "context": {
-            "cluster": cluster_name,
-            "user": admin_name,
-        },
-        "name": context_name,
-    }
-    d1["contexts"].append(context)
-
-    ccd = d2["users"][0]["user"].get("client-certificate-data")
-    ckd = d2["users"][0]["user"].get("client-key-data")
-    token = d2["users"][0]["user"].get("token")
-    user = {
-        "user": {
-        },
-        "name": admin_name,
-    }
-    if ccd is not None:
-        user["user"]["client-certificate-data"] = ccd
-    if ckd is not None:
-        user["user"]["client-key-data"] = ckd
-    if token is not None:
-        user["user"]["token"] = token
-
-    d1["users"].append(user)
+    d1 = merge_kubeconfigs(d1, d2)
 
     secure_write_yaml(KUBE_CONFIG_FILE, d1, permissions=0o600, sort_keys=False)
 
@@ -3797,6 +3812,43 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
         for cluster_name in failures:
             ansithemeprint([ANSIThemeStr("• ", "separator"),
                             ANSIThemeStr(f"{cluster_name}", "hostname")], stderr=True)
+
+
+# pylint: disable-next=unused-argument
+def import_kubeconfig(options: list[tuple[str, str]], args: list[str]) -> None:
+    """
+    Merge existing kubeconfig files with ~/.kube/config.
+
+        Parameters:
+            options ([(str, str)]): Options to use when executing this action
+            args ([str]): Arguments to use when executing this action
+    """
+    kubeconfig: Union[dict[str, Any], ruyaml.comments.CommentedSeq] = {}
+
+    # First read .kube/config (if it exists)
+    try:
+        kubeconfig = secure_read_yaml(KUBE_CONFIG_FILE)
+    except FileNotFoundError:
+        ansithemeprint([ANSIThemeStr("Note", "note"),
+                        ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path"),
+                        ANSIThemeStr(" not found; ", "default"),
+                        ANSIThemeStr("a new file will be created.", "default")])
+
+    for path in args[0].split(","):
+        if path.startswith("~/"):
+            path = path.replace("~", HOMEDIR, 1)
+        try:
+            d = secure_read_yaml(FilePath(path))
+        except FileNotFoundError as e:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Failed to import ", "default"),
+                            ANSIThemeStr(f"{path}", "path"),
+                            ANSIThemeStr("; ", "default"),
+                            ANSIThemeStr(f"{e}", "errorvalue"),
+                            ANSIThemeStr(". Skipping.", "default")], stderr=True)
+            continue
+        kubeconfig = merge_kubeconfigs(kubeconfig, d)
+        secure_write_yaml(KUBE_CONFIG_FILE, kubeconfig, permissions=0o600, sort_keys=False)
 
 
 # pylint: disable-next=unused-argument,too-many-locals
@@ -6953,6 +7005,33 @@ COMMANDLINE: dict[str, CommandType] = {
             },
         ],
         "callback": import_cluster,
+    },
+    "Import kubeconfig": {
+        "command": ["import-kubeconfig"],
+        "values": [
+            ANSIThemeStr("[", "separator"),
+            ANSIThemeStr("PATH", "argument"),
+            ANSIThemeStr(",", "separator"),
+            ANSIThemeStr("...", "argument"),
+            ANSIThemeStr("]", "separator")],
+        "description": [
+            ANSIThemeStr("Merge kubeconfig(s) into ", "description"),
+            ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path")],
+        "options": {
+        },
+        "required_args": [
+            {
+                "name": "kubeconfig",
+                "string": [
+                    ANSIThemeStr("FILE", "argument")],
+                "validation": {
+                    "validator": "path",
+                    "list_separator": ",",
+                },
+            },
+        ],
+        "optional_args": [],
+        "callback": import_kubeconfig,
     },
     "Prepare Installation": {
         "command": ["prepare"],

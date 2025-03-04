@@ -27,6 +27,8 @@ except ModuleNotFoundError:
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
 from clustermanagementtoolkit.ansithemeprint import ansithemestr_join_list, ansithemearray_to_str
 
+from clustermanagementtoolkit.cmtpaths import HOMEDIR
+
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath
 from clustermanagementtoolkit.cmttypes import HostNameStatus, ProgrammingError
 from clustermanagementtoolkit.cmttypes import LogLevel, ArgumentValidationError
@@ -527,6 +529,8 @@ def validate_argument(arg: str, arg_string: list[ANSIThemeStr], options: dict) -
             if not (result := validator_cidr(subarg, error_on_failure=error_on_failure)):
                 break
         elif validator == "path":
+            if subarg.startswith("~/"):
+                subarg = subarg.replace("~", HOMEDIR, 1)
             if not (result := validator_path(subarg, error_on_failure=error_on_failure)):
                 break
         elif validator in ("hostname", "hostname_or_path", "hostname_or_ip", "ip"):
