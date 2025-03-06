@@ -432,18 +432,18 @@ def test_format_yaml_line(verbose: bool = False) -> tuple[str, bool]:
              []), None),
             ("key: value", {}, ([
                 ThemeStr("key", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("value", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("\"key\": \"value\"", {}, ([
                 ThemeStr("\"key\"", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("\"value\"", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("\"config\": \"value1\"\\n\"value2\"\\n\"value3\"",
              {"expand_newline_fields": ("config",)}, ([
                  ThemeStr("\"config\"", ThemeAttr("types", "yaml_key")),
-                 ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                 ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                  ThemeStr("\"value1\"", ThemeAttr("types", "yaml_value")),
              ], [
                 [ThemeStr("           ", ThemeAttr("types", "yaml_key"), False),
@@ -453,55 +453,55 @@ def test_format_yaml_line(verbose: bool = False) -> tuple[str, bool]:
              ]), None),
             ("\"key\": \"\033[0;4;37mvalue\"", {"value_strip_ansicodes": True}, ([
                 ThemeStr("\"key\"", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("\"value\"", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("\"key\": \"val\\tue\"", {"value_expand_tabs": True}, ([
                 ThemeStr("\"key\"", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("\"val    ue\"", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("\"key\": \"value\"", {"value_expand_tabs": True}, ([
                 ThemeStr("\"key\"", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("\"value\"", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("\"key\": \"value\"", {}, ([
                 ThemeStr("\"key\"", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("\"value\"", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("key: &define", {}, ([
                 ThemeStr("key", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("&", ThemeAttr("types", "yaml_reference")),
                 ThemeStr("define", ThemeAttr("types", "yaml_anchor"))],
              []), None),
             ("key: &define '#112233'", {}, ([
                 ThemeStr("key", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("&", ThemeAttr("types", "yaml_reference")),
                 ThemeStr("define", ThemeAttr("types", "yaml_anchor")),
                 ThemeStr(" '#112233'", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("key: *define", {}, ([
                 ThemeStr("key", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("*", ThemeAttr("types", "yaml_reference")),
                 ThemeStr("define", ThemeAttr("types", "yaml_anchor"))],
              []), None),
             ("key:", {"override_formatting": {"key": {"key": ThemeAttr("types", "generic")}}}, ([
                 ThemeStr("key", ThemeAttr("types", "generic")),
-                ThemeStr(":", ThemeAttr("types", "yaml_separator"))],
+                ThemeStr(":", ThemeAttr("types", "yaml_key_separator"))],
              []), None),
             ("key: {", {}, ([
                 ThemeStr("key", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("{", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("key: {", {}, ([
                 ThemeStr("key", ThemeAttr("types", "yaml_key")),
-                ThemeStr(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeStr(": ", ThemeAttr("types", "yaml_key_separator")),
                 ThemeStr("{", ThemeAttr("types", "yaml_value"))],
              []), None),
             ("}", {}, ([
@@ -516,7 +516,7 @@ def test_format_yaml_line(verbose: bool = False) -> tuple[str, bool]:
                 ThemeStr("", ThemeAttr("types", "generic")),
                 ThemeRef("separators", "yaml_list"),
                 ThemeStr("key", ThemeAttr("types", "yaml_key")),
-                ThemeStr(':', ThemeAttr('types', 'yaml_separator'), False)],
+                ThemeStr(':', ThemeAttr('types', 'yaml_key_separator'), False)],
              []), None),
             ("- key:", {"override_formatting": "a"}, None, TypeError),
             ('  "error": "please install istio or disable the istio ingress plugin: '
@@ -545,7 +545,7 @@ def test_format_yaml_line(verbose: bool = False) -> tuple[str, bool]:
                  'value_expand_tabs': True
              }, ([
                  ThemeStr('  "error"', ThemeAttr('types', 'yaml_key_error'), False),
-                 ThemeStr(': ', ThemeAttr('types', 'yaml_separator'), False),
+                 ThemeStr(': ', ThemeAttr('types', 'yaml_key_separator'), False),
                  ThemeStr('"please install istio or disable the istio ingress plugin: '
                           'no matches for kind \\"Gateway\\" in version '
                           '\\"networking.istio.io/v1beta1\\"",',

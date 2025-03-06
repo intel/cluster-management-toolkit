@@ -391,7 +391,7 @@ def format_yaml_line(line: str, **kwargs: Any) -> tuple[list[Union[ThemeRef, The
     key_format = ThemeAttr("types", "yaml_key")
     value_format = ThemeAttr("types", "yaml_value")
     list_format: Union[ThemeRef, ThemeStr] = ThemeRef("separators", "yaml_list")
-    separator_format = ThemeAttr("types", "yaml_separator")
+    separator_format = ThemeAttr("types", "yaml_key_separator")
     reference_format = ThemeAttr("types", "yaml_reference")
     anchor_format = ThemeAttr("types", "yaml_anchor")
 
