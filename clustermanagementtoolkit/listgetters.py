@@ -613,12 +613,12 @@ def listgetter_dir(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
             filesize: str = disksize_to_human(fstat.st_size)
 
             vlist.append({
-                "filename": filename,
+                "name": filename,
                 "mtime": mtime,
                 "ctime": ctime,
                 "filesize": filesize,
                 "ref": {
-                    "filename": filename,
+                    "name": filename,
                     "filepath": FilePath(filepath),
                     "filesize": filesize,
                     "mtime": mtime,

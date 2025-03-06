@@ -18,7 +18,7 @@ listview:
     call: null
   field_indexes:
     Normal:
-      fields: ["filename", "mtime", "ctime", "filesize"]
+      fields: ["name", "mtime", "ctime", "filesize"]
       sortcolumn: "mtime"
       sortorder_reverse: true
   labels: null
@@ -29,9 +29,9 @@ listview:
         - path: "ctime"
           pathtype: "timestamp"
       formatter: "timestamp"
-    filename:
+    name:
       header: "Filename:"
-      path: "filename"
+      path: "name"
       type: "str"
     filesize:
       header: "File Size:"
@@ -50,6 +50,8 @@ listview:
         description: "Delete log"
         confirm: true
         actionfunc: "delete_logs"
+        action_args:
+          dirpath: "{HOME}/.cmt/logs"
   shortcuts:
     "Edit resource": null
     "View YAML dump": null

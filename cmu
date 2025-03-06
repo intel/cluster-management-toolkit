@@ -1738,7 +1738,18 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
             for item in tagged_items:
                 # XXX Once all infogetters have been fixed we do not need to check for <none>
-                if not item.name or item.name == "<none>":
+                if not hasattr(item, "name") \
+                        or not getattr(item, "name") or getattr(item, "name") == "<none>":
+                    errmsg = [
+                        [("Kind ", "default"),
+                         (f"{kind}", "argument"),
+                         (" either lacks the ", "default"),
+                         ("name", "argument"),
+                         (" attribute or has an empty value; ", "default"),
+                         ("currently tagging requires that attribute.", "default")],
+                    ]
+                    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                    cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
                     break
 
                 if hasattr(item, "roles"):
@@ -7815,8 +7826,11 @@ def delete_logs(**kwargs: Any) -> Retval:
             (Retval): The return value
     """
     items = deep_get(kwargs, DictPath("items"), [])
+    dirpath: str = deep_get(kwargs, DictPath("action#action_args#dirpath"))
+    if dirpath is not None:
+        dirpath = dirpath.replace("{HOME}", HOMEDIR)
     for item in items:
-        ansible_delete_log(item)
+        ansible_delete_log(item, dirpath=dirpath)
     return Retval.RETURNDONE
 
 

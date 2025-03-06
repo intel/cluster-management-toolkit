@@ -74,7 +74,7 @@ def get_playbook_path(playbook: Union[FilePath, str]) -> FilePath:
     Pass in the name of a playbook that exists in either
     {SYSTEM_PLAYBOOK_DIR} or {ANSIBLE_PLAYBOOK_DIR};
     returns the path to the drop-in playbook with the highest priority
-    (or the same playbook in case there is no override)
+    (or the same playbook in case there is no override).
 
         Parameters:
             playbook (FilePath): The name of the playbook to get the path to
@@ -276,7 +276,7 @@ def ansible_print_action_summary(playbooks: list[tuple[list[ANSIThemeStr], FileP
 
 def ansible_get_inventory_dict() -> Union[dict[str, Any], ruyaml.CommentedMap]:
     """
-        Get the Ansible inventory and return it as a dict
+        Get the Ansible inventory and return it as a dict.
 
         Returns:
             (dict): A dictionary with an Ansible inventory
@@ -305,7 +305,7 @@ def ansible_get_inventory_dict() -> Union[dict[str, Any], ruyaml.CommentedMap]:
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr], str]]:
     """
-        Get the Ansible inventory and return it neatly formatted
+        Get the Ansible inventory and return it neatly formatted.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -411,7 +411,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
 
 def ansible_get_hosts_by_group(inventory: FilePath, group: str) -> list[str]:
     """
-    Get the list of hosts belonging to a group
+    Get the list of hosts belonging to a group.
 
         Parameters:
             inventory (FilePath): The inventory to use
@@ -434,7 +434,7 @@ def ansible_get_hosts_by_group(inventory: FilePath, group: str) -> list[str]:
 
 def ansible_get_groups(inventory: FilePath) -> list[str]:
     """
-    Get the list of groups in the inventory
+    Get the list of groups in the inventory.
 
         Parameters:
             inventory (FilePath): The inventory to use
@@ -453,7 +453,7 @@ def ansible_get_groups(inventory: FilePath) -> list[str]:
 
 def ansible_get_groups_by_host(inventory_dict: dict, host: str) -> list[str]:
     """
-    Given an inventory, returns the groups a host belongs to
+    Given an inventory, returns the groups a host belongs to.
 
         Parameters:
             inventory_dict (dict): An Ansible inventory
@@ -479,7 +479,7 @@ def ansible_get_groups_by_host(inventory_dict: dict, host: str) -> list[str]:
 
 def __ansible_create_inventory(inventory: FilePath, **kwargs: Any) -> bool:
     """
-    Create a new inventory at the path given if no inventory exists
+    Create a new inventory at the path given if no inventory exists.
 
         Parameters:
             inventory (FilePath): A path where to create a new inventory (if non-existing)
@@ -535,7 +535,7 @@ def __ansible_create_inventory(inventory: FilePath, **kwargs: Any) -> bool:
 
 def ansible_create_groups(inventory: FilePath, groups: list[str], **kwargs: Any) -> bool:
     """
-    Create new groups
+    Create new groups.
 
         Parameters:
             inventory (FilePath): The path to the inventory
@@ -581,7 +581,7 @@ def ansible_create_groups(inventory: FilePath, groups: list[str], **kwargs: Any)
 
 def ansible_set_vars(inventory: FilePath, group: str, values: dict, **kwargs: Any) -> bool:
     """
-    Set one or several values for a group
+    Set one or several values for a group.
 
         Parameters:
             inventory (FilePath): The path to the inventory
@@ -637,7 +637,7 @@ def ansible_set_groupvars(inventory: FilePath,
                           groups: list[str],
                           groupvars: Sequence[tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
     """
-    Set one or several vars for the specified groups
+    Set one or several vars for the specified groups.
 
         Parameters:
             inventory (FilePath): The path to the inventory
@@ -694,7 +694,7 @@ def ansible_set_hostvars(inventory: FilePath,
                          hosts: list[str],
                          hostvars: Sequence[tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
     """
-    Set one or several vars for the specified hosts
+    Set one or several vars for the specified hosts.
 
         Parameters:
             inventory (FilePath): The path to the inventory
@@ -747,7 +747,7 @@ def ansible_set_hostvars(inventory: FilePath,
 def ansible_unset_groupvars(inventory: FilePath,
                             groups: list[str], groupvars: list[str], **kwargs: Any) -> bool:
     """
-    Unset one or several vars for the specified groups
+    Unset one or several vars for the specified groups.
 
         Parameters:
             inventory (FilePath): The path to the inventory
@@ -808,7 +808,7 @@ def ansible_unset_groupvars(inventory: FilePath,
 def ansible_unset_hostvars(inventory: FilePath,
                            hosts: list[str], hostvars: list[str], **kwargs: Any) -> bool:
     """
-    Unset one or several vars for the specified hosts
+    Unset one or several vars for the specified hosts.
 
         Parameters:
             inventory (FilePath): The path to the inventory
@@ -862,7 +862,7 @@ def ansible_unset_hostvars(inventory: FilePath,
 
 def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> bool:
     """
-    Add hosts to the ansible inventory; if the inventory does not exist, create it
+    Add hosts to the ansible inventory; if the inventory does not exist, create it.
 
         Parameters:
             inventory (FilePath): The path to the inventory
@@ -950,7 +950,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> b
 # Remove hosts from ansible groups
 def ansible_remove_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> bool:
     """
-    Remove hosts from the inventory
+    Remove hosts from the inventory.
 
         Parameters:
             inventory (FilePath): The inventory to use
@@ -995,7 +995,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -
 
 def ansible_remove_groups(inventory: FilePath, groups: list[str], **kwargs: Any) -> bool:
     """
-    Remove groups from the inventory
+    Remove groups from the inventory.
 
         Parameters:
             inventory (FilePath): The inventory to use
@@ -1050,7 +1050,7 @@ def ansible_remove_groups(inventory: FilePath, groups: list[str], **kwargs: Any)
 
 def ansible_get_logs() -> list[tuple[str, str, FilePath, datetime]]:
     """
-    Returns a list of all available logs
+    Returns a list of all available logs.
 
         Returns:
             (str, str, FilePath, datetime):
@@ -1078,7 +1078,7 @@ def ansible_get_logs() -> list[tuple[str, str, FilePath, datetime]]:
 # pylint: disable-next=too-many-branches
 def ansible_extract_failure(retval: int, error_msg_lines: list[str], **kwargs: Any) -> str:
     """
-    Given error information from an ansible run, return a suitable error message
+    Given error information from an ansible run, return a suitable error message.
 
         Parameters:
             retval (int): The retval from the run
@@ -1135,7 +1135,7 @@ def ansible_extract_failure(retval: int, error_msg_lines: list[str], **kwargs: A
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def ansible_results_extract(event: dict) -> tuple[int, dict]:
     """
-    Extract a result from an Ansible play
+    Extract a result from an Ansible play.
 
         Parameters:
             event (dict): The output from the run
@@ -1255,24 +1255,32 @@ def ansible_results_extract(event: dict) -> tuple[int, dict]:
     return retval_, d
 
 
-def ansible_delete_log(log: str) -> None:
+def ansible_delete_log(log: str, **kwargs: Any) -> None:
     """
-    Delete a log file
+    Delete a log file.
+    FIXME: This should be moved elsewhere since it's used by other components
+    than just Ansible logs.
 
         Parameters:
-            (str): The name of the log to delete
+            log (str): The name of the log to delete
+            **kwargs (dict[str, Any]): Keyword arguments
+                dirpath (str): The path to the logs
     """
-    logpath = Path(f"{ANSIBLE_LOG_DIR}/{log}")
+    dirpath: str = deep_get(kwargs, DictPath("dirpath"), ANSIBLE_LOG_DIR)
+    logpath: str = Path(f"{dirpath}/{log}")
     if logpath.exists():
-        for file in logpath.iterdir():
-            secure_rm(FilePath(file))
-        secure_rmdir(FilePath(logpath))
+        if logpath.is_dir():
+           for file in logpath.iterdir():
+               secure_rm(FilePath(file))
+           secure_rmdir(FilePath(logpath))
+        else:
+            secure_rm(FilePath(logpath))
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def ansible_write_log(start_date: datetime, playbook: FilePath, events: list[dict]) -> None:
     """
-    Save an Ansible log entry to a file
+    Save an Ansible log entry to a file.
 
         Parameters:
             start_date (date): A timestamp in the format YYYY-MM-DD_HH:MM:SS.ssssss
@@ -1394,7 +1402,7 @@ def ansible_print_task_results(task: str,
                                stdout_lines: list[str],
                                stderr_lines: list[str], retval: int, **kwargs: Any) -> None:
     """
-    Pretty-print the result of an Ansible task run
+    Pretty-print the result of an Ansible task run.
 
         Parameters:
             task (str): The name of the task
@@ -1458,7 +1466,7 @@ def ansible_print_task_results(task: str,
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def ansible_print_play_results(retval: int, ansible_results: dict, **kwargs: Any) -> None:
     """
-    Pretty-print the result of an Ansible play
+    Pretty-print the result of an Ansible play.
 
         Parameters:
             retval (int): The return value from the play
@@ -1579,7 +1587,7 @@ def ansible_print_play_results(retval: int, ansible_results: dict, **kwargs: Any
 # pylint: disable-next=too-many-locals
 def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> tuple[int, dict]:
     """
-    Run a playbook
+    Run a playbook.
 
         Parameters:
             playbook (FilePath): The playbook to run
@@ -1646,7 +1654,7 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> tuple[int, dict]:
 def ansible_run_playbook_on_selection(playbook: FilePath,
                                       selection: list[str], **kwargs: Any) -> tuple[int, dict]:
     """
-    Run a playbook on selected nodes
+    Run a playbook on selected nodes.
 
         Parameters:
             playbook (FilePath): The playbook to run
@@ -1704,7 +1712,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
 
 def ansible_ping(selection: Optional[list[str]] = None) -> list[tuple[str, str]]:
     """
-    Ping all selected hosts
+    Ping all selected hosts.
 
         Parameters:
             selection ([str]): A list of hostnames
