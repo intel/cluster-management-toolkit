@@ -834,7 +834,7 @@ class LogLevel(IntEnum):
     """
     Loglevels used by CMT.
 
-    LogLevel.ALL will be substituted by LogLevel.INFO unless it's overriden
+    LogLevel.ALL will be substituted by LogLevel.INFO unless it's overriden.
     """
     EMERG = 0
     ALERT = 1
@@ -851,7 +851,7 @@ class LogLevel(IntEnum):
     ALL = 255
 
 
-loglevel_mappings = {
+loglevel_mappings: dict[LogLevel, str] = {
     LogLevel.EMERG: "Emergency",
     LogLevel.ALERT: "Alert",
     LogLevel.CRIT: "Critical",
@@ -859,6 +859,7 @@ loglevel_mappings = {
     LogLevel.WARNING: "Warning",
     LogLevel.NOTICE: "Notice",
     LogLevel.INFO: "Info",
+    LogLevel.DEFAULT: "Info",
     LogLevel.DEBUG: "Debug",
     LogLevel.DIFFPLUS: "Diffplus",
     LogLevel.DIFFMINUS: "Diffminus",
@@ -892,9 +893,9 @@ def loglevel_to_name(loglevel: LogLevel) -> str:
         Returns:
             (str): A severity string
     """
-    if loglevel < LogLevel.EMERG or loglevel > LogLevel.ALL:
+    if loglevel is None or loglevel < LogLevel.EMERG or loglevel > LogLevel.DIFFSAME:
         loglevel = LogLevel.INFO
-    return loglevel_mappings[loglevel]
+    return loglevel_mappings.get(loglevel)
 
 
 def get_loglevel_names() -> list[str]:
