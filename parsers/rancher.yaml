@@ -6,6 +6,7 @@
   parser_rules:
     - name: "key_value"
     - name: "ts_8601"
+    - name: "glog"
     - name: "override_severity"
       overrides:
         - matchtype: "startswith"
@@ -19,6 +20,11 @@
     - name: "ts_8601"
     - name: "bracketed_severity"
     - name: "glog"
+    - name: "custom_splitter"
+      options:
+        regex: '^\d{4}/\d\d/\d\d \d\d:\d\d:\d\d (.*)'
+        message:
+          field: 1
     - name: "override_severity"
       overrides:
         - matchtype: "startswith"
