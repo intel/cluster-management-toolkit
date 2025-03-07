@@ -1,0 +1,129 @@
+---
+kind: "NodeDriver"
+api_family: "management.cattle.io"
+default_command: "nodedrivers.management.cattle.io"
+command:
+  - "nodedrivers.cattle"
+  - "nodedriver.cattle"
+  - "nodedrvs.cattle"
+  - "nodedrv.cattle"
+  - "nodrvs.cattle"
+  - "nodrv.cattle"
+listview:
+  name: "Node Drivers"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "active", "age"]
+  fields:
+    active:
+      header: "Active:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Active"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+infoview:
+  name: "Node Driver Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description",
+                 "active", "add_cloud_credential", "builtin",
+                 "checksum", "description",
+                 "display_name", "external_id", "ui_url",
+                 "url", "whitelist_domains"]
+    rows:
+      active:
+        header: [["Active:", ["main", "infoheader"]]]
+        path: "spec#active"
+        type: "bool"
+      add_cloud_credential:
+        header: [["Add Cloud Credential:", ["main", "infoheader"]]]
+        path: "spec#addCloudCredential"
+        type: "bool"
+      builtin:
+        header: [["Builtin:", ["main", "infoheader"]]]
+        path: "spec#builtin"
+        type: "bool"
+      checksum:
+        header: [["Checksum:", ["main", "infoheader"]]]
+        path: "spec#checksum"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      external_id:
+        header: [["External ID:", ["main", "infoheader"]]]
+        path: "spec#externalId"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      ui_url:
+        header: [["UI ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["RL:", ["main", "infoheader"]]]
+        path: "spec#uiUrl"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      url:
+        header: [["URL:", ["main", "infoheader"]]]
+        path: "spec#url"
+        type: "str"
+        fallback_on_empty: true
+        default: "<unset>"
+      whitelist_domains:
+        header: [["Whitelist Domains:", ["main", "infoheader"]]]
+        path: "spec#whitelistDomains"
+        type: "raw"
+        default: "<unset>"
+        formatter: "list"
+  shortcuts:
+    "Open UI URL":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open UI URL in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open",
+                  ["spec#uiUrl"]]
+    "Whitelist Domains":
+      key: "w"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show whitelist domains"
+      widget: "windowwidget"
+      title: "Whitelist Domains:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#whitelistDomains"
+      # This isn't supported for now
+      sortcolumn: "name"

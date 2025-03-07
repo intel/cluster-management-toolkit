@@ -1,0 +1,78 @@
+---
+kind: "DynamicSchema"
+api_family: "management.cattle.io"
+default_command: "dynamicschemas.management.cattle.io"
+command:
+  - "dynschemas.cattle"
+  - "dynschema.cattle"
+listview:
+  name: "Dynamic Schemas"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Dynamic Schema Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_driver"]
+    rows:
+      node_driver:
+        header: [["Node ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["river:", ["main", "infoheader"]]]
+        paths:
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "NodeDriver"
+        default: "<none>"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#resourceFields"
+      rename_bare: "name"
+      flatten_dicts: true
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "description", "type", "create", "update"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      create:
+        header: "Create:"
+        path: "create"
+        type: "bool"
+      description:
+        header: "Description:"
+        path: "description"
+        type: "str"
+      type:
+        header: "Type:"
+        path: "type"
+        type: "str"
+      update:
+        header: "Update:"
+        path: "update"
+        type: "bool"
+  shortcuts:
+    "Node Driver":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Node Driver"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "NodeDriver"
+        api_family: "management.cattle.io"
