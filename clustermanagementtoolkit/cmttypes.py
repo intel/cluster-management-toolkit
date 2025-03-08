@@ -834,7 +834,8 @@ class LogLevel(IntEnum):
     """
     Loglevels used by CMT.
 
-    LogLevel.ALL will be substituted by LogLevel.INFO unless it's overriden.
+    LogLevel.ALL will be substituted by LogLevel.DEBUG unless it's overriden,
+    since it's intended to show all log data.
     """
     EMERG = 0
     ALERT = 1
@@ -887,13 +888,18 @@ def name_to_loglevel(severity: str) -> LogLevel:
 def loglevel_to_name(loglevel: LogLevel) -> str:
     """
     Given a numerical loglevel, return its severity string.
+    If loglevel is missing or out of range it will be substituted with LogLevel.INFO.
 
         Parameters:
             loglevel (int): The corresponding numerical loglevel
         Returns:
             (str): A severity string
     """
-    if loglevel is None or loglevel < LogLevel.EMERG or loglevel > LogLevel.DIFFSAME:
+    if loglevel is None:
+        loglevel = LogLevel.INFO
+    elif loglevel == LogLevel.ALL:
+        loglevel = LogLevel.DEBUG
+    elif loglevel < LogLevel.EMERG or loglevel > LogLevel.DIFFSAME:
         loglevel = LogLevel.INFO
     return loglevel_mappings.get(loglevel)
 

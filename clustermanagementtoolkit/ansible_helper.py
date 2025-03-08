@@ -1270,9 +1270,9 @@ def ansible_delete_log(log: str, **kwargs: Any) -> None:
     logpath: str = Path(f"{dirpath}/{log}")
     if logpath.exists():
         if logpath.is_dir():
-           for file in logpath.iterdir():
-               secure_rm(FilePath(file))
-           secure_rmdir(FilePath(logpath))
+            for file in logpath.iterdir():
+                secure_rm(FilePath(file))
+            secure_rmdir(FilePath(logpath))
         else:
             secure_rm(FilePath(logpath))
 

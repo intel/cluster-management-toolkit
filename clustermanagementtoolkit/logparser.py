@@ -1268,7 +1268,7 @@ def split_json_style(message: str, **kwargs: Any) \
                 _facilities = deep_get(_fac, DictPath("keys"), [])
                 _separators = deep_get(_fac, DictPath("separators"), [])
                 for i, _fac in enumerate(_facilities):
-                    # this is to allow prefixes/suffixes
+                    # This is to allow prefixes/suffixes.
                     if _fac != "":
                         if _fac not in logentry:
                             break
@@ -3806,15 +3806,13 @@ def custom_splitter(message: str, **kwargs: Any) -> \
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def custom_parser(message: str, filters: list[Union[str, tuple]], **kwargs: Any) \
+def parsing_multiplexer(message: str, filters: list[Union[str, tuple]], **kwargs: Any) \
         -> tuple[str, LogLevel,
                  Union[list[Union[ThemeRef, ThemeStr]], tuple[str, Optional[Callable], dict]],
                  list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     The main loop for the parser; it will iterate loop through all rules specified for
     a particular log until a line has been fully processed.
-    Note: The name of this function is a misnomer and should be renamed *and* refactored;
-    the name is a holdover from an early version of the logparser.
 
         Parameters:
             message (str): The message to format
@@ -4206,7 +4204,7 @@ def get_parser_list() -> set[Parser]:
     return parsers_
 
 
-# We've already defined the parser, so no need to do it again
+# pylint: disable-next=too-many-locals
 def logparser_initialised(**kwargs: Any) \
         -> tuple[datetime, str, LogLevel,
                  Union[list[Union[ThemeRef, ThemeStr]], tuple[str, Optional[Callable], dict]],
@@ -4243,7 +4241,7 @@ def logparser_initialised(**kwargs: Any) \
         "__line": line,
     }
     facility, severity, rmessage, remnants = \
-        custom_parser(message, filters=parser.rules, fold_msg=fold_msg, options=options)
+        parsing_multiplexer(message, filters=parser.rules, fold_msg=fold_msg, options=options)
 
     max_untruncated_len = 16384
     if isinstance(rmessage, list) and themearray_len(rmessage) > max_untruncated_len - 1:
@@ -4256,6 +4254,36 @@ def logparser_initialised(**kwargs: Any) \
                              f"truncated to {max_untruncated_len} bytes "
                              "(Use line wrapping to see the entire message)",
                              ThemeAttr("logview", severity_name))]
+
+    if rmessage is None:
+        severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+        rmessage = [ThemeStr(message, ThemeAttr("logview", severity_name))]
+        errmsg = [
+            [("Message ", "default"),
+             (f"{message}", "argument"),
+             ("not parsed; converting.", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.NOTICE, msg=unformatted_msg, messages=formatted_msg)
+    elif isinstance(rmessage, str):
+        severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+        rmessage = [ThemeStr(rmessage, ThemeAttr("logview", severity_name))]
+        errmsg = [
+            [("Unexpected format for message: ", "default"),
+             (f"{rmessage}", "argument"),
+             (" (expected one of [ThemeStr] or tuple(block); converting.", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
+    if not (isinstance(rmessage, list) and len(rmessage) and isinstance(rmessage[0], ThemeStr)
+            or isinstance(rmessage, tuple)):
+        errmsg = [
+            [("Unexpected format for rmessage: ", "default"),
+             (f"{rmessage}", "argument"),
+             (" (expected one of [ThemeStr] or tuple(block).", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
 
     return timestamp, facility, severity, rmessage, remnants
 
@@ -4286,16 +4314,17 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
                 line (int): The line number
         Returns:
             (datetime, str, LogLevel,
-             str | ThemeArray | (str, Callable, dict),
+             ThemeArray | (str, Callable, dict),
              [(ThemeArray, LogLevel)], (str, str), Parser):
                 (datetime): A timestamp
                 (str): The log facility
                 (LogLevel): Loglevel
-                (ThemeArray): An unformatted string, a ThemeArray, or a scanner
+                (ThemeArray): A ThemeArray, or a scanner
                 ([tuple[ThemeArray, LogLevel]]): Formatted remainders with severity
-                (str): Subidentifiers to help explain
-                       what rules in the parser file are used
-                (str): Name of the parser file used
+                ((str, str)):
+                    (str): Subidentifiers to help explain
+                           what rules in the parser file are used
+                    (str): Name of the parser file used
                 (Parser): A reference to the parser rules that are used
     """
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
@@ -4323,12 +4352,15 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
                     "__line": line,
                 }
                 facility, severity, rmessage, remnants = \
-                    custom_parser(message, filters=parser.rules,
-                                  fold_msg=fold_msg, options=options)
+                    parsing_multiplexer(message, filters=parser.rules,
+                                        fold_msg=fold_msg, options=options)
         # As a step towards always using ThemeStr, convert all regular strings
         if rmessage is None:
             severity_name = f"severity_{loglevel_to_name(severity).lower()}"
             rmessage = [ThemeStr(message, ThemeAttr("logview", severity_name))]
+        elif isinstance(rmessage, str):
+            severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+            rmessage = [ThemeStr(rmessage, ThemeAttr("logview", severity_name))]
         return (timestamp, facility, severity,
                 rmessage, remnants, ("<override>", str(override_parser)), parser)
 
@@ -4361,7 +4393,8 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
                     "__line": line,
                 }
                 facility, severity, rmessage, remnants = \
-                    custom_parser(message, filters=parser.rules, fold_msg=fold_msg, options=options)
+                    parsing_multiplexer(message, filters=parser.rules,
+                                        fold_msg=fold_msg, options=options)
 
                 _lparser = []
                 if pod_prefix:
@@ -4382,7 +4415,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
         parser = Parser(name="basic_8601", show_in_selector=True,
                         match=[("raw", "", "", "container", None)], rules=[("ts_8601", {})])
         facility, severity, rmessage, remnants = \
-            custom_parser(message, filters=parser.rules, fold_msg=fold_msg, options={})
+            parsing_multiplexer(message, filters=parser.rules, fold_msg=fold_msg, options={})
 
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
     if rmessage is None:
@@ -4398,5 +4431,35 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
                              f"truncated to {max_untruncated_len} bytes "
                              "(Use line wrapping to see the entire message)",
                              ThemeAttr("logview", severity_name))]
+
+    if rmessage is None:
+        severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+        rmessage = [ThemeStr(message, ThemeAttr("logview", severity_name))]
+        errmsg = [
+            [("Message ", "default"),
+             (f"{message}", "argument"),
+             ("not parsed; converting.", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.NOTICE, msg=unformatted_msg, messages=formatted_msg)
+    elif isinstance(rmessage, str):
+        severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+        rmessage = [ThemeStr(rmessage, ThemeAttr("logview", severity_name))]
+        errmsg = [
+            [("Unexpected format for message: ", "default"),
+             (f"{rmessage}", "argument"),
+             (" (expected one of [ThemeStr] or tuple(block); converting.", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
+    if not (isinstance(rmessage, list) and len(rmessage) and isinstance(rmessage[0], ThemeStr)
+            or isinstance(rmessage, tuple)):
+        errmsg = [
+            [("Unexpected format for rmessage: ", "default"),
+             (f"{rmessage}", "argument"),
+             (" (expected one of [ThemeStr] or tuple(block).", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+        cmtlog.log(LogLevel.WARNING, msg=unformatted_msg, messages=formatted_msg)
 
     return timestamp, facility, severity, rmessage, remnants, (lparser, uparser), parser
