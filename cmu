@@ -1163,8 +1163,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
         uip.stdscr.timeout(100)
         c = uip.stdscr.getch()
-
-        retval = uip.generic_keycheck(c)
+        retval: Retval = uip.generic_keycheck(c)
 
         if retval == Retval.MATCH:
             continue
@@ -4493,9 +4492,7 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
         uip.stdscr.timeout(100)
         c = uip.stdscr.getch()
-        retval = uip.generic_keycheck(c)
-        if c == -1:
-            continue
+        retval: Retval = uip.generic_keycheck(c)
 
         if retval == Retval.MATCH:
             continue
@@ -5440,7 +5437,8 @@ def containerinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     ThemeStr(f"{status}", color_status_group(status_group))
                 ]
                 if status_message != "":
-                    statusarray.append(ThemeStr(f" ({status_message})",
+                    status_message_ = "\\n".join(split_msg(status_message))
+                    statusarray.append(ThemeStr(f" ({status_message_})",
                                        ThemeAttr("types", "generic")))
                 restartsarray: list[Union[ThemeRef, ThemeStr]] = [
                     ThemeStr("Restarts: ", ThemeAttr("main", "infoheader")),
