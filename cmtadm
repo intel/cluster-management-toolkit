@@ -997,6 +997,8 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                 "<<<arch>>>": arch,
                 "<<<context>>>": context,
             }
+            if verbose:
+                print(f"  Upgrade Command: " + " ".join(substitute_list(upgrade_command, substitutions)))
             check_and_print_status(execute_command(substitute_list(upgrade_command, substitutions)))
         else:
             ansithemeprint([ANSIThemeStr("No newer version available.", "default")])

@@ -337,11 +337,11 @@ cni_data: dict[str, dict[str, CNIDataType]] = {
         },
         "CNI": {
             "version_command": ["cilium", "--context", "<<<context>>>", "version"],
-            "version_regex": r"^cilium image \(running\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "version_regex": r"^cilium image \(running\): (\d+)(\.)(\d+)(\.)(\d+)$",
             "candidate_version_command": ["cilium", "--context", "<<<context>>>", "version"],
-            "candidate_version_regex": r"^cilium image \(default\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "candidate_version_regex": r"^cilium image \(stable\): v(\d+)(\.)(\d+)(\.)(\d+)$",
             "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-            "upgrade": ["cilium", "--reuse-values", "--context", "<<<context>>>", "upgrade"],
+            "upgrade": ["cilium", "--context", "<<<context>>>", "upgrade", "--reuse-values"],
             "install": ["cilium", "--context", "<<<context>>>", "install"],
             "uninstall": ["cilium", "--context", "<<<context>>>", "uninstall"],
         }
