@@ -76,6 +76,8 @@ No changes.
 
 * CNI configuration patching is now done by modifying the YAML rather than
   by using `sed`.  This should, in most cases, be more resilient.
+* Upgrading `cilium` now works properly.
+* There's now a command that allows for importing kubeconfig files.
 
 ### Changes to _cmtinv_ in v0.8.6
 
@@ -83,12 +85,18 @@ No changes.
 
 ### Changes to _cmu_ in v0.8.6
 
-No changes.
+* The container status in the container log view now trims control characters.
+* The clusteroverview has now been fixed not to overwrite the first line
+  of the event pad.
 
 ### Changes to other files in v0.8.6
 
 * secure_read_yaml()/secure_read_yaml_all()/secure_write_yaml() now utilises
   `ryaml` / `ruaemel.yaml`, to allow for round-trip capable operations.
+* `cmtlog.py` has now been reimplemented and allows for logging from both
+  executables and libraries.
+* Thanks to the new cmtlog we can now log a message and recover instead
+  of exiting in some cases, and log a message and exit in others.
 
 ### Notable view-file changes (by API-files)
 
