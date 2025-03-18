@@ -1,0 +1,53 @@
+---
+kind: "Agent"
+api_family: "kagent.dev"
+default_command: "agent.kagent.dev"
+command:
+  - "kagents"
+  - "kagent"
+listview:
+  name: "Agents"
+  group: "API & Extendability"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age", "description"]
+  fields:
+    description:
+      header: "Description:"
+      path: "spec#description"
+      type: "str"
+      default: "<empty>"
+infoview:
+  name: "Agent Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["description"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+        default: "<empty>"
+  logpad:
+    infogetter: "logpad_formatted"
+    infogetter_args:
+      path: "spec#systemMessage"
+      formatter: "format_markdown"
+    timestamps: false
+  shortcuts:
+    "Show tools":
+      key: "t"
+      read_only: true
+      helptext: "List tools"
+      widget: "windowwidget"
+      title: "Tools:"
+      headers: ["Provider:", "Description:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#tools"
+        fields:
+          - "provider"
+          - "description"
+      # Not supported for now
+      sortcolumn: "provider"

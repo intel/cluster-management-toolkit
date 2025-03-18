@@ -1,0 +1,46 @@
+---
+kind: "ModelConfig"
+api_family: "kagent.dev"
+default_command: "modelconfig.kagent.dev"
+command:
+  - "kmodelconfigs"
+  - "kmodelconfig"
+  - "kmodelcfgs"
+  - "kmodelcfg"
+listview:
+  name: "Model Configs"
+  group: "API & Extendability"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "model", "age"]
+  fields:
+    model:
+      header: "Model:"
+      path: "spec#model"
+      type: "str"
+      default: "<unset>"
+infoview:
+  name: "Model Config Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["model", "api_key_secret_header",
+                 "api_key_secret_key", "api_key_secret_name"]
+    rows:
+      api_key_secret_header:
+        header: [["API-Key Secret:", ["main", "infoheader"]]]
+      api_key_secret_key:
+        header: [["  Key:", ["main", "infoheader"]]]
+        path: "spec#apiKeySecretKey"
+        type: "str"
+        default: "<unset>"
+      api_key_secret_name:
+        header: [["  Name:", ["main", "infoheader"]]]
+        path: "spec#apiKeySecretName"
+        type: "str"
+        default: "<unset>"
+      model:
+        header: [["Model:", ["main", "infoheader"]]]
+        path: "spec#model"
+        type: "str"
+        default: "<unset>"

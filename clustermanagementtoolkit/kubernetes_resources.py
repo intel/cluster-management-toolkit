@@ -2609,6 +2609,19 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/k8s.ovn.org/v1/"],
         "api": "userdefinednetworks",
     },
+    # kagent.dev
+    ("Agent", "kagent.dev"): {
+        "api_paths": ["apis/kagent.dev/v1alpha1/"],
+        "api": "agents",
+    },
+    ("ModelConfig", "kagent.dev"): {
+        "api_paths": ["apis/kagent.dev/v1alpha1/"],
+        "api": "modelconfigs",
+    },
+    ("Team", "kagent.dev"): {
+        "api_paths": ["apis/kagent.dev/v1alpha1/"],
+        "api": "teams",
+    },
     # kamaji.clastix.io
     ("DataStore", "kamaji.clastix.io"): {
         "api_paths": ["apis/kamaji.clastix.io/v1alpha1/"],
