@@ -13,6 +13,7 @@ python_test_executables = \
 	tests/check_theme_use \
 	tests/clptests \
 	tests/cmtlibtests \
+	tests/cmtlogtests \
 	tests/cnitests \
 	tests/coverage_stats \
 	tests/cursestests \
@@ -43,6 +44,7 @@ python_unit_tests = \
 	tests/checkstests \
 	tests/clptests \
 	tests/cmtlibtests \
+	tests/cmtlogtests \
 	tests/cnitests \
 	tests/cursestests \
 	tests/datatests \
@@ -470,38 +472,6 @@ setup_tests: create_test_symlinks
 	 chmod o+w 03-wrong_dir_permissions ;\
 	 chmod 0600 testfile.txt ;\
 	 chmod o+w 01-wrong_permissions )
-
-async_fetch: setup_tests
-	@printf -- "\n\nRunning async_fetch to check that reexecutor.py behaves as expected\n\n"; \
-	(cd tests && ./async_fetch)
-
-iotests: setup_tests
-	@printf -- "\n\nRunning iotests to check that cmtio.py behaves as expected\n\n"; \
-	(cd tests && ./iotests)
-
-logtests: setup_tests
-	@printf -- "\n\nRunning logtests to check that logparser.py behaves as expected\n\n"; \
-	(cd tests && ./logtests)
-
-validatortests: setup_tests
-	@printf -- "\n\nRunning validatortests to check that cmtvalidators.py behaves as expected\n\n"; \
-	(cd tests && ./validatortests)
-
-cmtlibtests: setup_tests
-	@printf -- "\n\nRunning cmtlibtests to check that cmtlib.py behaves as expected\n\n"; \
-	(cd tests && ./cmtlibtests)
-
-cursestests: setup_tests
-	@printf -- "\n\nRunning cursestests to check that curses_helper.py behaves as expected\n\n"; \
-	(cd tests && ./cursestests)
-
-atptests: setup_tests
-	@printf -- "\n\nRunning atptests --include-clear to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
-	(cd tests && ./atptests --include-clear)
-
-atptests-manual: setup_tests
-	@printf -- "\n\nRunning atptests --include-clear ---include-input to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
-	(cd tests && ./atptests --include-clear --include-input)
 
 check_theme_use: setup_tests
 	@printf -- "\n\nRunning check_theme_use to check that all verifiable uses of ThemeStr and ANSIThemeStr are valid\n\n"; \
