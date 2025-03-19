@@ -95,7 +95,8 @@ def __loglevel_to_logger(loglevel: LogLevel) -> Callable:
         return logger.error
     if loglevel == LogLevel.CRIT:
         return logger.critical
-    raise ValueError(f"Unsupported LogLevel: {loglevel}")
+    raise ValueError(f"Unsupported LogLevel: {repr(loglevel)}; "
+                     "supported LogLevels: {DEBUG|INFO|WARNING|ERR|CRIT}.")
 
 
 def log(loglevel: LogLevel, **kwargs: Any) -> None:
