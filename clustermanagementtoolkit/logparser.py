@@ -250,6 +250,7 @@ def str_4letter_to_severity(string: str, **kwargs: Any) -> LogLevel:
         "SUCC": LogLevel.NOTICE,  # From KubeRay
         "INFO": LogLevel.INFO,
         "DEBU": LogLevel.DEBUG,
+        "DEBG": LogLevel.DEBUG,
     }
     return severities.get(string.upper(), default)
 
@@ -471,23 +472,23 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> tuple[str, datetim
 
     # This while loop is merely to allow for breaking out anywhere
     while True:
-        # 2020-02-07T13:12:24.224Z (Z = UTC)
-        tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+)Z ?(.*)", message)
+        # 2020-02-07T13:12:24[.,]224Z (Z = UTC)
+        tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d[.,]\d+)Z ?(.*)", message)
         if tmp is not None:
             ymd = tmp[1]
-            hmsms = tmp[2][0:len("HH:MM:SS.sss")]
+            hmsms = tmp[2][0:len("HH:MM:SS.sss")].replace(",", ".")
             tmp_timestamp = f"{ymd} {hmsms}+0000"
             message = tmp[3]
             break
 
-        # 2020-02-13T12:06:18.011345 [+-]00:00 (+timezone)
-        # 2020-09-23T17:12:32.183967091[+-]03:00
-        # 2024-11-02 23:20:35.121725861 +0000
-        tmp = re.match(r"^(\d{4}-\d\d-\d\d)[ T](\d\d:\d\d:\d\d\.\d+) ?([\+-])(\d\d):?(\d\d) ?(.*)",
+        # 2020-02-13T12:06:18[.,]011345 [+-]00:00 (+timezone)
+        # 2020-09-23T17:12:32[.,]183967091[+-]03:00
+        # 2024-11-02 23:20:35[.,]121725861 +0000
+        tmp = re.match(r"^(\d{4}-\d\d-\d\d)[ T](\d\d:\d\d:\d\d[.,]\d+) ?([\+-])(\d\d):?(\d\d) ?(.*)",
                        message)
         if tmp is not None:
             ymd = tmp[1]
-            hmsms = tmp[2][0:len("HH:MM:SS.sss")]
+            hmsms = tmp[2][0:len("HH:MM:SS.sss")].replace(",", ".")
             tzsign = tmp[3]
             tzhour = tmp[4]
             tzmin = tmp[5]
@@ -510,16 +511,16 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> tuple[str, datetim
             message = tmp[6]
             break
 
-        # 2020-02-20 13:47:41.008416 (assume UTC)
-        # 2020-02-20 13:47:41.008416: (assume UTC)
-        # 2020/02/20 13:47:41.008416 (assume UTC)
-        # 2020-02-20 13:47:41.008416Z (Z = UTC)
-        tmp = re.match(r"^(\d{4})[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d\.\d+)[Z:]? ?(.*)", message)
+        # 2020-02-20 13:47:41[.,]008416 (assume UTC)
+        # 2020-02-20 13:47:41[.,]008416: (assume UTC)
+        # 2020/02/20 13:47:41[.,]008416 (assume UTC)
+        # 2020-02-20 13:47:41[.,]008416Z (Z = UTC)
+        tmp = re.match(r"^(\d{4})[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d[.,]\d+)[Z:]? ?(.*)", message)
         if tmp is not None:
             year = tmp[1]
             month = tmp[2]
             day = tmp[3]
-            hmsms = tmp[4][0:len("HH:MM:SS.sss")]
+            hmsms = tmp[4][0:len("HH:MM:SS.sss")].replace(",", ".")
             tmp_timestamp = f"{year}-{month}-{day} {hmsms}+0000"
             message = tmp[5]
             break
@@ -546,10 +547,8 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> tuple[str, datetim
             message = tmp[5]
             break
 
-        # 2020-02-07 13:12:24.224
-        # 2020-02-07 13:12:24,224
-        # [2020-02-07 13:12:24.224]
-        # [2020-02-07 13:12:24,224]
+        # 2020-02-07 13:12:24[.,]224
+        # [2020-02-07 13:12:24[.,]224]
         tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)(,|\.)(\d+)\]? ?(.*)", message)
         if tmp is not None:
             ymd = tmp[1]
@@ -3761,7 +3760,8 @@ def custom_splitter(message: str, **kwargs: Any) -> \
         if message_field > group_count:
             sys.exit(f"The parser rule references a non-existing capture group {message_field} "
                      f"for message; the valid range is [1-{group_count}]")
-        if severity_field is not None and severity_transform is not None:
+        if severity_field is not None and severity_transform is not None \
+                and tmp[severity_field] is not None:
             if severity_field > group_count:
                 sys.exit("The parser rule references a non-existing capture group "
                          f"{severity_field} for severity; the valid range is [1-{group_count}]")
@@ -4054,8 +4054,24 @@ def init_parser_list() -> None:
                 dl = [list(d) for d in temp_dl]
             except (ruyaml.composer.ComposerError,
                     ruyaml.parser.ParserError,
-                    ruyaml.scanner.ScannerError):
-                sys.exit(f"{parser_file} is not valid YAML; aborting.")
+                    ruyaml.scanner.ScannerError) as e:
+                errmsg = [
+                    [("Failed to load parser-file ", "default"),
+                     (f"{parser_file}", "path"),
+                     (f": {type(e)}", "errorvalue"),
+                     ("; skipping.", "path")],
+                ]
+                errmsg_with_event = [
+                    [("Failed to load parser-file ", "default"),
+                     (f"{parser_file}", "path"),
+                     (f": {type(e)}", "errorvalue")],
+                ]
+                for line in str(e).splitlines():
+                    errmsg_with_event.append([(f"{line.replace('"', '\\\"')}", "default")])
+                unformatted_msg, _formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                _unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg_with_event)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                continue
             LogparserConfiguration.using_bundles = True
         else:
             try:
@@ -4063,8 +4079,24 @@ def init_parser_list() -> None:
             except (ruyaml.composer.ComposerError,
                     ruyaml.parser.ParserError,
                     ruyaml.scanner.ScannerError,
-                    TypeError):
-                sys.exit(f"{parser_file} is not valid YAML; aborting.")
+                    TypeError) as e:
+                errmsg = [
+                    [("Failed to load parser-file ", "default"),
+                     (f"{parser_file}", "path"),
+                     (f": {type(e)}", "errorvalue"),
+                     ("; skipping.", "path")],
+                ]
+                errmsg_with_event = [
+                    [("Failed to load parser-file ", "default"),
+                     (f"{parser_file}", "path"),
+                     (f": {type(e)}", "errorvalue")],
+                ]
+                for line in str(e).splitlines():
+                    errmsg_with_event.append([(f"{line.replace('"', '\\\"')}", "default")])
+                unformatted_msg, _formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                _unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg_with_event)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                continue
             dl = [d]
 
         for parser_dict in dl:
@@ -4264,7 +4296,7 @@ def logparser_initialised(**kwargs: Any) \
              ("not parsed; converting.", "default")],
         ]
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
-        cmtlog.log(LogLevel.NOTICE, msg=unformatted_msg, messages=formatted_msg)
+        cmtlog.log(LogLevel.INFO, msg=unformatted_msg, messages=formatted_msg)
     elif isinstance(rmessage, str):
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         rmessage = [ThemeStr(rmessage, ThemeAttr("logview", severity_name))]
@@ -4441,7 +4473,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
              ("not parsed; converting.", "default")],
         ]
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
-        cmtlog.log(LogLevel.NOTICE, msg=unformatted_msg, messages=formatted_msg)
+        cmtlog.log(LogLevel.INFO, msg=unformatted_msg, messages=formatted_msg)
     elif isinstance(rmessage, str):
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         rmessage = [ThemeStr(rmessage, ThemeAttr("logview", severity_name))]
