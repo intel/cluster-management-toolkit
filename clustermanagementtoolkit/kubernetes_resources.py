@@ -1101,6 +1101,10 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/cluster.x-k8s.io/v1beta1/"],
         "api": "machinedeployments",
     },
+    ("MachineDrainRule", "cluster.x-k8s.io"): {
+        "api_paths": ["apis/cluster.x-k8s.io/v1beta1/"],
+        "api": "machinedrainrules",
+    },
     ("MachineHealthCheck", "cluster.x-k8s.io"): {
         "api_paths": ["apis/cluster.x-k8s.io/v1beta1/"],
         "api": "machinehealthchecks",
