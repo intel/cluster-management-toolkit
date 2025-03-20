@@ -2481,12 +2481,6 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "virtualmachinepreferences",
     },
     # ipam.cluster.x-k8s.io
-    ("IPAddressClaim", "ipam.cluster.x-k8s.io"): {
-        "api_paths": ["apis/ipam.cluster.x-k8s.io/v1beta1/",
-                      "apis/ipam.cluster.x-k8s.io/v1alpha1/"],
-        "api": "ipaddressclaims",
-    },
-    # ipam.cluster.x-k8s.io
     ("GlobalInClusterIPPool", "ipam.cluster.x-k8s.io"): {
         "api_paths": ["apis/ipam.cluster.x-k8s.io/v1alpha2/"],
         "api": "globalinclusterippools",
@@ -2500,6 +2494,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/ipam.cluster.x-k8s.io/v1beta1/",
                       "apis/ipam.cluster.x-k8s.io/v1alpha1/"],
         "api": "ipaddresses",
+    },
+    ("IPAddressClaim", "ipam.cluster.x-k8s.io"): {
+        "api_paths": ["apis/ipam.cluster.x-k8s.io/v1beta1/",
+                      "apis/ipam.cluster.x-k8s.io/v1alpha1/"],
+        "api": "ipaddressclaims",
     },
     # ipam.metal3.io
     ("IPAddress", "ipam.metal3.io"): {
