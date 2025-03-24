@@ -2976,7 +2976,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("Topology", "kueue.x-k8s.io"): {
-        "api_paths": ["apis/kueue.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/kueue.x-k8s.io/v1beta1/",
+                      "apis/kueue.x-k8s.io/v1alpha1/"],
         "api": "topologies",
         "namespaced": False,
     },
