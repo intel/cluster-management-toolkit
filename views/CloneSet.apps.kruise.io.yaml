@@ -46,6 +46,25 @@ listview:
       type: "int"
       formatter: "numerical"
       align: "right"
+    images:
+      header: "Images:"
+      paths:
+        - paths:
+            - "spec#template#spec#initContainers"
+            - "spec#template#spec#containers"
+          pathtype: "items"
+          subpaths:
+            - subpath: "image"
+              regex: ["^([^:]+):(.+)"]
+          type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "generic"
+          - type: "generic"
+        field_separators:
+          - type: "field"
+          - type: "field"
     ready_replicas:
       header: "Ready:"
       paths:
@@ -71,25 +90,6 @@ listview:
                 - context: "main"
                   type: "status_not_ok"
       align: "right"
-    images:
-      header: "Images:"
-      paths:
-        - paths:
-            - "spec#template#spec#initContainers"
-            - "spec#template#spec#containers"
-          pathtype: "items"
-          subpaths:
-            - subpath: "image"
-              regex: ["^([^:]+):(.+)"]
-          type: "raw"
-      formatter: "list"
-      formatting:
-        field_colors:
-          - type: "generic"
-          - type: "generic"
-        field_separators:
-          - type: "field"
-          - type: "field"
     uptodate_replicas:
       header: "Up to Date:"
       paths:

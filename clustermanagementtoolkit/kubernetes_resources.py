@@ -471,6 +471,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/addons.cluster.x-k8s.io/v1beta1/"],
         "api": "clusterresourcesets",
     },
+        # jobset.x-k8s.io
+    ("JobSet", "jobset.x-k8s.io"): {
+        "api_paths": ["apis/jobset.x-k8s.io/v1alpha2/"],
+        "api": "jobsets",
+    },
     # agent.k8s.elastic.co
     ("Agent", "agent.k8s.elastic.co"): {
         "api_paths": ["apis/agent.k8s.elastic.co/v1alpha1/"],

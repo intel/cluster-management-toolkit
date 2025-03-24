@@ -1,0 +1,174 @@
+---
+kind: "JobSet"
+api_family: "jobset.x-k8s.io"
+default_command: "jobsets"
+listview:
+  name: "Job Sets"
+  group: "Workloads"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "age", "replicated_jobs"]
+    Normal:
+      fields: ["namespace", "name", "age"]
+  fields:
+    replicated_jobs:
+      header: "Replicated Jobs:"
+      paths:
+        - paths:
+            - "spec#replicatedJobs"
+          pathtype: "items"
+          subpaths:
+            - "name"
+          type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "generic"
+          - type: "version"
+        field_separators:
+          - type: "version"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Job Set Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["exclusive_placement",
+                 "network_header",
+                 "network_subdomain",
+                 "network_enable_dns_hostnames",
+                 "network_publish_not_ready_addresses",
+                 "policies_header",
+                 "failure_header",
+                 "failure_restart_strategy",
+                 "failure_max_restarts",
+                 "startup_header",
+                 "startup_order",
+                 "success_header",
+                 "success_operator",
+                 "success_target_replicated_jobs",
+                 ]
+    rows:
+      exclusive_placement:
+        header: [["Exclusive Placement:", ["main", "infoheader"]]]
+        path: "metadata#annotations#alpha.jobset.sigs.k8s.io/exclusive-topology"
+        type: "str"
+        default: "<unset>"
+      failure_header:
+        header: [["  Job Failures:", ["main", "infoheader"]]]
+      failure_max_restarts:
+        header: [["    Max Restarts:", ["main", "infoheader"]]]
+        path: "spec#failurePolicy#maxRestarts"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      failure_restart_strategy:
+        header: [["    Restart Strategy:", ["main", "infoheader"]]]
+        path: "spec#failurePolicy#restartStrategy"
+        default: "<unset>"
+        type: "str"
+      network_header:
+        header: [["Network:", ["main", "infoheader"]]]
+      network_enable_dns_hostnames:
+        header: [["  Enable DNS Hostnames:", ["main", "infoheader"]]]
+        path: "spec#network#enableDNSHostnames"
+        default: "<unset>"
+        type: "bool"
+      network_publish_not_ready_addresses:
+        header: [["  Publish Not Ready Addresses:", ["main", "infoheader"]]]
+        path: "spec#network#publishNotReadyAddresses"
+        default: "<unset>"
+        type: "bool"
+      network_subdomain:
+        header: [["  Subdomain:", ["main", "infoheader"]]]
+        path: "spec#network#subdomain"
+        default: "<unset>"
+        type: "str"
+      policies_header:
+        header: [["Policies:", ["main", "infoheader"]]]
+      startup_header:
+        header: [["  Startup:", ["main", "infoheader"]]]
+      startup_order:
+        header: [["    Order:", ["main", "infoheader"]]]
+        path: "spec#startupPolicy#startupPolicyOrder"
+        default: "<unset>"
+        type: "str"
+      success_header:
+        header: [["  Success:", ["main", "infoheader"]]]
+      success_operator:
+        header: [["    Operator:", ["main", "infoheader"]]]
+        path: "spec#successPolicy#operator"
+        default: "<unset>"
+        type: "str"
+      success_target_replicated_jobs:
+        header: [["    Target Replicated Jobs:", ["main", "infoheader"]]]
+        path: "spec#successPolicy#targetReplicatedJobs"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      join_key: "name"
+      paths:
+        - path: "spec#replicatedJobs"
+          type: "list"
+        - path: "status#replicatedJobsStatus"
+          type: "list"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal: ["name", "replicas",
+               "active", "suspended", "ready", "succeeded", "failed"]
+    fields:
+      active:
+        header: "Active:"
+        path: "active"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      failed:
+        header: "Failed:"
+        path: "failed"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      ready:
+        header: "Ready:"
+        path: "ready"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      replicas:
+        header: "Replicas:"
+        path: "replicas"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      succeeded:
+        header: "Succeeded:"
+        path: "succeeded"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      suspended:
+        header: "Suspended:"
+        path: "suspended"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
