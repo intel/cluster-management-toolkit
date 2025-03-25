@@ -13,16 +13,12 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime, timezone
-from pathlib import PurePath
 import sys
 from typing import Any
-from unittest import mock
-import yaml
 
-from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, ProgrammingError
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
-from clustermanagementtoolkit.ansithemeprint import init_ansithemeprint, ansithemestr_join_list
+from clustermanagementtoolkit.ansithemeprint import init_ansithemeprint
 from clustermanagementtoolkit import cmtlog
 
 # unit-tests for cmtlog.py
@@ -46,7 +42,7 @@ def test_log_array_to_string(verbose: bool = False) -> tuple[str, bool]:
             (
                 [[ANSIThemeStr("WARNING", "warning"), ANSIThemeStr(": not good!", "default")]],
                 '"themearray": [[{"string": "WARNING", "themeref": "warning"}, '
-                                '{"string": ": not good!", "themeref": "default"}]]',
+                '{"string": ": not good!", "themeref": "default"}]]',
                 None,
             ),
             ([], '', None),

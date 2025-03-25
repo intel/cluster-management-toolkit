@@ -2597,7 +2597,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
             yoffset = deep_get(return_args, DictPath("yoffset"), yoffset)
             xoffset = deep_get(return_args, DictPath("xoffset"), xoffset)
 
-        c = deep_get(return_args, DictPath("keypress"), -1)
+        c: int = int(deep_get(return_args, DictPath("keypress"), -1))
 
         # The following inputs terminate the loop
         if c == curses.KEY_RESIZE:
