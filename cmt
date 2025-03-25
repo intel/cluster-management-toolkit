@@ -88,6 +88,17 @@ from clustermanagementtoolkit.ansithemeprint import ansithemeprint, ansithemeinp
 from clustermanagementtoolkit.ansithemeprint import ansithemeinput_password
 
 from clustermanagementtoolkit import about
+
+try:
+    import prctl
+    # Pylint complains that prctl does not have a member called set_name();
+    # prctl disagrees...
+    # pylint: disable-next=no-member
+    prctl.set_name(os.path.basename(sys.argv[0]))
+    prctl.set_proctitle(" ".join(sys.argv))
+except ModuleNotFoundError:  # pragma: no cover
+    pass
+
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
 

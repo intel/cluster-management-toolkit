@@ -117,6 +117,16 @@ from clustermanagementtoolkit import checks
 
 from clustermanagementtoolkit import about
 
+try:
+    import prctl
+    # Pylint complains that prctl does not have a member called set_name();
+    # prctl disagrees...
+    # pylint: disable-next=no-member
+    prctl.set_name(os.path.basename(sys.argv[0]))
+    prctl.set_proctitle(" ".join(sys.argv))
+except ModuleNotFoundError:  # pragma: no cover
+    pass
+
 PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
@@ -998,7 +1008,8 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                 "<<<context>>>": context,
             }
             if verbose:
-                print(f"  Upgrade Command: " + " ".join(substitute_list(upgrade_command, substitutions)))
+                print("  Upgrade Command: " + " ".join(substitute_list(upgrade_command,
+                                                                       substitutions)))
             check_and_print_status(execute_command(substitute_list(upgrade_command, substitutions)))
         else:
             ansithemeprint([ANSIThemeStr("No newer version available.", "default")])
