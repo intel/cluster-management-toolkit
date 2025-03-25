@@ -284,6 +284,15 @@ def str_to_severity(string: str, **kwargs: Any) -> LogLevel:
         tmp = re.match(r"debug\+(\d+)$", string, re.IGNORECASE)
         if tmp is not None:
             return LogLevel.DEBUG
+    # Special case for severity found in jobset
+    level_regex = re.compile(r"LEVEL\((-\d+)\)")
+    if (tmp := level_regex.match(string)) is not None:
+        severity = int(tmp[1])
+        # We can only guess for now; the negative loglevels
+        # might be custom for JobSet and LeaderWorkerSet;
+        # but at least -2 seems to be Info.
+        if severity == -2:
+            return LogLevel.INFO
     return severities.get(string.lower(), default)
 
 
@@ -484,7 +493,8 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> tuple[str, datetim
         # 2020-02-13T12:06:18[.,]011345 [+-]00:00 (+timezone)
         # 2020-09-23T17:12:32[.,]183967091[+-]03:00
         # 2024-11-02 23:20:35[.,]121725861 +0000
-        tmp = re.match(r"^(\d{4}-\d\d-\d\d)[ T](\d\d:\d\d:\d\d[.,]\d+) ?([\+-])(\d\d):?(\d\d) ?(.*)",
+        tmp = re.match(r"^(\d{4}-\d\d-\d\d)[ T](\d\d:\d\d:\d\d[.,]\d+) "
+                       r"?([\+-])(\d\d):?(\d\d) ?(.*)",
                        message)
         if tmp is not None:
             ymd = tmp[1]
@@ -1117,13 +1127,6 @@ def tab_separated(message: str, **kwargs: Any) \
         return message, severity, facility, remnants
 
     severity = str_to_severity(fields[1], default=severity)
-    message_index = 2
-    if fields[2][0].islower():
-        facility = fields[2]
-        message_index += 1
-
-    message = fields[message_index]
-    remnants_index = message_index + 1
 
     override_formatting: dict[str, Any] = {}
     for _msg in versions:
@@ -1142,18 +1145,39 @@ def tab_separated(message: str, **kwargs: Any) \
             "value": ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"),
         }
 
-    if not fold_msg and remnants_index < len(fields) \
-            and fields[remnants_index].startswith("{") and fields[remnants_index].endswith("}"):
+    # If we have 5 fields it's (hopefully) timestamp, severity, facility, message, json;
+    # if it's 4, on the other hand, we need to figure out whether it's
+    # timestamp, severity, message, json, or timestamp, severity, facility, json.
+    #
+    # To do this we check the last field to see if it can be parsed as JSON.
+    if fields[-1].strip().startswith("{") and fields[-1].strip().endswith("}"):
+        # This is a promising candidate to be JSON.
         try:
-            d = json.loads(fields[remnants_index])
+            d = json.loads(fields[-1])
             json_strs = json_dumps(d)
             for remnant in formatters.format_yaml(json_strs,
                                                   override_formatting=override_formatting):
                 remnants.append((remnant, severity))
+            # OK, parsing as JSON was successful. Do we expand it or not?
+            if fold_msg:
+                message = " ".join(fields[-2:])
+                remnants = []
+            else:
+                if len(fields) == 4:
+                    message = fields[2]
+                else:
+                    facility = fields[2]
+                    message = fields[3]
         except DecodeException:
-            message = " ".join(fields[message_index:])
+            # If we failed to decode the message, and there are three fields,
+            # they (hopefully) are severity, facility, message.
+            # If we failed to decode the message, and there are four fields,
+            # it's (probably) invalid JSON.
+            facility = fields[2]
+            message = " ".join(fields[3:])
     else:
-        message = " ".join(fields[message_index:])
+        facility = fields[2]
+        message = " ".join(fields[3:])
 
     return message, severity, facility, remnants
 
@@ -4046,7 +4070,6 @@ def init_parser_list() -> None:
 
             parser_files.append(FilePath(ppath))
 
-    # pylint: disable-next=too-many-nested-blocks
     for parser_file in parser_files:
         if parser_file.endswith("BUNDLE.yaml"):
             temp_dl = secure_read_yaml_all(parser_file, directory_is_symlink=True)
@@ -4099,6 +4122,7 @@ def init_parser_list() -> None:
                 continue
             dl = [d]
 
+        # pylint: disable-next=too-many-nested-blocks
         for parser_dict in dl:
             for parser in parser_dict:
                 parser_name = parser.get("name", "")
