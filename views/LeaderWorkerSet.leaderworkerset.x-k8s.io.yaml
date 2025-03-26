@@ -1,0 +1,309 @@
+---
+kind: "LeaderWorkerSet"
+api_family: "leaderworkerset.x-k8s.io"
+default_command: "leaderworkersets"
+command:
+  - "lws"
+listview:
+  name: "Leader Worker Sets"
+  group: "Workloads"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "desired_replicas",
+               "current_replicas", "ready_replicas",
+               "uptodate_replicas", "age"]
+  fields:
+    current_replicas:
+      header: "Current:"
+      paths:
+        - path: ["status#replicas", "spec#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      align: "right"
+    desired_replicas:
+      header: "Desired:"
+      path: "spec#replicas"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    ready_replicas:
+      header: "Ready:"
+      paths:
+        - path: ["status#readyReplicas", "status#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      align: "right"
+    uptodate_replicas:
+      header: "Up to Date:"
+      paths:
+        - path: ["status#updatedReplicas", "status#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+      align: "right"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Leader Worker Set Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["hpa_pod_selector", "total_pods", "subgroup_size",
+                 "restart_policy", "startup_policy", "rollout_strategy",
+                 "replicas"]
+    rows:
+      hpa_pod_selector:
+        header: [["HPA Pod Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#hpaPodSelector"
+            pathtype: "key_value"
+            subtype: "strlist"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#replicas"], " Desired",
+                   ["status#replicas"], " Current",
+                   ["status#readyReplicas"], " Ready",
+                   ["status#updatedReplicas"], " Up to Date"]
+            pathtype: "tuple"
+            default: [0, "", 0, "", 0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+          field_separators:
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+      restart_policy:
+        header: [["Restart Policy:", ["main", "infoheader"]]]
+        path: "spec#leaderWorkerTemplate#restartPolicy"
+        default: "<unset>"
+        type: "str"
+      rollout_strategy:
+        header: [["Rollout Strategy:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#rolloutStrategy#type"],
+                   " (", "Max Surge: ",
+                   ["spec#rolloutStrategy#rollingUpdateConfiguration#maxSurge"],
+                   "Max Unavailable: ",
+                   ["spec#rolloutStrategy#rollingUpdateConfiguration#maxUnavailable"],
+                   ")"]
+            pathtype: "tuple"
+            when:
+              - key: "spec#rolloutStrategy#type"
+                eq: "RollingUpdate"
+          - path: [["spec#rolloutStrategy#type"]]
+            pathtype: "tuple"
+            when:
+              - key: "spec#strategy#type"
+                eq: "Recreate"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
+            # Ideally we want to achieve numerical with unit here
+            - type: "numerical"
+            - context: "main"
+              type: "infoheader"
+            # Ideally we want to achieve numerical with unit here
+            - type: "numerical"
+            - type: "generic"
+          field_separators:
+            - type: "no_pad"
+            - type: "no_pad"
+            - type: "no_pad"
+            - type: "list"
+            - type: "no_pad"
+            - type: "no_pad"
+      startup_policy:
+        header: [["Startup Policy:", ["main", "infoheader"]]]
+        path: "spec#startupPolicy"
+        default: "<unset>"
+        type: "str"
+      subgroup_size:
+        header: [["Pods per Subgroup:", ["main", "infoheader"]]]
+        path: "spec#leaderWorkerTemplate#subGroupPolicy#size"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      total_pods:
+        header: [["Total Pods:", ["main", "infoheader"]]]
+        path: "spec#leaderWorkerTemplate#size"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Pod"
+      _label_selector_path: "status#hpaPodSelector"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Pod"
+    field_indexes:
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
+      Normal:
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
+        default: -1
+        formatter: "age"
+        align: "right"
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+            - type: "host"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: "address"
+        formatter: "address"
+      restarts:
+        header: "Restarts:"
+        paths:
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
+        default: 0
+        formatter: "numerical"
+        align: "right"
+  shortcuts:
+    "Leader template":
+      key: "l"
+      read_only: true
+      helptext: "Show Leader template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Leader template"
+        _pass_obj: true
+        path: "spec#leaderWorkerTemplate#leaderTemplate"
+    "Worker template":
+      key: "w"
+      read_only: true
+      helptext: "Show Worker template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Worker template"
+        _pass_obj: true
+        path: "spec#leaderWorkerTemplate#workerTemplate"
