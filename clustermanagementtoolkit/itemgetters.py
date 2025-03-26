@@ -96,6 +96,7 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
                 selector_type (str): "field" or "label"
                 selector (str): The selector to use; if name is provided the selector will use name,
                                 otherwise the selector will be used bare
+                selector_path (str): The path to the selector to use
         Returns:
             ([(str, str)]): A list of fields from Kubernetes objects
     """
@@ -129,13 +130,16 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
     name = deep_get(obj, DictPath(name_path), name)
 
     selector_type = deep_get(kwargs, DictPath("selector_type"), "label")
-    selector_str = deep_get(kwargs, DictPath("selector"))
+    selector_str = deep_get(kwargs, DictPath("selector"), "")
+    selector_path = deep_get(kwargs, DictPath("selector_path"), "")
 
     label_selector = ""
     field_selector = ""
 
-    if selector_str:
-        if name:
+    if selector_str or selector_path:
+        if selector_path:
+            selector = deep_get(obj, DictPath(selector_path), "")
+        elif name:
             selector = f"{selector_str}={name}"
         else:
             selector = selector_str

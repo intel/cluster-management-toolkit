@@ -779,6 +779,16 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                 elif ptype == "key_value":
                     value = []
                     tmp = deep_get_with_fallback(obj, path, {})
+                    subtype = deep_get(_path, DictPath("subtype"), "dict")
+                    # This is to be for key_value-lists provided as strings
+                    if subtype == "strlist" and isinstance(tmp, str):
+                        strlist = {}
+                        for kv in tmp.split(","):
+                            kv_tuple = kv.split("=")
+                            if len(kv_tuple) != 2:
+                                break
+                            strlist[kv_tuple[0]] = kv_tuple[1]
+                            tmp = strlist
                     if isinstance(tmp, list):
                         tmp2: dict[str, Any] = {}
                         for item in tmp:
