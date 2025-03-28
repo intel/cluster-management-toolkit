@@ -113,6 +113,10 @@ infoview:
         type: "raw"
         formatter: "list"
   listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__JobSetTemplate"
+      api_family: "jobset.x-k8s.io"
     listgetter: "listgetter_path"
     listgetter_args:
       join_key: "name"

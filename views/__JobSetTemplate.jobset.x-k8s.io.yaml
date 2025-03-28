@@ -1,0 +1,23 @@
+---
+kind: "__JobSetTemplate"
+api_family: "jobset.x-k8s.io"
+default_command: "__"
+infoview:
+  name: "Job Set Template"
+  infopad:
+    name_path: "name"
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["replicas"]
+    rows:
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        path: "replicas"
+        type: "int"
+        formatter: "numerical"
+  logpad:
+    infogetter: "logpad_yaml"
+    timestamps: false
+    infogetter_args:
+      path: "template"
