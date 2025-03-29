@@ -428,6 +428,33 @@ def download_files(directory: str,
                                 ANSIThemeStr(f"{url}", "url")], stderr=True)
                 retval = False
                 continue
+            elif "Name or service not known" in str(e):
+                tmp = re.match(r"^.*Failed to resolve \'(.+?)\'.*$", str(e))
+                if tmp is not None:
+                    stripped_proxy = "[THISWILLNOTMATCH]"
+                    if https_proxy:
+                        stripped_proxy = https_proxy.removeprefix("http://")
+                        stripped_proxy = stripped_proxy.removeprefix("https://").split(":")[0]
+                    if stripped_proxy == tmp[1]:
+                        ansithemeprint([ANSIThemeStr("Error", "error"),
+                                        ANSIThemeStr(": Could not connect to ", "default"),
+                                        ANSIThemeStr("https_proxy=", "default"),
+                                        ANSIThemeStr(f"{https_proxy}", "url"),
+                                        ANSIThemeStr("; retry later or modify your ", "default"),
+                                        ANSIThemeStr("configuration; aborting.", "default")],
+                                                     stderr=True)
+                        sys.exit(errno.ENOENT)
+                    else:
+                        ansithemeprint([ANSIThemeStr("Error", "error"),
+                                        ANSIThemeStr(": Name or service not known; ", "default"),
+                                        ANSIThemeStr("URL ", "default"),
+                                        ANSIThemeStr(f"{tmp[1]}", "url")], stderr=True)
+                else:
+                    ansithemeprint([ANSIThemeStr("Error", "error"),
+                                    ANSIThemeStr(": Name or service not known; URL ", "default"),
+                                    ANSIThemeStr(f"{url}", "url")], stderr=True)
+                retval = False
+                continue
             raise
 
         if r1.status == 200:
