@@ -23,6 +23,9 @@ from clustermanagementtoolkit.cmtpaths import KUBE_CONFIG_FILE
 
 from clustermanagementtoolkit import about
 
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
+from clustermanagementtoolkit.ansithemeprint import init_ansithemeprint
+
 """
 This program takes the output from kubectl get events -A -oyaml and finds unknown event reasons
 """
@@ -32,6 +35,8 @@ def main() -> None:
     """
     Main function for the program.
     """
+
+    init_ansithemeprint()
 
     kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION,
                           config_path=KUBE_CONFIG_FILE)

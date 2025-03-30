@@ -549,7 +549,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("VolumeAttributesClass", "storage.k8s.io"): {
-        "api_paths": ["apis/storage.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/storage.k8s.io/v1beta1/",
+                      "apis/storage.k8s.io/v1alpha1/"],
         "api": "volumeattributesclasses",
         "namespaced": False,
     },
@@ -1779,6 +1780,10 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/config.openshift.io/v1/"],
         "api": "imagedigestmirrorsets",
         "namespaced": False,
+    },
+    ("ImagePolicy", "config.openshift.io"): {
+        "api_paths": ["apis/config.openshift.io/v1alpha1/"],
+        "api": "imagepolicies",
     },
     ("ImageTagMirrorSet", "config.openshift.io"): {
         "api_paths": ["apis/config.openshift.io/v1/"],
