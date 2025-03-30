@@ -5259,6 +5259,10 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/whereabouts.cni.cncf.io/v1alpha1/"],
         "api": "ippools",
     },
+    ("NodeSlicePool", "whereabouts.cni.cncf.io"): {
+        "api_paths": ["apis/whereabouts.cni.cncf.io/v1alpha1/"],
+        "api": "nodeslicepools",
+    },
     ("OverlappingRangeIPReservation", "whereabouts.cni.cncf.io"): {
         "api_paths": ["apis/whereabouts.cni.cncf.io/v1alpha1/"],
         "api": "overlappingrangeipreservations",
