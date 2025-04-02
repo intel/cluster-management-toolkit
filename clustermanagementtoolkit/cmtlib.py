@@ -23,6 +23,8 @@ from collections.abc import Generator
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
 
+from clustermanagementtoolkit import cmtlog
+
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
 from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
 from clustermanagementtoolkit.cmttypes import FilePath, ProgrammingError, LogLevel
@@ -676,6 +678,8 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
         Returns:
             (int|datetime): -1 if the timestamp was -1, datetime otherwise
     """
+    rtimestamp = timestamp
+
     if timestamp is None \
             or isinstance(timestamp, int) and timestamp == 0 \
             or isinstance(timestamp, str) and timestamp in ("", "None"):
@@ -684,13 +688,14 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
     if timestamp == -1:
         return none_timestamp()
 
+    # Just in case the timestamp isn't a string already
+    timestamp = str(timestamp)
+
     # Timestamps that end with Z are already in UTC; strip that
     if timestamp.endswith("Z"):
         timestamp = timestamp[:-1]
 
-    rtimestamp = timestamp
-
-    # Timestamps that has both a numerical timezone offset and a timezone name do not make sense
+    # Timestamps that have both a numerical timezone offset and a timezone name do not make sense
     tmp = re.match(r"^(.+ [+-]\d{4}) [A-Z]{3}$", timestamp)
     if tmp is not None:
         timestamp = f"{tmp[1]}"
@@ -720,7 +725,19 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
             return datetime.strptime(timestamp, fmt)
         except ValueError:
             pass
-    raise ValueError(f"Could not parse timestamp: {rtimestamp}")
+
+    errmsg = [
+        [("Could not parse timestamp: ", "default"),
+         (f"{rtimestamp}", "argument"),
+         ("; defaulting to ", "default"),
+         (f"{none_timestamp()}", "argument"),
+         (".", "default")],
+    ]
+
+    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+    cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+
+    return none_timestamp()
 
 
 # pylint: disable-next=too-many-branches
