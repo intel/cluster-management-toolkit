@@ -4095,7 +4095,7 @@ def init_parser_list() -> None:
                      (f": {type(e)}", "errorvalue")],
                 ]
                 for line in str(e).splitlines():
-                    errmsg_with_event.append([(f"{line.replace('"', '\\\"')}", "default")])
+                    errmsg_with_event.append([(line.replace('"', '\\\"'), "default")])
                 unformatted_msg, _formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
                 _unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg_with_event)
                 cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
@@ -4120,7 +4120,7 @@ def init_parser_list() -> None:
                      (f": {type(e)}", "errorvalue")],
                 ]
                 for line in str(e).splitlines():
-                    errmsg_with_event.append([(f"{line.replace('"', '\\\"')}", "default")])
+                    errmsg_with_event.append([(line.replace('"', '\\\"'), "default")])
                 unformatted_msg, _formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
                 _unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg_with_event)
                 cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
