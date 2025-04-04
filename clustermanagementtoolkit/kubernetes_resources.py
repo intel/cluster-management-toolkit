@@ -3096,6 +3096,16 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "vpc-nat-gateways",
         "namespaced": False,
     },
+    # kubescape.io
+    ("RuntimeRuleAlertBinding", "kubescape.io"): {
+        "api_paths": ["apis/kubescape.io/v1/"],
+        "api": "runtimerulealertbindings",
+        "namespaced": False,
+    },
+    ("OperatorCommand", "kubescape.io"): {
+        "api_paths": ["apis/kubescape.io/v1alpha1/"],
+        "api": "operatorcommands",
+    },
     # kubevirt.io
     ("KubeVirt", "kubevirt.io"): {
         "api_paths": ["apis/kubevirt.io/v1/"],
