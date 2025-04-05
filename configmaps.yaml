@@ -1,0 +1,418 @@
+# This file contains ways to determine the file format for configmaps;
+# many configmaps do not use a standard suffix to identify the file format.
+# The file format can be determined by:
+# (namespace, name prefix, data prefix, data suffix)
+# data header [str]
+# data header [binary]
+#
+# The data signatures are sorted by data type; some types are effectively
+# synonyms in that they'll be treated identically internally (NDJSON vs JSON,
+# for instance), but for clarify they're separared here.
+#
+# An empty text signature is kept last, to ensure that there
+# is a sensible fallback.
+configmap_signatures:
+  bash:
+    format_name: "BASH"
+    signatures:
+      - data_header: "/usr/bin/env bash"
+      - data_header: "/bin/bash"
+
+  bz2:
+    format_name: "bz2 / tar+bz2"
+    signatures:
+      - data_binary: [0x42, 0x5a, 0x68]
+
+  caddyfile:
+    format_name: "CaddyFile"
+    signatures:
+      - prefix: "coredns"
+        data_prefix: "Corefile"
+      - namespace: "kube-system"
+        prefix: "rke2-coredns"
+        data_prefix: "Corefile"
+      - prefix: "dns-default"
+        data_prefix: "Corefile"
+
+  crt:
+    format_name: "CRT"
+    signatures:
+      - data_suffix: .crt"
+      - data_suffix: .pem"
+      - data_prefix: "caBundle"
+        data_suffix: "caBundle"
+      - prefix: "image-registry-certificates"
+      - data_suffix: "client-ca-file"
+      - data_header: "-----BEGIN CERTIFICATE-----"
+
+  cpio:
+    format_name: "cpio"
+    signatures:
+      - data_binary: [0x30, 0x37, 0x30, 0x37, 0x30, 0x37]
+
+  deb:
+    format_name: "deb"
+    signatures:
+      - data_binary: [0x21, 0x3c, 0x61, 0x72, 0x63, 0x68, 0x3e, 0x0a]
+
+  elf:
+    format_name: "ELF"
+    signatures:
+      - data_binary: [0x7f, 0x45, 0x4c, 0x46]
+
+  fluentbit:
+    format_name: "FluentBit"
+    signatures:
+      - data_prefix: "fluentbit.conf"
+
+  gz:
+    format_name: "gz / tar+gz"
+    signatures:
+      - data_binary: [0x1f, 0x8b]
+
+  haproxy:
+    format_name: "HAProxy"
+    signatures:
+      - data_prefix: "haproxy.cfg"
+        data_suffix: "haproxy.cfg"
+
+  ini:
+    format_name: "INI"
+    signatures:
+      - data_suffix: ".ini"
+      - data_prefix: "resourceClaimParameters.config"
+        data_suffix: "resourceClaimParameters.config"
+      - namespace: "openshift-ovn-kubernetes"
+        prefix: "ovnkube-config"
+        data_prefix: "ovnkube.conf"
+        data_suffix: "ovnkube.conf"
+
+  iso_9660:
+    format_name: "ISO 9660"
+    signatures:
+      - data_offset: 0x8001
+        data_binary: [0x43, 0x44, 0x30, 0x30, 0x31]
+      - data_offset: 0x8801
+        data_binary: [0x43, 0x44, 0x30, 0x30, 0x31]
+      - data_offset: 0x9001
+        data_binary: [0x43, 0x44, 0x30, 0x30, 0x31]
+  json:
+    format_name: "JSON"
+    signatures:
+      - data_suffix: ".json"
+      # Not all JSON-data has a .json suffix
+      - namespace: "calico-system"
+        prefix: "cni-config"
+      - prefix: "canal-config"
+        data_prefix: "cni_network_config"
+      - prefix: "intel-iaa-config"
+        data_prefix: "iaa.config"
+        data_suffix: "iaa.config"
+      - prefix: "kubeapps-clusters-config"
+        data_prefix: "clusters.conf"
+      - prefix: "kubeapps-internal-kubeappsapis-configmap"
+        data_suffix: "plugins.conf"
+      - namespace: "kubeflow"
+        prefix: "centraldashboard-config"
+      - namespace: "kubeflow"
+        prefix: "inferenceservice-config"
+      - namespace: "kubescape"
+        prefix: "ks-capabilities"
+        data_prefix: "capabilities"
+        data_suffix: "capabilities"
+      - namespace: "kubescape"
+        prefix: "ks-cloud-config"
+        data_prefix: "clusterData"
+        data_suffix: "clusterData"
+      - namespace: "kube-system"
+        prefix: "antrea"
+        data_prefix: "antrea-cni"
+      - namespace: "kube-system"
+        prefix: ""
+        data_prefix: "cni_network_config"
+      - namespace: "kube-system"
+        prefix: "rke2-etcd-snapshots"
+      - namespace: "kube-system"
+        prefix: "scheduler-extender-policy"
+        data_prefix: "policy.cfg"
+      - data_prefix: "vf-memory.config"
+        data_suffix: "vf-memory.config"
+      - prefix: "trivy-operator"
+        data_prefix: "nodeCollector.volumeMounts"
+      - prefix: "trivy-operator"
+        data_prefix: "nodeCollector.volumes"
+      - prefix: "trivy-operator"
+        data_prefix: "scanJob.podTemplateContainerSecurityContext"
+      - prefix: "v4-0-config-system-cliconfig"
+        data_prefix: "v4-0-config-system-cliconfig"
+      - namespace: "openshift-authentication"
+        prefix: "v4-0-config-system-metadata"
+        data_prefix: "oauthMetadata"
+      - namespace: "openshift-config-managed"
+        prefix: "oauth-openshift"
+        data_prefix: "oauthMetadata"
+      - namespace: "openshift-kube-apiserver"
+        prefix: "config"
+        data_prefix: "kubeconfig"
+      - namespace: "openshift-kube-apiserver"
+        prefix: "oauth-metadata"
+        data_prefix: "oauthMetadata"
+      - namespace: "openshift-kube-controller-manager"
+        prefix: "controller-manager-kubeconfig"
+        data_prefix: "kubeconfig"
+      - namespace: "openshift-kube-controller-manager"
+        prefix: "kube-controller-cert-syncer-kubeconfig"
+        data_prefix: "kubeconfig"
+      - namespace: "openshift-kube-scheduler"
+        prefix: "kube-scheduler-cert-syncer-kubeconfig"
+        data_prefix: "kubeconfig"
+      - namespace: "openshift-kube-scheduler"
+        prefix: "scheduler-kubeconfig"
+        data_prefix: "kubeconfig"
+      - namespace: "openshift-machine-config-operator"
+        prefix: "coreos-bootimages"
+        data_prefix: "stream"
+      - namespace: "openshift-operator"
+        prefix: "applied-cluster"
+        data_prefix: "applied"
+
+  jws:
+    format_name: "JWS"
+    signatures:
+      - namespace: "kube-public"
+        prefix: "cluster-info"
+        data_prefix: "jws-"
+
+  known_hosts:
+    format_name: "known_hosts"
+    signatures:
+      - data_prefix: "known_hosts"
+        data_suffix: "known_hosts"
+      - data_prefix: "ssh_known_hosts"
+        data_suffix: "ssh_known_hosts"
+
+  lzh:
+    format_name: "lzh / tar+lzh"
+    signatures:
+      - data_binary: [0x1f, 0xa0]
+
+  lzh_no_compression:
+    format_name: "lzh (no compression)"
+    signatures:
+      - data_binary: [0x2d, 0x68, 0x6c, 0x30, 0x2d]
+        data_offset: 2
+
+  lzh_8kib_sliding_window:
+    format_name: "lzh (8KiB sliding window)"
+    signatures:
+      - data_binary: [0x2d, 0x68, 0x6c, 0x35, 0x2d]
+        data_offset: 2
+
+  lzip:
+    format_name: "lzip"
+    signatures:
+      - data_binary: [0x4c, 0x49, 0x50]
+
+  lzw:
+    format_name: "lzw / tar+lzw"
+    signatures:
+      - data_binary: [0x1f, 0x9d]
+
+  mosquitto:
+    format_name: "Mosquitto"
+    signatures:
+      - data_prefix: "mosquitto.conf"
+        data_suffix: "mosquitto.conf"
+
+  ndjson:
+    format_name: "NDJSON"
+    signatures:
+      - data_suffix: ".ndjson"
+
+  nginx:
+    format_name: "NGINX"
+    signatures:
+      - data_prefix: "nginx.conf"
+        data_suffix: "nginx.conf"
+      - prefix: "kubeshark-nginx"
+        data_prefix: "default.conf"
+        data_suffix: "default.conf"
+      - prefix: "kubeapps"
+        data_prefix: "vhost.conf"
+        data_suffix: "vhost.conf"
+      - prefix: "kubeapps"
+        data_prefix: "k8s-api-proxy.conf"
+        data_suffix: "k8s-api-proxy.conf"
+
+  shellscript:
+    format_name: "Shell Script"
+    signatures:
+      - data_suffix: ".sh"
+      - data_header: "/bin/sh"
+      - data_header: "/bin/dash"
+
+  perl:
+    format_name: "Perl"
+    signatures:
+      - data_suffix: ".pl"
+      - data_suffix: ".perl"
+      - data_header: "/usr/bin/env perl"
+      - data_header: "/bin/perl"
+
+  python:
+    format_name: "Python"
+    signatures:
+      - data_suffix: ".py"
+      - data_header: "/usr/bin/env python"
+      - data_header: "/bin/python"
+
+  qcow:
+    format_name: "qcow"
+    signatures:
+      - data_binary: [0x51, 0x46, 0x49]
+
+  rar:
+    format_name: "rar (v1.50+)"
+    signatures:
+      - data_binary: [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00]
+
+  rar:
+    format_name: "rar (v5.00+)"
+    signatures:
+      - data_binary: [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00]
+
+  rpm:
+    format_name: "rpm"
+    signatures:
+      - data_binary: [0xed, 0xab, 0xee, 0xdb]
+
+  ruby:
+    format_name: "Ruby"
+    signatures:
+      - data_header: "/usr/bin/env ruby"
+      - data_header: "/bin/ruby"
+
+  svg:
+    format_name: "SVG"
+    signatures:
+      - data_suffix: ".svg"
+
+  tar:
+    format_name: "tar"
+    signatures:
+      - data_binary: [0x75, 0x73, 0x74, 0x61, 0x72, 0x00, 0x30, 0x30]
+      - data_binary: [0x75, 0x73, 0x74, 0x61, 0x72, 0x20, 0x20, 0x00]
+
+  toml:
+    format_name: "TOML"
+    signatures:
+      - data_suffix: ".toml"
+
+  xar:
+    format_name: "xar"
+    signatures:
+      - data_binary: [0x78, 0x61, 0x72, 0x21]
+
+  xml:
+    format_name: "XML"
+    signatures:
+      - data_suffix: ".xml"
+      - data_header: "<?xml "
+
+  xz:
+    format_name: "xz / tar+xz"
+    signatures:
+      - data_binary: [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00]
+
+  yaml:
+    format_name: "YAML"
+    signatures:
+      - data_suffix: ".yaml"
+      - data_suffix: ".yml"
+      - namespace: "istio-system"
+        prefix: "istio"
+      - prefix: "k10-k10-metering-config"
+      - namespace: "kubeflow"
+        prefix: "trial-templates"
+        data_suffix: "Template"
+      - namespace: "kubeflow"
+        prefix: "workflow-controller-configmap"
+      - namespace: "kubescape"
+        prefix: "host-scanner-definition"
+        data_prefix: "host-scanner-yaml"
+        data_suffix: "host-scanner-yaml"
+      - namespace: "kube-public"
+        prefix: "cluster-info"
+        data_prefix: "kubeconfig"
+      - namespace: "kube-system"
+        prefix: "antrea"
+        data_prefix: "antrea-agent"
+      - namespace: "kube-system"
+        prefix: "antrea"
+        data_prefix: "antrea-controller"
+      - namespace: "kube-system"
+        prefix: "cluster-config"
+        data_prefix: "install-config"
+      - namespace: "kube-system"
+        prefix: "rke2-coredns"
+        data_prefix: "linear"
+      - namespace: "kube-system"
+        prefix: "kubeadm-config"
+      - namespace: "kube-system"
+        prefix: "kubeconfig-in-cluster"
+        data_prefix: "kubeconfig"
+      - namespace: "kube-system"
+        prefix: "kubelet-config"
+      - namespace: "kube-system"
+        prefix: "kube-proxy"
+        data_suffix: "config.conf"
+      - prefix: "linkerd-config"
+        data_prefix: "values"
+      - data_prefix: "nfd-master.conf"
+      - data_prefix: "nfd-worker.conf"
+      - data_prefix: "volcano-admission.conf"
+      - data_prefix: "volcano-scheduler.conf"
+      - namespace: "openshift-kube-apiserver"
+        prefix: "check-endpoints-kubeconfig"
+        data_prefix: "kubeconfig"
+      - namespace: "openshift-kube-apiserver"
+        prefix: "control-plane-node-kubeconfig"
+        data_prefix: "kubeconfig"
+      - namespace: "openshift-kube-apiserver"
+        prefix: "kube-apiserver-cert-syncer-kubeconfig"
+        data_prefix: "kubeconfig"
+
+  zip:
+    format_name: "zip"
+    signatures:
+      - data_binary: [0x50, 0x4b, 0x03, 0x04]
+
+  zip_empty:
+    format_name: "zip (empty)"
+    signatures:
+      - data_binary: [0x50, 0x4b, 0x05, 0x06]
+
+  zip_spanned_archive:
+    format_name: "zip (spanned archive)"
+    signatures:
+      - data_binary: [0x50, 0x4b, 0x07, 0x08]
+
+  zsh:
+    format_name: "ZSH"
+    signatures:
+      - data_header: "/bin/zsh"
+
+  zstd:
+    format_name: "zstd"
+    signatures:
+      - data_binary: [0x28, 0xb5, 0x2f, 0xfd]
+
+  __catchall:
+    format_name: "Text"
+    signatures:
+      # This entry has explicit empty fields to make it clear that
+      # it's intended to be a match-all.
+      - namespace: ""
+        name_prefix: ""
+        name_suffix: ""
+        data_suffix: ""
