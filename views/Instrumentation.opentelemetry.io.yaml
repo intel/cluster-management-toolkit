@@ -1,0 +1,285 @@
+---
+kind: "Instrumentation"
+api_family: "opentelemetry.io"
+default_command: "instrumentations"
+command:
+  - "otelinsts"
+  - "otelinst"
+listview:
+  name: "Instrumentations"
+  group: "Monitoring"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age", "endpoint", "sampler", "sampler_arg"]
+      sortcolumn: "namespace"
+  fields:
+    endpoint:
+      header: "Endpoint:"
+      paths:
+        - path: "spec#exporter#endpoint"
+          pathtype: "regex"
+          regex: "^(.+):(.*)"
+          default: ["<unset>"]
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "service"
+          - type: "port"
+        field_separators:
+          - type: "port"
+    sampler:
+      header: "Sampler:"
+      path: "spec#sampler#type"
+      default: "<unset>"
+      type: "str"
+    sampler_arg:
+      header: "Sampler Arg:"
+      path: "spec#sampler#argument"
+      default: "<none>"
+      type: "float"
+      formatter: "numerical"
+infoview:
+  name: "Instrumentation Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["endpoint", "propagators",
+                 "use_labels_for_resource_attributes",
+                 "sampler_header", "sampler_type", "sampler_argument",
+                 "instrumentation_libraries_header",
+                 "apache_httpd",
+                 "dotnet", "go", "java", "nginx", "nodejs", "python"]
+    rows:
+      apache_httpd:
+        header: [["  ", ["main", "infoheader"]],
+                 ["A", ["main", "infoheader_shortcut"]],
+                 ["pache httpd:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#apacheHttpd#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      dotnet:
+        header: [["  ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["otNet:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#dotnet#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      endpoint:
+        header: [["Endpoint:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#exporter#endpoint"
+            pathtype: "regex"
+            regex: "^(.+):(.*)"
+            default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "service"
+            - type: "port"
+          field_separators:
+            - type: "port"
+      go:
+        header: [["  ", ["main", "infoheader"]],
+                 ["G", ["main", "infoheader_shortcut"]],
+                 ["o:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#go#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      instrumentation_libraries_header:
+        header: [["Instrumentation Libraries:", ["main", "infoheader"]]]
+      java:
+        header: [["  ", ["main", "infoheader"]],
+                 ["J", ["main", "infoheader_shortcut"]],
+                 ["ava:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#java#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      nginx:
+        header: [["  Ngin", ["main", "infoheader"]],
+                 ["x", ["main", "infoheader_shortcut"]],
+                 [":", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#nginx#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      nodejs:
+        header: [["  NodeJ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 [":", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#nodejs#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      propagators:
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["ropagators:", ["main", "infoheader"]]]
+        path: "spec#propagators"
+        default:  ["<none>"]
+        type: "raw"
+        formatter: "list"
+      python:
+        header: [["  Py", ["main", "infoheader"]],
+                 ["t", ["main", "infoheader_shortcut"]],
+                 ["hon:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#python#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      sampler_argument:
+        header: [["  Argument:", ["main", "infoheader"]]]
+        path: "spec#sampler#argument"
+        default: "<none>"
+        type: "float"
+        formatter: "numerical"
+      sampler_header:
+        header: [["Sampler:", ["main", "infoheader"]]]
+      sampler_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#sampler#type"
+        default: "<unset>"
+        type: "str"
+      use_labels_for_resource_attributes:
+        header: [["Use Labels for Resource Attributes:",
+                  ["main", "infoheader"]]]
+        path: "spec#defaults#useLabelsForResourceAttributes"
+        default: false
+        type: "bool"
+  shortcuts:
+    "Apache httpd":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Apache httpd instrumentation configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Apache httpd instrumentation configuration"
+        _pass_obj: true
+        path: "spec#apacheHttpd"
+    "DotNet":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show DotNet instrumentation configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "DotNet instrumentation configuration"
+        _pass_obj: true
+        path: "spec#dotnet"
+    "Go":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Go instrumentation configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Go instrumentation configuration"
+        _pass_obj: true
+        path: "spec#go"
+    "Java":
+      key: "j"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Java instrumentation configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Java instrumentation configuration"
+        _pass_obj: true
+        path: "spec#java"
+    "Nginx":
+      key: "x"
+      read_only: true
+      helptext: "Show Nginx instrumentation configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Nginx instrumentation configuration"
+        _pass_obj: true
+        path: "spec#nginx"
+    "NodeJS":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show NodeJS instrumentation configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "NodeJS instrumentation configuration"
+        _pass_obj: true
+        path: "spec#nodejs"
+    "Propagators":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "List propagators"
+      widget: "windowwidget"
+      title: "Propagators:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#propagators"
+    "Python":
+      key: "t"
+      read_only: true
+      helptext: "Show Python instrumentation configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Python instrumentation configuration"
+        _pass_obj: true
+        path: "spec#python"

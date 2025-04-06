@@ -1,0 +1,17 @@
+---
+- name: "opentelemetry"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/open-telemetry/opentelemetry-operator/target-allocator"
+    - image_name: "/open-telemetry/opentelemetry-operator/opentelemetry-operator"
+  parser_rules:
+    - name: "json"
+- name: "opentelemetry"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector"
+  parser_rules:
+    - name: "tab_separated"
+      options:
+        versions:
+          - "Version"
