@@ -9,6 +9,130 @@ listview:
   name: "OpenTelemetry Collectors"
   group: "Monitoring"
   field_indexes:
-    Normal:
-      fields: ["namespace", "name", "age"]
+    Wide:
+      fields: ["namespace", "name", "mode", "management",
+               "version", "desired_replicas", "ready_replicas", "age", "image"]
       sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "mode", "management",
+               "version", "desired_replicas", "ready_replicas", "age"]
+      sortcolumn: "namespace"
+  fields:
+    desired_replicas:
+      header: "Desired:"
+      path: "spec#replicas"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    image:
+      header: "Image:"
+      paths:
+        - path: "status#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "generic"
+          - type: "version"
+        field_separators:
+          - type: "version"
+    management:
+      header: "Management:"
+      path: "spec#managementState"
+      default: "<unset>"
+      type: "str"
+    mode:
+      header: "Mode:"
+      path: "spec#mode"
+      default: "<unset>"
+      type: "str"
+    ready_replicas:
+      header: "Ready:"
+      paths:
+        - path: ["status#scale#replicas", "spec#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      align: "right"
+    version:
+      header: "Version:"
+      path: "status#version"
+      default: "<unset>"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "version"
+infoview:
+  name: "Open Telemetry Collector Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["mode", "management", "version", "image", "replicas"]
+    rows:
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      management:
+        header: [["Management:", ["main", "infoheader"]]]
+        path: "spec#managementState"
+        default: "<unset>"
+        type: "str"
+      mode:
+        header: [["Mode:", ["main", "infoheader"]]]
+        path: "spec#mode"
+        default: "<unset>"
+        type: "str"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#replicas"], " Desired",
+                   ["status#replicas"], " Current"]
+            pathtype: "tuple"
+            default: [0, "", 0]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+          field_separators:
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "status#version"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"

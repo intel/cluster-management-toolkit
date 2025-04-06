@@ -4088,9 +4088,22 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "extensions",
     },
     # opentelemetry.io
-    ("OpenTelemetryCollector", "opentelemetry.io"): {
+    ("Instrumentation", "opentelemetry.io"): {
         "api_paths": ["apis/opentelemetry.io/v1alpha1/"],
+        "api": "instrumentations",
+    },
+    ("OpAMPBridge", "opentelemetry.io"): {
+        "api_paths": ["apis/opentelemetry.io/v1alpha1/"],
+        "api": "opampbridges",
+    },
+    ("OpenTelemetryCollector", "opentelemetry.io"): {
+        "api_paths": ["apis/opentelemetry.io/v1beta1/",
+                      "apis/opentelemetry.io/v1alpha1/"],
         "api": "opentelemetrycollectors",
+    },
+    ("TargetAllocator", "opentelemetry.io"): {
+        "api_paths": ["apis/opentelemetry.io/v1alpha1/"],
+        "api": "targetallocators",
     },
     # operations.kubeedge.io
     ("ImagePrePullJob", "operations.kubeedge.io"): {
