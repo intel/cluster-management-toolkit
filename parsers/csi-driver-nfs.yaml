@@ -4,19 +4,15 @@
   matchkeys:
     - image_name: "/sig-storage/csi-node-driver-registrar"
     - image_name: "/sig-storage/livenessprobe"
+    - image_name: "/sig-storage/csi-provisioner"
+    - image_name: "/sig-storage/csi-resizer"
+    - image_name: "/sig-storage/csi-snapshotter"
   parser_rules:
     - name: "glog"
     - name: "key_value_with_leading_message"
       options:
         versions:
           - "version"
-- name: "csi-driver-nfs"
-  show_in_selector: false
-  matchkeys:
-    - image_name: "/sig-storage/csi-provisioner"
-  parser_rules:
-    - name: "glog"
-    - name: "key_value_with_leading_message"
     - name: "override_severity"
       overrides:
         - matchtype: "startswith"
