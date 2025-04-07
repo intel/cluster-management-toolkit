@@ -10,11 +10,11 @@ listview:
   group: "Monitoring"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "management", "version", "age"]
+      fields: ["namespace", "name", "management_state", "version", "age"]
       sortcolumn: "namespace"
   fields:
-    management:
-      header: "Management:"
+    management_state:
+      header: "Management State:"
       path: "spec#managementState"
       default: "<unset>"
       type: "str"
@@ -26,3 +26,57 @@ listview:
       formatting:
         field_colors:
           - type: "version"
+infoview:
+  name: "Target Allocator Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["management_state", "allocation_strategy",
+                 "filter_strategy", "ip_family_policy", "service_account",
+                 "version"]
+    rows:
+      allocation_strategy:
+        header: [["Allocation Strategy:", ["main", "infoheader"]]]
+        path: "spec#allocationStrategy"
+        default: "<unset>"
+        type: "str"
+      filter_strategy:
+        header: [["Filter Strategy:", ["main", "infoheader"]]]
+        path: "spec#filterStrategy"
+        default: "<unset>"
+        type: "str"
+      ip_family_policy:
+        header: [["IP-Family Policy:", ["main", "infoheader"]]]
+        path: "spec#ipFamilyPolicy"
+        default: "<unset>"
+        type: "str"
+      management_state:
+        header: [["Management State:", ["main", "infoheader"]]]
+        path: "spec#managementState"
+        default: "<unset>"
+        type: "str"
+      service_account:
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Account:", ["main", "infoheader"]]]
+        path: "spec#serviceAccount"
+        type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "status#version"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+  shortcuts:
+    "Service Account":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "spec#serviceAccount"
+        namespace_path: "metadata#namespace"

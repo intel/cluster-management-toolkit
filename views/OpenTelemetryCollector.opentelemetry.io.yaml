@@ -10,11 +10,11 @@ listview:
   group: "Monitoring"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "mode", "management",
+      fields: ["namespace", "name", "mode", "management_state",
                "version", "desired_replicas", "ready_replicas", "age", "image"]
       sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "mode", "management",
+      fields: ["namespace", "name", "mode", "management_state",
                "version", "desired_replicas", "ready_replicas", "age"]
       sortcolumn: "namespace"
   fields:
@@ -38,8 +38,8 @@ listview:
           - type: "version"
         field_separators:
           - type: "version"
-    management:
-      header: "Management:"
+    management_state:
+      header: "Management State:"
       path: "spec#managementState"
       default: "<unset>"
       type: "str"
@@ -86,7 +86,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["mode", "management", "version", "image", "replicas"]
+        fields: ["mode", "management_state", "version", "image", "replicas"]
     rows:
       image:
         header: [["Image:", ["main", "infoheader"]]]
@@ -101,8 +101,8 @@ infoview:
             - type: "version"
           field_separators:
             - type: "version"
-      management:
-        header: [["Management:", ["main", "infoheader"]]]
+      management_state:
+        header: [["Management State:", ["main", "infoheader"]]]
         path: "spec#managementState"
         default: "<unset>"
         type: "str"
