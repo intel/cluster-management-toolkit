@@ -86,7 +86,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["mode", "management_state", "version", "image", "replicas"]
+        fields: ["mode", "management_state", "version", "image",
+                 "label_selector", "replicas"]
     rows:
       image:
         header: [["Image:", ["main", "infoheader"]]]
@@ -101,6 +102,22 @@ infoview:
             - type: "version"
           field_separators:
             - type: "version"
+      label_selector:
+        header: [["Label ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["elector:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#scale#selector"
+            pathtype: "key_value"
+            subtype: "strlist"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
       management_state:
         header: [["Management State:", ["main", "infoheader"]]]
         path: "spec#managementState"
@@ -136,3 +153,15 @@ infoview:
         formatting:
           field_colors:
             - type: "version"
+  shortcuts:
+    "Label Selector":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Label selector"
+      widget: "windowwidget"
+      title: "Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "status#scale#selector"
