@@ -54,6 +54,19 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import yaml; "
              "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
+try:
+    import ruyaml
+    ryaml = ruyaml.YAML()
+    sryaml = ruyaml.YAML(typ="safe")
+except ModuleNotFoundError:  # pragma: no cover
+    try:
+        import ruamel.yaml as ruyaml  # type: ignore
+        ryaml = ruyaml.YAML()
+        sryaml = ruyaml.YAML(typ="safe")
+    except ModuleNotFoundError:  # pragma: no cover
+        sys.exit("ModuleNotFoundError: Could not import ruyaml/ruamel.yaml; "
+                 "you may need to (re-)run `cmt-install` or `pip3 install ruyaml/ruamel.yaml`; "
+                 "aborting.")
 
 try:
     from natsort import natsorted
@@ -9161,17 +9174,57 @@ def populate_views(force_refresh: bool = False) -> None:
 
         try:
             d = dict(secure_read_yaml(FilePath(view_file), directory_is_symlink=True))
-        except (yaml.parser.ParserError, TypeError):
-            sys.exit(f"View-file {view_file} is invalid; aborting.")
+        except (ruyaml.composer.ComposerError,
+                ruyaml.parser.ParserError,
+                ruyaml.scanner.ScannerError) as e:
+            printable_errmsg = [
+                [("View-file ", "default"),
+                 (f"{view_file}", "path"),
+                 (" is invalid; skipping.", "default")],
+            ]
+            _, printable_formatted_msg = ANSIThemeStr.format_error_msg(printable_errmsg)
+            tmplines = [[(line.replace("\"", "\\\""), "default")] for line in str(e).splitlines()]
+            errmsg = [
+                [("View-file ", "default"),
+                 (f"{view_file}", "path"),
+                 (" is invalid; skipping:", "default")],
+            ]
+            if tmplines:
+                errmsg += [
+                    [(f"{type(e)}", "error"),
+                     (": ", "default")] + tmplines[0],
+
+                ]
+                errmsg += tmplines[1:]
+            else:
+                errmsg += [(f".", "error")]
+
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            for line in printable_formatted_msg:
+                ansithemeprint(line, stderr=True)
+            print()
+            continue
 
         kind = deep_get(d, DictPath("kind"), "<missing>")
         default_command = deep_get(d, DictPath("default_command"), "<missing>")
         if kind is None or default_command is None or "<missing>" in (kind, default_command):
-            sys.exit(f"View-file {view_file} is invalid: "
-                     "the following fields cannot be missing or None:\n"
-                     f"kind: {kind}\n"
-                     f"default_command: {default_command}\n"
-                     "Aborting.")
+            errmsg = [
+                [("View-file ", "default"),
+                 (f"{view_file}", "path"),
+                 (" is invalid:", "default")],
+                [("The following fields cannot be missing or None:", "default")],
+                [("  • ", "separator"), ("kind", "argument")],
+                [("  • ", "separator"), ("default_command", "argument")],
+                [("Skipping.", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            formatted_msg[0].insert(0, ANSIThemeStr("Warning: ", "error"))
+            for line in formatted_msg:
+                ansithemeprint(line, stderr=True)
+            print()
+            continue
 
         api_family = deep_get(d, DictPath("api_family"), "")
         # Use a set to avoid duplicates
@@ -9196,8 +9249,19 @@ def populate_views(force_refresh: bool = False) -> None:
         listview_entry = None
 
         if "listview" not in d and "infoview" not in d:
-            sys.exit(f"View-file {view_file} lacks both listview and infoview; "
-                     "there might be typo somewhere")
+            errmsg = [
+                [("View-file ", "default"),
+                 (f"{view_file}", "path"),
+                 (" lacks both listview and infoview; ", "default")],
+                [("there might be a typo somewhere. Skipping.", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            formatted_msg[0].insert(0, ANSIThemeStr("Warning: ", "error"))
+            for line in formatted_msg:
+                ansithemeprint(line, stderr=True)
+            print()
+            continue
 
         if "listview" in d:
             # Do we need to override kind?
@@ -9232,8 +9296,20 @@ def populate_views(force_refresh: bool = False) -> None:
                 _indexes["Custom"] = custom_index
 
             if not _indexes:
-                sys.exit(f"View-file {view_file} is invalid: "
-                         "field_indexes is either missing or empty for the list view. Aborting.")
+                errmsg = [
+                    [("View-file ", "default"),
+                     (f"{view_file}", "path"),
+                     (" is invalid:", "default")],
+                    [("field_indexes", "argument"),
+                     (" is either missing or empty for the list view. Skipping.", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                formatted_msg[0].insert(0, ANSIThemeStr("Warning: ", "error"))
+                for line in formatted_msg:
+                    ansithemeprint(line, stderr=True)
+                print()
+                continue
 
             field_indexes = copy.deepcopy(_indexes)
 
@@ -9260,12 +9336,23 @@ def populate_views(force_refresh: bool = False) -> None:
                     field_indexes[field_index]["sortorder_reverse"] = field_index_sortorder_reverse
 
             if name is None or group is None or "<missing>" in (name, group):
-                sys.exit(f"View-file {view_file} is invalid: "
-                         "the following fields cannot be missing, empty or None:\n"
-                         "listview:\n"
-                         f"  name: {name}\n"
-                         f"  group: {group}\n"
-                         "Aborting.")
+                errmsg = [
+                    [("View-file ", "default"),
+                     (f"{view_file}", "path"),
+                     (" is invalid:", "default")],
+                    [("The following fields cannot be missing, empty or None:", "default")],
+                    [("listview:", "default")],
+                    [("  • ", "separator"), ("name", "argument")],
+                    [("  • ", "separator"), ("group", "argument")],
+                    [("Skipping.", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                formatted_msg[0].insert(0, ANSIThemeStr("Warning: ", "error"))
+                for line in formatted_msg:
+                    ansithemeprint(line, stderr=True)
+                print()
+                continue
 
             if viewname in views:
                 # We allow for view-files to be overriden, but *only* if the override
@@ -9480,10 +9567,22 @@ def populate_views(force_refresh: bool = False) -> None:
 
             _indexes = deep_get(infopad, DictPath("row_indexes"))
 
-            if _indexes is not None:
+            if "row_indexes" in infopad:
                 if not _indexes:
-                    sys.exit(f"View-file {view_file} is invalid: "
-                             "row_indexes is empty for the info view. Aborting.")
+                    errmsg = [
+                        [("View-file ", "default"),
+                         (f"{view_file}", "path"),
+                         (" is invalid:", "default")],
+                        [("row_indexes", "argument"),
+                         (" is empty for the info view. Skipping.", "default")],
+                    ]
+                    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                    cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                    formatted_msg[0].insert(0, ANSIThemeStr("Warning: ", "error"))
+                    for line in formatted_msg:
+                        ansithemeprint(line, stderr=True)
+                    print()
+                    continue
 
                 # We are not using row_indexes in the same way field_indexes are used;
                 # we do not support multiple profiles; since dicts are ordered by insertion

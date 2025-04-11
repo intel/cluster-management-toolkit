@@ -250,7 +250,7 @@ def get_image_list(obj: dict, **kwargs: Any) -> list[tuple[str, str]]:
 
 def get_key_value(obj: dict, **kwargs: Any) -> list[tuple[str, Any]]:
     """
-    Get a list of key/value data.
+    Get a list of key/value data, possibly from a string by splitting it.
 
         Parameters:
             obj (dict): The object to get data from
@@ -266,6 +266,13 @@ def get_key_value(obj: dict, **kwargs: Any) -> list[tuple[str, Any]]:
     if (path := deep_get(kwargs, DictPath("path"), "")):
         d = deep_get(obj, DictPath(path), {})
 
+        if isinstance(d, str):
+            d = d.split(",")
+            try:
+                d = dict([key_value.split("=", maxsplit=1) for key_value in d])
+            except ValueError:
+                # Log + Return empty?
+                raise TypeError(f"Unhandled type {type(value_)} for {key_}={value_}")
         for key_, value_ in d.items():
             if isinstance(value_, (list, tuple)):
                 value = ",".join(value_)
@@ -276,6 +283,7 @@ def get_key_value(obj: dict, **kwargs: Any) -> list[tuple[str, Any]]:
             elif isinstance(value_, (int, float, str)):
                 value = str(value_)
             else:
+                # Log + Return empty?
                 raise TypeError(f"Unhandled type {type(value_)} for {key_}={value_}")
             vlist.append((key_, value))
     return vlist

@@ -136,6 +136,7 @@ def secure_read_yaml(path: FilePath, **kwargs: Any) -> Union[dict,
                 (dict|ruyaml.comments.CommentedMap|ruyaml.comments.CommentedSeq): The read YAML-data
         Raises:
             ruyaml.composer.ComposerError (synchronous mode)
+            ruyaml.parser.ParserError (synchronous mode)
             ruyaml.scanner.ScannerError (synchronous mode)
             yaml.parser.ParserError (asynchronous mode)
             FileNotFoundError
@@ -181,6 +182,7 @@ def secure_read_yaml_all(path: FilePath, **kwargs: Any) -> Generator:
             cmttypes.FilePathAuditError
             ruyaml.composer.ComposerError
             ruyaml.scanner.ScannerError
+            ruyaml.parser.ParserError
     """
     checks: Optional[list[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
     directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), False)
