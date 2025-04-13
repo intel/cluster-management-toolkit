@@ -204,7 +204,9 @@ infoview:
         default: "<unset>"
         type: "str"
       namespace_label_selector:
-        header: [["Namespace Label Selector:", ["main", "infoheader"]]]
+        header: [["Namespace La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
         paths:
           - path: ["spec#target#namespaceSelector#matchLabels"]
             pathtype: "key_value"
@@ -246,6 +248,16 @@ infoview:
         namespace_path: "metadata#namespace"
       # This isn't supported for now
       sortcolumn: "namespace"
+    "Namespace Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Namespace Label selector"
+      widget: "windowwidget"
+      title: "Namespace Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#target#namespaceSelector#matchLabels"
     "Sources":
       key: "s"
       modifier: "shift"

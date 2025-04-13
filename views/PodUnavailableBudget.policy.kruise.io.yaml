@@ -9,6 +9,11 @@ listview:
   name: "Pod Unavailable Budgets"
   group: "Kruise"
   field_indexes:
+    Wide:
+      fields: ["namespace", "name", "available_replicas",
+               "max_unavailable", "unavailable_allowed_replicas",
+               "desired_replicas", "total_replicas", "target_reference", "age"]
+      sortcolumn: "namespace"
     Normal:
       fields: ["namespace", "name", "available_replicas",
                "max_unavailable", "unavailable_allowed_replicas",
@@ -36,6 +41,24 @@ listview:
       type: "int"
       formatter: "numerical"
       align: "right"
+    target_reference:
+      header: "Target Reference:"
+      paths:
+        - path: [["spec#targetRef#kind"],
+                 ["spec#targetRef#apiVersion"],
+                 ["spec#targetRef#name"]]
+          pathtype: "tuple"
+          default: ["<unset>"]
+          type: ["kind", "api_group", "name"]
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+        field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
     total_replicas:
       header: "Total:"
       path: "status#totalReplicas"
@@ -59,7 +82,9 @@ infoview:
                  "set_based_selector", "replicas"]
     rows:
       label_selector:
-        header: [["Label Selector:", ["main", "infoheader"]]]
+        header: [["La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
         paths:
           - path: ["spec#selector#matchLabels"]
             pathtype: "key_value"
@@ -151,6 +176,16 @@ infoview:
             - type: "kind_api_group"
             - type: "kind"
   shortcuts:
+    "Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Label selector"
+      widget: "windowwidget"
+      title: "Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#selector#matchLabels"
     "Open target reference":
       key: "r"
       modifier: "shift"

@@ -160,7 +160,8 @@ infoview:
         fields: ["phase", "conditions", "scheduler",
                  "priority", "priority_class", "preemption_policy",
                  "qos_class", "host_ips", "pod_ips",
-                 "termination_grace_period", "enable_service_links"]
+                 "termination_grace_period", "enable_service_links",
+                 "container_launch_priority"]
     rows:
       conditions:
         header: [["Conditions:", ["main", "infoheader"]]]
@@ -268,6 +269,11 @@ infoview:
                 field_colors:
                   - context: "main"
                     type: "status_not_ok"
+      container_launch_priority:
+        header: [["Container Launch Priority:", ["main", "infoheader"]]]
+        path: "metadata#annotations#apps.kruise.io/container-launch-priority"
+        default: "<unset>"
+        type: "str"
       enable_service_links:
         header: [["Enable Service Links:", ["main", "infoheader"]]]
         path: "spec#enableServiceLinks"

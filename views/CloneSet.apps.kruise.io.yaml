@@ -166,7 +166,9 @@ infoview:
         type: "int"
         formatter: "numerical"
       label_selector:
-        header: [["Label Selector:", ["main", "infoheader"]]]
+        header: [["La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
         paths:
           - path: ["spec#selector#matchLabels"]
             pathtype: "key_value"
@@ -290,6 +292,27 @@ infoview:
           field_separators:
             - type: "no_pad"
   shortcuts:
+    "Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Label selector"
+      widget: "windowwidget"
+      title: "Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#selector#matchLabels"
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#template"
     "Volume Claim template":
       key: "v"
       modifier: "shift"
@@ -302,14 +325,3 @@ infoview:
         _pass_obj: true
         path: "spec#volumeClaimTemplates"
         include_root: true
-    "Pod template":
-      key: "t"
-      modifier: "shift"
-      read_only: true
-      helptext: "Show Pod template"
-      action: "call"
-      action_call: "view_yaml"
-      action_args:
-        title: "Pod template"
-        _pass_obj: true
-        path: "spec#template"

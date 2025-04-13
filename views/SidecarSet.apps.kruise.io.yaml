@@ -35,7 +35,9 @@ infoview:
           - "status_observed_generation"
     rows:
       label_selector:
-        header: [["Label Selector:", ["main", "infoheader"]]]
+        header: [["La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
         paths:
           - path: ["spec#selector#matchLabels"]
             pathtype: "key_value"
@@ -216,6 +218,16 @@ infoview:
         formatter: "numerical"
         align: "right"
   shortcuts:
+    "Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Label selector"
+      widget: "windowwidget"
+      title: "Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#selector#matchLabels"
     "View Sidecar Containers":
       key: "c"
       read_only: true
