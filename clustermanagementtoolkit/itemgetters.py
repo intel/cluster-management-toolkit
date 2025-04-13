@@ -97,6 +97,9 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
                 selector (str): The selector to use; if name is provided the selector will use name,
                                 otherwise the selector will be used bare
                 selector_path (str): The path to the selector to use
+                selector_none_on_empty: If selector_path has been specified, but the path yields
+                                        an empty selector, setting this to true will yield an empty
+                                        result instead of all objects.
         Returns:
             ([(str, str)]): A list of fields from Kubernetes objects
     """
@@ -132,6 +135,7 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
     selector_type = deep_get(kwargs, DictPath("selector_type"), "label")
     selector_str = deep_get(kwargs, DictPath("selector"), "")
     selector_path = deep_get(kwargs, DictPath("selector_path"), "")
+    selector_none_on_empty = deep_get(kwargs, DictPath("selector_none_on_empty"), False)
 
     label_selector = ""
     field_selector = ""
@@ -139,6 +143,10 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
     if selector_str or selector_path:
         if selector_path:
             selector = deep_get(obj, DictPath(selector_path), "")
+            if not selector and selector_none_on_empty:
+                return []
+            if isinstance(selector, dict):
+                selector = make_label_selector(selector)
         elif name:
             selector = f"{selector_str}={name}"
         else:
@@ -174,7 +182,8 @@ def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
 
     tmp: list[Any] = []
     if vlist is None or status != 200:
-        return tmp
+        # This ensures that we fall through and remove temporary resources
+        vlist = []
 
     for item in vlist:
         entry = []
@@ -659,12 +668,12 @@ def get_pod_configmaps(obj: dict, **kwargs: Any) -> Optional[list[tuple[str, str
         for volume in deep_get(item, DictPath("spec#volumes"), []):
             if deep_get(volume, DictPath("configMap#name"), "") == cm_name:
                 matched = True
-                vlist.append((cm_namespace, pod_name))
+                vlist.append({"fields": (cm_namespace, pod_name), "ref": item})
                 break
             for source in deep_get(volume, DictPath("projected#sources"), []):
                 if deep_get(source, DictPath("configMap#name"), "") == cm_name:
                     matched = True
-                    vlist.append((cm_namespace, pod_name))
+                    vlist.append({"fields": (cm_namespace, pod_name), "ref": item})
                     break
             if matched:
                 break
@@ -674,13 +683,13 @@ def get_pod_configmaps(obj: dict, **kwargs: Any) -> Optional[list[tuple[str, str
             for env in deep_get(container, DictPath("env"), []):
                 if deep_get(env, DictPath("ValueFrom#configMapKeyRef#name"), "") == cm_name:
                     matched = True
-                    vlist.append((cm_namespace, pod_name))
+                    vlist.append({"fields": (cm_namespace, pod_name), "ref": item})
                     break
             if matched:
                 break
             for env_from in deep_get(container, DictPath("envFrom"), []):
                 if deep_get(env_from, DictPath("configMapKeyRef#name"), "") == cm_name:
-                    vlist.append((cm_namespace, pod_name))
+                    vlist.append({"fields": (cm_namespace, pod_name), "ref": item})
                     break
 
     if not vlist:

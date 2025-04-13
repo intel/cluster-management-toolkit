@@ -68,12 +68,14 @@ infoview:
       helptext: "List Pod Monitor endpoints"
       widget: "windowwidget"
       title: "Pod Monitor Endpoints:"
+      headers: ["Endpoint:", "Port:"]
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#podMetricsEndpoints"
         fields:
           - value: "index"
             index_template: "endpoint-<<<index>>>"
+          - "port"
         pass_ref: true
       # This isn't supported for now
       sortcolumn: "namespace"

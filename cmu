@@ -6646,6 +6646,15 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
                 obj = selected
 
     selection = deep_get(kwargs, DictPath("selection"))
+    fields = []
+    if isinstance(selection, dict):
+        if obj is None:
+            obj = selection
+        tmp_fields = deep_get(selection, DictPath("fields"), [])
+        if isinstance(tmp_fields, (list, tuple)):
+            fields = tmp_fields
+    elif isinstance(selection, (list, tuple)):
+        fields = selection
 
     name = deep_get(kwargs, DictPath("name"))
     namespace = deep_get(kwargs, DictPath("namespace"))
@@ -6684,8 +6693,35 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     if kind_path is not None:
         if isinstance(kind_path, str):
             kind_path = [kind_path]
-        elif isinstance(kind_path, int) and selection is not None and selection:
-            tmp = selection[kind_path]
+        elif isinstance(kind_path, int) and fields:
+            if not isinstance(selection, (list, tuple)) \
+                    and not isinstance(deep_get(selection, DictPath("fields")), (list, tuple)):
+                errmsg = [
+                    [("kind_path", "argument"),
+                     (" is an index, but ", "default"),
+                     ("selection", "argument"),
+                     (" is of non-indexable type ", "default"),
+                     (f"{type(selection)}", "argument"),
+                     (".", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                return Retval.NOMATCH
+            if kind_path >= len(fields):
+                errmsg = [
+                    [("kind_path", "argument"),
+                     (" index ", "default"),
+                     (f"{name_path}", "argument"),
+                     (" is out of bounds; valid range: [", "default"),
+                     ("0", "argument"),
+                     ("-", "default"),
+                     (f"{len(fields)}", "argument"),
+                     ("].", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                return Retval.NOMATCH
+            tmp = fields[kind_path]
             if tmp is not None:
                 kind = themearray_to_string(tmp)
 
@@ -6696,8 +6732,8 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     if api_group_path is not None:
         if isinstance(api_group_path, str):
             api_group_path = [api_group_path]
-        elif isinstance(api_group_path, int) and selection is not None and selection:
-            tmp = selection[api_group_path]
+        elif isinstance(api_group_path, int) and fields:
+            tmp = fields[api_group_path]
             if tmp is not None:
                 api_group = themearray_to_string(tmp)
 
@@ -6705,8 +6741,35 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     if api_version_path is not None:
         if isinstance(api_version_path, str):
             api_version_path = [api_version_path]
-        elif isinstance(api_version_path, int) and selection is not None and selection:
-            tmp = selection[api_version_path]
+        elif isinstance(api_version_path, int) and fields:
+            if not isinstance(selection, (list, tuple)) \
+                    and not isinstance(deep_get(selection, DictPath("fields")), (list, tuple)):
+                errmsg = [
+                    [("api_version_path", "argument"),
+                     (" is an index, but ", "default"),
+                     ("selection", "argument"),
+                     (" is of non-indexable type ", "default"),
+                     (f"{type(selection)}", "argument"),
+                     (".", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                return Retval.NOMATCH
+            if name_path >= len(fields):
+                errmsg = [
+                    [("api_version_path", "argument"),
+                     (" index ", "default"),
+                     (f"{api_version_path}", "argument"),
+                     (" is out of bounds; valid range: [", "default"),
+                     ("0", "argument"),
+                     ("-", "default"),
+                     (f"{len(fields)}", "argument"),
+                     ("].", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                return Retval.NOMATCH
+            tmp = fields[api_version_path]
             if tmp is not None:
                 api_version = themearray_to_string(tmp)
                 if api_version is not None:
@@ -6719,12 +6782,66 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     holder_identity_path = deep_get(kwargs, DictPath("holder_identity_path"))
 
     # When a path is an integer it references a field in selected
-    if isinstance(name_path, int) and selection is not None and selection:
-        tmp = selection[name_path]
+    if isinstance(name_path, int):
+        if not isinstance(selection, (list, tuple)) \
+                and not isinstance(deep_get(selection, DictPath("fields")), (list, tuple)):
+            errmsg = [
+                [("name_path", "argument"),
+                 (" is an index, but ", "default"),
+                 ("selection", "argument"),
+                 (" is of non-indexable type ", "default"),
+                 (f"{type(selection)}", "argument"),
+                 (".", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            return Retval.NOMATCH
+        if name_path >= len(fields):
+            errmsg = [
+                [("name_path", "argument"),
+                 (" index ", "default"),
+                 (f"{name_path}", "argument"),
+                 (" is out of bounds; valid range: [", "default"),
+                 ("0", "argument"),
+                 ("-", "default"),
+                 (f"{len(fields)}", "argument"),
+                 ("].", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            return Retval.NOMATCH
+        tmp = fields[name_path]
         if tmp is not None:
             name = themearray_to_string(tmp)
     if isinstance(namespace_path, int) and selection is not None and selection:
-        tmp = selection[namespace_path]
+        if not isinstance(selection, (list, tuple)) \
+                and not isinstance(deep_get(selection, DictPath("fields")), (list, tuple)):
+            errmsg = [
+                [("namespace_path", "argument"),
+                 (" is an index, but ", "default"),
+                 ("selection", "argument"),
+                 (" is of non-indexable type ", "default"),
+                 (f"{type(selection)}", "argument"),
+                 (".", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            return Retval.NOMATCH
+        if namespace_path >= len(fields):
+            errmsg = [
+                [("namespace_path", "argument"),
+                 (" index ", "default"),
+                 (f"{namespace_path}", "argument"),
+                 (" is out of bounds; valid range: [", "default"),
+                 ("0", "argument"),
+                 ("-", "default"),
+                 (f"{len(fields)}", "argument"),
+                 ("].", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            return Retval.NOMATCH
+        tmp = fields[namespace_path]
         if tmp is not None:
             namespace = themearray_to_string(tmp)
 

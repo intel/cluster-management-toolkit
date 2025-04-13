@@ -87,6 +87,19 @@ infoview:
     row_indexes:
       Normal:
         fields: ["mode", "management_state", "version", "image",
+                 "ip_family_policy",
+                 "service_account",
+                 "target_allocator_header",
+                 "target_allocator_enabled",
+                 "target_allocator_service_account",
+                 "target_allocator_allocation_strategy",
+                 "target_allocator_filter_strategy",
+                 "target_allocator_prometheus_cr_header",
+                 "target_allocator_prometheus_cr_enabled",
+                 "target_allocator_prometheus_cr_scrape_interval",
+                 "target_allocator_prometheus_cr_pod_monitor_selector",
+                 "target_allocator_prometheus_cr_service_monitor_selector",
+                 "upgrade_strategy",
                  "label_selector", "replicas"]
     rows:
       image:
@@ -102,10 +115,15 @@ infoview:
             - type: "version"
           field_separators:
             - type: "version"
+      ip_family_policy:
+        header: [["IP-family Policy:", ["main", "infoheader"]]]
+        path: "spec#ipFamilyPolicy"
+        default: "<unset>"
+        type: "str"
       label_selector:
-        header: [["Label ", ["main", "infoheader"]],
-                 ["S", ["main", "infoheader_shortcut"]],
-                 ["elector:", ["main", "infoheader"]]]
+        header: [["La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
         paths:
           - path: "status#scale#selector"
             pathtype: "key_value"
@@ -146,6 +164,82 @@ infoview:
             - type: "no_pad"
             - type: "fraction_spaced"
             - type: "no_pad"
+      service_account:
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Account:", ["main", "infoheader"]]]
+        path: "spec#targetAllocator#serviceAccount"
+        default: "<unset>"
+        type: "str"
+      target_allocator_allocation_strategy:
+        header: [["  Allocation Strategy:", ["main", "infoheader"]]]
+        path: "spec#targetAllocator#allocationStrategy"
+        default: "<unset>"
+        type: "str"
+      target_allocator_enabled:
+        header: [["  Enabled:", ["main", "infoheader"]]]
+        path: "spec#targetAllocator#enabled"
+        default: false
+        type: "bool"
+      target_allocator_filter_strategy:
+        header: [["  Filter Strategy:", ["main", "infoheader"]]]
+        path: "spec#targetAllocator#filterStrategy"
+        default: "<unset>"
+        type: "str"
+      target_allocator_header:
+        header: [["Target Allocator:", ["main", "infoheader"]]]
+      target_allocator_prometheus_cr_header:
+        header: [["  Prometheus CR:", ["main", "infoheader"]]]
+      target_allocator_prometheus_cr_enabled:
+        header: [["    Enabled:", ["main", "infoheader"]]]
+        path: "spec#targetAllocator#prometheusCR#enabled"
+        default: false
+        type: "bool"
+      target_allocator_prometheus_cr_scrape_interval:
+        header: [["    Scrape Interval:", ["main", "infoheader"]]]
+        path: "spec#targetAllocator#prometheusCR#scrapeInterval"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      target_allocator_prometheus_cr_pod_monitor_selector:
+        header: [["    ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["od Monitor Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#targetAllocator#prometheusCR#podMonitorSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      target_allocator_prometheus_cr_service_monitor_selector:
+        header: [["    Service Monitor Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#targetAllocator#prometheusCR#serviceMonitorSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      target_allocator_service_account:
+        header: [["  Service ", ["main", "infoheader"]],
+                 ["A", ["main", "infoheader_shortcut"]],
+                 ["ccount:", ["main", "infoheader"]]]
+        path: "spec#targetAllocator#serviceAccount"
+        default: "<unset>"
+        type: "str"
+      upgrade_strategy:
+        header: [["Upgrade Strategy:", ["main", "infoheader"]]]
+        path: "spec#upgradeStrategy"
+        default: "<unset>"
+        type: "str"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
@@ -153,10 +247,103 @@ infoview:
         formatting:
           field_colors:
             - type: "version"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Pod"
+      _label_selector_path: "status#scale#selector"
+      _none_on_empty_selector: true
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Pod"
+    field_indexes:
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
+      Normal:
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
+        default: -1
+        formatter: "age"
+        align: "right"
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+            - type: "host"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: "address"
+        formatter: "address"
+      restarts:
+        header: "Restarts:"
+        paths:
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
+        default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
-    "Label Selector":
-      key: "s"
+    "Config":
+      key: "c"
       modifier: "shift"
+      read_only: true
+      helptext: "Show config"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Config"
+        _pass_obj: true
+        path: "spec#config"
+    "Label Selector":
+      key: "b"
       read_only: true
       helptext: "Label selector"
       widget: "windowwidget"
@@ -165,3 +352,82 @@ infoview:
       itemgetter: "get_key_value"
       itemgetter_args:
         path: "status#scale#selector"
+    "Pod Monitors":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Pod Monitors"
+      widget: "windowwidget"
+      title: "Pod Monitors:"
+      headers: ["Namespace:", "Name:"]
+      itemgetter: "get_kubernetes_objects"
+      itemgetter_args:
+        kind: "PodMonitor"
+        api_family: "monitoring.coreos.com"
+        selector_path: "spec#targetAllocator#prometheusCR#podMonitorSelector#matchLabels"
+        selector_type: "label"
+        selector_none_on_empty: true
+        name_path: "metadata#name"
+        namespace_path: "metadata#namespace"
+        field_paths: ["metadata#namespace", "metadata#name"]
+      # This isn't supported for now
+      sortcolumn: "namespace"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "PodMonitor"
+        api_family: "monitoring.coreos.com"
+        name_path: "metadata#name"
+        namespace_path: "metadata#namespace"
+    "Service Monitors":
+      key: "v"
+      read_only: true
+      helptext: "List Service Monitors"
+      widget: "windowwidget"
+      title: "Service Monitors:"
+      headers: ["Namespace:", "Name:"]
+      itemgetter: "get_kubernetes_objects"
+      itemgetter_args:
+        kind: "ServiceMonitor"
+        api_family: "monitoring.coreos.com"
+        selector_path: "spec#targetAllocator#prometheusCR#serviceMonitorSelector#matchLabels"
+        selector_type: "label"
+        selector_none_on_empty: true
+        name_path: "metadata#name"
+        namespace_path: "metadata#namespace"
+        field_paths: ["metadata#namespace", "metadata#name"]
+      # This isn't supported for now
+      sortcolumn: "namespace"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "ServiceMonitor"
+        api_family: "monitoring.coreos.com"
+        name_path: 1
+        namespace_path: 0
+    "Service Account":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "spec#targetAllocator#serviceAccount"
+        namespace_path: "metadata#namespace"
+    "Target Allocator Service Account":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for target allocator Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "spec#targetAllocator#serviceAccount"
+        namespace_path: "metadata#namespace"
