@@ -6,3 +6,15 @@
   parser_rules:
     - name: "glog"
     - name: "key_value"
+- name: "trust-manager"
+  show_in_selector: false
+  matchkeys:
+    - pod_name: "trust-manager"
+      container_type: "init_container"
+  parser_rules:
+    - name: "ts_8601"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "DEPRECATED: "
+          loglevel: "warning"
