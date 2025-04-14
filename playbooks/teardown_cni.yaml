@@ -39,6 +39,7 @@
   tasks:
     - name: "Tearing down container network interfaces"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           if [ -x /usr/sbin/ip ]; then
@@ -94,10 +95,10 @@
             done
           fi
           killall -q weaver || true
-        executable: "/bin/bash"
       changed_when: false
     - name: "Removing leftover network configurations"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           rm -rf /etc/cni /var/lib/cni /var/lib/weave
@@ -105,5 +106,4 @@
           iptables -t nat -F
           iptables -t mangle -F
           iptables -X
-        executable: "/bin/bash"
       changed_when: false

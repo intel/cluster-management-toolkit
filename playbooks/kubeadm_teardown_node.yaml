@@ -34,13 +34,13 @@
   tasks:
     - name: "Tearing down Kubernetes"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           if kubeadm version > /dev/null 2> /dev/null; then
             runtime_endpoint=$(grep "^runtime-endpoint: " /etc/crictl.yaml | sed -e 's/^runtime-endpoint: \(.*\)/\1/')
             kubeadm reset -f || kubeadm reset -f --cri-socket ${runtime_endpoint}
           fi
-        executable: "/bin/bash"
       changed_when: false
     - name: "Unmarking packages as held"
       ansible.builtin.shell: |

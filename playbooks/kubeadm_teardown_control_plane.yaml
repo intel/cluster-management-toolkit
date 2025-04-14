@@ -19,6 +19,7 @@
   tasks:
     - name: "Tearing down Kubernetes"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           if kubeadm version > /dev/null 2> /dev/null; then
@@ -26,5 +27,4 @@
             kubeadm reset -f || kubeadm reset -f --cri-socket ${runtime_endpoint}
           fi
           killall -q kube-apiserver || true
-        executable: "/bin/bash"
       changed_when: false

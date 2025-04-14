@@ -17,6 +17,7 @@
   tasks:
     - name: "Showing NVidia information"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           if [ -x /usr/bin/nvidia-smi ]; then
@@ -24,5 +25,4 @@
           else
             printf -- "[SKIP] nvidia-smi not installed\n"
           fi
-        executable: "/bin/bash"
       changed_when: false

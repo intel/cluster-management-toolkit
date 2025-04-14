@@ -54,6 +54,7 @@
         mode: "0640"
     - name: "Create and start the cmt network"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           if ! $( virsh --connect qemu:///system net-list | grep cmt ); then
@@ -62,7 +63,6 @@
           fi
           virsh --connect qemu:///system net-destroy cmt 2> /dev/null || /bin/true
           virsh --connect qemu:///system net-start cmt
-        executable: "/bin/bash"
       changed_when: true
     - name: "Create DHCP entries for all instances"
       ansible.builtin.shell:
@@ -74,6 +74,7 @@
       changed_when: true
     - name: "Instantiate the VMs"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           echo virt-install --connect qemu:///system \
@@ -98,21 +99,21 @@
               --import \
               --network network=cmt,mac={{ item.2 }} \
               --noautoconsole
-        executable: "/bin/bash"
       loop: "{{ instances }}"
       changed_when: true
     - name: "Create /etc/hosts entries for all instances"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           grep -q "{{ item.0 }}" /etc/hosts || printf -- "{{ item.1 }} {{item.0 }}  # VM instance created by CMT\n" >> /etc/hosts
-        executable: "/bin/bash"
       loop: "{{ instances }}"
       become: true
       become_user: "root"
       changed_when: true
     - name: "Wait a reasonable time for the VMs to start"
       ansible.builtin.shell:
+        executable: "/bin/bash"
         cmd: |
           set -o pipefail
           count=0
@@ -125,6 +126,5 @@
               sleep 1
           done
           sleep 1
-        executable: "/bin/bash"
       loop: "{{ instances }}"
       changed_when: false
