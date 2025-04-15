@@ -1,0 +1,17 @@
+---
+k3s:
+  description: "k3s"
+  installed_version:
+    function: "get_executable_version"
+    executable: "/usr/bin/k3s"
+    args: ["--version"]
+    version_regex: '^k3s version v(\d+)(\.)(\d+)(\.)(\d+)\+([a-z0-9]+)$'
+  candidate_version:
+    function: "get_github_version"
+    args:
+      url: "https://api.github.com/repos/rancher/k3s/releases"
+      version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)\+([a-z0-9]+)$'
+  changelog:
+    from_body: true
+    reformatter: "reformat_github_release_notes"
+    dest: "k3s_changelog.md"
