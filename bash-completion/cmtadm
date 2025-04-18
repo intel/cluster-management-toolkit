@@ -57,7 +57,7 @@ _cmtadm() {
 				COMPREPLY=( $(compgen -W "" -- "$2") )
 				return
 				;;
-			--enable-dra|--list-tasks|--no-cache-update|--no-password|--override|--override-cni|--reinstall|--resume|--save-ansible-logs|-Y|--verbose|--disable-usergroup-autodetect)
+			--enable-dra|--list-tasks|--no-pkg-cache-update|--no-upstream-cache-update|--no-cache-update|--no-password|--override|--override-cni|--reinstall|--resume|--save-ansible-logs|-Y|--verbose|--disable-usergroup-autodetect)
 				# These options don't take any arguments
 				;;
 			--control-plane|--cri|--skip-tasks|--start-at-task|--usergroup)
@@ -147,6 +147,8 @@ _cmtadm() {
 	case "${COMP_WORDS[1]}" in
 	check-versions|cv|upgrade-control-plane)
 		commands=$(add_option_if_not_in_list "--no-cache-update" ${commands})
+		commands=$(add_option_if_not_in_list "--no-pkg-cache-update" ${commands})
+		commands=$(add_option_if_not_in_list "--no-upstream-cache-update" ${commands})
 	esac
 
 	case "${COMP_WORDS[1]}" in

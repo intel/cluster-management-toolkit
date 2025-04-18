@@ -3876,7 +3876,8 @@ def check_for_updates(options: list[tuple[str, str]], args: list[str]) -> None:
     os_distro = identify_distro()
 
     # default options
-    update_cache = True
+    update_pkg_cache = True
+    update_upstream_cache = True
     verbose = False
     force = False
 
@@ -3884,15 +3885,18 @@ def check_for_updates(options: list[tuple[str, str]], args: list[str]) -> None:
         if opt == "--force":
             force = True
         if opt == "--no-cache-update":
-            update_cache = False
+            update_pkg_cache = False
+            update_upstream_cache = False
+        if opt == "--no-pkg-cache-update":
+            update_pkg_cache = False
+        if opt == "--no-upstream-cache-update":
+            update_upstream_cache = False
         elif opt == "--verbose":
             verbose = True
 
     ansithemeprint([ANSIThemeStr("\n[Checking for software updates]", "phase")])
-    ansithemeprint([ANSIThemeStr("Note", "note"),
-                    ANSIThemeStr(": Currently only local versions are checked.", "default")])
 
-    if update_cache:
+    if update_pkg_cache:
         if os_distro in ("debian",):
             ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                             ANSIThemeStr("Updating APT cache", "action")])
@@ -3901,8 +3905,9 @@ def check_for_updates(options: list[tuple[str, str]], args: list[str]) -> None:
             ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                             ANSIThemeStr("Updating Zypper cache", "action")])
             check_and_print_status(update_zypper_cache())
+    if update_upstream_cache:
         ansithemeprint([ANSIThemeStr("\n• ", "separator"),
-                        ANSIThemeStr("Updating version cache", "action")])
+                        ANSIThemeStr("Updating upstream cache (GitHub, etc.)", "action")])
         update_version_cache(verbose=verbose, force=force)
 
     pkg_packages: list[str] = [
@@ -6944,7 +6949,21 @@ COMMANDLINE: dict[str, CommandType] = {
             },
             "--no-cache-update": {
                 "description": [
-                    ANSIThemeStr("Do not update the APT cache", "description")],
+                    ANSIThemeStr("Do not update the package caches", "description")],
+                "extended_description": [
+                    [ANSIThemeStr("Alias for:", "description")],
+                    [ANSIThemeStr("“", "description"),
+                     ANSIThemeStr("--no-pkg-cache-update --no-upstream-cache-update", "option"),
+                     ANSIThemeStr("“.", "description")],
+                ],
+            },
+            "--no-pkg-cache-update": {
+                "description": [
+                    ANSIThemeStr("Do not update the distro package cache", "description")],
+            },
+            "--no-upstream-cache-update": {
+                "description": [
+                    ANSIThemeStr("Do not update the upstream package cache", "description")],
             },
             "--verbose": {
                 "description": [

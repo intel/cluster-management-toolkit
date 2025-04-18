@@ -338,13 +338,13 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
     if output_format == "default":
         headerstring = [ANSIThemeStr(f"{programname}", "programname")]
     elif output_format == "markdown":  # pragma: no branch
-        headerstring = [ANSIThemeStr(f"# ___{programname}___", "default")]
+        headerstring = [ANSIThemeStr(f"# ___`{programname}`___", "default")]
 
     if has_commands:
         if output_format == "default":
             headerstring += [ANSIThemeStr(" COMMAND", "command")]
         elif output_format == "markdown":  # pragma: no branch
-            headerstring += [ANSIThemeStr(" __COMMAND__", "default")]
+            headerstring += [ANSIThemeStr(" __`COMMAND`__", "default")]
 
     if has_options:
         if output_format == "default":
@@ -353,7 +353,7 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
                              ANSIThemeStr("]", "separator"),
                              ANSIThemeStr("...", "option")]
         elif output_format == "markdown":  # pragma: no branch
-            headerstring += [ANSIThemeStr(" _\\[OPTION\\]_...", "default")]
+            headerstring += [ANSIThemeStr(" _`[OPTION]`_...", "default")]
     if has_args:
         if output_format == "default":
             headerstring += [ANSIThemeStr(" [", "separator"),
@@ -361,7 +361,7 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
                              ANSIThemeStr("]", "separator"),
                              ANSIThemeStr("...", "argument")]
         elif output_format == "markdown":  # pragma: no branch
-            headerstring += [ANSIThemeStr(" _\\[ARGUMENT\\]_...", "default")]
+            headerstring += [ANSIThemeStr(" _`[ARGUMENT]`_...", "default")]
 
     output.append(headerstring)
     output.append([ANSIThemeStr("", "default")])
@@ -456,12 +456,12 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
                 if output_format == "default":
                     tmp2.append(ANSIThemeStr(f"  {option}", "option"))
                 elif output_format == "markdown":  # pragma: no branch
-                    tmp2.append(ANSIThemeStr(f"  __{option}__", "option"))
+                    tmp2.append(ANSIThemeStr(f"  __`{option}`__", "option"))
             else:
                 if output_format == "default":
                     tmp2.append(ANSIThemeStr(f"{option}", "option"))
                 elif output_format == "markdown":  # pragma: no branch
-                    tmp2.append(ANSIThemeStr(f"__{option}__", "option"))
+                    tmp2.append(ANSIThemeStr(f"__`{option}`__", "option"))
             values = deep_get(value, DictPath(f"options#{option}#values"))
             if values is not None:
                 tmp2.append(ANSIThemeStr(" ", "default"))

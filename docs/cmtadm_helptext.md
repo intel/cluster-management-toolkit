@@ -1,4 +1,4 @@
-# ___cmtadm___ __COMMAND__ _\[OPTION\]_... _\[ARGUMENT\]_...
+# ___`cmtadm`___ __`COMMAND`__ _`[OPTION]`_... _`[ARGUMENT]`_...
 
 Setup or teardown a Kubernetes cluster
 
@@ -11,18 +11,22 @@ Setup or teardown a Kubernetes cluster
 _Note_: some of the listed software may not be relevant to the configuration in use
   
   
-  __--force__
+  __`--force`__
   Force update of the version cache  
-
-  Typically version cache updates are
-
+  _Typically version cache updates are
   rate-limited to once per hour; this option
+  forces an update during the cooldown period._  
+  __`--no-cache-update`__
+  Do not update the package caches  
+  _Alias for:  
+  “__--no-pkg-cache-update --no-upstream-cache-update__“._  
+  __`--no-pkg-cache-update`__
+  Do not update the distro package cache  
+  __`--no-upstream-cache-update`__
+  Do not update the upstream package cache  
+  __`--verbose`__
+  Be more verbose
 
-  forces an update during the cooldown period.
-  __--no-cache-update__
-  Do not update the APT cache  
-  __--verbose__
-  Be more verbose  
 ### import-cluster _[_CLUSTER_NAME_,_..._]_
 #### Import existing cluster(s) for use with CMT
   
@@ -31,20 +35,24 @@ _Note_: some of the listed software may not be relevant to the configuration in 
 If _CLUSTER_NAME_,_..._ is not specified all clusters in _~/.kube/config_ will be imported
   
   
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
-  __--no-password__
+  __`--no-password`__
   Do not prompt for a password  
 
   Use this if the hosts you are importing
 
   are already configured for login using an SSH key
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
+### import-kubeconfig _[_PATH_,_..._]_
+#### Merge kubeconfig(s) into _/home/tao/.kube/config_
+  
+  
 ### prepare __CLUSTER_NAME_ [[_KUBERNETES_DISTRO_=]_KUBERNETES_VERSION_]_
 #### Install and configure pre-requisites
   
@@ -53,41 +61,41 @@ If _CLUSTER_NAME_,_..._ is not specified all clusters in _~/.kube/config_ will b
 Run this before setup-control-plane. If _KUBERNETES_VERSION_ is not specified the newest available version will be used. Supported versions for _KUBERNETES_DISTRO_ are: _kubeadm_ (default) _rke2_
   
   
-  __--control-plane__ __HOST__
+  __`--control-plane`__ __HOST__
   Use _HOST_ as control plane   
 
   _Note_: if possible _HOST_ should be a resolvable
 
   hostname; using an IP-address may cause issues
-  __--resume__
+  __`--resume`__
   Resume preparation  
 
   This can be used to resume operations
 
   if preparation was aborted
-  __--start-at-task__ __TASK__
+  __`--start-at-task`__ __TASK__
   Start at _TASK_ instead of running all tasks  
-  __--skip-tasks__ __TASK_,_...__
+  __`--skip-tasks`__ __TASK_,_...__
   Skip _TASK_,_..._  
-  __--list-tasks__
+  __`--list-tasks`__
   List valid values for _TASK_  
 
   List valid values to use with __--start-at-task__
 
   and __--skip-tasks__
-  __--no-password__
+  __`--no-password`__
   Do not prompt for a password  
 
   Use this if the hosts you are preparing
 
   are already configured for login using an SSH key
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### create-cluster __PATH__
 #### Create a cluster based on template in _PATH_
@@ -97,9 +105,9 @@ Run this before setup-control-plane. If _KUBERNETES_VERSION_ is not specified th
 Create a cluster based on a ClusterDeployment template. This combines all the necessary steps to prepare and setup control planes and worker nodes, as well as CNI for a cluster.
   
   
-  __--redeploy__
+  __`--redeploy`__
   Redeploy workloads  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### setup-control-plane _[_CNI_] [_POD_NETWORK_CIDR_]_
 #### Setup and launch the control plane
@@ -109,27 +117,27 @@ Create a cluster based on a ClusterDeployment template. This combines all the ne
 Valid options for CNI (Container Network Interface, aka Pod Network):  _antrea_, _calico_, _canal_, _cilium_, _flannel_, _kube-router_, _weave_, _none_ By default _cilium_ will be used as CNI and _10.244.0.0/16_ will be used as pod network CIDR. If you wish to postpone the choice of CNI you can specify _none_
   
   
-  __--resume__
+  __`--resume`__
   Resume setup  
 
   This can be used to resume operations
 
   if control plane setup was aborted
-  __--start-at-task__ __TASK__
+  __`--start-at-task`__ __TASK__
   Start at _TASK_ instead of running all tasks  
-  __--skip-tasks__ __TASK_,_...__
+  __`--skip-tasks`__ __TASK_,_...__
   Skip _TASK_,_..._  
-  __--list-tasks__
+  __`--list-tasks`__
   List valid values for _TASK_  
 
   List valid values to use with __--start-at-task__
 
   and __--skip-tasks__
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--cri__ __CRI__
+  __`--cri`__ __CRI__
   Use _CRI_ instead of the default CRI  
 
   Valid options for CRI
@@ -149,7 +157,7 @@ Valid options for CNI (Container Network Interface, aka Pod Network):  _antrea_,
   _Note_: Kubernetes >= _1.26_ requires
 
   _containerd_ >= _1.6_ or _cri-o_
-  __--enable-dra__
+  __`--enable-dra`__
   Enable DRA  
 
   Enables the feature gates necessary to use
@@ -157,15 +165,15 @@ Valid options for CNI (Container Network Interface, aka Pod Network):  _antrea_,
   Dynamic Resource Allocation (DRA).
 
   Currently only _cri-o_ supports DRA
-  __--override-cni__
+  __`--override-cni`__
   Override CNI  
 
   Allow a change of CNI even if installation
 
   started with a different CNI
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### setup-cni _[_CNI_]_
 #### Install and configure CNI
@@ -175,11 +183,11 @@ Valid options for CNI (Container Network Interface, aka Pod Network):  _antrea_,
 Valid options for CNI (Container Network Interface, aka Pod Network):  _antrea_, _calico_, _canal_, _cilium_,  _flannel_, _kube-router_, _weave_ By default _cilium_ will be used as CNI
   
   
-  __--reinstall__
+  __`--reinstall`__
   Try to reinstall the already installed CNI  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
 ### uninstall-cni
 #### Uninstall the CNI
@@ -189,7 +197,7 @@ Valid options for CNI (Container Network Interface, aka Pod Network):  _antrea_,
 This should be used in case you want to switch to another CNI
   
   
-  __--cni-version__ __CNI_VERSION__
+  __`--cni-version`__ __CNI_VERSION__
   The installed CNI version  
 
   Use this option to specify
@@ -197,15 +205,15 @@ This should be used in case you want to switch to another CNI
   the version in case it cannot
 
   be autodetected
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
 ### upgrade-cni _[_CNI_]_
 #### Upgrade the CNI
   
   
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
 ### upgrade-control-plane _[_KUBERNETES_VERSION_]_
 #### Upgrade the control plane
@@ -215,7 +223,7 @@ This should be used in case you want to switch to another CNI
 If _KUBERNETES_VERSION_ is not specified the newest available version will be used. Upgrading requires all nodes to be drained first. Once the control plane has been uppgraded you __must__ upgrade all nodes to the same version. __Important__: skipping PATCH REVISIONS is acceptable, but when upgrading to a newer MINOR version all intermediate MINOR versions must be installed first; this applies to nodes too.
   
   
-  __--ignore-feature-gates__
+  __`--ignore-feature-gates`__
   Ignore the result of the feature gates check  
 
   Upgrading a cluster may fail if the default
@@ -229,39 +237,39 @@ If _KUBERNETES_VERSION_ is not specified the newest available version will be us
   _Note_: this may yield a failed installation
 
   or non-operational cluster
-  __--no-cache-update__
+  __`--no-cache-update`__
   Do not update the APT cache  
-  __--resume__
+  __`--resume`__
   Resume upgrade  
 
   This can be used to resume operations
 
   if upgrade was aborted
-  __--start-at-task__ __TASK__
+  __`--start-at-task`__ __TASK__
   Start at _TASK_ instead of running all tasks  
-  __--skip-tasks__ __TASK_,_...__
+  __`--skip-tasks`__ __TASK_,_...__
   Skip _TASK_,_..._  
-  __--list-tasks__
+  __`--list-tasks`__
   List valid values for _TASK_  
 
   List valid values to use with __--start-at-task__
 
   and __--skip-tasks__
-  __--reinstall__
+  __`--reinstall`__
   Allow installing the same version  
 
   This option allows you to install the same
 
   version that's already running in the cluster
-  __--override__
+  __`--override`__
   Override/rebuild installation info  
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### teardown-control-plane
 #### Tear down the control plane
@@ -271,29 +279,29 @@ If _KUBERNETES_VERSION_ is not specified the newest available version will be us
 __Note__: Before running this command all nodes must have been removed first. The configuration for the control plane and any software installed during setup will NOT be removed
   
   
-  __--resume__
+  __`--resume`__
   Resume teardown  
 
   This can be used to resume operations
 
   if teardown was aborted
-  __--start-at-task__ __TASK__
+  __`--start-at-task`__ __TASK__
   Start at _TASK_ instead of running all tasks  
-  __--skip-tasks__ __TASK_,_...__
+  __`--skip-tasks`__ __TASK_,_...__
   Skip _TASK_,_..._  
-  __--list-tasks__
+  __`--list-tasks`__
   List valid values for _TASK_  
 
   List valid values to use with __--start-at-task__
 
   and __--skip-tasks__
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### purge-control-plane
 #### Purge configuration and packages
@@ -303,25 +311,25 @@ __Note__: Before running this command all nodes must have been removed first. Th
 Software and configuration needed for CMT itself will not be purged
   
   
-  __--resume__
+  __`--resume`__
   Resume purge; can be used if purge was aborted  
-  __--start-at-task__ __TASK__
+  __`--start-at-task`__ __TASK__
   Start at _TASK_ instead of running all tasks  
-  __--skip-tasks__ __TASK_,_...__
+  __`--skip-tasks`__ __TASK_,_...__
   Skip _TASK_,_..._  
-  __--list-tasks__
+  __`--list-tasks`__
   List valid values for _TASK_  
 
   List valid values to use with __--start-at-task__
 
   and __--skip-tasks__
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### taint-control-plane _[_CONTROLPLANE_,_..._]_
 #### Mark control plane(s) as tainted
@@ -347,7 +355,7 @@ By default control planes are marked as tainted; workloads that lack tolerations
 __Note__: If the system is configured to use __usergroups__ (every user have their own group that only they belong to); if the name of that group differs from the username be sure to specify that group using the __--usergroup__ _USERGROUP_ option, to prevent the permission checker from complaining about insecure permissions
   
   
-  __--disable-usergroup-autodetect__
+  __`--disable-usergroup-autodetect`__
   Disable usergroup autodetect  
 
   __Note__: the audit command attempts
@@ -355,7 +363,7 @@ __Note__: If the system is configured to use __usergroups__ (every user have the
   to autodetect whether __usergroups__ are in use;
 
   use this option to disable autodetect
-  __--usergroup__ __USERGROUP__
+  __`--usergroup`__ __USERGROUP__
   The name of the usergroup  
 ### preflight-check __CONTROLPLANE__
 #### Preflight check
@@ -365,7 +373,7 @@ __Note__: If the system is configured to use __usergroups__ (every user have the
 Check for potential pitfalls that may prevent preparation or setup from succeeding
   
   
-  __--no-password__
+  __`--no-password`__
   Do not prompt for a password  
 
   Use this if the hosts you are preparing
@@ -381,7 +389,7 @@ Check for potential pitfalls that may prevent preparation or setup from succeedi
 #### Display help about _COMMAND_ and exit
   
   
-  __--format__ __FORMAT__
+  __`--format`__ __FORMAT__
   Output the help as _FORMAT_ instead  
 
   Valid formats are:
@@ -391,7 +399,7 @@ Check for potential pitfalls that may prevent preparation or setup from succeedi
 #### Display this help and exit
   
   
-  __--format__ __FORMAT__
+  __`--format`__ __FORMAT__
   Output the help as _FORMAT_ instead  
 
   Valid formats are:

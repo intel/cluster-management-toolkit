@@ -14,8 +14,10 @@ in path lookup and various I/O-operations.
 
 * `python3-ansible-runner` (>= 2.1.4)
 * `setuptools` (>= 70.0.0; this is not a direct dependency, this is to ensure that a security issue in ansible-runner is fixed)
-* `python3-jinja2` (>= 3.1.4)
+* `python3-jinja2` (>= 3.1.6)
 * `python3-natsort` (>= 8.0.2)
+* `python3-prctl` (not a strict necessity, recommended for cleaner ps output)
+* `python3-ruyaml` _or_ `python3-ruamel` (ruyaml seems to be more actively maintained, but either is fine)
 * `python3-ujson` (>= 5.4.0; not a strict necessity, just a nice performance improvement)
 * `python3-urllib3` (>= 1.26.19)
 * `python3-validators` (>= 0.22.0)

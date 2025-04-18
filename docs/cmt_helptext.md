@@ -1,4 +1,4 @@
-# ___cmt___ __COMMAND__ _\[OPTION\]_... _\[ARGUMENT\]_...
+# ___`cmt`___ __`COMMAND`__ _`[OPTION]`_... _`[ARGUMENT]`_...
 
 Commandline tool for managing Kubernetes clusters
 
@@ -7,31 +7,31 @@ Commandline tool for managing Kubernetes clusters
 #### Cordon _NODE_,_..._
   
   
-  __--include-control-planes__
+  __`--include-control-planes`__
   Include control planes when ALL is used  
 ### drain __NODE_,_..._|_ALL__
 #### Drain _NODE_,_..._
   
   
-  __--delete-emptydir-data__
+  __`--delete-emptydir-data`__
   Delete emptydir data  
 
   Drain nodes even if this would cause __emptyDir__
 
   data to be deleted
-  __--delete-local-data__
+  __`--delete-local-data`__
   This is an alias for “__--delete-emptydir-data__“  
-  __--disable-eviction__
+  __`--disable-eviction`__
   Delete pods instead of using evict  
 
   This bypasses __PodDisruptionBudget__
-  __--ignore-daemonsets__
+  __`--ignore-daemonsets`__
   Ignore pods managed by daemonsets  
 
   By default drain will abort if there are
 
   such pods running on the node
-  __--include-control-planes__
+  __`--include-control-planes`__
   Include control planes when ALL is used  
 ### force-drain __NODE_,_..._|_ALL__
 #### Force-drain _NODE_,_..._
@@ -41,17 +41,17 @@ Commandline tool for managing Kubernetes clusters
 When a node is force-drained, pods belonging to daemonsets are ignored, and __emptyDir__ data is deleted
   
   
-  __--disable-eviction__
+  __`--disable-eviction`__
   Delete pods instead of using evict  
 
   This bypasses __PodDisruptionBudget__
-  __--include-control-planes__
+  __`--include-control-planes`__
   Include control planes when ALL is used  
 ### uncordon __NODE_,_..._|_ALL__
 #### Uncordon _NODE_,_..._
   
   
-  __--include-control-planes__
+  __`--include-control-planes`__
   Include control planes when ALL is used  
 ### taint __NODE_,_..._|_ALL_ _KEY_[=_VALUE_]:_EFFECT__
 #### Add taint _KEY_[=_VALUE_] with _EFFECT_ to _NODE_,_..._
@@ -61,9 +61,9 @@ When a node is force-drained, pods belonging to daemonsets are ignored, and __em
 Valid values for _EFFECT_ are: _NoSchedule_, _PreferNoSchedule_, and _NoExecute_
   
   
-  __--include-control-planes__
+  __`--include-control-planes`__
   Include control planes when ALL is used  
-  __--overwrite__
+  __`--overwrite`__
   Allow taints to be overwritten  
 
   (by default conflicting taints are ignored)
@@ -75,7 +75,7 @@ Valid values for _EFFECT_ are: _NoSchedule_, _PreferNoSchedule_, and _NoExecute_
 If _EFFECT_ is not specified, all taints matching _KEY_[:_VALUE_] will be removed
   
   
-  __--include-control-planes__
+  __`--include-control-planes`__
   Include control planes when ALL is used  
 ### prepare __HOST_,_..._|_PATH__
 #### Prepare _HOST_,_..._ for use as cluster node(s)
@@ -85,9 +85,9 @@ If _EFFECT_ is not specified, all taints matching _KEY_[:_VALUE_] will be remove
 _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address may cause issues
   
   
-  __--ignore-existing__
+  __`--ignore-existing`__
   Ignore hosts that are already part of the cluster  
-  __--forks__ __FORKS__
+  __`--forks`__ __FORKS__
   Max number of parallel Ansible connections  
 
   This sets the max number of parallel connections
@@ -95,7 +95,7 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
   when running Ansible playbooks
 
   (this overrides _cmt.yaml_; default: _5_)
-  __--from-file__
+  __`--from-file`__
   Treat the argument to prepare as a path  
 
   When using this option the HOST
@@ -103,19 +103,19 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
   argument will be treated as a path to a file
 
   with hostnames instead of a list of hostnames
-  __--no-password__
+  __`--no-password`__
   Do not prompt for a password  
 
   Use this if the hosts you are preparing
 
   are already configured for login using an SSH key
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### add-node|add-nodes __HOST_,_..._|_PATH__
 #### Add _HOST_,_..._ as Kubernetes nodes to a cluster
@@ -125,9 +125,9 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
 _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address may cause issues
   
   
-  __--ca-cert-file__ __PATH__
+  __`--ca-cert-file`__ __PATH__
   Use _PATH_ as token CA certificate  
-  __--cri__ __CRI__
+  __`--cri`__ __CRI__
   Use _CRI_ instead of the default CRI  
 
   Valid options for CRI
@@ -143,7 +143,7 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
   containerd >= _1.6_ or cri-o.
 
   If you intend to use DRA you should use cri-o.
-  __--forks__ __FORKS__
+  __`--forks`__ __FORKS__
   Max number of parallel Ansible connections  
 
   This sets the max number of parallel connections
@@ -151,7 +151,7 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
   when running Ansible playbooks
 
   (this overrides _cmt.yaml_; default: _5_)
-  __--from-file__
+  __`--from-file`__
   Treat the argument to prepare as a path  
 
   When using this option the HOST
@@ -159,11 +159,11 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
   argument will be treated as a path to a file
 
   with hostnames instead of a list of hostnames
-  __--ignore-existing__
+  __`--ignore-existing`__
   Ignore hosts that are already part of the cluster  
-  __--ignore-non-existing__
+  __`--ignore-non-existing`__
   Ignore hosts that are not part of the inventory  
-  __--kubernetes-distro__ __DISTRO__
+  __`--kubernetes-distro`__ __DISTRO__
   The Kubernetes distro of the control plane  
 
   Depending on the Kubernetes distro in use a lot
@@ -183,25 +183,25 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
   _Note_: currently _rke2_ is the only supported
 
   option on SUSE
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### remove-node|remove-nodes __NODE_,_..._|_ALL__
 #### Remove _NODE_,_..._ from a Kubernetes cluster
   
   
-  __--force__
+  __`--force`__
   Force teardown of non-nodes  
 
   Attempt to teardown Kubernetes nodes
 
   that are no longer part of the cluster
-  __--forks__ __FORKS__
+  __`--forks`__ __FORKS__
   Max number of parallel Ansible connections  
 
   This sets the max number of parallel connections
@@ -209,7 +209,7 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
   when running Ansible playbooks
 
   (this overrides _cmt.yaml_; default: _5_)
-  __--kubernetes-distro__ __DISTRO__
+  __`--kubernetes-distro`__ __DISTRO__
   The Kubernetes distro of the control plane  
 
   Depending on the Kubernetes distro in use a lot
@@ -229,15 +229,15 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
   _Note_: currently _rke2_ is the only supported
 
   option on SUSE
-  __--purge__
+  __`--purge`__
   Purge hosts if teardown completes successfully  
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
-  __-Y__
+  __`-Y`__
   Do not ask for confirmation  
 ### purge __HOST_,_...__
 #### Purge configuration and packages from _HOST_
@@ -247,13 +247,13 @@ _Note_: If possible _HOST_ should be a resolvable hostname; using an IP-address 
 purge will run remove-node first if necessary
   
   
-  __--ignore-non-existing__
+  __`--ignore-non-existing`__
   Ignore non-existing hosts  
 
   Silently ignore hosts that cannot be found
 
   in the inventory
-  __--forks__ __FORKS__
+  __`--forks`__ __FORKS__
   Max number of parallel Ansible connections  
 
   This sets the max number of parallel connections
@@ -261,7 +261,7 @@ purge will run remove-node first if necessary
   when running Ansible playbooks
 
   (this overrides _cmt.yaml_; default: _5_)
-  __--kubernetes-distro__ __DISTRO__
+  __`--kubernetes-distro`__ __DISTRO__
   The Kubernetes distro of the control plane  
 
   Depending on the Kubernetes distro in use a lot
@@ -281,11 +281,11 @@ purge will run remove-node first if necessary
   _Note_: currently _rke2_ is the only supported
 
   option on SUSE
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
 ### upgrade-node|upgrade-nodes __NODE_,_..._|_ALL__
 #### Upgrade Kubernetes on _NODE_,_..._
@@ -295,7 +295,7 @@ purge will run remove-node first if necessary
 This command upgrades Kubernetes on _NODE_,_..._ to the version on the control plane(s); run this on all nodes after running “cmtadm upgrade-control-plane“ _Note_: upgrade-node is currently not implemented for _rke2_
   
   
-  __--forks__ __FORKS__
+  __`--forks`__ __FORKS__
   Max number of parallel Ansible connections  
 
   This sets the max number of parallel connections
@@ -303,11 +303,11 @@ This command upgrades Kubernetes on _NODE_,_..._ to the version on the control p
   when running Ansible playbooks
 
   (this overrides _cmt.yaml_; default: _5_)
-  __--save-ansible-logs__
+  __`--save-ansible-logs`__
   Save logs from Ansible runs  
 
   The logs can be viewed using “cmu logs“
-  __--verbose__
+  __`--verbose`__
   Be more verbose  
 ### get-contexts|get-ctx
 #### Get the list of available contexts
@@ -325,7 +325,7 @@ Set current context, either by specifying context _NAME_ or by specifying contex
 #### Display available API-resources
   
   
-  __--api-group__ __API_GROUP__
+  __`--api-group`__ __API_GROUP__
   Limit output to _API_GROUP_  
 
   If the version part of _API_GROUP_ is omitted,
@@ -333,7 +333,7 @@ Set current context, either by specifying context _NAME_ or by specifying contex
   all versions of the API-GROUP are included.
 
   To only show core APIs, use _""_.
-  __--color__ __WHEN__
+  __`--color`__ __WHEN__
   WHEN should the output use ANSI-colors  
 
   Valid arguments are:
@@ -345,13 +345,13 @@ Set current context, either by specifying context _NAME_ or by specifying contex
   to a terminal)
 
   _never_ (never color the output)
-  __--has-data__
+  __`--has-data`__
   Only list APIs that have resources  
 
   This option will only list APIs that have data.
 
   _Note_: this can be very slow.
-  __--known__ __FILTER__
+  __`--known`__ __FILTER__
   Limit output to _FILTER_  
 
   Valid values are:
@@ -379,7 +379,7 @@ Set current context, either by specifying context _NAME_ or by specifying contex
   to limit the output based on whether CMT
 
   has __list__ and __info__ views available.
-  __--local__ __true_|_false__
+  __`--local`__ __true_|_false__
   Limit output to only local or upstream view-files  
 
   If _true_ only locally added view-files are
@@ -393,7 +393,7 @@ Set current context, either by specifying context _NAME_ or by specifying contex
   By default both local and upstream view-files
 
   are considered.
-  __--namespaced__ __true_|_false__
+  __`--namespaced`__ __true_|_false__
   Limit output to namespaced or cluster-wide  
 
   If _true_ only namespaced resources will be listed.
@@ -401,9 +401,9 @@ Set current context, either by specifying context _NAME_ or by specifying contex
   If _false_ only cluster-wide resources will be
 
   listed. By default all resources are listed.
-  __--no-header__
+  __`--no-header`__
   Do not output list headers  
-  __--format__ __FORMAT__
+  __`--format`__ __FORMAT__
   Format the output as FORMAT  
 
   Valid formats are:
@@ -417,7 +417,7 @@ Set current context, either by specifying context _NAME_ or by specifying contex
   _tsv_ (tab-separated values)
 
   _entry_ (used when adding API support to CMT)
-  __--sort-by__ __SORTKEY__
+  __`--sort-by`__ __SORTKEY__
   Sort the output by SORTKEY  
 
   Valid sortkeys are:
@@ -429,9 +429,9 @@ Set current context, either by specifying context _NAME_ or by specifying contex
   _namespaced_
 
   _kind_
-  __--verbs__ __VERB_,_...__
+  __`--verbs`__ __VERB_,_...__
   Limit output by supported verbs  
-  __--wide__
+  __`--wide`__
   Wide output format  
   
   
@@ -439,7 +439,7 @@ Set current context, either by specifying context _NAME_ or by specifying contex
 #### Display help about _COMMAND_ and exit
   
   
-  __--format__ __FORMAT__
+  __`--format`__ __FORMAT__
   Output the help as _FORMAT_ instead  
 
   Valid formats are:
@@ -449,7 +449,7 @@ Set current context, either by specifying context _NAME_ or by specifying contex
 #### Display this help and exit
   
   
-  __--format__ __FORMAT__
+  __`--format`__ __FORMAT__
   Output the help as _FORMAT_ instead  
 
   Valid formats are:
