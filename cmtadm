@@ -127,7 +127,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 
-PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
+PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster."
 PROGRAMAUTHORS = "Written by David Weinehall."
 
 DEFAULT_CNI = "cilium"
@@ -6935,7 +6935,7 @@ COMMANDLINE: dict[str, CommandType] = {
         "extended_description": [
             [ANSIThemeStr("Note", "note"),
              ANSIThemeStr(": some of the listed software may not be", "description")],
-            [ANSIThemeStr("relevant to the configuration in use", "description")],
+            [ANSIThemeStr("relevant to the configuration in use.", "description")],
         ],
         "options": {
             "--force": {
@@ -6993,7 +6993,7 @@ COMMANDLINE: dict[str, CommandType] = {
              ANSIThemeStr(" is not specified", "description")],
             [ANSIThemeStr("all clusters in ", "description"),
              ANSIThemeStr("~/.kube/config", "path")],
-            [ANSIThemeStr("will be imported", "description")],
+            [ANSIThemeStr("will be imported.", "description")],
         ],
         "options": {
             "-Y": {
@@ -7289,7 +7289,8 @@ COMMANDLINE: dict[str, CommandType] = {
              ANSIThemeStr(" will be used as pod network CIDR.", "description")],
             [ANSIThemeStr("If you wish to postpone the choice of CNI", "description")],
             [ANSIThemeStr("you can specify ", "description"),
-             ANSIThemeStr("none", "argument")],
+             ANSIThemeStr("none", "argument"),
+             ANSIThemeStr(".", "description")],
         ],
         "options": {
             "--resume": {

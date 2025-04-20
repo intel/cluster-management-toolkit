@@ -18,7 +18,7 @@ from clustermanagementtoolkit import about
 
 from clustermanagementtoolkit.cmtlib import lstrip_count, rstrip_count
 
-from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemearray_to_str
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
 from clustermanagementtoolkit.ansithemeprint import themearray_len, themearray_ljust
 
@@ -190,6 +190,7 @@ def __version(options: list[tuple[str, str]], args: list[str]) -> int:
 def __sub_usage(command: str) -> int:
     """
     Display usage information for a single command.
+    TODO: We need to support options for __sub_usage, to handle --format.
 
         Parameters:
             command (str): The command to show help for
@@ -393,7 +394,7 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
                 commands.append(([ANSIThemeStr("Global Options:", "description")],
                                  [ANSIThemeStr("", "default")]))
             elif output_format == "markdown":  # pragma: no branch
-                commands.append(([ANSIThemeStr("### _Global Options:_", "description")],
+                commands.append(([ANSIThemeStr("### Global Options:", "description")],
                                  [ANSIThemeStr("", "default")]))
 
         tmp: list[ANSIThemeStr] = []
@@ -404,9 +405,12 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
 
             if tmp:
                 tmp.append(ANSIThemeStr(f"{separator}", "separator"))
+            elif output_format == "markdown":
+                tmp.append(ANSIThemeStr("`", "command"))
             tmp.append(ANSIThemeStr(f"{cmd}", "command"))
         if tmp and output_format == "markdown":  # pragma: no branch
             tmp.insert(0, ANSIThemeStr("### ", "command"))
+            tmp.append(ANSIThemeStr("`", "command"))
 
         values = deep_get(value, DictPath("values"))
         if values is not None:
@@ -488,6 +492,8 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
                                      [ANSIThemeStr(indent, "default")] + line))
                 else:
                     commands.append(([ANSIThemeStr("", "default")], line))
+            commands.append(([ANSIThemeStr("  ", "default")],
+                             [ANSIThemeStr("", "default")]))
 
     # cmd[0]: formatted cmd/option
     # cmd[1]: formatted description
@@ -506,7 +512,8 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
                 string = themearray_ljust(cmd[0], 29) + cmd[1]
                 output.append(string)
         elif output_format == "markdown":  # pragma: no branch
-            output.append(cmd[0])
+            if ansithemearray_to_str(cmd[0], color=False).strip():
+                output.append(cmd[0])
             output.append(cmd[1])
 
     if "extended_description" in commandline:
