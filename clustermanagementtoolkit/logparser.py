@@ -3787,14 +3787,35 @@ def custom_splitter(message: str, **kwargs: Any) -> \
     if tmp is not None:
         group_count = len(tmp.groups())
         if message_field > group_count:
-            sys.exit(f"The parser rule references a non-existing capture group {message_field} "
-                     f"for message; the valid range is [1-{group_count}]")
-        if severity_field is not None and severity_transform is not None \
-                and tmp[severity_field] is not None:
+            errmsg = [
+                [("The parser rule references non-existing capture group ", "default"),
+                 (f"{message_field}", "argument"),
+                 (" for message; the valid range is [", "default"),
+                 ("1", "argument"),
+                 ("-", "separator"),
+                 (f"{group_count}", "argument"),
+                 ("].", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            message_field = 0
+            severity_field = None
+            facility_fields = None
+        if severity_field is not None and severity_transform is not None:
             if severity_field > group_count:
-                sys.exit("The parser rule references a non-existing capture group "
-                         f"{severity_field} for severity; the valid range is [1-{group_count}]")
-            if severity_transform == "letter":
+                errmsg = [
+                    [("The parser rule references non-existing capture group ", "default"),
+                     (f"{severity_field}", "argument"),
+                     (" for severity; the valid range is [", "default"),
+                     ("1", "argument"),
+                     ("-", "separator"),
+                     (f"{group_count}", "argument"),
+                     ("].", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                severity = LogLevel.DEFAULT
+            elif severity_transform == "letter":
                 severity = letter_to_severity(tmp[severity_field], default=severity)
             elif severity_transform == "3letter":
                 severity = str_3letter_to_severity(tmp[severity_field], default=severity)
@@ -3805,7 +3826,14 @@ def custom_splitter(message: str, **kwargs: Any) -> \
             elif severity_transform == "int":
                 severity = cast(LogLevel, int(tmp[severity_field]))
             else:
-                sys.exit(f"Unknown severity transform rule {severity_transform}; aborting.")
+                errmsg = [
+                    [("Unknown severity transform rule ", "default"),
+                     (f"{severity_transform}", "argument"),
+                     ("; could not extract severity.", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                severity = LogLevel.DEFAULT
             message, severity = \
                 custom_override_severity(tmp[message_field], severity,
                                          overrides={
@@ -3823,8 +3851,18 @@ def custom_splitter(message: str, **kwargs: Any) -> \
             facility = ""
             for field in facility_fields:
                 if field > group_count:
-                    sys.exit(f"The parser rule references a non-existing capture group {field} "
-                             f"for facility; the valid range is [1-{group_count}]")
+                    errmsg = [
+                        [("The parser rule references non-existing capture group ", "default"),
+                         (f"{field}", "argument"),
+                         (" for facility; the valid range is [", "default"),
+                         ("1", "argument"),
+                         ("-", "separator"),
+                         (f"{group_count}", "argument"),
+                         ("].", "default")],
+                    ]
+                    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                    cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                    break
                 if i:
                     facility += facility_separators[min(i - 1, len(facility_separators) - 1)]
                 if field != 0:
