@@ -1,0 +1,69 @@
+---
+kind: "Cluster"
+api_family: "postgresql.cnpg.io"
+default_command: "clusters.postgresql.cnpg.io"
+command:
+  - "cnpgclrs"
+  - "cnpgclr"
+listview:
+  name: "Cluster"
+  group: "Databases"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "instances", "primary",
+               "ready", "status", "age"]
+  fields:
+    instances:
+      header: "Instances:"
+      path: "spec#instances"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    primary:
+      header: "Primary:"
+      path: "status#primary"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+    ready:
+      header: "Ready:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+    status:
+      header: "Status:"
+      path: "status#phase"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Setting up primary":
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+    storage:
+      header: "Size:"
+      path: "spec#storage#size"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"

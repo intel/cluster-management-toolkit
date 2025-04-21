@@ -4365,6 +4365,44 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/pool.kubevirt.io/v1alpha1/"],
         "api": "virtualmachinepools",
     },
+    # postgresql.cnpg.io
+    ("Backup", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "backups",
+    },
+    ("ClusterImageCatalog", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "clusterimagecatalogs",
+        "namespaced": False,
+    },
+    ("Cluster", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "clusters",
+    },
+    ("Database", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "databases",
+    },
+    ("ImageCatalog", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "imagecatalogs",
+    },
+    ("Pooler", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "poolers",
+    },
+    ("Publication", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "publications",
+    },
+    ("ScheduledBackup", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "scheduledbackups",
+    },
+    ("Subscription", "postgresql.cnpg.io"): {
+        "api_paths": ["apis/postgresql.cnpg.io/v1/"],
+        "api": "subscriptions",
+    },
     # pmem-csi.intel.com
     ("PmemCSIDeployment", "pmem-csi.intel.com"): {
         "api_paths": ["apis/pmem-csi.intel.com/v1beta1/"],
