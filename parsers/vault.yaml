@@ -1,0 +1,22 @@
+---
+- name: "vault"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/openbao/openbao"
+    - image_name: "/hashicorp/vault-k8s"
+  parser_rules:
+    - name: "ts_8601"
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "exact"
+            matchkey: "==> OpenBao server configuration:"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "exact"
+            matchkey: "==> OpenBao server started! Log data will stream in below:"
+            matchline: "any"
+            format_block_end: true
+        loglevel: "notice"
+    - name: "bracketed_severity"
