@@ -2121,7 +2121,9 @@ infoview:
             - type: "kind_api_group"
             - type: "kind"
       message:
-        header: [["Message:", ["main", "infoheader"]]]
+        header: [["M", ["main", "infoheader"]],
+                 ["e", ["main", "infoheader_shortcut"]],
+                 ["ssage:", ["main", "infoheader"]]]
         paths:
           - path: "note"
             pathtype: "value"
@@ -4124,6 +4126,15 @@ infoview:
     # a last applied configuration either.
     "Show Events": null
     "Last Applied Configuration": null
+    "Show Event Description":
+      key: "e"
+      read_only: true
+      helptext: "Show Event description"
+      widget: "windowwidget"
+      title: "Event Description:"
+      itemgetter: "get_strings_from_string"
+      itemgetter_args:
+        path: "note"
     "Open involved object":
       key: "i"
       modifier: "shift"
