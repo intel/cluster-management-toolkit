@@ -1173,6 +1173,8 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                                 if isinstance(_subpath, str):
                                     _subpath = [_subpath]
                                 tmp_ = deep_get_with_fallback(item, _subpath, _default)
+                                if isinstance(tmp_, str):
+                                    tmp_ = __process_string(tmp_, replace_quotes="same")
                                 if isinstance(prefix, str):
                                     if isinstance(tmp_, str):
                                         tmp_ = prefix + tmp_
