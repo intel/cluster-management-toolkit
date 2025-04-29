@@ -1384,6 +1384,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/beat.k8s.elastic.co/v1beta1/"],
         "api": "beats",
     },
+    # bitnami.com
+    ("SealedSecret", "bitnami.com"): {
+        "api_paths": ["apis/bitnami.com/v1alpha1/"],
+        "api": "sealedsecrets",
+    },
     # bmc.tinkerbell.org
     ("Job", "bmc.tinkerbell.org"): {
         "api_paths": ["apis/bmc.tinkerbell.org/v1alpha1/"],
