@@ -4622,7 +4622,10 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     if selected is not None:
                         w_ref = getattr(selected, "ref", None)
                         if w_ref is not None:
-                            w_items = w_itemgetter(w_ref["ref"], **w_itemgetter_args)
+                            if "ref" in w_ref:
+                                w_items = w_itemgetter(w_ref["ref"], **w_itemgetter_args)
+                            else:
+                                w_items = w_itemgetter(w_ref, **w_itemgetter_args)
                 else:
                     w_items = w_itemgetter(obj, **w_itemgetter_args)
 
