@@ -1164,7 +1164,7 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                                                     tmp.append(group)
                                             break
                                         tmp.append("")
-                                    if not tmp:
+                                    if not tmp or not _regexes:
                                         tmp.append(_raw)
                             else:
                                 prefix = deep_get(_path, DictPath("prefix"), [])
