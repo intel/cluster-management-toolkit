@@ -1,0 +1,40 @@
+---
+kind: "DirectResponse"
+api_family: "gateway.kgateway.dev"
+default_command: "directresponses"
+command:
+  - "dresponses"
+  - "dresponse"
+listview:
+  name: "Direct Responses"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "status", "age"]
+  fields:
+    status:
+      header: "Status:"
+      path: "spec#status"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Direct Response Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["status"]
+    rows:
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "spec#status"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+  logpad:
+    infogetter: "logpad_formatted"
+    infogetter_args:
+      path: "spec#body"
+      formatter: "format_none"
+    timestamps: false

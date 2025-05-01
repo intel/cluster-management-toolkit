@@ -1,0 +1,143 @@
+---
+kind: "BackendTLSPolicy"
+api_family: "gateway.networking.k8s.io"
+default_command: "backendtlspolicies"
+command:
+  - "backendtlsps"
+  - "backendtlsp"
+listview:
+  name: "Backend TLS Policies"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Backend TLS Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["tls_options", "validation_header",
+                 "validation_hostname",
+                 "validation_ca_certificate_refs"]
+    rows:
+      tls_options:
+        header: [["TLS ", ["main", "infoheader"]],
+                 ["O", ["main", "infoheader_shortcut"]],
+                 ["ptions:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#options"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "keyvalue"
+      validation_header:
+        header: [["Validation:", ["main", "infoheader"]]]
+      validation_ca_certificate_refs:
+        header: [["  ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["A Certificate References:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#validation#caCertificateRefs"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "group"
+              - subpath: "namespace"
+                fallback_path: "metadata#namespace"
+              - "name"
+        default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
+      validation_hostname:
+        header: [["  Hostname:", ["main", "infoheader"]]]
+        path: "spec#validation#hostname"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "hostname"
+  shortcuts:
+    "Show TLS Options":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show TLS options"
+      widget: "windowwidget"
+      title: "TLS Options:"
+      headers: ["Option:", "Value:"]
+      # Not supported for now
+      sortcolumn: "option"
+      itemgetter: "get_key_value"
+      # This isn't supported for now
+      itemgetter_args:
+        path: "spec#options"
+        fields:
+          - "key"
+          - "value"
+    "CA Certificate References":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show CA certificate references"
+      widget: "windowwidget"
+      title: "CA Certificate References:"
+      selectable: true
+      headers: ["Kind:", "Group:", "Name:"]
+      # Not supported for now
+      sortcolumn: "kind"
+      itemgetter: "get_list_fields"
+      # This isn't supported for now
+      itemgetter_args:
+        path: "spec#validation#caCertificateRefs"
+        fields:
+          - "kind"
+          - "group"
+          - "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _parent_namespace_path: "metadata#namespace"
+        kind_path: 0
+        api_group_path: 1
+        name_path: 2
+    "Target References":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show target references"
+      widget: "windowwidget"
+      title: "Target References:"
+      selectable: true
+      headers: ["Kind:", "Group:", "Name:"]
+      # Not supported for now
+      sortcolumn: "kind"
+      itemgetter: "get_list_fields"
+      # This isn't supported for now
+      itemgetter_args:
+        path: "spec#targetRefs"
+        fields:
+          - "kind"
+          - "group"
+          - "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _parent_namespace_path: "metadata#namespace"
+        kind_path: 0
+        api_group_path: 1
+        name_path: 2

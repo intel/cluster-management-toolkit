@@ -1,0 +1,165 @@
+---
+kind: "GatewayExtension"
+api_family: "gateway.kgateway.dev"
+default_command: "gatewayextensions"
+command:
+  - "gwexts"
+  - "gwext"
+listview:
+  name: "Gateway Extensions"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "extension_type", "age"]
+  fields:
+    extension_type:
+      header: "Extension Type:"
+      path: "spec#type"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "Gateway Extension Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["extension_type",
+                 "external_auth_header",
+                 "external_auth_grpc_service_header",
+                 "external_auth_grpc_service_backend_ref",
+                 "external_auth_grpc_service_backend_port",
+                 "external_auth_grpc_service_backend_weight",
+                 "external_auth_grpc_service_authority",
+                 "external_proc_header",
+                 "external_proc_grpc_service_header",
+                 "external_proc_grpc_service_backend_ref",
+                 "external_proc_grpc_service_backend_port",
+                 "external_proc_grpc_service_backend_weight",
+                 ]
+    rows:
+      extension_type:
+        header: [["Extension Type:", ["main", "infoheader"]]]
+        path: "spec#type"
+        default: "<unset>"
+        type: "str"
+      external_auth_grpc_service_authority:
+        header: [["    Authority Header:", ["main", "infoheader"]]]
+        path: "spec#extAuth#grpcService#authority"
+        default: "<unset>"
+        type: "str"
+      external_auth_grpc_service_backend_ref:
+        header: [["    Backend Reference:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#extAuth#grpcService#backendRef#kind"],
+                   ["spec#extAuth#grpcService#backendRef#group"],
+                   ["spec#extAuth#grpcService#backendRef#namespace",
+                    "metadata#namespace"],
+                   ["spec#extAuth#grpcService#backendRef#name"]]
+            pathtype: "tuple"
+            when:
+              - key: "spec#extAuth#grpcService#backendRef#name"
+                notnone: true
+        default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
+      external_auth_grpc_service_header:
+        header: [["  gRPC Service:", ["main", "infoheader"]]]
+      external_auth_grpc_service_backend_port:
+        header: [["    Port:", ["main", "infoheader"]]]
+        path: "spec#extAuth#grpcService#backendRef#port"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+            - type: "port"
+      external_auth_grpc_service_backend_weight:
+        header: [["    Weight:", ["main", "infoheader"]]]
+        path: "spec#extAuth#grpcService#backendRef#weight"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      external_auth_header:
+        header: [["External ", ["main", "infoheader"]],
+                 ["A", ["main", "infoheader_shortcut"]],
+                 ["uthenticator:", ["main", "infoheader"]]]
+      external_proc_grpc_service_backend_ref:
+        header: [["    Backend Reference:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#extProc#grpcService#backendRef#kind"],
+                   ["spec#extProc#grpcService#backendRef#group"],
+                   ["spec#extProc#grpcService#backendRef#namespace",
+                    "metadata#namespace"],
+                   ["spec#extProc#grpcService#backendRef#name"]]
+            pathtype: "tuple"
+            when:
+              - key: "spec#extProc#grpcService#backendRef#name"
+                notnone: true
+        default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
+      external_proc_grpc_service_header:
+        header: [["  gRPC Service:", ["main", "infoheader"]]]
+      external_proc_grpc_service_backend_port:
+        header: [["    Port:", ["main", "infoheader"]]]
+        path: "spec#extProc#grpcService#backendRef#port"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+            - type: "port"
+      external_proc_grpc_service_backend_weight:
+        header: [["    Weight:", ["main", "infoheader"]]]
+        path: "spec#extProc#grpcService#backendRef#weight"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      external_proc_header:
+        header: [["External ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["rocessor:", ["main", "infoheader"]]]
+  shortcuts:
+    "Open Authentication Backend Reference":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for authentication backend reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#extAuth#grpcService#backendRef#kind"
+        api_group_path: "spec#extAuth#grpcService#backendRef#group"
+        namespace_path: "spec#extAuth#grpcService#backendRef#namespace"
+        _parent_namespace_path: "metadata#namespace"
+        name_path: "spec#extAuth#grpcService#backendRef#name"
+    "Open Processor Backend Reference":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for processor backend reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#extProc#grpcService#backendRef#kind"
+        api_group_path: "spec#extProc#grpcService#backendRef#group"
+        namespace_path: "spec#extProc#grpcService#backendRef#namespace"
+        _parent_namespace_path: "metadata#namespace"
+        name_path: "spec#extProc#grpcService#backendRef#name"

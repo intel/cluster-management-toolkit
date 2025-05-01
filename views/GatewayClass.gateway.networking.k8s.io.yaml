@@ -9,6 +9,8 @@ listview:
   name: "Gateway Classes"
   group: "Network"
   field_indexes:
+    Wide:
+      fields: ["name", "controller_name", "age", "description"]
     Normal:
       fields: ["name", "controller_name", "age"]
   fields:
@@ -16,14 +18,24 @@ listview:
       header: "Controller Name:"
       path: "spec#controllerName"
       type: "str"
+    description:
+      header: "Description:"
+      path: "spec#description"
+      default: "<unset>"
+      type: "str"
 infoview:
   name: "Gateway Class Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller_name"]
+        fields: ["controller_name", "description"]
     rows:
       controller_name:
         header: [["Controller Name:", ["main", "infoheader"]]]
         path: "spec#controllerName"
+        type: "str"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        default: "<unset>"
         type: "str"

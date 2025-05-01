@@ -57,8 +57,11 @@ infoview:
       read_only: true
       helptext: "Show target references"
       widget: "windowwidget"
+      title: "Target References:"
+      selectable: true
       headers: ["Kind:", "Group:", "Name:"]
-      sortcolumn: "group"
+      # Not supported for now
+      sortcolumn: "kind"
       itemgetter: "get_list_fields"
       # This isn't supported for now
       itemgetter_args:
@@ -67,3 +70,10 @@ infoview:
           - "kind"
           - "group"
           - "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _parent_namespace_path: "metadata#namespace"
+        kind_path: 0
+        api_group_path: 1
+        name_path: 2

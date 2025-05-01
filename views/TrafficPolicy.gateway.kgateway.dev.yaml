@@ -1,0 +1,123 @@
+---
+kind: "TrafficPolicy"
+api_family: "gateway.kgateway.dev"
+default_command: "trafficpolicies"
+command:
+  - "trafficpols"
+  - "trafficpol"
+listview:
+  name: "Traffic Policies"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Traffic Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["external_authenticator_header",
+                 "external_authenticator_extension_ref",
+                 "external_processor_header",
+                 "external_processor_extension_ref",
+                 "rate_limit_header",
+                 "rate_limit_fill_interval",
+                 "rate_limit_max_tokens",
+                 "rate_limit_tokens_per_fill"]
+    rows:
+      external_authenticator_extension_ref:
+        header: [["  Extension Reference:", ["main", "infoheader"]]]
+        path: "spec#extAuth#extensionRef#name"
+        default: "<unset>"
+        type: "str"
+      external_authenticator_header:
+        header: [["External ", ["main", "infoheader"]],
+                 ["A", ["main", "infoheader_shortcut"]],
+                 ["uthenticator:", ["main", "infoheader"]]]
+      external_processor_extension_ref:
+        header: [["  Extension Reference:", ["main", "infoheader"]]]
+        path: "spec#extProc#extensionRef#name"
+        default: "<unset>"
+        type: "str"
+      external_processor_header:
+        header: [["External ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["rocessor:", ["main", "infoheader"]]]
+      rate_limit_fill_interval:
+        header: [["  Fill Interval:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#local#tokenBucket#fillInterval"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      rate_limit_header:
+        header: [["Rate Limit:", ["main", "infoheader"]]]
+      rate_limit_max_tokens:
+        header: [["  Max Tokens:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#local#tokenBucket#maxTokens"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      rate_limit_tokens_per_fill:
+        header: [["  Tokens per Fill:", ["main", "infoheader"]]]
+        path: "spec#rateLimit#local#tokenBucket#tokensPerFill"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+  logpad:
+    infogetter: "logpad_yaml"
+    infogetter_args:
+      path: "spec#transformation"
+    timestamps: false
+  shortcuts:
+    "Open authenticator extension":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for authenticator extension"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "GatewayExtension"
+        api_family: "gateway.kgateway.dev"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#extAuth#extensionRef#name"
+    "Open processor extension":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for processor extension"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "GatewayExtension"
+        api_family: "gateway.kgateway.dev"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#extProc#extensionRef#name"
+    "Target References":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show target references"
+      widget: "windowwidget"
+      title: "Target References:"
+      selectable: true
+      headers: ["Kind:", "Group:", "Name:"]
+      # Not supported for now
+      sortcolumn: "kind"
+      itemgetter: "get_list_fields"
+      # This isn't supported for now
+      itemgetter_args:
+        path: "spec#targetRefs"
+        fields:
+          - "kind"
+          - "group"
+          - "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _parent_namespace_path: "metadata#namespace"
+        kind_path: 0
+        api_group_path: 1
+        name_path: 2

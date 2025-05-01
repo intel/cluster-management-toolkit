@@ -2458,6 +2458,31 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "frrnodestates",
         "namespaced": False,
     },
+    # gateway.kgateway.dev
+    ("Backend", "gateway.kgateway.dev"): {
+        "api_paths": ["apis/gateway.kgateway.dev/v1alpha1/"],
+        "api": "backends",
+    },
+    ("DirectResponse", "gateway.kgateway.dev"): {
+        "api_paths": ["apis/gateway.kgateway.dev/v1alpha1/"],
+        "api": "directresponses",
+    },
+    ("GatewayExtension", "gateway.kgateway.dev"): {
+        "api_paths": ["apis/gateway.kgateway.dev/v1alpha1/"],
+        "api": "gatewayextensions",
+    },
+    ("GatewayParameters", "gateway.kgateway.dev"): {
+        "api_paths": ["apis/gateway.kgateway.dev/v1alpha1/"],
+        "api": "gatewayparameters",
+    },
+    ("HTTPListenerPolicy", "gateway.kgateway.dev"): {
+        "api_paths": ["apis/gateway.kgateway.dev/v1alpha1/"],
+        "api": "httplistenerpolicies",
+    },
+    ("TrafficPolicy", "gateway.kgateway.dev"): {
+        "api_paths": ["apis/gateway.kgateway.dev/v1alpha1/"],
+        "api": "trafficpolicies",
+    },
     # gaudi.resource.intel.com
     ("GaudiAllocationState", "gaudi.resource.intel.com"): {
         "api_paths": ["apis/gaudi.resource.intel.com/v1alpha1/"],
