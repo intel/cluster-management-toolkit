@@ -6714,7 +6714,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
                 errmsg = [
                     [("kind_path", "argument"),
                      (" index ", "default"),
-                     (f"{name_path}", "argument"),
+                     (f"{kind_path}", "argument"),
                      (" is out of bounds; valid range: [", "default"),
                      ("0", "argument"),
                      ("-", "default"),
@@ -6736,6 +6736,33 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
         if isinstance(api_group_path, str):
             api_group_path = [api_group_path]
         elif isinstance(api_group_path, int) and fields:
+            if not isinstance(selection, (list, tuple)) \
+                    and not isinstance(deep_get(selection, DictPath("fields")), (list, tuple)):
+                errmsg = [
+                    [("api_group_path", "argument"),
+                     (" is an index, but ", "default"),
+                     ("selection", "argument"),
+                     (" is of non-indexable type ", "default"),
+                     (f"{type(selection)}", "argument"),
+                     (".", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                return Retval.NOMATCH
+            if api_group_path >= len(fields):
+                errmsg = [
+                    [("api_group_path", "argument"),
+                     (" index ", "default"),
+                     (f"{api_group_path}", "argument"),
+                     (" is out of bounds; valid range: [", "default"),
+                     ("0", "argument"),
+                     ("-", "default"),
+                     (f"{len(fields)}", "argument"),
+                     ("].", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                return Retval.NOMATCH
             tmp = fields[api_group_path]
             if tmp is not None:
                 api_group = themearray_to_string(tmp)
@@ -6758,7 +6785,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
                 unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
                 cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
                 return Retval.NOMATCH
-            if name_path >= len(fields):
+            if api_version_path >= len(fields):
                 errmsg = [
                     [("api_version_path", "argument"),
                      (" index ", "default"),
