@@ -1,0 +1,16 @@
+---
+- name: "axosyslog"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/axoflow/axosyslog"
+  parser_rules:
+    - name: "custom_splitter"
+      options:
+        regex: '^\[\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}\] (.*)'
+        message:
+          field: 1
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Setting current version as config version; version="
+          loglevel: "notice"

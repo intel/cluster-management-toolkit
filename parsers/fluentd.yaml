@@ -50,3 +50,35 @@
             - 1
         message:
           field: 2
+- name: "fluentd"
+  show_in_selector: true
+  matchkeys:
+    - image_name: "/fluent/fluent-bit"
+  parser_rules:
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "startswith"
+            # yamllint disable-line rule:line-length
+            matchkey: "Fluent Bit v"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "startswith"
+            # yamllint disable-line rule:line-length
+            matchkey: "["
+            matchline: "any"
+            format_block_end: false
+            process_block_end: false
+        loglevel: "notice"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[\d{4}\/\d\d/\d\d \d\d:\d\d:\d\d\] \[\s*?([a-z]+?)\] \[([^]^\s]+)\s*?\] (.*)'
+        facility:
+          fields:
+            - 2
+        severity:
+          field: 1
+          transform: "str"
+        message:
+          field: 3

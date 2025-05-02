@@ -3264,6 +3264,15 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
         "api": "flows",
     },
+    ("FluentbitAgent", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "fluentbitagents",
+        "namespaced": False,
+    },
+    ("FluentdConfig", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "fluentdconfigs",
+    },
     ("Logging", "logging.banzaicloud.io"): {
         "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
         "api": "loggings",
@@ -3272,6 +3281,36 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("Output", "logging.banzaicloud.io"): {
         "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
         "api": "outputs",
+    },
+    ("LoggingRoute", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "loggingroutes",
+        "namespaced": False,
+    },
+    ("NodeAgent", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "nodeagents",
+        "namespaced": False,
+    },
+    ("SyslogNGClusterFlow", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "syslogngclusterflows",
+    },
+    ("SyslogNGClusterOutput", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "syslogngclusteroutputs",
+    },
+    ("SyslogNGConfig", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "syslogngconfigs",
+    },
+    ("SyslogNGFlow", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "syslogngflows",
+    },
+    ("SyslogNGOutput", "logging.banzaicloud.io"): {
+        "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+        "api": "syslogngoutputs",
     },
     # logstash.k8s.elastic.co
     ("Logstash", "logstash.k8s.elastic.co"): {
