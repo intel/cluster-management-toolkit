@@ -205,6 +205,7 @@ infoview:
                  ["P", ["main", "infoheader_shortcut"]],
                  ["od Monitor Selector:", ["main", "infoheader"]]]
         paths:
+          # yamllint disable-line rule:line-length
           - path: ["spec#targetAllocator#prometheusCR#podMonitorSelector#matchLabels"]
             pathtype: "key_value"
             default: ["<none>"]
@@ -218,6 +219,7 @@ infoview:
       target_allocator_prometheus_cr_service_monitor_selector:
         header: [["    Service Monitor Selector:", ["main", "infoheader"]]]
         paths:
+          # yamllint disable-line rule:line-length
           - path: ["spec#targetAllocator#prometheusCR#serviceMonitorSelector#matchLabels"]
             pathtype: "key_value"
             default: ["<none>"]
@@ -364,6 +366,7 @@ infoview:
       itemgetter_args:
         kind: "PodMonitor"
         api_family: "monitoring.coreos.com"
+        # yamllint disable-line rule:line-length
         selector_path: "spec#targetAllocator#prometheusCR#podMonitorSelector#matchLabels"
         selector_type: "label"
         selector_none_on_empty: true
@@ -391,6 +394,7 @@ infoview:
       itemgetter_args:
         kind: "ServiceMonitor"
         api_family: "monitoring.coreos.com"
+        # yamllint disable-line rule:line-length
         selector_path: "spec#targetAllocator#prometheusCR#serviceMonitorSelector#matchLabels"
         selector_type: "label"
         selector_none_on_empty: true

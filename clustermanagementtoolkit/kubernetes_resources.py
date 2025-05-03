@@ -368,7 +368,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("IPAddress", "networking.k8s.io"): {
-        "api_paths": ["apis/networking.k8s.io/v1beta1/",
+        "api_paths": ["apis/networking.k8s.io/v1/",
+                      "apis/networking.k8s.io/v1beta1/",
                       "apis/networking.k8s.io/v1alpha1/"],
         "api": "ipaddresses",
         "namespaced": False,
@@ -390,7 +391,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "networkpolicies",
     },
     ("ServiceCIDR", "networking.k8s.io"): {
-        "api_paths": ["apis/networking.k8s.io/v1beta1/",
+        "api_paths": ["apis/networking.k8s.io/v1/",
+                      "apis/networking.k8s.io/v1beta1/",
                       "apis/networking.k8s.io/v1alpha1/"],
         "api": "servicecidrs",
         "namespaced": False,
@@ -1639,7 +1641,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     },
     # clone.kubevirt.io
     ("VirtualMachineClone", "clone.kubevirt.io"): {
-        "api_paths": ["apis/clone.kubevirt.io/v1alpha1/"],
+        "api_paths": ["apis/clone.kubevirt.io/v1beta1/",
+                      "apis/clone.kubevirt.io/v1alpha1/"],
         "api": "virtualmachineclones",
     },
     # cloudcredential.openshift.io

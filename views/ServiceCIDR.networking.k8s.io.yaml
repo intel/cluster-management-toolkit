@@ -1,0 +1,45 @@
+---
+kind: "ServiceCIDR"
+api_family: "networking.k8s.io"
+default_command: "servicecidrs"
+command:
+  - "svccidrs"
+  - "svccidr"
+listview:
+  name: "Service CIDRs"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["name", "cidrs", "age"]
+  fields:
+    cidrs:
+      header: "CIDRs:"
+      path: "spec#cidrs"
+      type: "raw"
+      formatter: "address"
+infoview:
+  name: "Service CIDR Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cidrs"]
+    rows:
+      cidrs:
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["IDRs:", ["main", "infoheader"]]]
+        path: "spec#cidrs"
+        type: "raw"
+        formatter: "address"
+  shortcuts:
+    "Service CIDRs":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Service CIDRs"
+      widget: "windowwidget"
+      title: "Service CIDRs:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#cidrs"
+      # This isn't supported for now
+      sortcolumn: "name"
