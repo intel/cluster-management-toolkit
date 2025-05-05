@@ -1,0 +1,86 @@
+---
+kind: "Logging"
+api_family: "logging.banzaicloud.io"
+default_command: "loggings"
+listview:
+  name: "Loggings"
+  group: "Logging"
+  field_indexes:
+    Wide:
+      fields: ["name", "control_namespace", "logging_ref", "problems", "age", "watch_namespaces"]
+    Normal:
+      fields: ["name", "control_namespace", "logging_ref", "problems", "age"]
+  fields:
+    control_namespace:
+      header: "Control Namespace:"
+      path: "spec#controlNamespace"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "namespace"
+    logging_ref:
+      header: "Logging Reference:"
+      path: "spec#loggingRef"
+      default: "<unset>"
+      type: "str"
+    problems:
+      header: "Problems:"
+      path: "status#problemsCount"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    watch_namespaces:
+      header: "Watch Namespaces:"
+      path: "status#watchNamespaces"
+      type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "namespace"
+infoview:
+  name: "Logging Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["control_namespace", "logging_ref", "problems", "watch_namespaces", "config_check_results"]
+    rows:
+      config_check_results:
+        header: [["Config Check Results:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#configCheckResults"
+          pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "keyvalue"
+      control_namespace:
+        header: [["Control Namespace:", ["main", "infoheader"]]]
+        path: "spec#controlNamespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      logging_ref:
+        header: [["Logging Reference:", ["main", "infoheader"]]]
+        path: "spec#loggingRef"
+        default: "<unset>"
+        type: "str"
+      problems:
+        header: [["Problems:", ["main", "infoheader"]]]
+        path: "status#problemsCount"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      watch_namespaces:
+        header: [["Watch Namespaces:", ["main", "infoheader"]]]
+        path: "status#watchNamespaces"
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "namespace"
