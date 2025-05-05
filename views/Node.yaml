@@ -181,9 +181,8 @@ infoview:
       Normal:
         fields: ["csi_node", "status", "internal_ips", "external_ips",
                  "architecture", "kernel_version", "os", "os_image",
-                 "kube_proxy_version", "kubelet_version",
-                 "kubelet_endpoint", "container_runtime",
-                 "pod_cidrs", "taints"]
+                 "kubelet_version", "kubelet_endpoint",
+                 "container_runtime", "pod_cidrs", "taints"]
     rows:
       architecture:
         header: [["Architecture:", ["main", "infoheader"]]]
@@ -247,13 +246,6 @@ infoview:
       kubelet_version:
         header: [["kubelet Version:", ["main", "infoheader"]]]
         path: "status#nodeInfo#kubeletVersion"
-        type: "str"
-        formatting:
-          field_colors:
-            - type: "version"
-      kube_proxy_version:
-        header: [["kube-proxy Version:", ["main", "infoheader"]]]
-        path: "status#nodeInfo#kubeProxyVersion"
         type: "str"
         formatting:
           field_colors:
