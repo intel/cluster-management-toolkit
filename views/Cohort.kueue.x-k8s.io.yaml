@@ -1,0 +1,62 @@
+---
+kind: "Cohort"
+api_family: "kueue.x-k8s.io"
+default_command: "cohorts"
+listview:
+  name: "Cohorts"
+  group: "Batch Scheduling"
+  field_indexes:
+    Normal:
+      fields: ["name", "parent", "age"]
+  fields:
+    parent:
+      header: "Parent:"
+      path: "spec#parent"
+      default: "<none>"
+      type: "str"
+infoview:
+  name: "Cohort Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["parent", "fair_sharing_header", "fair_sharing_weight"]
+    rows:
+      fair_sharing_header:
+        header: [["Fair Sharing:", ["main", "infoheader"]]]
+      fair_sharing_weight:
+        header: [["  Weight:", ["main", "infoheader"]]]
+        path: "spec#fairSharing#weight"
+        default: "<none>"
+        type: "float"
+        formatter: "numerical"
+      parent:
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arent:", ["main", "infoheader"]]]
+        path: "spec#parent"
+        default: "<none>"
+        type: "str"
+  shortcuts:
+    "Parent Cohort":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open parent Cohort"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Cohort"
+        api_family: "kueue.x-k8s.io"
+        name_path: "spec#parent"
+    "Resource Groups":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show resource groups"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Resource Groups"
+        _pass_obj: true
+        path: "spec#resourceGroups"
+        include_root: true

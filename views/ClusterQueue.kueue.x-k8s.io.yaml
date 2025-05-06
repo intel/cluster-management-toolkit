@@ -116,14 +116,15 @@ infoview:
                   - context: "main"
                     type: "status_not_ok"
       admission_checks:
-        header: [["Admission ", ["main", "infoheader"]],
-                 ["C", ["main", "infoheader_shortcut"]],
-                 ["hecks:", ["main", "infoheader"]]]
+        header: [["A", ["main", "infoheader_shortcut"]],
+                 ["dmission Checks:", ["main", "infoheader"]]]
         path: "spec#admissionChecks"
+        default: "<none>"
         type: "raw"
         formatter: "list"
       cohort:
-        header: [["Cohort:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ohort:", ["main", "infoheader"]]]
         path: "spec#cohort"
         type: "raw"
         default: "<unset>"
@@ -244,7 +245,7 @@ infoview:
         align: "right"
   shortcuts:
     "Admission Checks":
-      key: "c"
+      key: "a"
       modifier: "shift"
       read_only: true
       helptext: "List Admission Checks"
@@ -262,6 +263,18 @@ infoview:
         kind: "AdmissionCheck"
         api_family: "kueue.x-k8s.io"
         name_path: 0
+    "Cohort":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open Cohort"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Cohort"
+        api_family: "kueue.x-k8s.io"
+        name_path: "spec#cohort"
     "Flavors Reservations":
       key: "f"
       read_only: true
