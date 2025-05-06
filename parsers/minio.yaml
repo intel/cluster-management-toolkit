@@ -2,6 +2,13 @@
 - name: "minio"
   show_in_selector: false
   matchkeys:
+    - image_name: "/minio/operator"
+      container_name: "minio"
+  parser_rules:
+    - name: "glog"
+- name: "minio"
+  show_in_selector: false
+  matchkeys:
     - pod_name: "minio"
       container_name: "minio"
     - pod_name: "minio-"
