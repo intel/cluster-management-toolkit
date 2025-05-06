@@ -3884,6 +3884,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "migrationpolicies",
         "namespaced": False,
     },
+    # minio.min.io
+    ("Tenant", "minio.min.io"): {
+        "api_paths": ["apis/minio.min.io/v2/"],
+        "api": "tenants",
+    },
     # monitoring.coreos.com
     ("Alertmanager", "monitoring.coreos.com"): {
         "api_paths": ["apis/monitoring.coreos.com/v1/"],
@@ -5075,6 +5080,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "virtualclustertemplates",
         "namespaced": False,
     },
+    # sts.min.io
+    ("PolicyBinding", "sts.min.io"): {
+        "api_paths": ["apis/sts.min.io/v1beta1/"],
+        "api": "policybindings",
+    },
     # system.antrea.io
     ("AntreaControllerInfo", "system.antrea.io"): {
         "api_paths": ["apis/system.antrea.io/v1beta1/"],
@@ -5149,6 +5159,15 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/templates.gatekeeper.sh/v1/"],
         "api": "constrainttemplates",
         "namespaced": False,
+    },
+    # tempo.grafana.com
+    ("TempoMonolithic", "tempo.grafana.com"): {
+        "api_paths": ["apis/tempo.grafana.com/v1alpha1/"],
+        "api": "tempomonolithics",
+    },
+    ("TempoStack", "tempo.grafana.com"): {
+        "api_paths": ["apis/tempo.grafana.com/v1alpha1/"],
+        "api": "tempostacks",
     },
     # tenancy.kiosk.sh
     ("Account", "tenancy.kiosk.sh"): {
