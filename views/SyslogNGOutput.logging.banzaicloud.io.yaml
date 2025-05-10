@@ -1,0 +1,106 @@
+---
+kind: "SyslogNGOutput"
+api_family: "logging.banzaicloud.io"
+default_command: "syslogngoutputs"
+listview:
+  name: "Syslog-NG Outputs"
+  group: "Logging"
+  field_indexes:
+    Normal:
+      fields: ["name", "active", "age"]
+  fields:
+    active:
+      header: "Active:"
+      path: "status#active"
+      default: "<unset>"
+      type: "bool"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+infoview:
+  name: "Syslog-NG Output Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["http_header",
+                 "http_url",
+                 "http_disk_buffer_header",
+                 "http_disk_buffer_dir",
+                 "http_disk_buffer_size",
+                 "http_disk_buffer_reliable",
+                 "http_headers",
+                 "active"]
+    rows:
+      active:
+        header: [["Active:", ["main", "infoheader"]]]
+        path: "status#active"
+        default: "<unset>"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "False":
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+      http_disk_buffer_dir:
+        header: [["    Dir:", ["main", "infoheader"]]]
+        path: "spec#http#disk_buffer#dir"
+        default: "<unset>"
+        type: "str"
+      http_disk_buffer_header:
+        header: [["  Disk Buffer:", ["main", "infoheader"]]]
+      http_disk_buffer_reliable:
+        header: [["    Reliable:", ["main", "infoheader"]]]
+        path: "spec#http#disk_buffer#reliable"
+        default: "<unset>"
+        type: "bool"
+      http_disk_buffer_size:
+        header: [["    Size:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#http#disk_buffer#disk_buf_size"
+            type: "disk_usage"
+            default: "<unset>"
+        formatter: "numerical"
+      http_header:
+        header: [["HTTP:", ["main", "infoheader"]]]
+      http_headers:
+        header: [["  HTTP H", ["main", "infoheader"]],
+                 ["e", ["main", "infoheader_shortcut"]],
+                 ["aders:", ["main", "infoheader"]]]
+        path: "spec#http#headers"
+        type: "raw"
+        default: ["<none>"]
+        formatter: "list"
+      http_url:
+        header: [["  URL:", ["main", "infoheader"]]]
+        path: "spec#http#url"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "HTTP headers":
+      key: "e"
+      read_only: true
+      helptext: "Show HTTP headers"
+      widget: "windowwidget"
+      title: "HTTP Headers:"
+      # Not supported for now
+      sortcolumn: "header"
+      # This isn't supported for now
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#http#headers"

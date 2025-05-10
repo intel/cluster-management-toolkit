@@ -1,0 +1,99 @@
+---
+kind: "SyslogNGFlow"
+api_family: "logging.banzaicloud.io"
+default_command: "syslogngflows"
+listview:
+  name: "Syslog-NG Flows"
+  group: "Logging"
+  field_indexes:
+    Normal:
+      fields: ["name", "active", "age"]
+  fields:
+    active:
+      header: "Active:"
+      path: "status#active"
+      default: "<unset>"
+      type: "bool"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+infoview:
+  name: "Syslog-NG Flow Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["local_output_refs",
+                 "match_header",
+                 "match_regex_header",
+                 "match_regex_pattern",
+                 "match_regex_type",
+                 "match_regex_value",
+                 "active"]
+    rows:
+      active:
+        header: [["Active:", ["main", "infoheader"]]]
+        path: "status#active"
+        default: "<unset>"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "False":
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+      local_output_refs:
+        header: [["Local ", ["main", "infoheader"]],
+                 ["O", ["main", "infoheader_shortcut"]],
+                 ["utput References:", ["main", "infoheader"]]]
+        path: "spec#localOutputRefs"
+        type: "raw"
+        default: ["<none>"]
+        formatter: "list"
+      match_header:
+        header: [["Match Header:", ["main", "infoheader"]]]
+      match_regex_header:
+        header: [["  Regex:", ["main", "infoheader"]]]
+      match_regex_pattern:
+        header: [["    Pattern:", ["main", "infoheader"]]]
+        path: "spec#match#regexp#pattern"
+        default: "<unset>"
+        type: "str"
+      match_regex_type:
+        header: [["    Type:", ["main", "infoheader"]]]
+        path: "spec#match#regexp#type"
+        default: "<unset>"
+        type: "str"
+      match_regex_value:
+        header: [["    Value:", ["main", "infoheader"]]]
+        path: "spec#match#regexp#value"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Local output references":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show local output references"
+      widget: "windowwidget"
+      title: "Local Output References:"
+      # Not supported for now
+      sortcolumn: "reference"
+      # This isn't supported for now
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#localOutputRefs"
