@@ -1,0 +1,12 @@
+---
+- name: "csi-driver"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/sig-storage/csi-node-driver-registrar"
+    - image_name: "/sig-storage/livenessprobe"
+  parser_rules:
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+      options:
+        versions:
+          - "version"

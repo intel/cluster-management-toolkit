@@ -4743,6 +4743,15 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "queues",
         "namespaced": False,
     },
+    # secrets-store.csi.x-k8s.io
+    ("SecretProviderClass", "secrets-store.csi.x-k8s.io"): {
+        "api_paths": ["apis/secrets-store.csi.x-k8s.io/v1/"],
+        "api": "secretproviderclasses",
+    },
+    ("SecretProviderClassPodStatus", "secrets-store.csi.x-k8s.io"): {
+        "api_paths": ["apis/secrets-store.csi.x-k8s.io/v1/"],
+        "api": "secretproviderclasspodstatuses",
+    },
     # security.istio.io
     ("AuthorizationPolicy", "security.istio.io"): {
         "api_paths": ["apis/security.istio.io/v1/",
