@@ -675,6 +675,15 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
         "api": "kubeadmcontrolplanetemplates",
     },
+    # inference.networking.x-k8s.io
+    ("InferenceModel", "inference.networking.x-k8s.io"): {
+        "api_paths": ["apis/inference.networking.x-k8s.io/v1alpha2/"],
+        "api": "inferencemodels",
+    },
+    ("InferencePool", "inference.networking.x-k8s.io"): {
+        "api_paths": ["apis/inference.networking.x-k8s.io/v1alpha2/"],
+        "api": "inferencepools",
+    },
     # infrastructure.cluster.x-k8s.io
     ("AWSClusterControllerIdentity", "infrastructure.cluster.x-k8s.io"): {
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta2/"],
