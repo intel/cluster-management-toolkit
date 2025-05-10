@@ -1,0 +1,22 @@
+---
+- name: "envoy"
+  show_in_selector: false
+  matchkeys:
+    - pod_name: "cilium-envoy"
+    - image_name: "/kgateway-dev/envoy-wrapper"
+  parser_rules:
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[\d+\]\[([a-z]+?)\]\[([^]]+)\] \[([^]]+)\] (.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+            - 3
+          separators:
+            - "|"
+        message:
+          field: 4
