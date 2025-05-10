@@ -1,0 +1,78 @@
+---
+kind: "InferenceModel"
+api_family: "inference.networking.x-k8s.io"
+default_command: "inferencemodels"
+listview:
+  name: "Inference Models"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "model", "inference_pool", "criticality", "age"]
+      sortcolumn: "namespace"
+  fields:
+    criticality:
+      header: "Criticality:"
+      path: "spec#criticality"
+      default: "<unset>"
+      type: "str"
+    inference_pool:
+      header: "Inference Pool:"
+      path: "spec#poolRef#name"
+      default: "<unset>"
+      type: "str"
+    model:
+      header: "Model:"
+      path: "spec#modelName"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "Inference Model Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["pool_reference",
+                 "model", "criticality"]
+    rows:
+      criticality:
+        header: [["Criticality:", ["main", "infoheader"]]]
+        path: "spec#criticality"
+        default: "<unset>"
+        type: "str"
+      model:
+        header: [["Model:", ["main", "infoheader"]]]
+        path: "spec#modelName"
+        default: "<unset>"
+        type: "str"
+      pool_reference:
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["ool Reference:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#poolRef#kind"],
+                   ["spec#poolRef#group"],
+                   ["spec#poolRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>"]
+            type: ["kind", "api_group", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+  shortcuts:
+    "Open pool reference":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for pool reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#poolRef#kind"
+        api_group_path: "spec#poolRef#group"
+        name_path: "spec#poolRef#name"
+        namespace_path: "metadata#namespace"

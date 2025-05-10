@@ -1,0 +1,97 @@
+---
+kind: "InferencePool"
+api_family: "inference.networking.x-k8s.io"
+default_command: "inferencepools"
+listview:
+  name: "Inference Pools"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Inference Pool Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["label_selector",
+                 "target_port",
+                 "extension_header",
+                 "extension_reference",
+                 "extension_failure_mode",
+                 ]
+    rows:
+      extension_failure_mode:
+        header: [["  Failure Mode:", ["main", "infoheader"]]]
+        path: "spec#extensionRef#failureMode"
+        default: "<unset>"
+        type: "str"
+      extension_header:
+        header: [["Extension:", ["main", "infoheader"]]]
+      extension_reference:
+        header: [["  ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["eference:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#extensionRef#kind"],
+                   ["spec#extensionRef#group"],
+                   ["spec#extensionRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>"]
+            type: ["kind", "api_group", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+      label_selector:
+        header: [["La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#selector"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      target_port:
+        header: [["Target Port:", ["main", "infoheader"]]]
+        path: "spec#targetPortNumber"
+        default: "<unset>"
+        type: "numerical"
+        formatting:
+          field_colors:
+            - type: "port"
+  shortcuts:
+    "Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Label selector"
+      widget: "windowwidget"
+      title: "Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#selector"
+    "Open extension reference":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for extension reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#extensionRef#kind"
+        api_group_path: "spec#extensionRef#group"
+        name_path: "spec#extensionRef#name"
+        namespace_path: "metadata#namespace"
