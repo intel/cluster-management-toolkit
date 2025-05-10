@@ -112,10 +112,6 @@ infoview:
         type: "raw"
         formatter: "list"
   listpad:
-    on_activation:
-      call: "resourceinfodispatch"
-      kind: "__JobSetTemplate"
-      api_family: "jobset.x-k8s.io"
     listgetter: "listgetter_path"
     listgetter_args:
       join_key: "name"
@@ -125,9 +121,14 @@ infoview:
         - path: "status#replicatedJobsStatus"
           type: "list"
     infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__JobSetTemplate"
+      api_family: "jobset.x-k8s.io"
     field_indexes:
-      Normal: ["name", "replicas",
-               "active", "suspended", "ready", "succeeded", "failed"]
+      Normal:
+        fields: ["name", "replicas",
+                 "active", "suspended", "ready", "succeeded", "failed"]
     fields:
       active:
         header: "Active:"

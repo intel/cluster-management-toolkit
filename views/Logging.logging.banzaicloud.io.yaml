@@ -7,7 +7,8 @@ listview:
   group: "Logging"
   field_indexes:
     Wide:
-      fields: ["name", "control_namespace", "logging_ref", "problems", "age", "watch_namespaces"]
+      fields: ["name", "control_namespace", "logging_ref", "problems", "age",
+               "watch_namespaces"]
     Normal:
       fields: ["name", "control_namespace", "logging_ref", "problems", "age"]
   fields:
@@ -43,13 +44,14 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["control_namespace", "logging_ref", "problems", "watch_namespaces", "config_check_results"]
+        fields: ["control_namespace", "logging_ref", "problems",
+                 "watch_namespaces", "config_check_results"]
     rows:
       config_check_results:
         header: [["Config Check Results:", ["main", "infoheader"]]]
         paths:
-        - path: "status#configCheckResults"
-          pathtype: "key_value"
+          - path: "status#configCheckResults"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
@@ -75,7 +77,6 @@ infoview:
         default: 0
         type: "int"
         formatter: "numerical"
-        align: "right"
       watch_namespaces:
         header: [["Watch Namespaces:", ["main", "infoheader"]]]
         path: "status#watchNamespaces"

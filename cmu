@@ -7994,7 +7994,7 @@ def delete_logs(**kwargs: Any) -> Retval:
             (Retval): The return value
     """
     items = deep_get(kwargs, DictPath("items"), [])
-    dirpath: str = deep_get(kwargs, DictPath("action#action_args#dirpath"))
+    dirpath: str = deep_get(kwargs, DictPath("action#actionfunc_args#dirpath"))
     if dirpath is not None:
         dirpath = dirpath.replace("{HOME}", HOMEDIR)
     for item in items:

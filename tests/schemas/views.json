@@ -680,6 +680,13 @@
 							}
 						}
 					},
+					"subtype": {
+						"description": "Certain pathtypes can have a subtype that modifies their behaviour",
+						"enum": [
+							"dict",
+							"strlist"
+						]
+					},
 					"suffix": {
 						"description": "A suffix or list of suffixes to add after the output",
 						"anyOf": [
@@ -1130,7 +1137,21 @@
 										},
 										"actionfunc": {
 											"description": "The function to call",
-											"type": "string"
+											"enum": [
+												"action_view_pod_logs",
+												"cordon_node",
+												"delete_logs",
+												"delete_resource",
+												"drain_node",
+												"force_delete_resource",
+												"force_drain_node",
+												"patch_resource",
+												"rescale_resource",
+												"restart_resource_rescale",
+												"restart_resource_rollout",
+												"stop_resource_rescale",
+												"uncordon_node"
+											]
 										},
 										"actionfunc_args": {
 											"description": "Arguments to pass to the actionfunc",
@@ -2272,6 +2293,10 @@
 															"description": "Path to get the API family of the object from (used with get_kubernetes_objects)",
 															"$ref": "#/definitions/path"
 														},
+														"api_version_path": {
+															"description": "Path to get the API version of the object from, optionally with fallback(s)",
+															"$ref": "#/definitions/path"
+														},
 														"cm_name": {
 															"description": "Name or name paths for the ConfigMap",
 															"oneOf": [
@@ -2297,6 +2322,10 @@
 														},
 														"fields": {
 															"type": "array"
+														},
+														"guess_kind": {
+															"description": "If set to False a temporary resource type will be created instead of trying to match known types",
+															"type": "boolean"
 														},
 														"items": {
 															"type": "array",
@@ -2350,6 +2379,10 @@
 															"description": "The namespace of the objects (used with get_kubernetes_objects)",
 															"$ref": "#/definitions/path"
 														},
+														"namespaced_resource": {
+															"description": "When guess_kind is set to False this property is used to indicate whether the temporary resource type is namespaced or not",
+															"type": "boolean"
+														},
 														"namespace_path": {
 															"description": "Path to get the namespace of the objects from (used with get_kubernetes_objects)",
 															"$ref": "#/definitions/path"
@@ -2394,6 +2427,14 @@
 															"description": "The selector or selector component (used with get_kubernetes_objects)",
 															"type": "string"
 														},
+														"selector_none_on_empty": {
+															"description": "If this is true and the selector is empty, return none",
+															"type": "boolean"
+														},
+														"selector_path": {
+															"description": "The path to get the selector from (used with get_kubernetes_objects)",
+															"type": "string"
+														},
 														"selector_type": {
 															"description": "The selector type; label or field",
 															"enum": [
@@ -2422,6 +2463,17 @@
 															"required": [ "cm_namespace", "cm_name", "pod_name" ]
 														}
 													],
+													"additionalProperties": false
+												}, {
+													"type": "object",
+													"properties": {
+														"allocatable_path": {
+															"$ref": "#/definitions/simple_path"
+														},
+														"capacity_path": {
+															"$ref": "#/definitions/simple_path"
+														}
+													},
 													"additionalProperties": false
 												}, {
 													"type": "object",
