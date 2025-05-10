@@ -1,0 +1,62 @@
+---
+kind: "VirtualMachineInstancePreset"
+api_family: "kubevirt.io"
+default_command: "virtualmachineinstancepresets"
+command:
+  - "kvvmipresets"
+  - "kvvmipreset"
+listview:
+  name: "Virtual Machine Instance Presets"
+  group: "Virtualization"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Virtual Machine Instance Preset Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["label_selector", "set_based_selector"]
+    rows:
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      set_based_selector:
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#selector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "operator"
+            - type: "value"
+          field_separators:
+            - type: "space"
+            - type: "no_pad"
+  shortcuts:
+    "View domain presets":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show domain presets"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Domain Presets"
+        _named_title: true
+        _pass_obj: true
+        path: "spec#domain"
