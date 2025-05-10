@@ -299,6 +299,14 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/gateway.networking.k8s.io/v1alpha2/"],
         "api": "udproutes",
     },
+    ("XBackendTrafficPolicy", "gateway.networking.x-k8s.io"): {
+        "api_paths": ["apis/gateway.networking.x-k8s.io/v1alpha1/"],
+        "api": "xbackendtrafficpolicies",
+    },
+    ("XListenerSet", "gateway.networking.x-k8s.io"): {
+        "api_paths": ["apis/gateway.networking.x-k8s.io/v1alpha1/"],
+        "api": "xlistenersets",
+    },
     # groupsnapshot.storage.k8s.io
     ("VolumeGroupSnapshotClass", "groupsnapshot.storage.k8s.io"): {
         "api_paths": ["apis/groupsnapshot.storage.k8s.io/v1beta1/",
