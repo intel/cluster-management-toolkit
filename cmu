@@ -2906,11 +2906,13 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
         selected_pod = min(selected_pod, len(podinfo))
         selected_node = min(selected_node, len(nodeinfo))
 
-        if nodeinfo and podinfo:
+        if nodeinfo or podinfo:
             node_heatmap_xpos = 0
             pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 2
 
-            taints = getattr(nodeinfo[selected_node], "taints", ["<none>"])
+            taints = []
+            if nodeinfo:
+                taints = getattr(nodeinfo[selected_node], "taints", ["<none>"])
             if not taints:
                 taints = ["<none>"]
             selectednodetaints = \
@@ -2918,6 +2920,15 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                        field_colors=[ThemeAttr("types", "key"),
                                                      ThemeAttr("types", "effect")],
                                        field_separators=[ThemeRef("separators", "keyvalue")])
+
+            node_name = "<none>"
+            node_status = "<none>"
+            node_status_group = StatusGroup.UNKNOWN
+
+            if nodeinfo:
+                node_name = nodeinfo[selected_node].name
+                node_status = nodeinfo[selected_node].status
+                node_status_group = nodeinfo[selected_node].status_group
 
             nodearrays: list[list[Union[ThemeRef, ThemeStr]]] = [
                 [
@@ -2932,13 +2943,13 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     ThemeStr("d", ThemeAttr("main", "listheader"),
                              selected=selected_heatmap == "Node"),
                     ThemeStr("e: ", ThemeAttr("main", "listheader")),
-                    ThemeStr(f"{nodeinfo[selected_node].name}".ljust(node_heatmap_width),
+                    ThemeStr(f"{node_name}".ljust(node_heatmap_width),
                              ThemeAttr("main", "highlight")),
                 ], [
                     ThemeStr(" ", ThemeAttr("main", "listheader")),
                     ThemeStr("Status: ", ThemeAttr("main", "infoheader")),
-                    ThemeStr(f"{nodeinfo[selected_node].status}".ljust(node_heatmap_width),
-                             color_status_group(nodeinfo[selected_node].status_group)),
+                    ThemeStr(f"{node_status}".ljust(node_heatmap_width),
+                             color_status_group(node_status_group)),
                 ], [
                     ThemeStr(" ", ThemeAttr("main", "listheader")),
                     ThemeStr("Taints: ", ThemeAttr("main", "infoheader")),
@@ -2953,6 +2964,19 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 curses_helper.generate_heatmap(node_heatmap_width, node_statuses, selected_node)
             nodearrays += node_heatmap
 
+            pod_name = "<none>"
+            pod_namespace = "<none>"
+            pod_node = "<none>"
+            pod_status = "<none>"
+            pod_status_group = StatusGroup.UNKNOWN
+
+            if podinfo:
+                pod_name = podinfo[selected_pod].name
+                pod_namespace = podinfo[selected_pod].namespace
+                pod_node = podinfo[selected_pod].node
+                pod_status = podinfo[selected_pod].status
+                pod_status_group = podinfo[selected_pod].status_group
+
             podarrays: list[list[Union[ThemeRef, ThemeStr]]] = [
                 [
                     ThemeStr(f"Pod ({selected_pod + 1}/{len(podinfo)}):",
@@ -2964,14 +2988,14 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     ThemeStr("P", ThemeAttr("main", "listheader"),
                              selected=selected_heatmap == "Pod"),
                     ThemeStr("od: ", ThemeAttr("main", "listheader")),
-                    ThemeStr(f"{podinfo[selected_pod].name}".ljust(pod_heatmap_width),
+                    ThemeStr(f"{pod_name}".ljust(pod_heatmap_width),
                              ThemeAttr("main", "highlight")),
                 ], [
                     ThemeStr(" ", ThemeAttr("main", "listheader")),
                     ThemeStr("N", ThemeAttr("main", "listheader"),
                              selected=selected_heatmap == "Pod"),
                     ThemeStr("amespace: ", ThemeAttr("main", "listheader")),
-                    ThemeStr(f"{podinfo[selected_pod].namespace}".ljust(pod_heatmap_width),
+                    ThemeStr(f"{pod_namespace}".ljust(pod_heatmap_width),
                              ThemeAttr("main", "highlight")),
                 ], [
                     ThemeStr(" ", ThemeAttr("main", "listheader")),
@@ -2979,13 +3003,13 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     ThemeStr("d", ThemeAttr("main", "listheader"),
                              selected=selected_heatmap == "Pod"),
                     ThemeStr("e: ", ThemeAttr("main", "infoheader")),
-                    ThemeStr(f"{podinfo[selected_pod].node}".ljust(pod_heatmap_width),
+                    ThemeStr(f"{pod_node}".ljust(pod_heatmap_width),
                              ThemeAttr("main", "highlight")),
                 ], [
                     ThemeStr(" ", ThemeAttr("main", "listheader")),
                     ThemeStr("Status: ", ThemeAttr("main", "infoheader")),
-                    ThemeStr(f"{podinfo[selected_pod].status}".ljust(pod_heatmap_width),
-                             color_status_group(podinfo[selected_pod].status_group)),
+                    ThemeStr(f"{pod_status}".ljust(pod_heatmap_width),
+                             color_status_group(pod_status_group)),
                 ], [
                     # Empty line
                 ]
@@ -3004,12 +3028,12 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             for y, row in enumerate(podarrays):
                 uip.addthemearray(uip.listpad, row, y=y, x=pod_heatmap_xpos)
 
-        if selected_heatmap == "Pod":
+        if podinfo and selected_heatmap == "Pod":
             uip.maxcurypos = len(pod_heatmap) - 1
             uip.curypos = pod_curypos
             uip.maxyoffset = 0
             uip.yoffset = 0
-        elif selected_heatmap == "Node":
+        elif nodeinfo and selected_heatmap == "Node":
             uip.maxcurypos = len(node_heatmap) - 1
             uip.curypos = node_curypos
             uip.maxyoffset = 0
@@ -3028,7 +3052,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             __info = podinfo
             __selected = selected_pod
             heatmap_width = pod_heatmap_width
-        elif nodeinfo:
+        elif nodeinfo and selected_heatmap == "Node":
             __node_name = nodeinfo[selected_node].name
             __namespace = None
             __pod_name = None
