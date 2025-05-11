@@ -425,7 +425,6 @@ parser_bundle:
 	@printf -- "Building parser bundle\n" ;\
 	rm -f parsers/BUNDLE.yaml; \
 	for file in parsers/*.yaml; do \
-		printf -- "---\n" >> parsers/BUNDLE.yaml; \
 		cat $$file >> parsers/BUNDLE.yaml; \
 	done
 
