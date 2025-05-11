@@ -1604,8 +1604,9 @@ def get_node_info(**kwargs: Any) -> list[Type]:
         return []
 
     for obj in vlist:
+        name = deep_get(obj, DictPath("metadata#name"))
         # For now we do not do anything with external IPs; we should
-        name, internal_ips, _external_ips = \
+        hostname, internal_ips, _external_ips = \
             get_node_addresses(deep_get(obj, DictPath("status#addresses")))
         ref = obj
         kubernetes_roles = get_node_roles(obj)
@@ -1625,6 +1626,7 @@ def get_node_info(**kwargs: Any) -> list[Type]:
 
         info.append(type("InfoClass", (), {
             "name": name,
+            "hostname": hostname,
             "ref": ref,
             "status": status,
             "status_group": status_group,
