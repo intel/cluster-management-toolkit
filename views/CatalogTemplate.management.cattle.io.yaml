@@ -1,0 +1,136 @@
+---
+kind: "CatalogTemplate"
+api_family: "management.cattle.io"
+default_command: "catalogs.management.cattle.io"
+command:
+  - "catalogstmpl.cattle"
+  - "catalogtmpl.cattle"
+listview:
+  name: "Catalog Templates"
+  group: "Rancher"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "catalog_id", "categories",
+               "default_version", "versions", "age", "description"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "catalog_id", "default_version", "age"]
+      sortcolumn: "namespace"
+  fields:
+    catalog_id:
+      header: "Catalog ID:"
+      path: "spec#catalogId"
+      default: "<unset>"
+      type: "str"
+    categories:
+      header: "Categories:"
+      path: "spec#categories"
+      default: ["<none>"]
+      type: "raw"
+      formatter: "list"
+    default_version:
+      header: "Default Version:"
+      path: "spec#defaultVersion"
+      default: "<empty>"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "version"
+    description:
+      header: "Description:"
+      path: "spec#description"
+      fallback_on_empty: true
+      default: "<unset>"
+      type: "str"
+    versions:
+      header: "Versions:"
+      path: "spec#versions"
+      type: "len"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Catalog Template Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description", "folder_name",
+                 "catalog_id", "project_url", "categories", "default_version"]
+    rows:
+      catalog_id:
+        header: [["Catalog ID:", ["main", "infoheader"]]]
+        path: "spec#catalogId"
+        default: "<unset>"
+        type: "str"
+      categories:
+        header: [["Categories:", ["main", "infoheader"]]]
+        path: "spec#categories"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      default_version:
+        header: [["Default Version:", ["main", "infoheader"]]]
+        path: "spec#defaultVersion"
+        default: "<empty>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      folder_name:
+        header: [["Folder Name:", ["main", "infoheader"]]]
+        path: "spec#folderName"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      project_url:
+        header: [["Project ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["RL:", ["main", "infoheader"]]]
+        path: "spec#projectURL"
+        fallback_on_empty: true
+        default: "<none>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+  shortcuts:
+    "List versions":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "List versions"
+      widget: "windowwidget"
+      title: "Versions:"
+      headers: ["Name:", "Version:", "Max Rancher Version:", "Dir:", "External ID:", "Digest:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#versions"
+        fields:
+          - "versionName"
+          - "version"
+          - "rancherMaxVersion"
+          - "versionDir"
+          - "externalId"
+          - "digest"
+      # Not supported for now
+      sortcolumn: "versionName"
+    "Open project URL":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open project URL in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open",
+                  ["spec#projectURL"]]

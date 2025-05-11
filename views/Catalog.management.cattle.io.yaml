@@ -9,6 +9,8 @@ listview:
   name: "Catalogs"
   group: "Rancher"
   field_indexes:
+    Wide:
+      fields: ["name", "branch", "catalog_kind", "age", "url", "description"]
     Normal:
       fields: ["name", "branch", "catalog_kind", "age", "url"]
   fields:
@@ -20,6 +22,12 @@ listview:
     catalog_kind:
       header: "Catalog Kind:"
       path: "spec#catalogKind"
+      default: "<unset>"
+      type: "str"
+    description:
+      header: "Description:"
+      path: "spec#description"
+      fallback_on_empty: true
       default: "<unset>"
       type: "str"
     url:
@@ -35,11 +43,16 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["description", "branch", "catalog_kind", "url"]
+        fields: ["description", "branch", "commit", "catalog_kind", "url"]
     rows:
       branch:
         header: [["Branch:", ["main", "infoheader"]]]
         path: "spec#branch"
+        default: "<unset>"
+        type: "str"
+      commit:
+        header: [["Commit:", ["main", "infoheader"]]]
+        path: "status#commit"
         default: "<unset>"
         type: "str"
       description:
