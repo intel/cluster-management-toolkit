@@ -59,10 +59,24 @@ listview:
         field_colors:
           - type: "key"
           - type: "value"
-          - type: "generic"
+          - type: "effect"
         field_separators:
+          - type: "equal"
           - type: "keyvalue"
-          - type: "field"
+        mapping:
+          mappings:
+            NoSchedule:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            PreferNoSchedule:
+              field_colors:
+                - context: "main"
+                  type: "status_warning"
+            NoExecute:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Machine Info"
   infopad:
@@ -125,10 +139,24 @@ infoview:
           field_colors:
             - type: "key"
             - type: "value"
-            - type: "generic"
+            - type: "effect"
           field_separators:
+            - type: "equal"
             - type: "keyvalue"
-            - type: "field"
+          mapping:
+            mappings:
+              NoSchedule:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              PreferNoSchedule:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              NoExecute:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
   shortcuts:
     "Addresses":
       key: "a"

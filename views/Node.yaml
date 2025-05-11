@@ -124,7 +124,7 @@ listview:
           - type: "key"
           - type: "value"
         field_separators:
-          - type: "keyvalue_taint"
+          - type: "keyvalue"
         mapping:
           mappings:
             NoSchedule:
@@ -331,10 +331,24 @@ infoview:
           field_colors:
             - type: "key"
             - type: "value"
-            - type: "generic"
+            - type: "effect"
           field_separators:
+            - type: "equal"
             - type: "keyvalue"
-            - type: "keyvalue_taint"
+          mapping:
+            mappings:
+              NoSchedule:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              PreferNoSchedule:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              NoExecute:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:

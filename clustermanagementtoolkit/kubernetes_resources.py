@@ -4785,6 +4785,44 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "securitycontextconstraints",
         "namespaced": False,
     },
+    # security-profiles-operator.x-k8s.io
+    ("AppArmorProfile", "security-profiles-operator.x-k8s.io"): {
+        "api_paths": ["apis/security-profiles-operator.x-k8s.io/v1alpha1/"],
+        "api": "apparmorprofiles",
+        "namespaced": False,
+    },
+    ("ProfileBinding", "security-profiles-operator.x-k8s.io"): {
+        "api_paths": ["apis/security-profiles-operator.x-k8s.io/v1alpha1/"],
+        "api": "profilebindings",
+    },
+    ("ProfileRecording", "security-profiles-operator.x-k8s.io"): {
+        "api_paths": ["apis/security-profiles-operator.x-k8s.io/v1alpha1/"],
+        "api": "profilerecordings",
+    },
+    ("SecurityProfileNodeStatus", "security-profiles-operator.x-k8s.io"): {
+        "api_paths": ["apis/security-profiles-operator.x-k8s.io/v1alpha1/"],
+        "api": "securityprofilenodestatuses",
+        "namespaced": False,
+    },
+    ("SecurityProfilesOperatorDaemon", "security-profiles-operator.x-k8s.io"): {
+        "api_paths": ["apis/security-profiles-operator.x-k8s.io/v1alpha1/"],
+        "api": "securityprofilesoperatordaemons",
+    },
+    ("RawSelinuxProfile", "security-profiles-operator.x-k8s.io"): {
+        "api_paths": ["apis/security-profiles-operator.x-k8s.io/v1alpha2/"],
+        "api": "rawselinuxprofiles",
+        "namespaced": False,
+    },
+    ("SelinuxProfile", "security-profiles-operator.x-k8s.io"): {
+        "api_paths": ["apis/security-profiles-operator.x-k8s.io/v1alpha2/"],
+        "api": "selinuxprofiles",
+        "namespaced": False,
+    },
+    ("SeccompProfile", "security-profiles-operator.x-k8s.io"): {
+        "api_paths": ["apis/security-profiles-operator.x-k8s.io/v1beta1/"],
+        "api": "seccompprofiles",
+        "namespaced": False,
+    },
     # servicecertsigner.config.openshift.io
     ("ServiceCertSignerOperatorConfig", "servicecertsigner.config.openshift.io"): {
         "api_paths": ["apis/servicecertsigner.config.openshift.io/v1alpha1/"],

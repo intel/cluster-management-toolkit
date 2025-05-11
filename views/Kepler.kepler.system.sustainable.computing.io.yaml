@@ -146,7 +146,7 @@ infoview:
         header: [["  Tolerations:", ["main", "infoheader"]]]
         paths:
           - path: "spec#exporter#deployment#tolerations"
-            pathtype: "match_expression"
+            pathtype: "toleration"
             default: "<none>"
         formatter: "list"
         formatting:
@@ -154,11 +154,11 @@ infoview:
             - type: "key"
             - type: "operator"
             - type: "value"
-            - type: "value"
+            - type: "effect"
           field_separators:
             - type: "space"
             - type: "no_pad"
-            - type: "keyvalue_taint"
+            - type: "keyvalue"
       nodes:
         header: [["Nodes:", ["main", "infoheader"]]]
         paths:

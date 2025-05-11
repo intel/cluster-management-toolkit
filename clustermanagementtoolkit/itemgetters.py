@@ -281,7 +281,7 @@ def get_key_value(obj: dict, **kwargs: Any) -> list[tuple[str, Any]]:
                 d = dict([key_value.split("=", maxsplit=1) for key_value in d])
             except ValueError:
                 # Log + Return empty?
-                raise TypeError(f"Unhandled type {type(value_)} for {key_}={value_}")
+                raise TypeError("Could not convert list of key=value into a dict")
         for key_, value_ in d.items():
             if isinstance(value_, (list, tuple)):
                 value = ",".join(value_)

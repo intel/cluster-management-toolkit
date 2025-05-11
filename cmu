@@ -2910,12 +2910,14 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             node_heatmap_xpos = 0
             pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 2
 
-            taints = deep_get(nodeinfo, DictPath(f"{selected_node}#taints"), "<none>")
+            taints = getattr(nodeinfo[selected_node], "taints", ["<none>"])
+            if not taints:
+                taints = ["<none>"]
             selectednodetaints = \
                 generators.format_list(taints, fieldlen=node_heatmap_width, pad=False,
                                        field_colors=[ThemeAttr("types", "key"),
-                                                     ThemeAttr("types", "value")],
-                                       field_separators=[ThemeRef("separators", "keyvalue_taint")])
+                                                     ThemeAttr("types", "effect")],
+                                       field_separators=[ThemeRef("separators", "keyvalue")])
 
             nodearrays: list[list[Union[ThemeRef, ThemeStr]]] = [
                 [
@@ -9344,7 +9346,7 @@ def populate_views(force_refresh: bool = False) -> None:
                 ]
                 errmsg += tmplines[1:]
             else:
-                errmsg += [(f".", "error")]
+                errmsg += [(".", "error")]
 
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)

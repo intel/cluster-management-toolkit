@@ -267,6 +267,9 @@ color_pairs_curses:
   type_key_error:
     unselected: [["red", "normal"], ["black", "normal"]]
     selected: [["red", "normal"], ["white", "normal"]]
+  type_effect:
+    unselected: [["white", "bright"], ["black", "normal"]]
+    selected: [["black", "normal"], ["white", "normal"]]
   type_operator:
     unselected: [["magenta", "normal"], ["black", "normal"]]
     selected: [["magenta", "normal"], ["white", "normal"]]
@@ -860,6 +863,7 @@ types:
   dir_symlink_name: ["type_dir_symlink_name", "bold"]
   dir_type: "type_generic"
   dir_unknown: "type_generic"
+  effect: "type_effect"
   facility_extended: "type_facility_extended"
   fixme: ["type_fixme", "bold"]
   group: "type_group"
@@ -945,7 +949,6 @@ types:
   separator_ipv6address: "separator_address"
   separator_keyvalue_log: "separator_keyvalue"
   separator_keyvalue: "separator_keyvalue"
-  separator_keyvalue_taint: "separator_keyvalue"
   separator_kind_api_group: "separator_kind_api_group"
   separator_kind: "separator_kind"
   separator_line_break: "separator_line_break"
@@ -1067,7 +1070,6 @@ separators:
   mainheader_suffix: [[" ::", ["types", "mainheader_suffix"]]]
   percentage: [["%", ["types", "separator_percentage"]]]
   keyvalue: [[":", ["types", "separator_keyvalue"]]]
-  keyvalue_taint: [["=", ["types", "separator_keyvalue"]]]
   keyvalue_log: [["=", ["types", "separator_keyvalue"]]]
   selector: [["=", ["types", "separator_selector"]]]
   id_prefix: [[": ", ["types", "separator_version"]]]

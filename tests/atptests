@@ -300,11 +300,11 @@ def test_ansithemestr_join_list(verbose: bool = False) -> tuple[str, bool]:
     formatting = "error"
 
     tmp = fun(indata, formatting=formatting)
-    expected_result = [ANSIThemeStr(string="one", themeref="error"),
-                       ANSIThemeStr(string=", ", themeref="separator"),
-                       ANSIThemeStr(string="two", themeref="warning"),
-                       ANSIThemeStr(string=", ", themeref="separator"),
-                       ANSIThemeStr(string="three", themeref="error")]
+    expected_result = [ANSIThemeStr("one", "error"),
+                       ANSIThemeStr(", ", "separator"),
+                       ANSIThemeStr("two", "warning"),
+                       ANSIThemeStr(", ", "separator"),
+                       ANSIThemeStr("three", "error")]
 
     for i, item in enumerate(tmp):
         if item != expected_result[i]:
@@ -315,9 +315,9 @@ def test_ansithemestr_join_list(verbose: bool = False) -> tuple[str, bool]:
 
     if result:
         tmp = fun(indata, formatting=formatting, separator=None)
-        expected_result = [ANSIThemeStr(string="one", themeref="error"),
-                           ANSIThemeStr(string="two", themeref="warning"),
-                           ANSIThemeStr(string="three", themeref="error")]
+        expected_result = [ANSIThemeStr("one", "error"),
+                           ANSIThemeStr("two", "warning"),
+                           ANSIThemeStr("three", "error")]
         for i, item in enumerate(tmp):
             if item != expected_result[i]:
                 message = f"{fun.__name__} did not yield a correctly formatted string " \

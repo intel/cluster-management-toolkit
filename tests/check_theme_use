@@ -66,7 +66,40 @@ class FindVisits(ast.NodeVisitor):
             call_func = node.func.id
 
         if call_func == "ANSIThemeStr":
-            if not hasattr(node.args[1], "value") or not isinstance(node.args[1], ast.Constant):
+            if len(node.args) != 2:
+                if len(node.keywords) + len(node.args) == 2:
+                    ansithemeprint([ANSIThemeStr("Note", "note"),
+                                    ANSIThemeStr(": ", "default"),
+                                    ANSIThemeStr(f"{path}", "path"),
+                                    ANSIThemeStr(":", "default"),
+                                    ANSIThemeStr(f"{node.lineno}", "emphasis"),
+                                    ANSIThemeStr(f": The checker currently does not support "
+                                                 "keyword arguments", "default")])
+                    self.result[call_func].append({
+                        "ref": "N/A",
+                        "file": path,
+                        "lineno": node.lineno,
+                        "theme": themepath,
+                        "result": "NOTE: keyword arguments cannot be verified by the checker",
+                    })
+                else:
+                    ansithemeprint([ANSIThemeStr("Error", "note"),
+                                    ANSIThemeStr(": ", "default"),
+                                    ANSIThemeStr(f"{path}", "path"),
+                                    ANSIThemeStr(":", "default"),
+                                    ANSIThemeStr(f"{node.lineno}", "emphasis"),
+                                    ANSIThemeStr(f": Found ", "default"),
+                                    ANSIThemeStr(f"{len(node.args)}", "emphasis"),
+                                    ANSIThemeStr(f" arguments, expected ", "default"),
+                                    ANSIThemeStr(f"2", "emphasis")])
+                    self.result[call_func].append({
+                        "ref": "N/A",
+                        "file": path,
+                        "lineno": node.lineno,
+                        "theme": themepath,
+                        "result": "ERROR: too few arguments",
+                    })
+            elif not hasattr(node.args[1], "value") or not isinstance(node.args[1], ast.Constant):
                 ansithemeprint([ANSIThemeStr("Note", "note"),
                                 ANSIThemeStr(": ", "default"),
                                 ANSIThemeStr(f"{path}", "path"),
@@ -121,7 +154,40 @@ class FindVisits(ast.NodeVisitor):
                         "result": "OK",
                     })
         elif call_func in ("ThemeAttr", "ThemeRef"):
-            if not hasattr(node.args[0], "value") \
+            if len(node.args) != 2:
+                if 2 <= len(node.keywords) + len(node.args) <= 3:
+                    ansithemeprint([ANSIThemeStr("Note", "note"),
+                                    ANSIThemeStr(": ", "default"),
+                                    ANSIThemeStr(f"{path}", "path"),
+                                    ANSIThemeStr(":", "default"),
+                                    ANSIThemeStr(f"{node.lineno}", "emphasis"),
+                                    ANSIThemeStr(f": The checker currently does not support "
+                                                 "keyword arguments", "default")])
+                    self.result[call_func].append({
+                        "ref": "N/A",
+                        "file": path,
+                        "lineno": node.lineno,
+                        "theme": themepath,
+                        "result": "NOTE: keyword arguments cannot be verified by the checker",
+                    })
+                else:
+                    ansithemeprint([ANSIThemeStr("Error", "note"),
+                                    ANSIThemeStr(": ", "default"),
+                                    ANSIThemeStr(f"{path}", "path"),
+                                    ANSIThemeStr(":", "default"),
+                                    ANSIThemeStr(f"{node.lineno}", "emphasis"),
+                                    ANSIThemeStr(f": Found ", "default"),
+                                    ANSIThemeStr(f"{len(node.args)}", "emphasis"),
+                                    ANSIThemeStr(f" arguments, expected ", "default"),
+                                    ANSIThemeStr(f"[2-3]", "emphasis")])
+                    self.result[call_func].append({
+                        "ref": "N/A",
+                        "file": path,
+                        "lineno": node.lineno,
+                        "theme": themepath,
+                        "result": "ERROR: too few arguments",
+                    })
+            elif not hasattr(node.args[0], "value") \
                     or not hasattr(node.args[1], "value") \
                     or not isinstance(node.args[0], ast.Constant) \
                     or not isinstance(node.args[1], ast.Constant):

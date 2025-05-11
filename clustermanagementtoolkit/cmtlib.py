@@ -742,12 +742,14 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 
 # pylint: disable-next=too-many-branches
 def make_set_expression_list(expression_list: list[dict],
-                             key: str = "") -> list[tuple[str, str, str]]:
+                             key: str = "", toleration: bool = False) -> list[tuple[str, str, str]]:
     """
     Create a list of set expressions (key, operator, values).
 
         Parameters:
             expression_list ([dict]): A list of dicts to extract extract the data from
+            key (str):
+            toleration (bool): Is this a match expression or a toleration?
         Returns:
             ([(key, operator, values)]): A set expression list
     """
@@ -805,7 +807,11 @@ def make_set_expression_list(expression_list: list[dict],
             if requires_values != "0" and operator not in ("Gt", "Lt"):
                 values = f"[{values}]"
 
-            expressions.append((str(key), str(new_operator), values))
+            if toleration:
+                effect = deep_get(expression, DictPath("effect"), "All")
+                expressions.append((str(key), str(new_operator), values, effect))
+            else:
+                expressions.append((str(key), str(new_operator), values))
     return expressions
 
 
