@@ -1,0 +1,149 @@
+---
+kind: "SecurityProfilesOperatorDaemon"
+api_family: "security-profiles-operator.x-k8s.io"
+default_command: "securityprofilesoperatordaemons"
+command:
+  - "secprofopdaemons"
+  - "secprofopdaemon"
+  - "secprofopds"
+  - "secprofopd"
+listview:
+  name: "Security Profiles Operator Daemons"
+  group: "Security"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "state", "age"]
+  fields:
+    state:
+      header: "State:"
+      path: "status#state"
+      default: "<unknown>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            ERROR:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            "IN-PROGRESS":
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            PENDING:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            RUNNING:
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+infoview:
+  name: "Security Profiles Operator Daemon Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["priority_class",
+                 "tolerations",
+                 "selinux_header",
+                 "selinux_options",
+                 "selinux_type_tag",
+                 "disable_oci_artifact_signature_verification",
+                 "host_proc_volume_path", "state"]
+    rows:
+      disable_oci_artifact_signature_verification:
+        # yamllint disable-line rule:line-length
+        header: [["Disable OCI Artifact Signature Verification:", ["main", "infoheader"]]]
+        path: "spec#disableOciArtifactSignatureVerification"
+        default: "<unset>"
+        type: "bool"
+      host_proc_volume_path:
+        header: [["Host Proc Volume Path:", ["main", "infoheader"]]]
+        path: "spec#hostProcVolumePath"
+        default: "<unset>"
+        type: "str"
+      priority_class:
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["riority Class:", ["main", "infoheader"]]]
+        path: "spec#priorityClassName"
+        default: "<default>"
+        type: "str"
+      selinux_header:
+        header: [["SELinux:", ["main", "infoheader"]]]
+      selinux_options:
+        header: [["  Allowed System Profiles:", ["main", "infoheader"]]]
+        path: "spec#allowedSystemProfiles"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      selinux_type_tag:
+        header: [["  Type Tag:", ["main", "infoheader"]]]
+        path: "spec#selinuxTypeTag"
+        default: "<unset>"
+        type: "str"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        default: "<unknown>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              ERROR:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              "IN-PROGRESS":
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              PENDING:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              RUNNING:
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+      tolerations:
+        header: [["Tolerations:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#tolerations"
+            pathtype: "toleration"
+            default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "operator"
+            - type: "value"
+            - type: "effect"
+          field_separators:
+            - type: "space"
+            - type: "no_pad"
+            - type: "keyvalue"
+  shortcuts:
+    "Priority Class":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Priority Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "PriorityClass"
+        api_family: "scheduling.k8s.io"
+        name_path: "spec#priorityClassName"
+    "Show tolerations":
+      key: "t"
+      read_only: true
+      helptext: "Show tolerations"
+      title: "Tolerations:"
+      widget: "windowwidget"
+      headers: ["Key:", "Operator:", "Value:", "Effect:", "Timeout:"]
+      itemgetter: "get_pod_tolerations"
+      # This isn't supported for now
+      sortcolumn: "key"

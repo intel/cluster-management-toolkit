@@ -63,6 +63,8 @@ listview:
     os_image:
       header: "OS Image:"
       path: "status#nodeInfo#osImage"
+      fallback_on_empty: true
+      default: "<unset>"
       type: "str"
     roles:
       header: "Roles:"
@@ -179,7 +181,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["csi_node", "status", "internal_ips", "external_ips",
+        fields: ["csi_node", "status", "hostname",
+                 "internal_ips", "external_ips",
                  "architecture", "kernel_version", "os", "os_image",
                  "kubelet_version", "kubelet_endpoint",
                  "container_runtime", "pod_cidrs", "taints"]
@@ -216,6 +219,18 @@ infoview:
               - key: "type"
                 eq: "ExternalIP"
             default: ["<none>"]
+        formatter: "address"
+      hostname:
+        header: [["Hostname:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#addresses"
+            pathtype: "items"
+            subpaths:
+              - "address"
+            when:
+              - key: "type"
+                eq: "Hostname"
+            default: ["<unset>"]
         formatter: "address"
       internal_ips:
         header: [["Internal IPs:", ["main", "infoheader"]]]
@@ -257,6 +272,8 @@ infoview:
       os_image:
         header: [["OS Image:", ["main", "infoheader"]]]
         path: "status#nodeInfo#osImage"
+        fallback_on_empty: true
+        default: "<unset>"
         type: "str"
       pod_cidrs:
         header: [["Pod CIDRs:", ["main", "infoheader"]]]
@@ -333,7 +350,7 @@ infoview:
             - type: "value"
             - type: "effect"
           field_separators:
-            - type: "equal"
+            - type: "equals"
             - type: "keyvalue"
           mapping:
             mappings:

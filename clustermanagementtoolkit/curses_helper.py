@@ -231,10 +231,10 @@ class ThemeRef:
             ]
             unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
-            raise ProgrammingError(unformatted_msg,
-                                   severity=LogLevel.ERR,
-                                   facility=str(themefile),
-                                   formatted_msg=formatted_msg)
+            self.context = "strings"
+            self.key = "themeref_missing"
+            data = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
+
         if isinstance(data, dict):
             if self.selected:
                 selected = "selected"
