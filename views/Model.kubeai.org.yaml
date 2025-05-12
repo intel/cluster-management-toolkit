@@ -1,0 +1,238 @@
+---
+kind: "Model"
+api_family: "kubeai.org"
+default_command: "models"
+listview:
+  name: "Models"
+  group: "Machine Learning"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "profile", "engine",
+               "desired_replicas", "current_replicas", "ready_replicas",
+               "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name",
+               "desired_replicas", "current_replicas", "ready_replicas",
+               "age"]
+      sortcolumn: "namespace"
+  fields:
+    current_replicas:
+      header: "Current:"
+      paths:
+        - path: ["status#replicas#all", "spec#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
+      align: "right"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+    desired_replicas:
+      header: "Desired:"
+      path: "spec#replicas"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    engine:
+      header: "Engine:"
+      path: "spec#engine"
+      type: "str"
+    profile:
+      header: "Profile:"
+      type: "str"
+      paths:
+        - path: "spec#resourceProfile"
+          pathtype: "regex"
+          regex: "^(.*?):(.*)"
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "generic"
+          - type: "version"
+        field_separators:
+          - type: "version"
+    ready_replicas:
+      header: "Ready:"
+      paths:
+        - path: ["status#replicas#ready", "status#replicas#all"]
+          pathtype: "comparison"
+          default: [0, 0]
+      align: "right"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+infoview:
+  name: "Model Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["replicas", "profile", "engine", "features",
+                 "args", "env", "scaledown_delay", "target_requests",
+                 "load_balancing_header",
+                 "load_balancing_prefix_hash_header",
+                 "load_balancing_prefix_hash_mean_load_factor",
+                 "load_balancing_prefix_hash_prefix_char_length",
+                 "load_balancing_prefix_hash_replication",
+                 "load_balancing_strategy",
+                 "owner", "url"]
+    rows:
+      args:
+        header: [["Args:", ["main", "infoheader"]]]
+        path: "spec#args"
+        type: "raw"
+        formatter: "list"
+      cache_header:
+        header: [["Cache:", ["main", "infoheader"]]]
+      cache_loaded:
+        header: [["  Loaded:", ["main", "infoheader"]]]
+        path: "status#loaded"
+        type: "bool"
+      cache_profile:
+        header: [["  Profile:", ["main", "infoheader"]]]
+        path: "spec#cacheProfile"
+        type: "str"
+      engine:
+        header: [["Engine:", ["main", "infoheader"]]]
+        path: "spec#engine"
+        type: "str"
+      env:
+        header: [["Env:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#env"
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "keyvalue"
+      features:
+        header: [["Features:", ["main", "infoheader"]]]
+        path: "spec#features"
+        type: "raw"
+        formatter: "list"
+      load_balancing_header:
+        header: [["Load Balancing:", ["main", "infoheader"]]]
+      load_balancing_prefix_hash_header:
+        header: [["  Prefix Hash:", ["main", "infoheader"]]]
+      load_balancing_prefix_hash_mean_load_factor:
+        header: [["    Mean Load Factor:", ["main", "infoheader"]]]
+        path: "spec#loadBalancing#prefixHash#meanLoadFactor"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      load_balancing_prefix_hash_prefix_char_length:
+        header: [["    Prefix Char Length:", ["main", "infoheader"]]]
+        path: "spec#loadBalancing#prefixHash#prefixCharLength"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      load_balancing_prefix_hash_replication:
+        header: [["    Replication:", ["main", "infoheader"]]]
+        path: "spec#loadBalancing#prefixHash#replication"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      load_balancing_strategy:
+        header: [["  Strategy:", ["main", "infoheader"]]]
+        path: "spec#loadBalancing#strategy"
+        default: "<unset>"
+        type: "str"
+      owner:
+        header: [["Owner:", ["main", "infoheader"]]]
+        path: "spec#owner"
+        default: "<none>"
+        fallback_on_empty: true
+        type: "str"
+      profile:
+        header: [["Profile:", ["main", "infoheader"]]]
+        type: "str"
+        paths:
+          - path: "spec#resourceProfile"
+            pathtype: "regex"
+            regex: "^(.*?):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#replicas"],
+                   " Desired",
+                   ["status#replicas#all"],
+                   " Current",
+                   ["status#readyReplicas#ready"],
+                   " Ready"]
+            pathtype: "tuple"
+            default: [0, "", 0, "", 0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+          field_separators:
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+      scaledown_delay:
+        header: [["Scaledown Delay:", ["main", "infoheader"]]]
+        path: "spec#scaleDownDelaySeconds"
+        default: "<unset>"
+        fallback_on_empty: true
+        type: "int"
+        formatter: "numerical"
+        formatting:
+          unit: "s"
+      target_requests:
+        header: [["Target Requests:", ["main", "infoheader"]]]
+        path: "spec#targetRequests"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      url:
+        header: [["URL:", ["main", "infoheader"]]]
+        path: "spec#url"
+        default: "<unset>"
+        type: "str"

@@ -229,28 +229,13 @@ infoview:
       session_affinity_header:
         header: [["Session:", ["main", "infoheader"]]]
       session_affinity_timeout:
-        header: [["  Timeout (Seconds):", ["main", "infoheader"]]]
-        paths:
-          - path: [["spec#sessionAffinityConfig#clientIP#timeoutSeconds"], "s"]
-            pathtype: "tuple"
-            when:
-              - key: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
-                notnone: true
-          - path: ["<none>", ""]
-            pathtype: "tuple"
-            when:
-              - key: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
-                none: true
-            type: "raw"
-        formatter: "list"
+        header: [["  Timeout:", ["main", "infoheader"]]]
+        path: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
+        default: "<none>"
+        type: "int"
+        formatter: "numerical"
         formatting:
-          field_colors:
-            - type: "numerical"
-            - type: "unit"
-          list_separators:
-            - type: "no_pad"
-          field_separators:
-            - type: "no_pad"
+          unit: "s"
       topology_keys:
         header: [["Topology Keys:", ["main", "infoheader"]]]
         path: "spec#topologyKeys"

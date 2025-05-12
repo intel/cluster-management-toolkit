@@ -911,11 +911,13 @@ def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: bo
         array = [ThemeStr(value, fmt, selected)]
         return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
+    unit = deep_get(formatting, DictPath("unit"), "")
+
     # Currently allow_signed seems to be unused
     if value == -1 and not deep_get(formatting, DictPath("allow_signed")):
         string = ""
     else:
-        string = str(value)
+        string = f"{value}{unit}"
 
     array = format_numerical_with_units(string, "numerical", selected)
 
@@ -1629,6 +1631,9 @@ def get_formatter(field: dict) -> dict:
     for field_formatter in deep_get(field, DictPath("formatting#field_formatters"), []):
         field_formatters.append(deep_get(field_formatter_allowlist, DictPath(field_formatter)))
 
+    # FIXME: we probably want this to be per field
+    unit = deep_get(field, DictPath("formatting#unit"), "")
+
     tmp_field["generator"] = generator
     tmp_field["processor"] = processor
     # Fix all of these to use the new format
@@ -1655,6 +1660,7 @@ def get_formatter(field: dict) -> dict:
         "field_suffixes": field_suffixes,
         "mapping": mapping,
         "field_formatters": field_formatters,
+        "unit": unit,
     }
 
     tmp_field["formatting"] = formatting

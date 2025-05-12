@@ -444,7 +444,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     },
     # resource.k8s.io
     ("DeviceClass", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha3/"],
+        "api_paths": ["apis/resource.k8s.io/v1beta1/",
+                      "apis/resource.k8s.io/v1alpha3/"],
         "api": "deviceclasses",
         "namespaced": False,
     },
@@ -459,7 +460,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "podschedulingcontexts",
     },
     ("ResourceClaim", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha3/",
+        "api_paths": ["apis/resource.k8s.io/v1beta1/",
+                      "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/",
                       "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclaims",
@@ -469,7 +471,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "resourceclaimparameters",
     },
     ("ResourceClaimTemplate", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha3/",
+        "api_paths": ["apis/resource.k8s.io/v1beta1/",
+                      "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/",
                       "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclaimtemplates",
@@ -485,7 +488,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "resourceclassparameters",
     },
     ("ResourceSlice", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha3/",
+        "api_paths": ["apis/resource.k8s.io/v1beta1/",
+                      "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/"],
         "api": "resourceslices",
         "namespaced": False,
@@ -1200,6 +1204,39 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("WorkloadSpread", "apps.kruise.io"): {
         "api_paths": ["apis/apps.kruise.io/v1alpha1/"],
         "api": "workloadspreads",
+    },
+    # apps.nvidia.com
+    ("NemoCustomizer", "apps.nvidia.com"): {
+        "api_paths": ["apis/apps.nvidia.com/v1alpha1/"],
+        "api": "nemocustomizers",
+    },
+    ("NemoDatastore", "apps.nvidia.com"): {
+        "api_paths": ["apis/apps.nvidia.com/v1alpha1/"],
+        "api": "nemodatastores",
+    },
+    ("NemoEntitystore", "apps.nvidia.com"): {
+        "api_paths": ["apis/apps.nvidia.com/v1alpha1/"],
+        "api": "nemoentitystores",
+    },
+    ("NemoEvaluator", "apps.nvidia.com"): {
+        "api_paths": ["apis/apps.nvidia.com/v1alpha1/"],
+        "api": "nemoevaluators",
+    },
+    ("NemoGuardrail", "apps.nvidia.com"): {
+        "api_paths": ["apis/apps.nvidia.com/v1alpha1/"],
+        "api": "nemoguardrails",
+    },
+    ("NIMCache", "apps.nvidia.com"): {
+        "api_paths": ["apis/apps.nvidia.com/v1alpha1/"],
+        "api": "nimcaches",
+    },
+    ("NIMPipeline", "apps.nvidia.com"): {
+        "api_paths": ["apis/apps.nvidia.com/v1alpha1/"],
+        "api": "nimpipelines",
+    },
+    ("NIMService", "apps.nvidia.com"): {
+        "api_paths": ["apis/apps.nvidia.com/v1alpha1/"],
+        "api": "nimservices",
     },
     # apps.openshift.io
     ("DeploymentConfig", "apps.openshift.io"): {
@@ -2961,6 +2998,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/kro.run/v1alpha1/"],
         "api": "resourcegraphdefinitions",
         "namespaced": False,
+    },
+    # kubeai.org
+    ("Model", "kubeai.org"): {
+        "api_paths": ["apis/kubeai.org/v1/"],
+        "api": "models",
     },
     # kubeapps.com
     ("AppRepository", "kubeapps.com"): {
