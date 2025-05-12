@@ -102,26 +102,34 @@ infoview:
         path: "spec#strategy#failurePolicy"
         type: "str"
       strategy_min_started_seconds:
-        header: [["  Minimum Started Seconds:", ["main", "infoheader"]]]
+        header: [["  Minimum Started:", ["main", "infoheader"]]]
         path: "spec#strategy#minStartedSeconds"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       strategy_termination_grace_period_seconds:
-        header: [["  Termination Grace Period Seconds:",
+        header: [["  Termination Grace Period:",
                   ["main", "infoheader"]]]
         path: "spec#strategy#terminationGracePeriodSeconds"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       strategy_unready_grace_period_seconds:
-        header: [["  Unready Grace Period Seconds:", ["main", "infoheader"]]]
+        header: [["  Unready Grace Period:", ["main", "infoheader"]]]
         path: "spec#strategy#unreadyGracePeriodSeconds"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       ttl_seconds_after_finished:
-        header: [["TTL Seconds After Finished:", ["main", "infoheader"]]]
+        header: [["TTL after Finished:", ["main", "infoheader"]]]
         path: "spec#ttlSecondsAfterFinished"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
   shortcuts:
     "Open Node":
       key: "d"

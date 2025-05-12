@@ -178,11 +178,13 @@ infoview:
           field_separators:
             - type: "selector"
       minimum_ready_seconds:
-        header: [["Minimum Ready Seconds:", ["main", "infoheader"]]]
+        header: [["Minimum Ready:", ["main", "infoheader"]]]
         path: "spec#minReadySeconds"
         default: 0
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       pod_management_policy:
         header: [["Pod Management Policy:", ["main", "infoheader"]]]
         path: "spec#podManagementPolicy"

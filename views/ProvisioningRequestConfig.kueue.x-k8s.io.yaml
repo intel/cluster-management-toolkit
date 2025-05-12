@@ -47,33 +47,21 @@ infoview:
       retry_strategy_backoff_limit_header:
         header: [["  Backoff Limit:", ["main", "infoheader"]]]
       retry_strategy_backoff_base_seconds:
-        header: [["    Base Seconds:", ["main", "infoheader"]]]
-        paths:
-          - path: [["spec#retryStrategy#backoffBaseSeconds"], "s"]
-            pathtype: "tuple"
-            default: ["1800", ""]
-        type: "list"
-        formatter: "list"
+        header: [["    Base:", ["main", "infoheader"]]]
+        path: "spec#retryStrategy#backoffBaseSeconds"
+        default: 1800
+        type: "int"
+        formatter: "numerical"
         formatting:
-          field_colors:
-            - type: "numerical"
-            - type: "unit"
-          field_separators:
-            - type: "no_pad"
+          unit: "s"
       retry_strategy_backoff_max_seconds:
         header: [["    Max:", ["main", "infoheader"]]]
-        paths:
-          - path: [["spec#retryStrategy#backoffMaxSeconds"], "s"]
-            pathtype: "tuple"
-            default: ["1800", ""]
-        type: "list"
-        formatter: "list"
+        path: "spec#retryStrategy#backoffMaxSeconds"
+        default: 1800
+        type: "int"
+        formatter: "numerical"
         formatting:
-          field_colors:
-            - type: "numerical"
-            - type: "unit"
-          field_separators:
-            - type: "no_pad"
+          unit: "s"
       retry_strategy_header:
         header: [["Retry Strategy:", ["main", "infoheader"]]]
   shortcuts:

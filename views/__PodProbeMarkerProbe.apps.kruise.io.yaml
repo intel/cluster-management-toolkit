@@ -38,17 +38,21 @@ infoview:
       probe_header:
         header: [["Probe:", ["main", "infoheader"]]]
       probe_initial_delay:
-        header: [["  Initial Delay (seconds):", ["main", "infoheader"]]]
+        header: [["  Initial Delay:", ["main", "infoheader"]]]
         path: "probe#initialDelaySeconds"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       probe_period:
-        header: [["  Period (seconds):", ["main", "infoheader"]]]
+        header: [["  Period:", ["main", "infoheader"]]]
         path: "probe#periodSeconds"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       probe_threshold_failure:
         header: [["  Failure Threshold:", ["main", "infoheader"]]]
         path: "probe#failureThreshold"
@@ -62,11 +66,13 @@ infoview:
         type: "int"
         formatter: "numerical"
       probe_timeout:
-        header: [["  Timeout (seconds):", ["main", "infoheader"]]]
+        header: [["  Timeout:", ["main", "infoheader"]]]
         path: "probe#timeoutSeconds"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
   shortcuts:
     "Command":
       key: "c"

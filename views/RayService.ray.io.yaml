@@ -33,17 +33,23 @@ infoview:
           - "service_status"
     rows:
       deployment_unhealthy_threshold:
-        header: [["Deployment Unhealthy Threshold (seconds):",
+        header: [["Deployment Unhealthy Threshold:",
                   ["main", "infoheader"]]]
         path: "spec#deploymentUnhealthySecondThreshold"
+        default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       service_unhealthy_threshold:
-        header: [["Service Unhealthy Threshold (seconds):",
+        header: [["Service Unhealthy Threshold:",
                   ["main", "infoheader"]]]
         path: "spec#serviceUnhealthySecondThreshold"
+        default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       service_status:
         header: [["Service Status:", ["main", "infoheader"]]]
         path: "status#serviceStatus"

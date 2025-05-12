@@ -123,19 +123,23 @@ infoview:
                  "completion_time_with_age", "message"]
     rows:
       completion_policy_active_deadline_seconds:
-        header: [["  Active Deadline Seconds:", ["main", "infoheader"]]]
+        header: [["  Active Deadline:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#activeDeadlineSeconds"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       completion_policy_header:
         header: [["Completion Policy:", ["main", "infoheader"]]]
       completion_policy_ttl_seconds_after_finished:
-        header: [["  TTL Seconds After Finished:", ["main", "infoheader"]]]
+        header: [["  TTL after Finished:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#ttlSecondsAfterFinished"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       completion_policy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#type"
@@ -253,11 +257,13 @@ infoview:
         default: "IfNotPresent"
         type: "str"
       pull_policy_timeout_seconds:
-        header: [["  Timeout Seconds:", ["main", "infoheader"]]]
+        header: [["  Timeout:", ["main", "infoheader"]]]
         path: "spec#pullPolicy#timeoutSeconds"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:

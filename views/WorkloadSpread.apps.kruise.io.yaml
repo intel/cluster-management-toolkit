@@ -42,11 +42,13 @@ infoview:
       schedule_strategy_header:
         header: [["Schedule Strategy:", ["main", "infoheader"]]]
       schedule_strategy_reschedule_critical_seconds:
-        header: [["  Reschedule Critical Seconds:", ["main", "infoheader"]]]
+        header: [["  Reschedule Critical:", ["main", "infoheader"]]]
         path: "spec#scheduleStrategy#adaptive#rescheduleCriticalSeconds"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       schedule_strategy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#scheduleStrategy#type"

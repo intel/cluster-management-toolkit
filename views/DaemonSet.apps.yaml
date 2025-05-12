@@ -147,7 +147,9 @@ infoview:
     row_indexes:
       Normal:
         fields: ["controller", "label_selector",
-                 "set_based_selector", "nodes", "update_strategy"]
+                 "set_based_selector",
+                 "minimum_ready_seconds",
+                 "nodes", "update_strategy"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]],
@@ -189,11 +191,13 @@ infoview:
           field_separators:
             - type: "selector"
       minimum_ready_seconds:
-        header: [["Minimum Ready Seconds:", ["main", "infoheader"]]]
+        header: [["Minimum Ready:", ["main", "infoheader"]]]
         path: "spec#minReadySeconds"
         default: 0
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       nodes:
         header: [["Nodes:", ["main", "infoheader"]]]
         paths:

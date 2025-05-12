@@ -55,7 +55,7 @@ infoview:
     row_indexes:
       Normal:
         fields: ["label_selector", "set_based_selector",
-                 "delete_policy", "min_ready_seconds",
+                 "delete_policy", "minimum_ready_seconds",
                  "replicas_header", "desired", "observed", "ready",
                  "available", "fully_labelled"]
     rows:
@@ -93,12 +93,14 @@ infoview:
             - type: "value"
           field_separators:
             - type: "selector"
-      min_ready_seconds:
-        header: [["Min Ready Seconds:", ["main", "infoheader"]]]
+      minimum_ready_seconds:
+        header: [["Minimum Ready:", ["main", "infoheader"]]]
         path: "spec#minReadySeconds"
         default: 0
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       observed:
         header: [["  Observed:", ["main", "infoheader"]]]
         path: "status#replicas"

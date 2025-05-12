@@ -139,19 +139,23 @@ infoview:
                  "parallelism", "replicas", "phase"]
     rows:
       completion_policy_active_deadline_seconds:
-        header: [["  Active Deadline Seconds:", ["main", "infoheader"]]]
+        header: [["  Active Deadline:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#activeDeadlineSeconds"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       completion_policy_header:
         header: [["Completion Policy:", ["main", "infoheader"]]]
       completion_policy_ttl_seconds_after_finished:
-        header: [["  TTL Seconds After Finished:", ["main", "infoheader"]]]
+        header: [["  TTL after Finished:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#ttlSecondsAfterFinished"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
+        formatting:
+          unit: "s"
       completion_policy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#type"
