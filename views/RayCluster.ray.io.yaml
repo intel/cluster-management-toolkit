@@ -10,35 +10,66 @@ listview:
   group: "KubeRay"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "available_workers",
-               "desired_workers", "age"]
+      fields: ["namespace", "name", "ready_workers", "available_workers",
+               "desired_workers", "state", "age"]
       sortcolumn: "namespace"
   fields:
     available_workers:
-      header: "Available Workers:"
+      header: "Available:"
       path: "status#availableWorkerReplicas"
       default: 0
       type: "int"
       formatter: "numerical"
       align: "right"
     desired_workers:
-      header: "Desired Workers:"
+      header: "Desired:"
       path: "status#desiredWorkerReplicas"
       default: 0
       type: "int"
       formatter: "numerical"
       align: "right"
+    ready_workers:
+      header: "Ready:"
+      path: "status#readyWorkerReplicas"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    state:
+      header: "State:"
+      path: "status#state"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            failed:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            ready:
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            suspended:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
 infoview:
   name: "Ray Cluster Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "ray_version", "available_workers",
+        fields: ["controller", "ray_version", "ready_workers",
+                 "available_workers",
                  "desired_workers", "desired_resources_header",
                  "desired_cpus", "desired_gpus", "desired_tpus",
                  "desired_mem", "endpoints_header", "endpoint_client",
-                 "endpoint_dashboard", "endpoint_gcs",
-                 "endpoint_metrics", "endpoint_serve"]
+                 "endpoint_dashboard", "endpoint_gcs_server",
+                 "endpoint_metrics", "endpoint_serve",
+                 "head_header", "head_pod_name", "head_pod_ip",
+                 "head_service_name", "head_service_ip", "state"]
     rows:
       available_workers:
         header: [["Available Workers:", ["main", "infoheader"]]]
@@ -116,9 +147,9 @@ infoview:
         formatting:
           field_colors:
             - type: "port"
-      endpoint_gcs:
-        header: [["  GCS:", ["main", "infoheader"]]]
-        path: "status#endpoints#gcs"
+      endpoint_gcs_server:
+        header: [["  GCS Server:", ["main", "infoheader"]]]
+        path: "status#endpoints#gcs-server"
         type: "str"
         formatting:
           field_colors:
@@ -139,13 +170,69 @@ infoview:
             - type: "port"
       endpoints_header:
         header: [["Endpoints:", ["main", "infoheader"]]]
+      head_header:
+        header: [["Head:", ["main", "infoheader"]]]
+      head_pod_ip:
+        header: [["  Pod IP:", ["main", "infoheader"]]]
+        path: "status#head#podIP"
+        default: "<unset>"
+        type: "str"
+        formatter: "address"
+      head_pod_name:
+        header: [["  ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["od Name:", ["main", "infoheader"]]]
+        path: "status#head#podName"
+        default: "<unset>"
+        type: "str"
+      head_service_ip:
+        header: [["  Service IP:", ["main", "infoheader"]]]
+        path: "status#head#serviceIP"
+        default: "<unset>"
+        type: "str"
+        formatter: "address"
+      head_service_name:
+        header: [["  ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Name:", ["main", "infoheader"]]]
+        path: "status#head#serviceName"
+        default: "<unset>"
+        type: "str"
       ray_version:
         header: [["Ray Version:", ["main", "infoheader"]]]
         path: "spec#rayVersion"
+        default: "<unset>"
         type: "str"
         formatting:
           field_colors:
             - type: "version"
+      ready_workers:
+        header: [["Ready Workers:", ["main", "infoheader"]]]
+        path: "status#readyWorkerReplicas"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              failed:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              ready:
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              suspended:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
   shortcuts:
     "Open controller":
       key: "c"
@@ -158,6 +245,30 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+    "Open head pod":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for head pod"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        name_path: "status#head#podName"
+        kind: "Pod"
+    "Open head service":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for head service"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        name_path: "status#head#serviceName"
+        kind: "Service"
     "View Head Group Specs":
       key: "h"
       read_only: true
