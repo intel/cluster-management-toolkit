@@ -1,0 +1,13 @@
+---
+- name: "security-profiles-operator"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/k8s-staging-sp-operator/security-profiles-operator"
+    - image_name: "/k8s-staging-sp-operator/security-profiles-operator"
+      container_type: "init_container"
+  parser_rules:
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+      options:
+        versions:
+          - "version"

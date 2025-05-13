@@ -49,12 +49,14 @@ infoview:
                  "selinux_header",
                  "selinux_options",
                  "selinux_type_tag",
+                 "static_webhook_config",
                  "disable_oci_artifact_signature_verification",
                  "host_proc_volume_path", "state"]
     rows:
       disable_oci_artifact_signature_verification:
         # yamllint disable-line rule:line-length
-        header: [["Disable OCI Artifact Signature Verification:", ["main", "infoheader"]]]
+        header: [["Disable OCI Artifact Signature Verification:",
+                 ["main", "infoheader"]]]
         path: "spec#disableOciArtifactSignatureVerification"
         default: "<unset>"
         type: "bool"
@@ -107,6 +109,11 @@ infoview:
                 field_colors:
                   - context: "main"
                     type: "status_ok"
+      static_webhook_config:
+        header: [["Static Webhook Config:", ["main", "infoheader"]]]
+        path: "spec#staticWebhookConfig"
+        default: "<unset>"
+        type: "bool"
       tolerations:
         header: [["Tolerations:", ["main", "infoheader"]]]
         paths:
