@@ -278,19 +278,19 @@ CreateVirtualService:
 Created:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatedControlPlaneService:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 <unknown>Created:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatedDefaultCertificate:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatedHeadPod:
   field_colors:
     - context: "main"
@@ -298,11 +298,11 @@ CreatedHeadPod:
 CreatedImagePullJob:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatedSCCRanges:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatedService:
   field_colors:
     - context: "main"
@@ -310,15 +310,15 @@ CreatedService:
 CreatedVM:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatedVMPod:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatedWildcardCACert:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatedWorkerPod:
   field_colors:
     - context: "main"
@@ -326,7 +326,7 @@ CreatedWorkerPod:
 CreatedWorkload:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CreatingInstance:
   field_colors:
     - context: "main"
@@ -335,6 +335,10 @@ CreatingPodDisruptionBudget:
   field_colors:
     - context: "main"
       type: "status_pending"
+CreatedRayCluster:
+  field_colors:
+    - context: "main"
+      type: "status_done"
 CreatingRole:
   field_colors:
     - context: "main"
@@ -350,7 +354,7 @@ CreatingRevision:
 CSIDriverCreated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 CSRApproval:
   field_colors:
     - context: "main"
@@ -374,7 +378,7 @@ CustomResourceDefinitionCreateFailed:
 DaemonSetCreated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 # This is an assumption, not an observed event
 DaemonSetCreateFailed:
   field_colors:
@@ -383,7 +387,7 @@ DaemonSetCreateFailed:
 DaemonSetUpdated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 DeadlineExceeded:
   field_colors:
     - context: "main"
@@ -672,6 +676,10 @@ FailedToCreateEndpoint:
   field_colors:
     - context: "main"
       type: "status_warning"
+FailedToCreateRayCluster:
+  field_colors:
+    - context: "main"
+      type: "status_warning"
 FailedToDeleteWorkerPod:
   field_colors:
     - context: "main"
@@ -752,6 +760,10 @@ FreeDiskSpaceFailed:
   field_colors:
     - context: "main"
       type: "status_warning"
+GangScheduling:
+  field_colors:
+    - context: "main"
+      type: "status_pending"
 Generated:
   field_colors:
     - context: "main"
@@ -801,6 +813,10 @@ InFlightRequestsDrained:
     - context: "main"
       type: "status_ok"
 Info:
+  field_colors:
+    - context: "main"
+      type: "status_ok"
+Informational:
   field_colors:
     - context: "main"
       type: "status_ok"
@@ -989,6 +1005,10 @@ NewReplicaSetAvailable:
     - context: "main"
       type: "status_ok"
 NewReplicaSetCreated:
+  field_colors:
+    - context: "main"
+      type: "status_done"
+NodeAccepted:
   field_colors:
     - context: "main"
       type: "status_ok"
@@ -1196,10 +1216,14 @@ Pending:
   field_colors:
     - context: "main"
       type: "status_pending"
-PodCreated:
+PodBindSuccessful:
   field_colors:
     - context: "main"
       type: "status_ok"
+PodCreated:
+  field_colors:
+    - context: "main"
+      type: "status_done"
 PodDisruptionBudgetCreated:
   field_colors:
     - context: "main"
@@ -1208,10 +1232,14 @@ PodGroupPending:
   field_colors:
     - context: "main"
       type: "status_pending"
+PodUnschedulable:
+  field_colors:
+    - context: "main"
+      type: "status_not_ok"
 Preempted:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 Preempting:
   field_colors:
     - context: "main"
@@ -1259,7 +1287,7 @@ PublishedRouterCertificates:
 Pulled:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 Pulling:
   field_colors:
     - context: "main"
@@ -1503,7 +1531,11 @@ Schedulable:
 Scheduled:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
+Scheduling:
+  field_colors:
+    - context: "main"
+      type: "status_pending"
 ScriptControllerErrorUpdatingStatus:
   field_colors:
     - context: "main"
@@ -1511,7 +1543,7 @@ ScriptControllerErrorUpdatingStatus:
 SecretCreated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 SecretCreateFailed:
   field_colors:
     - context: "main"
@@ -1519,11 +1551,11 @@ SecretCreateFailed:
 SecretDeleted:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 SecretUpdated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 SecretUpdateFailed:
   field_colors:
     - context: "main"
@@ -1531,7 +1563,7 @@ SecretUpdateFailed:
 ServiceAccountCreated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 "ServiceAccount is exist":
   field_colors:
     - context: "main"
@@ -1543,11 +1575,11 @@ ServiceAccountIssuer:
 ServiceCreated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 ServiceMonitorCreated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 ServiceNotReady:
   field_colors:
     - context: "main"
@@ -1563,7 +1595,7 @@ ServiceUnhealthy:
 ServiceUpdated:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 SetDesiredConfig:
   field_colors:
     - context: "main"
@@ -1627,7 +1659,7 @@ Start:
 Started:
   field_colors:
     - context: "main"
-      type: "status_ok"
+      type: "status_done"
 Starting:
   field_colors:
     - context: "main"

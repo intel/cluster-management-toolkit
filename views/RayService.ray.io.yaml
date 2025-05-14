@@ -53,6 +53,7 @@ infoview:
       service_status:
         header: [["Service Status:", ["main", "infoheader"]]]
         path: "status#serviceStatus"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -94,6 +95,10 @@ infoview:
                 field_colors:
                   - context: "main"
                     type: "status_pending"
+              "<unset>":
+                field_colors:
+                  - context: "types"
+                    type: "unset"
       status_dashboard_is_healthy:
         header: [["    Healthy:", ["main", "infoheader"]]]
         path: "status#activeServiceStatus#dashboardStatus#isHealthy"

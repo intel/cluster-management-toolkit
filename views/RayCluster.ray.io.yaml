@@ -56,12 +56,19 @@ listview:
               field_colors:
                 - context: "main"
                   type: "status_pending"
+            "<unset>":
+              field_colors:
+                - context: "types"
+                  type: "unset"
 infoview:
   name: "Ray Cluster Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "ray_version", "ready_workers",
+        fields: ["controller", "scheduler",
+                 "kueue_queue",
+                 "volcano_queue",
+                 "ray_version", "ready_workers",
                  "available_workers",
                  "desired_workers", "desired_resources_header",
                  "desired_cpus", "desired_gpus", "desired_tpus",
@@ -198,6 +205,12 @@ infoview:
         path: "status#head#serviceName"
         default: "<unset>"
         type: "str"
+      kueue_queue:
+        header: [["K", ["main", "infoheader_shortcut"]],
+                 ["ueue Queue:", ["main", "infoheader"]]]
+        path: "metadata#labels#kueue.x-k8s.io/queue-name"
+        default: "N/A"
+        type: "str"
       ray_version:
         header: [["Ray Version:", ["main", "infoheader"]]]
         path: "spec#rayVersion"
@@ -212,6 +225,38 @@ infoview:
         default: 0
         type: "int"
         formatter: "numerical"
+      scheduler:
+        header: [["Scheduler:", ["main", "infoheader"]]]
+        paths:
+          - path: "metadata#labels"
+            pathtype: "substitution"
+            subpath: "ray.io/scheduler-name"
+            when:
+              - key: "ray.io/scheduler-name"
+                notnone: true
+            substitute: "volcano"
+          - path: "metadata#labels"
+            pathtype: "substitution"
+            subpath: "kueue.x-k8s.io/queue-name"
+            when:
+              - key: "kueue.x-k8s.io/queue-name"
+                notnone: true
+            substitute: "kueue"
+          - path: "metadata#labels"
+            pathtype: "substitution"
+            subpath: "yunikorn.apache.org/app-id"
+            when:
+              - key: "yunikorn.apache.org/app-id"
+                notnone: true
+            substitute: "yunikorn"
+        default: "default-scheduler"
+        type: "str"
+      volcano_queue:
+        header: [["V", ["main", "infoheader_shortcut"]],
+                 ["olcano Queue:", ["main", "infoheader"]]]
+        path: "metadata#labels#volcano.sh/queue-name"
+        default: "N/A"
+        type: "str"
       state:
         header: [["State:", ["main", "infoheader"]]]
         path: "status#state"
@@ -233,6 +278,10 @@ infoview:
                 field_colors:
                   - context: "main"
                     type: "status_pending"
+              "<unset>":
+                field_colors:
+                  - context: "types"
+                    type: "unset"
   shortcuts:
     "Open controller":
       key: "c"
@@ -269,6 +318,32 @@ infoview:
         namespace_path: "metadata#namespace"
         name_path: "status#head#serviceName"
         kind: "Service"
+    "Open Kueue Queue":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Kueue Queue"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        name_path: "metadata#labels#kueue.x-k8s.io/queue-name"
+        kind: "LocalQueue"
+        api_family: "kueue.x-k8s.io"
+    "Open Volcano Queue":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Volcano Queue"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        name_path: "metadata#labels#volcano.sh/queue-name"
+        kind: "Queue"
+        api_family: "scheduling.volcano.sh"
     "View Head Group Specs":
       key: "h"
       read_only: true

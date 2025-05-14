@@ -15,7 +15,7 @@ listview:
   field_indexes:
     Wide:
       fields: ["name", "allocated", "capability", "weight",
-               "reclaimable", "running", "status", "age"]
+               "reclaimable", "running", "parent", "status", "age"]
     Normal:
       fields: ["name", "allocated", "capability", "status", "age"]
   fields:
@@ -44,6 +44,11 @@ listview:
           - type: "value"
         field_separators:
           - type: "keyvalue"
+    parent:
+      header: "Parent:"
+      path: "spec#parent"
+      default: "<unset>"
+      type: "str"
     reclaimable:
       header: "Reclaimable:"
       path: "spec#reclaimable"
@@ -109,7 +114,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["allocated", "capability", "weight", "reclaimable", "running",
+        fields: ["parent",
+                 "allocated", "capability", "weight", "reclaimable", "running",
                  "status"]
     rows:
       allocated:
@@ -137,6 +143,12 @@ infoview:
             - type: "value"
           field_separators:
             - type: "keyvalue"
+      parent:
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arent:", ["main", "infoheader"]]]
+        path: "spec#parent"
+        default: "<unset>"
+        type: "str"
       reclaimable:
         header: [["Reclaimable:", ["main", "infoheader"]]]
         path: "spec#reclaimable"
@@ -176,3 +188,16 @@ infoview:
         path: "spec#weight"
         type: "int"
         formatter: "numerical"
+  shortcuts:
+    "Open parent queue":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for parent Queue"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#parent"
+        kind: "Queue"
+        api_family: "scheduling.volcano.sh"

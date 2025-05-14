@@ -1,0 +1,19 @@
+---
+- name: "yunikorn"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/apache/yunikorn"
+      container_name: "yunikorn-scheduler-web"
+  parser_rules:
+    - name: "ts_8601"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Starting yunikorn-web version"
+          loglevel: "notice"
+- name: "yunikorn"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/apache/yunikorn"
+  parser_rules:
+    - name: "tab_separated"
