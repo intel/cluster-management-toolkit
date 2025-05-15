@@ -679,6 +679,18 @@ infoview:
         _pass_selected: true
       kind_filter:
         kind: "Node"
+    "Show container arguments":
+      key: "g"
+      read_only: true
+      helptext: "Show container arguments"
+      title: "Arguments:"
+      widget: "windowwidget"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        source: "selected"
+        path: "args"
+      # This isn't supported for now
+      sortcolumn: "name"
     "Show container volume mounts":
       key: "m"
       read_only: true
@@ -696,6 +708,22 @@ infoview:
           - "readOnly"
       # This isn't supported for now
       sortcolumn: "name"
+    "Show container security context information":
+      key: "x"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show container security context information"
+      title: "Container Security Context Policies:"
+      widget: "windowwidget"
+      headers: ["Policy:", "Value:"]
+      itemgetter: "get_security_context"
+      itemgetter_args:
+        source: "selected"
+        path: "securityContext"
+      formatting: [["windowwidget", "default"],
+                   ["windowwidget", "highlight"]]
+      # This isn't supported for now
+      sortcolumn: "policy"
     "Show volumes":
       key: "v"
       modifier: "shift"

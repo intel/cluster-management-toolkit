@@ -882,42 +882,55 @@ def get_endpoint_ips(subsets: list[dict]) -> list[str]:
 
 security_context_values: dict[str, list[DictPath]] = {
     "Run as User": [
+        DictPath("securityContext#runAsUser"),
         DictPath("spec#securityContext#runAsUser"),
         DictPath("spec#template#spec#securityContext#runAsUser")],
     "Run as non-Root": [
+        DictPath("securityContext#runAsNonRoot"),
         DictPath("spec#securityContext#runAsNonRoot"),
         DictPath("spec#template#spec#securityContext#runAsNonRoot")],
     "Run as Group": [
+        DictPath("securityContext#runAsGroup"),
         DictPath("spec#securityContext#runAsGroup"),
         DictPath("spec#template#spec#securityContext#runAsGroup")],
     "FS Group": [
+        DictPath("securityContext#fsGroup"),
         DictPath("spec#securityContext#fsGroup"),
         DictPath("spec#template#spec#securityContext#fsGroup")],
     "FS Group-change Policy": [
+        DictPath("securityContext#fsGroupChangePolicy"),
         DictPath("spec#securityContext#fsGroupChangePolicy"),
         DictPath("spec#template#spec#securityContext#fsGroupChangePolicy")],
     "Allow Privilege Escalation": [
+        DictPath("securityContext#allowPrivilegeEscalation"),
         DictPath("spec#securityContext#allowPrivilegeEscalation"),
         DictPath("spec#template#spec#securityContext#allowPrivilegeEscalation")],
     "Capabilities": [
+        DictPath("securityContext#capabilities"),
         DictPath("spec#securityContext#capabilities"),
         DictPath("spec#template#spec#securityContext#capabilities")],
     "Privileged": [
+        DictPath("securityContext#privileged"),
         DictPath("spec#securityContext#privileged"),
         DictPath("spec#template#spec#securityContext#privileged")],
     "Proc Mount": [
+        DictPath("securityContext#procMount"),
         DictPath("spec#securityContext#procMount"),
         DictPath("spec#template#spec#securityContext#procMount")],
     "Read-only Root Filesystem": [
+        DictPath("securityContext#readOnlyRootFilesystem"),
         DictPath("spec#securityContext#readOnlyRootFilesystem"),
         DictPath("spec#template#spec#securityContext#readOnlyRootFilesystem")],
     "SELinux Options": [
+        DictPath("securityContext#seLinuxOptions"),
         DictPath("spec#securityContext#seLinuxOptions"),
         DictPath("spec#template#spec#securityContext#seLinuxOptions")],
     "Seccomp Profile": [
+        DictPath("securityContext#seccompProfile"),
         DictPath("spec#securityContext#seccompProfile"),
         DictPath("spec#template#spec#securityContext#seccompProfile")],
     "Windows Options": [
+        DictPath("securityContext#windowsOptions"),
         DictPath("spec#securityContext#windowsOptions"),
         DictPath("spec#template#spec#securityContext#windowsOptions")],
 }
@@ -934,7 +947,7 @@ def get_security_context(obj: dict, **kwargs: Any) -> list[tuple[str, str]]:
         Returns:
             ([(str, str)]): A list of security context information
     """
-    security_policies = []
+    security_policies: list[tuple[str, str]] = []
 
     for name, path in security_context_values.items():
         if (policy := deep_get_with_fallback(obj, path)) is not None:
