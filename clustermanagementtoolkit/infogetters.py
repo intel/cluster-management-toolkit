@@ -776,6 +776,10 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                             else:
                                 rangevals.append((f"{firstnum}", f"{lastnum}", ""))
                     _values.append((rangevals, "raw"))
+                elif ptype == "identify_type":
+                    tmp = deep_get_with_fallback(obj, path, {})
+                    vtype, _value = cmtlib.decode_value(tmp)
+                    _values.append((vtype, "str"))
                 elif ptype == "key_value":
                     value = []
                     tmp = deep_get_with_fallback(obj, path, {})
