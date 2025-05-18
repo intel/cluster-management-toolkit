@@ -41,7 +41,46 @@ listview:
                   type: "status_pending"
 infoview:
   name: "Global Role Info"
-  infopad: null
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "builtin", "status"]
+    rows:
+      builtin:
+        header: [["Builtin:", ["main", "infoheader"]]]
+        path: "builtin"
+        default: "<unset>"
+        type: "bool"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "displayName"
+        default: "<unset>"
+        type: "str"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status#summary"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Completed:
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+              Error:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              InProgress:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              Terminating:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
   listpad:
     listgetter: "listgetter_policy_rules"
     infogetter: "generic_infogetter"

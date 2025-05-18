@@ -9,7 +9,7 @@ command:
   - "roletempl.cattle"
 listview:
   name: "Role Templates"
-  group: "Rancher"
+  group: "Authorization & Access Control"
   field_indexes:
     Normal:
       fields: ["name", "display_name", "context", "builtin", "external",
@@ -53,11 +53,16 @@ infoview:
     row_indexes:
       Normal:
         fields: ["display_name", "description", "context", "builtin",
-                 "external", "hidden"]
+                 "external", "cluster_creator_default", "hidden"]
     rows:
       builtin:
         header: [["Builtin:", ["main", "infoheader"]]]
         path: "builtin"
+        default: "<unset>"
+        type: "bool"
+      cluster_creator_default:
+        header: [["Cluster Creator Default:", ["main", "infoheader"]]]
+        path: "clusterCreatorDefault"
         default: "<unset>"
         type: "bool"
       context:

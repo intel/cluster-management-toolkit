@@ -9,9 +9,11 @@ listview:
   name: "ETCD Snapshot Files"
   group: "Rancher"
   field_indexes:
-    Normal:
+    Wide:
       fields: ["name", "snapshotname", "node", "location", "size",
-               "ready_to_use", "age"]
+               "ready", "age"]
+    Normal:
+      fields: ["name", "snapshotname", "node", "size", "ready", "age"]
   fields:
     location:
       header: "Location:"
@@ -28,8 +30,8 @@ listview:
       formatting:
         field_colors:
           - type: "host"
-    ready_to_use:
-      header: "Ready to Use:"
+    ready:
+      header: "Ready:"
       path: "status#readyToUse"
       type: "str"
     size:

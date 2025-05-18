@@ -1,0 +1,155 @@
+---
+kind: "PodSecurityAdmissionConfigurationTemplate"
+api_family: "management.cattle.io"
+# yamllint disable-line rule:line-length
+default_command: "podsecurityadmissionconfigurationtemplates.management.cattle.io"
+command:
+  - "podsecadmconftemplates.cattle"
+  - "podsecadmconftemplate.cattle"
+listview:
+  name: "Pod Security Admission Configuration Templates"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Pod Security Admission Configuration Template Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["description", "defaults_header",
+                 "defaults_audit", "defaults_audit_version",
+                 "defaults_enforce", "defaults_enforce_version",
+                 "defaults_warn", "defaults_warn_version",
+                 "exemptions", "exemptions_namespaces",
+                 "exemptions_users", "exemptions_runtime_classes"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "description"
+        default: "<unset>"
+        type: "str"
+      defaults_audit:
+        header: [["  Audit:", ["main", "infoheader"]]]
+        path: "configuration#defaults#audit"
+        default: "<unset>"
+        type: "str"
+      defaults_audit_version:
+        header: [["  Audit Version:", ["main", "infoheader"]]]
+        path: "configuration#defaults#audit-version"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      defaults_enforce:
+        header: [["  Enforce:", ["main", "infoheader"]]]
+        path: "configuration#defaults#enforce"
+        default: "<unset>"
+        type: "str"
+      defaults_enforce_version:
+        header: [["  Enforce Version:", ["main", "infoheader"]]]
+        path: "configuration#defaults#enforce-version"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      defaults_header:
+        header: [["Defaults:", ["main", "infoheader"]]]
+      defaults_warn:
+        header: [["  Warn:", ["main", "infoheader"]]]
+        path: "configuration#defaults#warn"
+        default: "<unset>"
+        type: "str"
+      defaults_warn_version:
+        header: [["  Warn Version:", ["main", "infoheader"]]]
+        path: "configuration#defaults#warn-version"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      exemptions:
+        header: [["Exemptions:", ["main", "infoheader"]]]
+      exemptions_namespaces:
+        header: [["  ", ["main", "infoheader"]],
+                 ["N", ["main", "infoheader_shortcut"]],
+                 ["amespaces:", ["main", "infoheader"]]]
+        path: "configuration#exemptions#namespaces"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      exemptions_runtime_classes:
+        header: [["  ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["untime Classes:", ["main", "infoheader"]]]
+        path: "configuration#exemptions#runtimeClasses"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      exemptions_users:
+        header: [["  ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["sers:", ["main", "infoheader"]]]
+        path: "configuration#exemptions#usernames"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+  shortcuts:
+    "List exempted Namespaces":
+      key: "n"
+      modifier: "shift"
+      read_only: true
+      helptext: "List exempted Namespaces"
+      widget: "windowwidget"
+      title: "Exempted Namespaces:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["configuration#exemptions#namespaces"]
+      # Not supported for now
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Namespace"
+        name_path: 0
+    "List exempted Runtime Classes":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List exempted Runtime Classes"
+      widget: "windowwidget"
+      title: "Exempted Runtime Classes:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["configuration#exemptions#runtimeClasses"]
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "RuntimeClass"
+        api_family: "node.k8s.io"
+        name_path: 0
+    "List exempted Users":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "List exempted Users"
+      widget: "windowwidget"
+      title: "Exempted Users:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["configuration#exemptions#usernames"]
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "User"
+        api_family: "management.cattle.io"
+        name_path: 0

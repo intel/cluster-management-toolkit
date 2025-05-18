@@ -23,19 +23,35 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["sha256", "content_size"]
+        fields: ["sha256", "content_size", "content_type"]
     rows:
       content_size:
         header: [["Content Size:", ["main", "infoheader"]]]
         path: "content"
         type: "len"
         formatter: "numerical"
+      content_type:
+        header: [["Content Type:", ["main", "infoheader"]]]
+        paths:
+        - path: "content"
+          pathtype: "identify_type"
+        type: "str"
       sha256:
         header: [["SHA256:", ["main", "infoheader"]]]
         path: "sha256sum"
-        type: "raw"
+        type: "str"
         formatter: "hex"
   shortcuts:
+    "Decode and View":
+      key: "v"
+      modifier: "shift"
+      read_only: false
+      helptext: "Decode and view content"
+      action: "call"
+      action_call: "decode_and_view_data"
+      action_args:
+        _pass_obj: true
+        path: "content"
     "Decode and Export":
       key: "x"
       modifier: "shift"

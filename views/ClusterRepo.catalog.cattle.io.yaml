@@ -36,7 +36,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["repo", "branch", "download_time"]
+        fields: ["repo", "branch", "commit", "download_time"]
     rows:
       branch:
         header: [["Branch:", ["main", "infoheader"]]]
@@ -45,6 +45,12 @@ infoview:
         formatting:
           field_colors:
             - type: "version"
+      commit:
+        header: [["Commit:", ["main", "infoheader"]]]
+        path: "status#commit"
+        default: "<unset>"
+        type: "str"
+        formatter: "hex"
       download_time:
         header: [["Download Time:", ["main", "infoheader"]]]
         path: "status#downloadTime"

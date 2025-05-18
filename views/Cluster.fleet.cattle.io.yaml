@@ -34,12 +34,13 @@ listview:
       formatter: "numerical"
       align: "right"
 infoview:
-  name: "Cluster Group Info"
+  name: "Cluster Info"
   infopad:
     row_indexes:
       Normal:
         fields: ["cluster_namespace", "kubeconfig",
-                 "agent_header", "agent_tls_mode", "agent_migrated",
+                 "agent_header", "agent_last_seen",
+                 "agent_tls_mode", "agent_migrated",
                  "agent_namespace", "agent_namespace_migrated",
                  "api_server_url", "garbage_collection_interval",
                  "ready_bundles", "last_seen"]
@@ -50,6 +51,11 @@ infoview:
         header: [["  Migrated:", ["main", "infoheader"]]]
         path: "status#agentMigrated"
         type: "bool"
+      agent_last_seen:
+        header: [["  Last Seen:", ["main", "infoheader"]]]
+        path: "status#agent#lastSeen"
+        type: "timestamp"
+        formatter: "age"
       agent_namespace:
         header: [["  Names", ["main", "infoheader"]],
                  ["p", ["main", "infoheader_shortcut"]],

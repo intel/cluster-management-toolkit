@@ -47,7 +47,8 @@ infoview:
         fields: ["cluster_name", "granted", "cluster_labels"]
     rows:
       cluster_labels:
-        header: [["Cluster Labels:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["luster Labels:", ["main", "infoheader"]]]
         paths:
           - path: "spec#clusterLabels"
             pathtype: "key_value"
@@ -82,3 +83,16 @@ infoview:
         namespace_path: "metadata#namespace"
         kind: "Cluster"
         api_family: "fleet.cattle.io"
+    "Show Cluster Label List":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List cluster labels"
+      widget: "windowwidget"
+      title: "Cluster Labels:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#clusterLabels"
+      # Not supported for now
+      sortcolumn: "label"

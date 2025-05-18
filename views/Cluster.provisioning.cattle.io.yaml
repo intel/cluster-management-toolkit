@@ -43,10 +43,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_name", "ready", "kubeconfig"]
+        fields: ["cluster_name", "client_secret_name",
+                 "kubeconfig", "ready"]
     rows:
+      client_secret_name:
+        header: [["Client ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ecret:", ["main", "infoheader"]]]
+        path: "status#clientSecretName"
+        type: "str"
       cluster_name:
-        header: [["Cluster Name:", ["main", "infoheader"]]]
+        header: [["Cl", ["main", "infoheader"]],
+                 ["u", ["main", "infoheader_shortcut"]],
+                 ["ster Name:", ["main", "infoheader"]]]
         path: "status#clusterName"
         type: "str"
       kubeconfig:
@@ -71,7 +80,19 @@ infoview:
                   - context: "main"
                     type: "status_pending"
   shortcuts:
-    "Kubeconfig":
+    "Open Cluster":
+      key: "u"
+      read_only: true
+      helptext: "Open info page for Cluster"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Cluster"
+        api_family: "fleet.cattle.io"
+        namespace_path: "metadata#namespace"
+        name_path: "status#clusterName"
+    "Open Kubeconfig":
       key: "k"
       modifier: "shift"
       read_only: true
@@ -83,3 +104,15 @@ infoview:
         kind: "Secret"
         name_path: "status#clientSecretName"
         namespace_path: "metadata#namespace"
+    "Open Secret":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        namespace_path: "metadata#namespace"
+        name_path: "status#clientSecretName"

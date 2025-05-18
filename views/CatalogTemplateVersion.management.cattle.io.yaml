@@ -1,0 +1,94 @@
+---
+kind: "CatalogTemplateVersion"
+api_family: "management.cattle.io"
+default_command: "catalogtemplateversions.management.cattle.io"
+command:
+  - "cattmplatevers.cattle"
+  - "cattmplatever.cattle"
+listview:
+  name: "Catalog Template Versions"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Catalog Template Version Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["catalog_template", "external_id",
+                 "version_name",
+                 "version",
+                 "version_dir",
+                 "rancher_max_version"]
+    rows:
+      catalog_template:
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["atalog Template:", ["main", "infoheader"]]]
+        paths:
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "kind"
+                eq: "CatalogTemplate"
+            type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
+          field_separators:
+            - type: "kind_api_group"
+            - type: "kind"
+      rancher_max_version:
+        header: [["Rancher Max Version:", ["main", "infoheader"]]]
+        path: "spec#rancherMaxVersion"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      version_dir:
+        header: [["Version Directory:", ["main", "infoheader"]]]
+        path: "spec#versionDir"
+        default: "<unset>"
+        type: "str"
+      external_id:
+        header: [["External ID:", ["main", "infoheader"]]]
+        path: "spec#externalId"
+        default: "<unset>"
+        type: "str"
+      version_name:
+        header: [["Version Name:", ["main", "infoheader"]]]
+        path: "spec#versionName"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Open Catalog Template":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Catalog Template"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "CatalogTemplate"
+        api_family: "management.cattle.io"

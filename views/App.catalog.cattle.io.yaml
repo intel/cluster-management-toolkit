@@ -36,7 +36,20 @@ listview:
     status:
       header: "Status:"
       path: "spec#info#status"
+      default: "<unset>"
       type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            deployed:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            "<unset>":
+              field_colors:
+                - context: "types"
+                  type: "unset"
     version:
       header: "Version:"
       path: "spec#chart#metadata#version"
@@ -99,6 +112,18 @@ infoview:
         header: [["Status:", ["main", "infoheader"]]]
         path: "spec#info#status"
         type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              deployed:
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+              "<unset>":
+                field_colors:
+                  - context: "types"
+                    type: "unset"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#chart#metadata#version"

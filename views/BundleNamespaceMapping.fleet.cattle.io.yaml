@@ -1,0 +1,106 @@
+---
+kind: "BundleNamespaceMapping"
+api_family: "fleet.cattle.io"
+default_command: "bundlenamespacemappings.fleet.cattle.io"
+command:
+  - "bundlensmaps.cattle"
+  - "bundlensmap.cattle"
+listview:
+  name: "Bundle Namespace Mappings"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Bundle Namespace Mapping Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["bundle_label_selector", "namespace_label_selector"]
+    rows:
+      bundle_label_selector:
+        header: [["Bun", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["le Label Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["namespaceSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      namespace_label_selector:
+        header: [["Namespace La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["namespaceSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Bundle"
+      _api_family: "fleet.cattle.io"
+      _label_selector_path: "spec#bundleSelector#matchLabels"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Bundle"
+      api_family: "fleet.cattle.io"
+    field_indexes:
+      Normal:
+        fields: ["namespace", "name", "default_namespace", "ready", "age"]
+        sortcolumn: "ready"
+    fields:
+      default_namespace:
+        header: "Default Namespace:"
+        path: "spec#defaultNamespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+      ready:
+        header: "Ready:"
+        paths:
+          - path: [["status#summary#ready"], ["status#summary#desiredReady"]]
+            pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "numerical"
+          field_separators:
+            - type: "fraction"
+        align: "right"
+  shortcuts:
+    "Bundle Label Selector":
+      key: "d"
+      read_only: true
+      helptext: "Bundle label selector"
+      widget: "windowwidget"
+      title: "Bundle Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "bundleSelector#matchLabels"
+    "Namespace Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Namespace label selector"
+      widget: "windowwidget"
+      title: "Namespace Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "namespaceSelector#matchLabels"

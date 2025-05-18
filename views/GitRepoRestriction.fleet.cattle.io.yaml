@@ -1,0 +1,76 @@
+---
+kind: "GitRepoRestriction"
+api_family: "fleet.cattle.io"
+default_command: "gitreporestrictions.fleet.cattle.io"
+command:
+  - "gitreporestrs.cattle"
+  - "gitreporestr.cattle"
+listview:
+  name: "Git Repo Restrictions"
+  group: "Rancher"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "default_service_account", "allowed_service_accounts", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+  fields:
+    allowed_service_accounts:
+      header: "Allowed Service Accounts:"
+      path: "spec#allowedServiceAccounts"
+      default: ["<unset>"]
+      type: "raw"
+      formatter: "list"
+    default_service_account:
+      header: "Default Service Account:"
+      path: "spec#defaultServiceAccount"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "Git Repo Restriction Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["default_client_secret",
+                 "default_client_service_account"]
+    rows:
+      default_client_secret:
+        header: [["Default ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["lient Secret:", ["main", "infoheader"]]]
+        path: "spec#defaultClientSecretName"
+        default: "<unset>"
+        type: "str"
+      default_client_service_account:
+        header: [["Default ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Account:", ["main", "infoheader"]]]
+        path: "spec#defaultServiceAccount"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Open Default Client Secret":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for default client Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "spec#defaultClientSecretName"
+        namespace_path: "metadata#namespace"
+    "Open Default Service Account":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for default Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "spec#defaultServiceAccount"
+        namespace_path: "metadata#namespace"

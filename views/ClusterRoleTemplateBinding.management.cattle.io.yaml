@@ -1,0 +1,77 @@
+---
+kind: "ClusterRoleTemplateBinding"
+api_family: "management.cattle.io"
+default_command: "clusterroletemplatebindings.management.cattle.io"
+command:
+  - "clrroletemplatebindings.cattle"
+  - "clrroletemplatebinding.cattle"
+listview:
+  name: "Cluster Role Template Bindings"
+  group: "Authorization & Access Control"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "role_template_name", "username", "user_principal_name", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "username", "user_principal_name", "age"]
+      sortcolumn: "namespace"
+  fields:
+    role_template_name:
+      header: "Role Template Name:"
+      path: "roleTemplateName"
+      default: "<unset>"
+      type: "str"
+    username:
+      header: "Username:"
+      path: "userName"
+      default: "<unset>"
+      type: "str"
+    user_principal_name:
+      header: "User Principal Name:"
+      path: "userPrincipalName"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "Cluster Role Template Binding Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["role_template_name", "username"]
+    rows:
+      role_template_name:
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["ole Template Name:", ["main", "infoheader"]]]
+        path: "roleTemplateName"
+        default: "<unset>"
+        type: "str"
+      username:
+        header: [["U", ["main", "infoheader_shortcut"]],
+                 ["sername:", ["main", "infoheader"]]]
+        path: "userName"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Open Role Template":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Role Template"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "RoleTemplate"
+        api_family: "management.cattle.io"
+        name_path: "roleTemplateName"
+    "Open User":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for User"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "User"
+        api_family: "management.cattle.io"
+        name_path: "userName"

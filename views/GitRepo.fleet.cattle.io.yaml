@@ -1,0 +1,218 @@
+---
+kind: "GitRepo"
+api_family: "fleet.cattle.io"
+default_command: "gitrepos.fleet.cattle.io"
+command:
+  - "gitrepos.cattle"
+  - "gitrepo.cattle"
+listview:
+  name: "Git Repos"
+  group: "Rancher"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "repo", "target_namespace", "status", "age"]
+  fields:
+    repo:
+      header: "Repository:"
+      path: "spec#repo"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "url"
+    status:
+      header: "Status:"
+      path: "status#gitJobStatus"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Current":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "Failed":
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            "<unset>":
+              field_colors:
+                - context: "types"
+                  type: "unset"
+    target_namespace:
+      header: "Target Namespace:"
+      path: "spec#targetNamespace"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "namespace"
+infoview:
+  name: "Git Repo Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["repo", "commit", "paths", "target_namespace",
+                 "resource_counts_header",
+                 "resource_desired_ready",
+                 "resource_missing",
+                 "resource_modified",
+                 "resource_not_ready",
+                 "resource_orphaned",
+                 "resource_ready",
+                 "resource_unknown",
+                 "resource_wait_applied",
+                 "state", "status", "last_polled"]
+    rows:
+      commit:
+        header: [["Commit:", ["main", "infoheader"]]]
+        path: "status#commit"
+        type: "str"
+        formatter: "hex"
+      last_polled:
+        header: [["Last Polled", ["main", "infoheader"]]]
+        path: "status#lastPollingTriggered"
+        type: "timestamp"
+        formatter: "timestamp"
+      paths:
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["aths:", ["main", "infoheader"]]]
+        path: "spec#paths"
+        type: "raw"
+        formatter: "list"
+      repo:
+        header: [["G", ["main", "infoheader_shortcut"]],
+                 ["it Repository URL:", ["main", "infoheader"]]]
+        path: "spec#repo"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+      resource_counts_header:
+        header: [["Resource Counts:", ["main", "infoheader"]]]
+      resource_desired_ready:
+        header: [["  Desired Ready:", ["main", "infoheader"]]]
+        path: "status#resourceCounts#desiredReady"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      resource_missing:
+        header: [["  Missing:", ["main", "infoheader"]]]
+        path: "status#resourceCounts#missing"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      resource_modified:
+        header: [["  Modified:", ["main", "infoheader"]]]
+        path: "status#resourceCounts#modified"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      resource_not_ready:
+        header: [["  Not Ready:", ["main", "infoheader"]]]
+        path: "status#resourceCounts#notReady"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      resource_orphaned:
+        header: [["  Orphaned:", ["main", "infoheader"]]]
+        path: "status#resourceCounts#orphaned"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      resource_ready:
+        header: [["  Ready:", ["main", "infoheader"]]]
+        path: "status#resourceCounts#ready"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      resource_unknown:
+        header: [["  Unknown:", ["main", "infoheader"]]]
+        path: "status#resourceCounts#unknown"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      resource_wait_applied:
+        header: [["  Wait Applied:", ["main", "infoheader"]]]
+        path: "status#resourceCounts#waitApplied"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#display#state"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "GitUpdating":
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              "<unset>":
+                field_colors:
+                  - context: "types"
+                    type: "unset"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status#gitJobStatus"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Current":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "Failed":
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              "<unset>":
+                field_colors:
+                  - context: "types"
+                    type: "unset"
+      target_namespace:
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["arget Namespace:", ["main", "infoheader"]]]
+        path: "spec#targetNamespace"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "namespace"
+  shortcuts:
+    "Show path list":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "List paths"
+      widget: "windowwidget"
+      title: "Paths:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#paths"]
+      # Not supported for now
+      sortcolumn: "path"
+    "Open Git Repository webpage":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open Git Repo webpage in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open", ["spec#repo"]]
+    "Open Target Namespace":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for target Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "spec#targetNamespace"
