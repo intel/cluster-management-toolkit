@@ -1470,7 +1470,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                            title="Select Namespace", cursor=True,
                                            preselection=preselection)
             selection = None
-            if tmpselection is not None and isinstance(tmpselection, str):
+            if isinstance(tmpselection, str):
                 selection = tmpselection
 
             if selection is not None and selection:
@@ -3759,12 +3759,11 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     formatter_path = deep_get(kwargs, DictPath("formatter_path"))
     # formatter_path has precedence over formatter, to allow ConfigMaps to work properly
     formatter = deep_get(kwargs, DictPath("formatter"))
-    formatter_args: dict = deep_get(kwargs, DictPath("formatter_args"), {})
+    formatter_args: dict[str, Any] = deep_get(kwargs, DictPath("formatter_args"), {})
     if formatter_path is not None:
         formatter = deep_get(obj, DictPath(formatter_path))
-    elif formatter is not None:
-        if isinstance(formatter, str):
-            formatter = check_allowlist(formatter_allowlist, "formatter_allowlist", formatter)
+    elif isinstance(formatter, str):
+        formatter = check_allowlist(formatter_allowlist, "formatter_allowlist", formatter)
     obj_path = deep_get(kwargs, DictPath("obj_path"))
     title = None
     if obj_path is not None:
@@ -6072,7 +6071,7 @@ def containerinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
             if tmpselection is not None and tmpselection != "":
                 selection = tmpselection
             uip.refresh_all()
-            if selection is not None and selection and isinstance(selection, str):
+            if isinstance(selection, str) and selection:
                 log_level = name_to_loglevel(selection)
             uip.yoffset = 0
             uip.xoffset = 0
@@ -6694,13 +6693,13 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     namespaced_name_path = None
 
     name_path = deep_get(kwargs, DictPath("name_path"))
-    if name_path is not None and isinstance(name_path, str):
+    if isinstance(name_path, str):
         name_path = [name_path]
     namespace_path = deep_get(kwargs, DictPath("namespace_path"), "")
-    if namespace_path is not None and isinstance(namespace_path, str):
+    if isinstance(namespace_path, str):
         namespace_path = [namespace_path]
     namespaced_name_path = deep_get(kwargs, DictPath("namespaced_name_path"), "")
-    if namespaced_name_path is not None and isinstance(namespaced_name_path, str):
+    if isinstance(namespaced_name_path, str):
         namespaced_name_path = [namespaced_name_path]
         if namespaced_name_enabled_path is not None:
             namespaced_name_enabled = deep_get(obj, DictPath(namespaced_name_enabled_path), True)
