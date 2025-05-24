@@ -1260,7 +1260,7 @@ def split_json_style(message: str, **kwargs: Any) \
                 pass
 
     # pylint: disable-next=too-many-nested-blocks
-    if logentry is not None and isinstance(logentry, dict):
+    if isinstance(logentry, dict):
         # If msg_first we reorder the dict
         if LogparserConfiguration.msg_first:
             _d = {}

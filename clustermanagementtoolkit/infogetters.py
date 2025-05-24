@@ -679,7 +679,7 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                     raise ValueError(f"Field {name}: the path field has no default type; "
                                      "type must always be specified")
                 tmp_value = deep_get(obj, DictPath(path), global_default)
-                if tmp_value is not None and isinstance(tmp_value, (str, list)) \
+                if isinstance(tmp_value, (str, list)) \
                         and not tmp_value and fallback_on_empty:
                     tmp_value = global_default
                 _values.append((tmp_value, deep_get(field, DictPath("type"))))
