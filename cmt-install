@@ -808,22 +808,29 @@ def install(options: list[tuple[str, str]], args: list[str]) -> int:
 
     distro_id_like = ""
     distro_id = ""
+    version_id = ""
 
     with open(distro_path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            key, value = line.split("=")
+
+            # Some line might be empty
+            try:
+                key, value = line.split("=")
+            except ValueError:
+                continue
+
             value = value.strip("\"'")
             if key == "ID_LIKE":
                 distro_id_like = value
-                # If there's an ID_LIKE in the file we're done
-                break
             if key == "ID":
                 distro_id = value
-                # But if we've only found an ID we cannot be sure
-                # that there won't be an ID_LIKE later on
+            if key == "VERSION_ID":
+                version_id = value
 
-    if distro_id_like:
+    if distro_id_like and distro_id and distro_id == "rhel":
+        distro = distro_id
+    elif distro_id_like:
         distro = distro_id_like
     else:
         distro = distro_id
@@ -839,6 +846,16 @@ def install(options: list[tuple[str, str]], args: list[str]) -> int:
     if distro == "suse opensuse":
         distro = "suse"
 
+    version_id_tuple = [0, 0, 0]
+
+    if version_id:
+        try:
+            for i, val in enumerate(version_id.split(".")):
+                if i < 3:
+                    version_id_tuple[i] = int(val)
+        except ValueError:
+            pass
+
     if distro not in ("debian", "suse", "rhel", "fedora"):
         ansithemeprint([ANSIThemeStr("Error:", "error"),
                         ANSIThemeStr(" distro “", "default"),
@@ -853,7 +870,7 @@ def install(options: list[tuple[str, str]], args: list[str]) -> int:
                         ANSIThemeStr(" are supported.", "default")])
         sys.exit(errno.ENOTSUP)
 
-    if distro == "suse":
+    if distro == "suse" and version_id_tuple[0] < 15:
         ansithemeprint([ANSIThemeStr("Note:", "note"),
                         ANSIThemeStr(" on SUSE distros older than OpenSUSE 16 "
                                      "you need to install “", "default"),
@@ -863,7 +880,7 @@ def install(options: list[tuple[str, str]], args: list[str]) -> int:
                                      "default"),
                         ANSIThemeStr("python310-pip", "programname"),
                         ANSIThemeStr("“.\n", "default")])
-    elif distro in ("fedora", "rhel"):
+    elif distro == "rhel" and version_id_tuple[0] < 9:
         ansithemeprint([ANSIThemeStr("Note:", "note"),
                         ANSIThemeStr(" on Red Hat distros older than RHEL 9 "
                                      "you need to install a newer version", "default")])
