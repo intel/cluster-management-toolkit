@@ -274,14 +274,14 @@ def ansible_print_action_summary(playbooks: list[tuple[list[ANSIThemeStr], FileP
                 ansithemeprint([ANSIThemeStr(f"        {description}", "default")])
 
 
-def ansible_get_inventory_dict() -> Union[dict[str, Any], ruyaml.CommentedMap]:
+def ansible_get_inventory_dict() -> Union[dict[str, Any], ruyaml.comments.CommentedMap]:
     """
         Get the Ansible inventory and return it as a dict.
 
         Returns:
             (dict): A dictionary with an Ansible inventory
     """
-    d: Union[dict[str, Any], ruyaml.CommentedMap] = {
+    d: Union[dict[str, Any], ruyaml.comments.CommentedMap] = {
         "all": {
             "hosts": {},
             "vars": {},
@@ -292,7 +292,7 @@ def ansible_get_inventory_dict() -> Union[dict[str, Any], ruyaml.CommentedMap]:
         return d
 
     tmp_d: Any = secure_read_yaml(ANSIBLE_INVENTORY)
-    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.CommentedMap)):
+    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.comments.CommentedMap)):
         deep_set(tmp_d, DictPath("all#hosts"),
                  deep_get(tmp_d, DictPath("all#hosts"), {}), create_path=True)
         deep_set(tmp_d, DictPath("all#vars"),
@@ -324,7 +324,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
     include_hostvars: bool = deep_get(kwargs, DictPath("include_hostvars"), False)
     include_hosts: bool = deep_get(kwargs, DictPath("include_hosts"), True)
 
-    tmp: Union[dict[str, Any], ruyaml.CommentedMap] = {}
+    tmp: Union[dict[str, Any], ruyaml.comments.CommentedMap] = {}
 
     if not Path(ANSIBLE_INVENTORY).is_file():
         return []
@@ -894,7 +894,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> b
                           "skip_all": skip_all,
                           "temporary": temporary})
 
-    d: Union[dict[str, Any], ruyaml.CommentedMap] = {}
+    d: Union[dict[str, Any], ruyaml.comments.CommentedMap] = {}
 
     tmp_d: Any = None
 
@@ -908,7 +908,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> b
             tmp_d = secure_read_yaml(inventory, temporary=temporary)
     else:
         tmp_d = secure_read_yaml(inventory, temporary=temporary)
-    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.CommentedMap)):
+    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.comments.CommentedMap)):
         d = tmp_d
 
     for host in hosts:
@@ -1026,9 +1026,9 @@ def ansible_remove_groups(inventory: FilePath, groups: list[str], **kwargs: Any)
     if not Path(inventory).is_file():
         return False
 
-    d: Union[dict[str, Any], ruyaml.CommentedMap] = {}
+    d: Union[dict[str, Any], ruyaml.comments.CommentedMap] = {}
     tmp_d: Any = secure_read_yaml(inventory, temporary=temporary)
-    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.CommentedMap)):
+    if tmp_d is not None and isinstance(tmp_d, (dict, ruyaml.comments.CommentedMap)):
         d = tmp_d
 
     for group in groups:
