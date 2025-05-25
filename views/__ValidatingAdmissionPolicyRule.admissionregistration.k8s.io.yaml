@@ -1,0 +1,43 @@
+---
+kind: "__ValidatingAdmissionPolicyRule"
+api_family: "admissionregistration.k8s.io"
+default_command: "__"
+infoview:
+  name: "Validating Admission Policy Rule"
+  infopad:
+    name_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["name", "message", "reason", "type"]
+    rows:
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        path: "message"
+        default: "<unset>"
+        type: "str"
+      name:
+        header: [["Name:", ["main", "infoheader"]]]
+        path: "name"
+        default: "<unset>"
+        type: "str"
+      reason:
+        header: [["Reason:", ["main", "infoheader"]]]
+        path: "reason"
+        default: "<unset>"
+        type: "str"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "type"
+        default: "<unset>"
+        type: "str"
+  logpad:
+    infogetter: "logpad_yaml"
+    timestamps: false
+    infogetter_args:
+      path: "expression"
+  shortcuts:
+    # __ValidatingAdmissionPolicyRule
+    # has no last applied configuration or events
+    "Show Events": null
+    "Last Applied Configuration": null

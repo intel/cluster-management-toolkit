@@ -37,12 +37,63 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["param_kind", "failure_policy"]
+        fields: ["param_kind", "failure_policy", "match_conditions",
+                 "match_constraints_header", "match_constraints_match_policy",
+                 "match_constraints_namespace_label_selector",
+                 "match_constraints_namespace_set_based_selector",
+                 "match_constraints_object_label_selector",
+                 "match_constraints_object_set_based_selector"]
     rows:
       failure_policy:
         header: [["Failure Policy:", ["main", "infoheader"]]]
         path: "spec#failurePolicy"
         type: "str"
+      match_conditions:
+        header: [["Match ", ["main", "infoheader"]],
+                 ["C", ["main", "infoheader_shortcut"]],
+                 ["onditions:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#matchConditions"
+            pathtype: "items"
+            subpaths:
+              - "name"
+        formatter: "list"
+      match_constraints_header:
+        header: [["Match Constraints:", ["main", "infoheader"]]]
+      match_constraints_match_policy:
+        header: [["  Match Policy:", ["main", "infoheader"]]]
+        path: "spec#matchConstraints#matchPolicy"
+        type: "str"
+      match_constraints_namespace_label_selector:
+        header: [["  Namespace La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#matchConstraints#namespaceSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      match_constraints_object_label_selector:
+        header: [["  ", ["main", "infoheader"]],
+                 ["O", ["main", "infoheader_shortcut"]],
+                 ["bject Label Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#matchConstraints#objectSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
       param_kind:
         header: [["P", ["main", "infoheader_shortcut"]],
                  ["arameter Kind:", ["main", "infoheader"]]]
@@ -58,23 +109,71 @@ infoview:
             - type: "api_group"
           field_separators:
             - type: "kind_api_group"
+      match_constraints_namespace_set_based_selector:
+        header: [["  Set-based Namespace Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#matchConstraints#namespaceSelector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "operator"
+            - type: "value"
+          field_separators:
+            - type: "space"
+            - type: "no_pad"
+      match_constraints_object_set_based_selector:
+        header: [["  Set-based Object Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#matchConstraints#objectSelector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "operator"
+            - type: "value"
+          field_separators:
+            - type: "space"
+            - type: "no_pad"
   listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__ValidatingAdmissionPolicyRule"
+      api_family: "admissionregistration.k8s.io"
     listgetter: "listgetter_path"
     listgetter_args:
-      path: "spec#validations"
+      paths:
+        - path: "spec#validations"
+          type: "list"
+          key_name: "type"
+          key_value: "Validation"
+        - path: "spec#variables"
+          type: "list"
+          key_name: "type"
+          key_value: "Variable"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["expression", "reason", "message"]
-        sortcolumn: "expression"
+        fields: ["type", "name", "message", "reason", "expression"]
+        sortcolumn: "message"
     fields:
       expression:
         header: "Expression:"
         path: "expression"
         type: "str"
+        default: "<unset>"
       message:
         header: "Message:"
         path: "message"
+        type: "str"
+        default: "<unset>"
+      name:
+        header: "Name:"
+        path: "name"
         type: "str"
         default: "<unset>"
       reason:
@@ -82,7 +181,29 @@ infoview:
         path: "reason"
         type: "str"
         default: "<unset>"
+      type:
+        header: "Type:"
+        path: "type"
+        type: "str"
   shortcuts:
+    "List Match Conditions":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List match conditions"
+      widget: "windowwidget"
+      title: "Match Conditions:"
+      headers: ["Name:", "Expression:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#matchConditions"
+        fields:
+          - "name"
+          - "expression"
+      formatting: [["windowwidget", "default"],
+                   ["windowwidget", "highlight"]]
+      # Not supported for now
+      sortcolumn: "name"
     "List Parameter Kind":
       key: "p"
       modifier: "shift"
