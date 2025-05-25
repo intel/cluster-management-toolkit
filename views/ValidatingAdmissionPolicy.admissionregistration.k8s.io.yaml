@@ -186,6 +186,27 @@ infoview:
         path: "type"
         type: "str"
   shortcuts:
+    "Namespace Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Namespace label selector"
+      widget: "windowwidget"
+      title: "Namespace Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#matchConstraints#namespaceSelector#matchLabels"
+    "Object Label Selector":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Object label selector"
+      widget: "windowwidget"
+      title: "Object Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#matchConstraints#objectSelector#matchLabels"
     "List Match Conditions":
       key: "c"
       modifier: "shift"
