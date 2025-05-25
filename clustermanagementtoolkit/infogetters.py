@@ -862,9 +862,9 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                         value = []
                         subpath = deep_get(_path, DictPath("subpath"))
                         if subpath is None:
-                            value = make_set_expression_list(tmp, toleration=ptype=="toleration")
+                            value = make_set_expression_list(tmp, toleration=ptype == "toleration")
                         else:
-                            value = make_set_expression_list(tmp, toleration=ptype=="toleration")
+                            value = make_set_expression_list(tmp, toleration=ptype == "toleration")
                             for _tmp in tmp:
                                 __tmp = deep_get(_tmp, DictPath(subpath), _tmp)
                                 value.append(make_set_expression_list(__tmp))
@@ -874,7 +874,7 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                             for tmp in value:
                                 _values.append((tmp, "raw"))
                     elif isinstance(tmp, dict):
-                        value = make_set_expression_list(tmp, toleration=ptype=="toleration")
+                        value = make_set_expression_list(tmp, toleration=ptype == "toleration")
                         _values.append((value, "raw"))
                     else:
                         _values.append((default, "raw"))

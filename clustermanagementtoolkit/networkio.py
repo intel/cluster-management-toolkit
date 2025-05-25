@@ -442,7 +442,7 @@ def download_files(directory: str,
                                         ANSIThemeStr(f"{https_proxy}", "url"),
                                         ANSIThemeStr("; retry later or modify your ", "default"),
                                         ANSIThemeStr("configuration; aborting.", "default")],
-                                                     stderr=True)
+                                       stderr=True)
                         sys.exit(errno.ENOENT)
                     else:
                         ansithemeprint([ANSIThemeStr("Error", "error"),

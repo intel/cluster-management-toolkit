@@ -73,7 +73,7 @@ class FindVisits(ast.NodeVisitor):
                                     ANSIThemeStr(f"{path}", "path"),
                                     ANSIThemeStr(":", "default"),
                                     ANSIThemeStr(f"{node.lineno}", "emphasis"),
-                                    ANSIThemeStr(f": The checker currently does not support "
+                                    ANSIThemeStr(": The checker currently does not support "
                                                  "keyword arguments", "default")])
                     self.result[call_func].append({
                         "ref": "N/A",
@@ -88,10 +88,10 @@ class FindVisits(ast.NodeVisitor):
                                     ANSIThemeStr(f"{path}", "path"),
                                     ANSIThemeStr(":", "default"),
                                     ANSIThemeStr(f"{node.lineno}", "emphasis"),
-                                    ANSIThemeStr(f": Found ", "default"),
+                                    ANSIThemeStr(": Found ", "default"),
                                     ANSIThemeStr(f"{len(node.args)}", "emphasis"),
-                                    ANSIThemeStr(f" arguments, expected ", "default"),
-                                    ANSIThemeStr(f"2", "emphasis")])
+                                    ANSIThemeStr(" arguments, expected ", "default"),
+                                    ANSIThemeStr("2", "emphasis")])
                     self.result[call_func].append({
                         "ref": "N/A",
                         "file": path,
@@ -161,7 +161,7 @@ class FindVisits(ast.NodeVisitor):
                                     ANSIThemeStr(f"{path}", "path"),
                                     ANSIThemeStr(":", "default"),
                                     ANSIThemeStr(f"{node.lineno}", "emphasis"),
-                                    ANSIThemeStr(f": The checker currently does not support "
+                                    ANSIThemeStr(": The checker currently does not support "
                                                  "keyword arguments", "default")])
                     self.result[call_func].append({
                         "ref": "N/A",
@@ -176,10 +176,10 @@ class FindVisits(ast.NodeVisitor):
                                     ANSIThemeStr(f"{path}", "path"),
                                     ANSIThemeStr(":", "default"),
                                     ANSIThemeStr(f"{node.lineno}", "emphasis"),
-                                    ANSIThemeStr(f": Found ", "default"),
+                                    ANSIThemeStr(": Found ", "default"),
                                     ANSIThemeStr(f"{len(node.args)}", "emphasis"),
-                                    ANSIThemeStr(f" arguments, expected ", "default"),
-                                    ANSIThemeStr(f"[2-3]", "emphasis")])
+                                    ANSIThemeStr(" arguments, expected ", "default"),
+                                    ANSIThemeStr("[2-3]", "emphasis")])
                     self.result[call_func].append({
                         "ref": "N/A",
                         "file": path,
