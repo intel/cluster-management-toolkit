@@ -428,7 +428,7 @@ def download_files(directory: str,
                                 ANSIThemeStr(f"{url}", "url")], stderr=True)
                 retval = False
                 continue
-            elif "Name or service not known" in str(e):
+            if "Name or service not known" in str(e):
                 tmp = re.match(r"^.*Failed to resolve \'(.+?)\'.*$", str(e))
                 if tmp is not None:
                     stripped_proxy = "[THISWILLNOTMATCH]"
