@@ -2210,10 +2210,127 @@ def test_get_pod_configmaps(verbose: bool = False) -> tuple[str, bool]:
                     },
                 ], 200),
                 [
-                    ("kube-system", "coredns-1"),
-                    ("kube-system", "coredns-2"),
-                    ("kube-system", "coredns-3"),
-                    ("kube-system", "coredns-4"),
+                    {
+                        "fields": ("kube-system", "coredns-1"),
+                        "ref": {
+                            "kind": "Pod",
+                            "apiVersion": "v1",
+                            "metadata": {
+                                "name": "coredns-1",
+                            },
+                            "spec": {
+                                "volumes": [
+                                    {
+                                        "configMap": {
+                                            "name": "coredns",
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    {
+                        "fields": ("kube-system", "coredns-2"),
+                        "ref": {
+                            "kind": "Pod",
+                            "apiVersion": "v1",
+                            "metadata": {
+                                "name": "coredns-2",
+                            },
+                            "spec": {
+                                "volumes": [],
+                                "containers": [
+                                    {
+                                        "env": [
+                                            {
+                                                "ValueFrom": {
+                                                    "configMapKeyRef": {
+                                                        "name": "coredns",
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    {
+                        "fields": ("kube-system", "coredns-3"),
+                        "ref": {
+                            "kind": "Pod",
+                            "apiVersion": "v1",
+                            "metadata": {
+                                "name": "coredns-3",
+                            },
+                            "spec": {
+                                "volumes": [
+                                    {
+                                        "projected": [
+                                            {
+                                                "sources": [],
+                                            },
+                                        ],
+                                    },
+                                ],
+                                "containers": [
+                                    {
+                                        "env": [
+                                            {
+                                                "ValueFrom": {
+                                                    "configMapKeyRef": {
+                                                        "name": "somethingelse",
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                        "envFrom": [
+                                            {
+                                                "configMapKeyRef": {
+                                                    "name": "somethingelse",
+                                                },
+                                            },
+                                            {
+                                                "configMapKeyRef": {
+                                                    "name": "coredns",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    {
+                        "fields": ("kube-system", "coredns-4"),
+                        "ref": {
+                            "kind": "Pod",
+                            "apiVersion": "v1",
+                            "metadata": {
+                                "name": "coredns-4",
+                            },
+                            "spec": {
+                                "volumes": [
+                                    {
+                                        "projected": {
+                                            "sources": [
+                                                {
+                                                    "configMap": {
+                                                        "name": "somethingelse",
+                                                    },
+                                                },
+                                                {
+                                                    "configMap": {
+                                                        "name": "coredns",
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    },
                 ],
                 None,
             ),
@@ -2253,7 +2370,25 @@ def test_get_pod_configmaps(verbose: bool = False) -> tuple[str, bool]:
                     },
                 ], 200),
                 [
-                    ("kube-system", "coredns"),
+                    {
+                        "fields": ("kube-system", "coredns"),
+                        "ref": {
+                            "kind": "Pod",
+                            "apiVersion": "v1",
+                            "metadata": {
+                                "name": "coredns",
+                            },
+                            "spec": {
+                                "volumes": [
+                                    {
+                                        "configMap": {
+                                            "name": "coredns",
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    },
                 ],
                 None,
             ),

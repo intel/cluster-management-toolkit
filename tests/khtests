@@ -108,13 +108,13 @@ def test_guess_kind(verbose: bool = False) -> tuple[str, bool]:
             (("daemonsets", "apps"), ("DaemonSet", "apps"), None),
             ("daemonsets.apps", ("DaemonSet", "apps"), None),
             (("GpuAllocationState", ""), ("GpuAllocationState", "gpu.resource.intel.com"), None),
-            (("Workflow", ""), None, NameError),
+            # Unknown kinds should also be accepted
+            (("Workflow", ""), ("Workflow", ""), None),
             (("__Log", ""), ("__Log", ""), None),
             (None, None, TypeError),
             (1, None, TypeError),
             (("a",), None, TypeError),
             (("a", "b", "c"), None, TypeError),
-            (("NonExistingAPI", ""), None, NameError),
         )
         for indata, expected_result, expected_exception in testdata:
             try:

@@ -299,17 +299,19 @@ def test_themeref(verbose: bool = False) -> tuple[str, bool]:
         indata = ThemeRef("nonexisting", "themeref", True)
         try:
             tmp = str(indata)
-            message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield " \
-                      "expected result:\n" \
-                      f"       expected: ProgrammingError"
-            result = False
+            if tmp != "<themeref missing>":
+                message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield " \
+                          "expected result:\n" \
+                         f"         output: \"{tmp}\"\n" \
+                          "       expected: \"<themeref missing>\""
+                result = False
         except Exception as e:
             if isinstance(e, ProgrammingError):
                 pass
             else:
                 message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield " \
                           "expected result:\n" \
-                          f"       expected: ProgrammingError"
+                          "       expected: \"<themeref missing>\""
                 result = False
 
     if result:

@@ -568,15 +568,17 @@ def datagetter_api_support(obj: dict[str, Any], **kwargs: Any) -> tuple[list[str
 
     available_views = []
 
-    try:
-        kind = guess_kind((kind, api_family))
-        available_views.append("Known")
-        if deep_get(available_apis[kind], DictPath("list"), False):
-            available_views.append("List")
-        if deep_get(available_apis[kind], DictPath("info"), False):
-            available_views.append("Info")
-    except NameError:
-        pass
+    kind = guess_kind((kind, api_family))
+    available_views.append("Known")
+
+    # If kind is not in available_apis it's an unknown kind
+    if kind not in available_apis:
+        return [], {}
+
+    if deep_get(available_apis[kind], DictPath("list"), False):
+        available_views.append("List")
+    if deep_get(available_apis[kind], DictPath("info"), False):
+        available_views.append("Info")
 
     if not available_views:
         available_views = default

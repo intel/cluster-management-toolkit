@@ -13,7 +13,7 @@ from typing import Union
 
 # pylint: disable=too-many-lines
 
-# A list of all K8s resources we have some knowledge about
+# A dict of all K8s resources we have some knowledge about
 kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool]]] = {
     # core API
     # ComponentStatus is deprecated
@@ -5591,4 +5591,8 @@ kubernetes_resource_types: dict[tuple[str, str], str] = {
      "admissionregistration.k8s.io"): "[webhook_configuration]",
     ("VulnerabilityReport", "aquasecurity.github.io"): "[report]",
     ("Workflow", "argoproj.io"): "[controller]",
+}
+
+# A dict that will be populated with K8s resources that we don't support
+unknown_kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool]]] = {
 }

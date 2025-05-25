@@ -97,6 +97,10 @@ No changes.
   executables and libraries.
 * Thanks to the new cmtlog we can now log a message and recover instead
   of exiting in some cases, and log a message and exit in others.
+* Unknown kinds are now handled in a more resilient manner;
+  earlier cmu would raise an exception if it encountered owner references
+  for resources that it did not know about (possibly also in other places).
+  Now it'll log a message about it and silently ignore the request.
 
 ### Notable view-file changes (by API-files)
 

@@ -80,6 +80,7 @@ from clustermanagementtoolkit.cmtio import secure_read
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
 
 from clustermanagementtoolkit.kubernetes_resources import kubernetes_resources
+from clustermanagementtoolkit.kubernetes_resources import unknown_kubernetes_resources
 from clustermanagementtoolkit.kubernetes_resources import kubernetes_resource_types
 
 # Acceptable ciphers
@@ -535,7 +536,7 @@ def guess_kind(kind: Union[str, tuple[str, str]]) -> tuple[str, str]:
             kind = (kind, "")
 
     # If we already have a tuple, do not guess
-    if kind in kubernetes_resources:
+    if kind in kubernetes_resources or kind in unknown_kubernetes_resources:
         return cast(tuple, kind)
 
     if kind[0].startswith("__"):
@@ -581,7 +582,16 @@ def guess_kind(kind: Union[str, tuple[str, str]]) -> tuple[str, str]:
     if guess is not None:
         return guess
 
-    raise NameError(f"Could not guess kubernetes resource for kind: {kind}")
+    errmsg: list[list[tuple[str, str]]] = [
+        [("Unknown kind (", "default"),
+         (f"{kind[0]}.{kind[1]}", "argument"),
+         (" encountered; adding to temporary dict.", "default")],
+    ]
+    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+    cmtlog.log(LogLevel.INFO, msg=unformatted_msg, messages=formatted_msg)
+    unknown_kubernetes_resources[(kind)] = None
+
+    return kind
 
 
 def update_api_status(kind: tuple[str, str], listview: bool = False,
@@ -1635,6 +1645,9 @@ class KubernetesHelper:
             Returns:
                 is_namespaced (bool): True if namespaced, False if not
         """
+        if kind in unknown_kubernetes_resources:
+            # Technically we don't know, but we have to return a value
+            return False
         if kind not in kubernetes_resources:
             raise ValueError(f"Kind {kind} not known; "
                              "this is likely a programming error (possibly a typo)")
@@ -1776,6 +1789,10 @@ class KubernetesHelper:
             Returns:
                 latest_api (str): The latest API-version
         """
+        if kind in unknown_kubernetes_resources:
+            # We don't know; return empty string
+            return ""
+
         if kind not in kubernetes_resources:
             raise ValueError(f"Could not determine latest API; "
                              f"kind {kind} not found in kubernetes_resources")
@@ -1972,7 +1989,7 @@ class KubernetesHelper:
         """
         modified = False
 
-        # If the list is not empty, but the cluster is unreachable, return it unchanged
+        # If the dict is not empty, but the cluster is unreachable, return it unchanged
         if self.cluster_unreachable:
             return kubernetes_resources, 42503, modified
 
@@ -2010,6 +2027,7 @@ class KubernetesHelper:
             # Flush the entire API list
             for _resource_kind, resource_data in kubernetes_resources.items():
                 resource_data["available"] = False
+            unknown_kubernetes_resources = {}
 
             # When running in developer mode with testdata we allow reads from files,
             # and can thus get data without the Kubernetes API being available.
@@ -2418,7 +2436,15 @@ class KubernetesHelper:
             api = deep_get(kubernetes_resources[kind], DictPath("api"))
             namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
         else:
-            raise ValueError(f"kind unknown: {kind}")
+            # If the kind is unknown we fail the request
+            errmsg: list[list[tuple[str, str]]] = [
+                [("Unhandled POST request: kind ", "default"),
+                 (f"{kind[0]}.{kind[1]}", "argument"),
+                 (" is not supported; ignoring request.", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            return 422, f"POST requested for unknown kind {kind[0]}.{kind[1]}; ignoring."
 
         fullitem = f"{kind[0]}.{kind[1]} {name}"
         if namespaced:
@@ -2493,7 +2519,15 @@ class KubernetesHelper:
             api = deep_get(kubernetes_resources[kind], DictPath("api"))
             namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
         else:
-            raise ValueError(f"kind unknown: {kind}")
+            # If the kind is unknown we fail the request
+            errmsg: list[list[tuple[str, str]]] = [
+                [("Unhandled PATCH request: kind ", "default"),
+                 (f"{kind[0]}.{kind[1]}", "argument"),
+                 (" is not supported; ignoring request.", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            return 422, f"PATCH requested for unknown kind {kind[0]}.{kind[1]}; ignoring."
 
         fullitem = f"{kind[0]}.{kind[1]} {name}"
         if namespaced:
@@ -2550,7 +2584,16 @@ class KubernetesHelper:
             api = deep_get(kubernetes_resources[kind], DictPath("api"))
             namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
         else:
-            raise ValueError(f"kind unknown: {kind}")
+            # If the kind is unknown we fail the request
+            errmsg: list[list[tuple[str, str]]] = [
+                [("Unhandled DELETE request: kind ", "default"),
+                 (f"{kind[0]}.{kind[1]}", "argument"),
+                 (" is not supported; ignoring request.", "default")],
+            ]
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+            cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+            return 422, f"DELETE requested for unknown kind {kind[0]}.{kind[1]}; ignoring."
+
 
         fullitem = f"{kind[0]}.{kind[1]} {name}"
         if namespaced:
@@ -2623,7 +2666,15 @@ class KubernetesHelper:
                 api = deep_get(kubernetes_resources[kind], DictPath("api"))
                 namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
             else:
-                raise ValueError(f"kind unknown: {kind}; this is most likely a programming error")
+                # If the kind is unknown we fail the request
+                errmsg: list[list[tuple[str, str]]] = [
+                    [("Unhandled GET request: kind ", "default"),
+                     (f"{kind[0]}.{kind[1]}", "argument"),
+                     (" is not supported; ignoring request.", "default")],
+                ]
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(errmsg)
+                cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
+                return 422, f"GET requested for unknown kind {kind[0]}.{kind[1]}; ignoring."
         else:
             api_paths = [raw_path]
             api = ""
