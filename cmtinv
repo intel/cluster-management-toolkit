@@ -1093,11 +1093,14 @@ def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
     # The first patch revision that isn't available from the new repositories is 1.24.0,
     # but anything older than 1.28.0 is signed with a key that has expired, so only
     # include 1.28.0 and newer; the old repository is no longer usable.
-    if (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")) is None:
+    if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
         ansithemeprint([ANSIThemeStr("Error", "error"),
-                        ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
-                                     "default"),
-                        ANSIThemeStr("this is either a network error or a bug; aborting.",
+                        ANSIThemeStr(": Could not determine the latest upstream Kubernetes "
+                                     "version; ", "default"),
+                        ANSIThemeStr("please run ", "default"),
+                        ANSIThemeStr(f"{about.ADMIN_PROGRAM_NAME} ", "programname"),
+                        ANSIThemeStr("check-versions", "command"),
+                        ANSIThemeStr(" to update the version cache; aborting.",
                                      "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
