@@ -2264,7 +2264,7 @@ def list_api_resources(options: list[tuple[str, str]], args: list[str]) -> int:
 
                 # OK, this is a kind known by CMT that is available in the cluster;
                 # is this particular API-version known by CMT?
-                if known_filter["updated"]:
+                if kind_tuple in kubernetes_resources and known_filter["updated"]:
                     if api_group_version in deep_get(kubernetes_resources[kind_tuple],
                                                      DictPath("api_paths")):
                         continue
