@@ -1,15 +1,10 @@
 ---
-- name: "csi-driver"
+- name: "csi-cephfsplugin"
   show_in_selector: false
   matchkeys:
-    - image_name: "/sig-storage/csi-node-driver-registrar"
-    - image_name: "/sig-storage/livenessprobe"
+    - image_name: "/sig-storage/csi-attacher"
   parser_rules:
     - name: "glog"
-    - name: "key_value_with_leading_message"
-      options:
-        versions:
-          - "version"
     - name: "override_severity"
       overrides:
         - matchtype: "startswith"

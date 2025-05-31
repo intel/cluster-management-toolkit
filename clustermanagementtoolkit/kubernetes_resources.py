@@ -1580,6 +1580,75 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
         "api": "volumeuploadsources",
     },
+    # ceph.rook.io
+    ("CephBlockPoolRadosNamespace", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephblockpoolradosnamespaces",
+    },
+    ("CephBlockPool", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephblockpools",
+    },
+    ("CephBucketNotification", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephbucketnotifications",
+    },
+    ("CephBucketTopic", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephbuckettopics",
+    },
+    ("CephClient", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephclients",
+    },
+    ("CephCluster", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephclusters",
+    },
+    ("CephCOSIDriver", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephcosidrivers",
+    },
+    ("CephFilesystemMirror", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephfilesystemmirrors",
+    },
+    ("CephFilesystem", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephfilesystems",
+    },
+    ("CephFilesystemSubVolumeGroup", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephfilesystemsubvolumegroups",
+    },
+    ("CephNFS", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephnfses",
+    },
+    ("CephObjectRealm", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephobjectrealms",
+    },
+    ("CephObjectStore", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephobjectstores",
+    },
+    ("CephObjectStoreUser", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephobjectstoreusers",
+    },
+    ("CephObjectZoneGroup", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephobjectzonegroups",
+    },
+    ("CephObjectZone", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephobjectzones",
+    },
+    ("CephRBDMirror", "ceph.rook.io"): {
+        "api_paths": ["apis/ceph.rook.io/v1/"],
+        "api": "cephrbdmirrors",
+    },
     # cert-manager.io <= rename from: certmanager.k8s.io
     ("Certificate", "cert-manager.io"): {
         "api_paths": ["apis/cert-manager.io/v1/",
@@ -4211,6 +4280,16 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("UserOAuthAccessToken", "oauth.openshift.io"): {
         "api_paths": ["apis/oauth.openshift.io/v1/"],
         "api": "useroauthaccesstokens",
+        "namespaced": False,
+    },
+    # objectbucket.io
+    ("ObjectBucketClaim", "objectbucket.io"): {
+        "api_paths": ["apis/objectbucket.io/v1alpha1/"],
+        "api": "objectbucketclaims",
+    },
+    ("ObjectBucket", "objectbucket.io"): {
+        "api_paths": ["apis/objectbucket.io/v1alpha1/"],
+        "api": "objectbuckets",
         "namespaced": False,
     },
     # olm.operatorframework.io

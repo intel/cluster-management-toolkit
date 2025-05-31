@@ -2,10 +2,10 @@
 - name: "csi-generic"
   show_in_selector: false
   matchkeys:
-    - pod_name: "csi-attacher"
-    - pod_name: "csi-provisioner"
-    - pod_name: "csi-resizer"
-    - pod_name: "csi-snapshotter"
+    - image_name: "/sig-storage/csi-attacher"
+    - image_name: "/sig-storage/csi-provisioner"
+    - image_name: "/sig-storage/csi-resizer"
+    - image_name: "/sig-storage/csi-snapshotter"
   parser_rules:
     - name: "glog"
     - name: "key_value_with_leading_message"
@@ -13,3 +13,11 @@
         versions:
           - "version"
     - name: "expand_event"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Version:"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "\"Version\" version="
+          loglevel: "notice"

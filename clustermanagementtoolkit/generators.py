@@ -644,7 +644,7 @@ def generator_basic(obj: dict, field: str, fieldlen: int, pad: bool,
 
     if string in ("<none>", "<unknown>"):
         fmt = ThemeAttr("types", "none")
-    elif string == "<default>":
+    elif string in ("<default>", "<unbounded>"):
         fmt = ThemeAttr("types", "default")
     elif string in ("<undefined>", "<unspecified>"):
         fmt = ThemeAttr("types", "undefined")
@@ -906,8 +906,11 @@ def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: bo
     array: list[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
 
-    if value in ("<none>", "<unset>", "<unknown>"):
-        fmt = ThemeAttr("types", "none")
+    if value in ("<default>", "<none>", "<unset>", "<unbounded>", "<unknown>"):
+        if value in ("<default>", "<unbounded>"):
+            fmt = ThemeAttr("types", "default")
+        else:
+            fmt = ThemeAttr("types", "none")
         array = [ThemeStr(value, fmt, selected)]
         return align_and_pad(array, fieldlen=fieldlen, pad=pad, ralign=ralign, selected=selected)
 
