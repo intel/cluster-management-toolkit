@@ -1,0 +1,42 @@
+---
+- name: "ceph"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/rook/ceph"
+  parser_rules:
+    - name: "glog"
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]) \| (.+?): (.*)'
+        severity:
+          field: 1
+          transform: "letter"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+- name: "ceph"
+  show_in_selector: false
+  matchkeys:
+    - container_name: "ceph-crash"
+      image_name: "/ceph/ceph"
+  parser_rules:
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]+?):(ceph-crash):(.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "[errno "
+          loglevel: "error"

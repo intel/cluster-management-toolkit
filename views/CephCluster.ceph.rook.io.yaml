@@ -1,0 +1,298 @@
+---
+kind: "CephCluster"
+api_family: "ceph.rook.io"
+default_command: "cephclusters"
+command:
+  - "cephclrs"
+  - "cephclr"
+listview:
+  name: "Ceph Clusters"
+  group: "Storage & Backups"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "datadir_hostpath", "mon_count",
+               "phase", "state", "age", "message"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "datadir_hostpath",
+               "phase", "state", "age"]
+      sortcolumn: "namespace"
+  fields:
+    datadir_hostpath:
+      header: "Datadir Hostpath:"
+      path: "spec#dataDirHostPath"
+      type: "str"
+      formatting:
+        - type: "path"
+    message:
+      header: "Message:"
+      path: "status#message"
+      type: "str"
+    mon_count:
+      header: "Mon Count:"
+      path: "spec#mon#count"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Connected:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            Connecting:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            Deleting:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            DeletionIsBlocked:
+              field_colors:
+                - context: "main"
+                  type: "status_warning"
+            Failure:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            RadosNamespaceDeletionIsBlocked:
+              field_colors:
+                - context: "main"
+                  type: "status_warning"
+            PodDeletionIsBlocked:
+              field_colors:
+                - context: "main"
+                  type: "status_warning"
+            Progressing:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            Ready:
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+    state:
+      header: "State:"
+      path: "status#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Connected:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            Connecting:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            Created:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            Creating:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            Error:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            Updating:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+infoview:
+  name: "Ceph Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ceph_version_header",
+                 "ceph_version_image",
+                 "ceph_version_version",
+                 "ceph_version_allow_unsupported",
+                 "datadir_hostpath",
+                 "storage_header", "storage_device_filter",
+                 "storage_device_path_filter", "storage_devices",
+                 "storage_use_all_devices",
+                 "storage_flapping_restart_interval_hours",
+                 "mon_count", "phase", "state", "message"]
+    rows:
+      ceph_version_allow_unsupported:
+        header: [["  Allow Unsupported:", ["main", "infoheader"]]]
+        path: "spec#cephVersion#allowUnsupported"
+        default: "<unset>"
+        type: "bool"
+      ceph_version_header:
+        header: [["Ceph Version:", ["main", "infoheader"]]]
+      ceph_version_image:
+        header: [["  Image:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#cephVersion#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+            default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      ceph_version_version:
+        header: [["  Version:", ["main", "infoheader"]]]
+        path: "status#version#version"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      datadir_hostpath:
+        header: [["Datadir Hostpath:", ["main", "infoheader"]]]
+        path: "spec#dataDirHostPath"
+        type: "str"
+        formatting:
+          - type: "path"
+      storage_device_filter:
+        header: [["  Device Filter:", ["main", "infoheader"]]]
+        path: "spec#storage#deviceFilter"
+        default: "<unset>"
+        type: "str"
+      storage_device_path_filter:
+        header: [["  Device Path Filter:", ["main", "infoheader"]]]
+        path: "spec#storage#devicePathFilter"
+        default: "<unset>"
+        type: "str"
+      storage_devices:
+        header: [["  ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["evices:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#storage#devices"
+            pathtype: "items"
+            subpaths:
+              - "name"
+        formatter: "list"
+        formatting:
+          - type: "path"
+      storage_header:
+        header: [["Storage:", ["main", "infoheader"]]]
+      storage_flapping_restart_interval_hours:
+        header: [["  Flapping Restart Interval Hours:", ["main", "infoheader"]]]
+        path: "spec#storage#flappingRestartIntervalHours"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      storage_use_all_devices:
+        header: [["  Use All Devices:", ["main", "infoheader"]]]
+        path: "spec#storage#useAllDevices"
+        default: "<unset>"
+        type: "bool"
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        path: "status#message"
+        type: "str"
+      mon_count:
+        header: [["Mon Count:", ["main", "infoheader"]]]
+        path: "spec#mon#count"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Connected:
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+              Connecting:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              Deleting:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              DeletionIsBlocked:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              Failure:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              RadosNamespaceDeletionIsBlocked:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              PodDeletionIsBlocked:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              Progressing:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              Ready:
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Connected:
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+              Connecting:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              Created:
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+              Creating:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              Error:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              Updating:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+  shortcuts:
+    "Storage Devices":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Storage devices"
+      widget: "windowwidget"
+      title: "Storage Devices:"
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#storage#devices"
+        subpaths:
+        fields:
+          - "name"
