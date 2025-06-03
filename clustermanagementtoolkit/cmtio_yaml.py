@@ -138,6 +138,7 @@ def secure_read_yaml(path: FilePath, **kwargs: Any) -> Union[dict,
             ruyaml.composer.ComposerError (synchronous mode)
             ruyaml.parser.ParserError (synchronous mode)
             ruyaml.scanner.ScannerError (synchronous mode)
+            ruyaml.constructor.DuplicateKeyError (synchronous mode)
             yaml.parser.ParserError (asynchronous mode)
             FileNotFoundError
             cmttypes.FilePathAuditError

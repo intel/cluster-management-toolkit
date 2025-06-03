@@ -1,0 +1,172 @@
+---
+kind: "CephFilesystem"
+api_family: "ceph.rook.io"
+default_command: "cephfilesystems"
+command:
+  - "cephfs"
+listview:
+  name: "Ceph Filesystems"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "metadata_servers_active", "phase", "age"]
+      sortcolumn: "namespace"
+  fields:
+    metadata_servers_active:
+      header: "Metadata Servers (Active):"
+      path: "spec#metadataServer#activeCount"
+      type: "int"
+      default: "<unset>"
+      formatter: "numerical"
+      align: "right"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Connecting:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            Connected:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+            Deleting:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            DeletionIsBlocked:
+              field_colors:
+                - context: "main"
+                  type: "status_warning"
+            Failure:
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+            PoolDeletionIsBlocked:
+              field_colors:
+                - context: "main"
+                  type: "status_warning"
+            Progressing:
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            RadosNamespaceDeletionIsBlocked:
+              field_colors:
+                - context: "main"
+                  type: "status_warning"
+            Ready:
+              field_colors:
+                - context: "main"
+                  type: "status_done"
+infoview:
+  name: "Ceph Filesystem Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["metadata_server_header",
+                 "metadata_server_active",
+                 "metadata_server_active_standby",
+                 "metadata_server_priority_class",
+                 "preserve_filesystem_on_delete",
+                 "phase"]
+    rows:
+      metadata_server_header:
+        header: [["Metadata Server:", ["main", "infoheader"]]]
+      metadata_server_active:
+        header: [["  Active:", ["main", "infoheader"]]]
+        path: "spec#metadataServer#activeCount"
+        type: "int"
+        default: "<unset>"
+        formatter: "numerical"
+      metadata_server_active_standby:
+        header: [["  Active Standby:", ["main", "infoheader"]]]
+        path: "spec#metadataServer#activeStandby"
+        default: "<unset>"
+        type: "bool"
+      metadata_server_priority_class:
+        header: [["  ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["riority Class:", ["main", "infoheader"]]]
+        path: "spec#metadataServer#priorityClassName"
+        default: "<default>"
+        type: "str"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Connecting:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              Connected:
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+              Deleting:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              DeletionIsBlocked:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              Failure:
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
+              PoolDeletionIsBlocked:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              Progressing:
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              RadosNamespaceDeletionIsBlocked:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              Ready:
+                field_colors:
+                  - context: "main"
+                    type: "status_done"
+      preserve_filesystem_on_delete:
+        header: [["Preserve Filesystem on Delete:", ["main", "infoheader"]]]
+        path: "spec#preserveFilesystemOnDelete"
+        default: "<unset>"
+        type: "bool"
+  shortcuts:
+    "Show affinities":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show affinities"
+      title: "Affinities:"
+      widget: "windowwidget"
+      headers: ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"]
+      itemgetter: "get_pod_affinity"
+      itemgetter_args:
+        path: "spec#metadataServer#placement"
+      # This isn't supported for now
+      sortcolumn: "type"
+    "Priority Class":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Priority Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "PriorityClass"
+        api_family: "scheduling.k8s.io"
+        name_path: "spec#metadataServer#priorityClassName"

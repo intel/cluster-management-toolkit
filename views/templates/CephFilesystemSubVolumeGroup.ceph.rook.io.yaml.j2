@@ -1,0 +1,89 @@
+---
+kind: "CephFilesystemSubVolumeGroup"
+api_family: "ceph.rook.io"
+default_command: "cephfilesystemsubvolumegroups"
+command:
+  - "acephfssvgs"
+  - "acephfssvg"
+  - "cephsvgs"
+  - "cephsvg"
+listview:
+  name: "Ceph Filesystem Subvolume Groups"
+  group: "Storage & Backups"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "filesystem_name", "pinning",
+               "phase", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "filesystem_name", "phase", "age"]
+      sortcolumn: "namespace"
+  fields:
+    filesystem_name:
+      header: "Filesystem Name:"
+      path: "spec#filesystemName"
+      type: "str"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            {%- for line in ceph_condition_type.split("\n") %}
+            {{ line }}
+            {%- endfor %}
+    pinning:
+      header: "Pinning:"
+      paths:
+        - path: "status#info#pinning"
+          pathtype: "regex"
+          regex: "^(.+?)=(.*)"
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "key"
+          - type: "value"
+        field_separators:
+          - type: "equals"
+infoview:
+  name: "Ceph Filesystem Subvolume Group Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["filesystem_name", "cluster_id", "pinning", "phase"]
+    rows:
+      cluster_id:
+        header: [["Cluster ID:", ["main", "infoheader"]]]
+        path: "status#info#clusterID"
+        type: "str"
+        formatter: "hex"
+      filesystem_name:
+        header: [["Filesystem Name:", ["main", "infoheader"]]]
+        path: "spec#filesystemName"
+        type: "str"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              {%- for line in ceph_condition_type.split("\n") %}
+              {{ line }}
+              {%- endfor %}
+      pinning:
+        header: [["Pinning:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#info#pinning"
+            pathtype: "regex"
+            regex: "^(.+?)=(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "equals"
