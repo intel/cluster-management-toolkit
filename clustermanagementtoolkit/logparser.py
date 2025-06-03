@@ -4119,8 +4119,10 @@ def init_parser_list() -> None:
             try:
                 dl = [list(d) for d in temp_dl]
             except (ruyaml.composer.ComposerError,
+                    ruyaml.constructor.DuplicateKeyError,
                     ruyaml.parser.ParserError,
-                    ruyaml.scanner.ScannerError) as e:
+                    ruyaml.scanner.ScannerError,
+                    TypeError) as e:
                 errmsg = [
                     [("Failed to load parser-file ", "default"),
                      (f"{parser_file}", "path"),
@@ -4143,6 +4145,7 @@ def init_parser_list() -> None:
             try:
                 d = list(secure_read_yaml(parser_file, directory_is_symlink=True))
             except (ruyaml.composer.ComposerError,
+                    ruyaml.constructor.DuplicateKeyError,
                     ruyaml.parser.ParserError,
                     ruyaml.scanner.ScannerError,
                     TypeError) as e:

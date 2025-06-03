@@ -8472,7 +8472,11 @@ def __populate_playbooklist(path: FilePath, action_list: dict) -> dict:
 
         try:
             d = list(secure_read_yaml(FilePath(playbookpath), directory_is_symlink=True))
-        except (yaml.YAMLError, TypeError):
+        except (ruyaml.composer.ComposerError,
+                ruyaml.constructor.DuplicateKeyError,
+                ruyaml.parser.ParserError,
+                ruyaml.scanner.ScannerError,
+                TypeError):
             # This entry could not be parsed; add a dummy entry
             action_list[playbookname] = {
                 "description": playbookpath,
@@ -9347,8 +9351,10 @@ def populate_views(force_refresh: bool = False) -> None:
         try:
             d = dict(secure_read_yaml(FilePath(view_file), directory_is_symlink=True))
         except (ruyaml.composer.ComposerError,
+                ruyaml.constructor.DuplicateKeyError,
                 ruyaml.parser.ParserError,
-                ruyaml.scanner.ScannerError) as e:
+                ruyaml.scanner.ScannerError,
+                TypeError) as e:
             printable_errmsg = [
                 [("View-file ", "default"),
                  (f"{view_file}", "path"),
