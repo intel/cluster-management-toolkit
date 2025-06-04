@@ -1,0 +1,84 @@
+---
+kind: "CephClient"
+api_family: "ceph.rook.io"
+default_command: "cephclients"
+command:
+  - "cephcls"
+  - "cephcl"
+listview:
+  name: "Ceph Clients"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "phase", "secret_name", "age"]
+      sortcolumn: "namespace"
+  fields:
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            {%- for line in ceph_condition_type.split("\n") %}
+            {{ line }}
+            {%- endfor %}
+    secret_name:
+      header: "Secret Name:"
+      path: "status#info#secretName"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "Ceph Client Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["secret_name",
+                 "capabilities_header",
+                 "capabilities_monitors",
+                 "capabilities_object_storage_daemons",
+                 "phase"]
+    rows:
+      capabilities_header:
+        header: [["Capabilities:", ["main", "infoheader"]]]
+      capabilities_monitors:
+        header: [["  Monitor:", ["main", "infoheader"]]]
+        path: "spec#caps#mon"
+        default: "<unset>"
+        type: "str"
+      capabilities_object_storage_daemons:
+        header: [["  Object Storage Daemon:", ["main", "infoheader"]]]
+        path: "spec#caps#osd"
+        default: "<unset>"
+        type: "str"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              {%- for line in ceph_condition_type.split("\n") %}
+              {{ line }}
+              {%- endfor %}
+      secret_name:
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ecret Name:", ["main", "infoheader"]]]
+        path: "status#info#secretName"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Secret":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        name_path: "status#info#secretName"
+        namespace_path: "metadata#namespace"

@@ -12,16 +12,24 @@ listview:
   group: "Storage & Backups"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "filesystem_name", "pinning",
-               "phase", "age"]
+      fields: ["namespace", "name", "filesystem_name", "subvolume_name",
+               "data_pool_name", "pinning", "phase", "age"]
       sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "filesystem_name", "phase", "age"]
+      fields: ["namespace", "name", "filesystem_name", "subvolume_name",
+               "phase", "age"]
       sortcolumn: "namespace"
   fields:
+    data_pool_name:
+      header: "Data Pool:"
+      path: "spec#dataPoolName"
+      default: "<unset>"
+      fallback_on_empty: true
+      type: "str"
     filesystem_name:
-      header: "Filesystem Name:"
+      header: "Filesystem:"
       path: "spec#filesystemName"
+      default: "<unset>"
       type: "str"
     phase:
       header: "Phase:"
@@ -47,21 +55,35 @@ listview:
           - type: "value"
         field_separators:
           - type: "equals"
+    subvolume_name:
+      header: "Subvolume:"
+      path: "spec#name"
+      default: "<unset>"
+      type: "str"
 infoview:
   name: "Ceph Filesystem Subvolume Group Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["filesystem_name", "cluster_id", "pinning", "phase"]
+        fields: ["filesystem_name", "subvolume_name", "data_pool_name",
+                 "cluster_id", "pinning", "phase"]
     rows:
       cluster_id:
         header: [["Cluster ID:", ["main", "infoheader"]]]
         path: "status#info#clusterID"
         type: "str"
         formatter: "hex"
+      data_pool_name:
+        header: [["Data Pool Name:", ["main", "infoheader"]]]
+        path: "spec#dataPoolName"
+        default: "<unset>"
+        fallback_on_empty: true
+        type: "str"
       filesystem_name:
-        header: [["Filesystem Name:", ["main", "infoheader"]]]
+        header: [["F", ["main", "infoheader_shortcut"]],
+                 ["ilesystem Name:", ["main", "infoheader"]]]
         path: "spec#filesystemName"
+        default: "<unset>"
         type: "str"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
@@ -87,3 +109,22 @@ infoview:
             - type: "value"
           field_separators:
             - type: "equals"
+      subvolume_name:
+        header: [["Subvolume Name:", ["main", "infoheader"]]]
+        path: "spec#name"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Filesystem":
+      key: "f"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Ceph Filesystem"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "CephFilesystem"
+        api_family: "ceph.rook.io"
+        name_path: "spec#filesystemName"
+        namespace_path: "metadata#namespace"

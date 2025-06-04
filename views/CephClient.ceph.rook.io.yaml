@@ -1,36 +1,18 @@
 ---
-kind: "CephFilesystemSubVolumeGroup"
+kind: "CephClient"
 api_family: "ceph.rook.io"
-default_command: "cephfilesystemsubvolumegroups"
+default_command: "cephclients"
 command:
-  - "acephfssvgs"
-  - "acephfssvg"
-  - "cephsvgs"
-  - "cephsvg"
+  - "cephcls"
+  - "cephcl"
 listview:
-  name: "Ceph Filesystem Subvolume Groups"
+  name: "Ceph Clients"
   group: "Storage & Backups"
   field_indexes:
-    Wide:
-      fields: ["namespace", "name", "filesystem_name", "subvolume_name",
-               "data_pool_name", "pinning", "phase", "age"]
-      sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "filesystem_name", "subvolume_name",
-               "phase", "age"]
+      fields: ["namespace", "name", "phase", "secret_name", "age"]
       sortcolumn: "namespace"
   fields:
-    data_pool_name:
-      header: "Data Pool:"
-      path: "spec#dataPoolName"
-      default: "<unset>"
-      fallback_on_empty: true
-      type: "str"
-    filesystem_name:
-      header: "Filesystem:"
-      path: "spec#filesystemName"
-      default: "<unset>"
-      type: "str"
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -75,47 +57,32 @@ listview:
               field_colors:
                 - context: "main"
                   type: "status_done"
-    pinning:
-      header: "Pinning:"
-      paths:
-        - path: "status#info#pinning"
-          pathtype: "regex"
-          regex: "^(.+?)=(.*)"
-      formatter: "list"
-      formatting:
-        field_colors:
-          - type: "key"
-          - type: "value"
-        field_separators:
-          - type: "equals"
-    subvolume_name:
-      header: "Subvolume:"
-      path: "spec#name"
+    secret_name:
+      header: "Secret Name:"
+      path: "status#info#secretName"
       default: "<unset>"
       type: "str"
 infoview:
-  name: "Ceph Filesystem Subvolume Group Info"
+  name: "Ceph Client Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["filesystem_name", "subvolume_name", "data_pool_name",
-                 "cluster_id", "pinning", "phase"]
+        fields: ["secret_name",
+                 "capabilities_header",
+                 "capabilities_monitors",
+                 "capabilities_object_storage_daemons",
+                 "phase"]
     rows:
-      cluster_id:
-        header: [["Cluster ID:", ["main", "infoheader"]]]
-        path: "status#info#clusterID"
-        type: "str"
-        formatter: "hex"
-      data_pool_name:
-        header: [["Data Pool Name:", ["main", "infoheader"]]]
-        path: "spec#dataPoolName"
+      capabilities_header:
+        header: [["Capabilities:", ["main", "infoheader"]]]
+      capabilities_monitors:
+        header: [["  Monitor:", ["main", "infoheader"]]]
+        path: "spec#caps#mon"
         default: "<unset>"
-        fallback_on_empty: true
         type: "str"
-      filesystem_name:
-        header: [["F", ["main", "infoheader_shortcut"]],
-                 ["ilesystem Name:", ["main", "infoheader"]]]
-        path: "spec#filesystemName"
+      capabilities_object_storage_daemons:
+        header: [["  Object Storage Daemon:", ["main", "infoheader"]]]
+        path: "spec#caps#osd"
         default: "<unset>"
         type: "str"
       phase:
@@ -162,35 +129,22 @@ infoview:
                 field_colors:
                   - context: "main"
                     type: "status_done"
-      pinning:
-        header: [["Pinning:", ["main", "infoheader"]]]
-        paths:
-          - path: "status#info#pinning"
-            pathtype: "regex"
-            regex: "^(.+?)=(.*)"
-        formatter: "list"
-        formatting:
-          field_colors:
-            - type: "key"
-            - type: "value"
-          field_separators:
-            - type: "equals"
-      subvolume_name:
-        header: [["Subvolume Name:", ["main", "infoheader"]]]
-        path: "spec#name"
+      secret_name:
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ecret Name:", ["main", "infoheader"]]]
+        path: "status#info#secretName"
         default: "<unset>"
         type: "str"
   shortcuts:
-    "Filesystem":
-      key: "f"
+    "Secret":
+      key: "s"
       modifier: "shift"
       read_only: true
-      helptext: "Open info page for Ceph Filesystem"
+      helptext: "Open info page for Secret"
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: "CephFilesystem"
-        api_family: "ceph.rook.io"
-        name_path: "spec#filesystemName"
+        kind: "Secret"
+        name_path: "status#info#secretName"
         namespace_path: "metadata#namespace"

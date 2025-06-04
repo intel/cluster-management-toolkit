@@ -11,7 +11,7 @@ listview:
   field_indexes:
     Normal:
       fields: ["namespace", "name", "condition_ready",
-               "secret", "issuer", "status_message", "age"]
+               "secret_name", "issuer", "status_message", "age"]
       sortcolumn: "namespace"
   fields:
     condition_ready:
@@ -53,9 +53,10 @@ listview:
           - type: "generic"
         field_separators:
           - type: "kind"
-    secret:
-      header: "Secret:"
+    secret_name:
+      header: "Secret Name:"
       path: "spec#secretName"
+      default: "<unset>"
       type: "str"
     status_message:
       header: "Status:"
@@ -154,9 +155,9 @@ infoview:
       secret_name:
         header: [["S", ["main", "infoheader_shortcut"]],
                  ["ecret Name:", ["main", "infoheader"]]]
-        paths:
-          - path: ["spec#secretName"]
-            pathtype: "str"
+        path: "spec#secretName"
+        default: "<unset>"
+        pathtype: "str"
       status_message:
         header: [["Status:", ["main", "infoheader"]]]
         paths:
@@ -198,7 +199,7 @@ infoview:
         api_family: "cert-manager.io"
         name_path: "spec#issuerRef#name"
         namespace_path: "metadata#namespace"
-    "Secret Name":
+    "Secret":
       key: "s"
       modifier: "shift"
       read_only: true
