@@ -2155,7 +2155,7 @@ def __move_xoffset(**kwargs: Any) -> tuple[Retval, dict]:
     maxxoffset: int = deep_get(kwargs, DictPath("maxxoffset"))
     xoffset: int = deep_get(kwargs, DictPath("xoffset"))
     offset: int = deep_get(kwargs, DictPath("offset"))
-    return Retval.MATCH, {"xoffset": max(maxxoffset, min(0, xoffset + offset))}
+    return Retval.MATCH, {"xoffset": cmtlib.clamp(xoffset + offset, 0, maxxoffset)}
 
 
 def __move_cur_with_offset(**kwargs: Any) -> tuple[Retval, dict]:
@@ -2194,7 +2194,7 @@ windowwidget_shortcuts = {
     },
     "Scroll one character left": {
         "helptext": ("[Left]", "Scroll one character left"),
-        "shortcut": [curses.KEY_RIGHT],
+        "shortcut": [curses.KEY_LEFT],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __move_xoffset,
@@ -2254,7 +2254,7 @@ windowwidget_shortcuts = {
     },
     "Jump to beginning of row": {
         "helptext": ("[Home]", "Jump to beginning of row"),
-        "shortcut": [curses.KEY_SHOME],
+        "shortcut": [curses.KEY_HOME],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __move_xoffset,
@@ -2264,7 +2264,7 @@ windowwidget_shortcuts = {
     },
     "Jump to end of row": {
         "helptext": ("[End]", "Jump to end of row"),
-        "shortcut": [curses.KEY_SEND],
+        "shortcut": [curses.KEY_END],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __move_xoffset,
