@@ -874,9 +874,9 @@ def name_to_loglevel(severity: str) -> LogLevel:
     Given a severity string, return its numerical number.
 
         Parameters:
-            name  (int): The corresponding numerical loglevel
+            severity (str): A severity string
         Returns:
-            (str): A severity string
+            (LogLevel): The corresponding numerical loglevel
     """
     for severity_, severity_string_ in loglevel_mappings.items():
         if severity_string_.lower() == severity.lower():
@@ -891,7 +891,7 @@ def loglevel_to_name(loglevel: LogLevel) -> str:
     If loglevel is missing or out of range it will be substituted with LogLevel.INFO.
 
         Parameters:
-            loglevel (int): The corresponding numerical loglevel
+            loglevel (LogLevel): A numerical loglevel
         Returns:
             (str): A severity string
     """

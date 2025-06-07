@@ -1711,12 +1711,12 @@ def split_bracketed_timestamp_severity_facility(message: str,
             **kwargs (dict[str, Any]): Keyword arguments
                 default: The default severity to return if the message coouldn't be split
         Returns:
-            (str, LogLeve, str):
+            (str, LogLevel, str):
                 (str): The message part
                 (LogLevel): The extracted LogLevel
                 (str): The facility
     """
-    severity: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.INFO)
+    severity: LogLevel = deep_get(kwargs, DictPath("default_loglevel"), LogLevel.INFO)
     facility: str = ""
 
     tmp = re.match(r"^\[([^ ]+) ([^ ]+) (.+?)\]: (.+)", message)
