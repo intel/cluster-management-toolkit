@@ -96,12 +96,18 @@
           fi
           killall -q weaver || true
       changed_when: false
-    - name: "Removing leftover network configurations"
+    - name: "Removing leftover network configuration and binaries"
       ansible.builtin.shell:
         executable: "/bin/bash"
         cmd: |
           set -o pipefail
-          rm -rf /etc/cni /var/lib/cni /var/lib/weave
+          rm -rf /etc/cni/* /var/lib/cni /var/lib/weave
+          rm -rf /opt/cni/bin/antrea
+          rm -rf /opt/cni/bin/calico
+          rm -rf /opt/cni/bin/calico-ipam
+          rm -rf /opt/cni/bin/cilium-cni
+          rm -rf /opt/cni/bin/flannel
+          rm -rf /opt/cni/bin/weave
           iptables -F
           iptables -t nat -F
           iptables -t mangle -F
