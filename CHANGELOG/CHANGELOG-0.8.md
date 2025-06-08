@@ -78,6 +78,9 @@ No changes.
   by using `sed`.  This should, in most cases, be more resilient.
 * Upgrading `cilium` now works properly.
 * There's now a command that allows for importing kubeconfig files.
+* It is now possible to specify whether or not the cluster-name should
+  be appended to the kubernetes-admin username in .kube/config.
+* Extra arguments can now be supplied when installing helm charts.
 
 ### Changes to _cmtinv_ in v0.8.6
 
@@ -101,6 +104,7 @@ No changes.
   earlier cmu would raise an exception if it encountered owner references
   for resources that it did not know about (possibly also in other places).
   Now it'll log a message about it and silently ignore the request.
+* ClusterDeployment v1alpha5; support options.suffixAdmin and helm.extraArgs.
 
 ### Notable view-file changes (by API-files)
 

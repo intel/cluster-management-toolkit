@@ -1045,9 +1045,10 @@ def setup_cni(options: list[tuple[str, str]], args: list[str]) -> None:
         sys.exit(errno.EINVAL)
 
     installation_info = get_installation_info()
-    cluster_name = installation_info["installation_target"]
+    cluster_name = deep_get(installation_info, DictPath("installation_target"))
     cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
-    admin_name = f"kubernetes-admin+{cluster_name}"
+    admin_name = deep_get(installation_info, DictPath(f"{cluster_name}#admin_name"),
+                          f"kubernetes-admin+{cluster_name}")
     context_name = f"{admin_name}@{cluster_name}"
 
     if cni not in ("", "none", "<none>", "<unknown>") and not reinstall:
@@ -2452,7 +2453,10 @@ def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> 
         Parameters:
             installation_info (dict): A dict with installation information
     """
-    cluster_name = installation_info["installation_target"]
+    cluster_name = deep_get(installation_info, DictPath("installation_target"))
+    admin_name = deep_get(installation_info, DictPath(f"{cluster_name}#admin_name"),
+                          f"kubernetes-admin+{cluster_name}")
+    context_name = f"{admin_name}@{cluster_name}"
     config_file_name = FilePath(f"{HOMEDIR}/.kube/config.{cluster_name}")
 
     d1: Union[dict[str, Any], ruyaml.comments.CommentedSeq] = {}
@@ -2474,6 +2478,21 @@ def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> 
         d1 = secure_read_yaml(KUBE_CONFIG_FILE, checks=security_checks)
     except (FileNotFoundError, TypeError):
         pass
+
+    # Before merging we may need to rename the admin user + context
+    for context in deep_get(d2, DictPath("contexts"), []):
+        if deep_get(context, DictPath("name")) in (context_name,
+                                                   f"kubernetes-admin@{cluster_name}"):
+            context["context"]["user"] = admin_name
+            context["name"] = context_name
+
+    for user in deep_get(d2, DictPath("users"), []):
+        if deep_get(user, DictPath("name")) in (admin_name, f"kubernetes-admin"):
+            user["name"] = admin_name
+
+    if deep_get(d2, DictPath("current-context")) in (context_name,
+                                                     f"kubernetes-admin@{cluster_name}"):
+        d2["current-context"] = context_name
 
     d1 = merge_kubeconfigs(d1, d2)
 
@@ -2566,9 +2585,10 @@ def __task_setup_cni(installation_info: dict, verbose: bool = False) -> None:
         Parameters:
             installation_info (dict): A dict with installation information
     """
-    cluster_name = installation_info["installation_target"]
-    cni = installation_info[cluster_name]["cni"]
-    admin_name = f"kubernetes-admin+{cluster_name}"
+    cluster_name = deep_get(installation_info, DictPath("installation_target"))
+    cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
+    admin_name = deep_get(installation_info, DictPath(f"{cluster_name}#admin_name"),
+                          f"kubernetes-admin+{cluster_name}")
     context_name = f"{admin_name}@{cluster_name}"
 
     # If everything is successful so far we deploy the pod network
@@ -2856,8 +2876,9 @@ def __task_remove_kubeconfig(installation_info: dict, verbose: bool = False) -> 
         check_and_print_status(True)
         return
 
-    cluster_name = installation_info["installation_target"]
-    admin_name = f"kubernetes-admin+{cluster_name}"
+    cluster_name = deep_get(installation_info, DictPath("installation_target"))
+    admin_name = deep_get(installation_info, DictPath(f"{cluster_name}#admin_name"),
+                          f"kubernetes-admin+{cluster_name}")
     context_name = f"{admin_name}@{cluster_name}"
     d1 = None
 
@@ -4441,7 +4462,7 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                         ANSIThemeStr(" configuration; aborting.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
-    if cd_api_version not in ("v1alpha1", "v1alpha2", "v1alpha3", "v1alpha4"):
+    if cd_api_version not in ("v1alpha1", "v1alpha2", "v1alpha3", "v1alpha4", "v1alpha5"):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": ", "default"),
                         ANSIThemeStr("The apiVersion ", "default"),
@@ -4465,6 +4486,8 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
         cni_executable_version = None
     no_password = not deep_get(cd, DictPath("options#promptForPassword"), True)
     save_ansible_logs = deep_get(cd, DictPath("options#saveAnsibleLogs"), False)
+
+    suffix_admin = deep_get(cd, DictPath("options#suffixAdmin"), True)
 
     control_planes = deep_get(cd, DictPath("cluster#controlPlanes"))
     if control_planes is None or not control_planes:
@@ -4491,10 +4514,18 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                        stderr=True)
         sys.exit(errno.EINVAL)
 
+    # Create the admin name and context name
+    if suffix_admin:
+        admin_name: str = f"kubernetes-admin+{cluster_name}"
+    else:
+        admin_name = "kubernetes-admin"
+    context_name: str = f"{admin_name}@{cluster_name}"
+
     if deep_get(installation_info, DictPath("installation_target")) != cluster_name:
         installation_info = \
             update_installation_info(installation_target=cluster_name,
-                                     cluster_name=cluster_name, distro=k8s_distro)
+                                     cluster_name=cluster_name, distro=k8s_distro,
+                                     admin_name=admin_name)
 
     rke2_configuration_path = \
         __get_configuration_data(cluster_deployment_file, "rke2Configuration",
@@ -4522,7 +4553,7 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                                  HOMEDIR.joinpath("templates", "config",
                                                   "kube_proxy_configuration.yaml.j2"))
 
-    nodes = []
+    nodes: list[str] = []
 
     # Get a list of all nodes in the cluster
     for _node_group, data in deep_get(cd, DictPath("nodes#groups"), {}).items():
@@ -4619,9 +4650,6 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
 
     state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
     phase = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
-
-    admin_name = f"kubernetes-admin+{cluster_name}"
-    context_name = f"{admin_name}@{cluster_name}"
 
     if kh is None:
         kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME,
@@ -4890,9 +4918,6 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
             update_installation_info(cluster_name=cluster_name, state=state, phase=phase)
 
     # Now we can setup the CNI
-    admin_name = f"kubernetes-admin+{cluster_name}"
-    context_name = f"{admin_name}@{cluster_name}"
-
     if state == "setup_cni":
         __setup_cni(cni, context_name, cluster_name,
                     cni_version=cni_version, cni_executable_version=cni_executable_version)
@@ -5279,6 +5304,7 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                     repo_url = deep_get(deployment, DictPath("repoURL"))
                     repo_name = deep_get(deployment, DictPath("repoName"))
                     version = deep_get(deployment, DictPath("version"))
+                    extra_flags = deep_get(deployment, DictPath("extraArgs"), [])
 
                     if None in (hname, chart, namespace, repo_url, repo_name, version):
                         ansithemeprint([ANSIThemeStr("Error", "error"),
@@ -5336,6 +5362,22 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                             "--version", version, "--install"]
                     if create_namespace:
                         args.append("--create-namespace")
+
+                    # Add extra flags if there are any
+                    for flags in extra_flags:
+                        if isinstance(flags, list):
+                            args += flags
+                        elif isinstance(flags, str):
+                            args.append(flags)
+                        else:
+                            ansithemeprint([ANSIThemeStr("Error", "error"),
+                                            ANSIThemeStr(": The workload ", "default"),
+                                            ANSIThemeStr(f"{name}", "argument"),
+                                            ANSIThemeStr(" is invalid; ", "default"),
+                                            ANSIThemeStr(f"extraArgs", "emphasis"),
+                                            ANSIThemeStr(" must be [str|list[str]]", "default"),
+                                            ANSIThemeStr("; aborting.", "default")], stderr=True)
+                            sys.exit(errno.EINVAL)
 
                     if verbose:
                         check_and_print_status(execute_command(args, env=env))

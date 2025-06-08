@@ -1,5 +1,5 @@
 ---
-apiVersion: "v1alpha4"
+apiVersion: "v1alpha5"
 kind: "ClusterDeployment"
 
 # yamllint disable rule:comments-indentation
@@ -72,6 +72,14 @@ options:
   # false
   # [optional; default: false]
   # saveAnsibleLogs: false
+
+  # Add the cluster name as suffix to admin account;
+  # by default the admin account created by kubeadm is always kubernetes-admin.
+  # This creates issues when merging multiple clusters into one .kube/config.
+  # If you only plan to have one cluster per .kube/config file you can
+  # safely say false here.
+  # [optional; default: true]
+  # suffixAdmin: true
 
 # Cluster-wide configuration and configuration for the control plane(s)
 cluster:
@@ -639,7 +647,7 @@ workloads:
           # version#; if <<<version>>> is encountered in a URI it will be
           # substituted for the value of the version field.
           # [optional; default: ""]
-          version: "v0.17.2"
+          version: "v0.17.3"
           # The URI[s] to the data;
           # this field can be either a string (a single URI) or a list
           # (a single or multiple URIs)
@@ -661,7 +669,7 @@ workloads:
       - kubectl:
           method: "apply"
           type: "file"
-          version: "v1.17.1"
+          version: "v1.17.2"
           # yamllint disable-line rule:line-length
           uri: "https://github.com/cert-manager/cert-manager/releases/download/<<<version>>>/cert-manager.crds.yaml"
       - helm:
@@ -678,7 +686,15 @@ workloads:
           # Create the namespace if it doesn't exist?
           createNamespace: true
           # The version to install
-          version: "v1.17.1"
+          version: "v1.17.2"
+          # Extra arguments to pass to helm.
+          # To allow logical grouping of options each option is its own list;
+          # these lists will be concatenated into once.
+          # Keep in mind that spaces will *NOT* be handled the way you might
+          # expect them to by the shell. You need to specify each "word"
+          # separately instead of separating them with a space.
+          # extraArgs:
+          #   - ["--set", "crds.enabled=true"]
   - name: "intel-resource-drivers-for-kubernetes"
     # If you enable this you need to enable DRA support too and use
     # Kubernetes 1.31 or newer
