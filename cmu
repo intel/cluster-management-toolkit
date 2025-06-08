@@ -50,11 +50,6 @@ import sys
 from typing import Any, cast, Optional, Type, Union
 from collections.abc import Callable
 try:
-    import yaml
-except ModuleNotFoundError:  # pragma: no cover
-    sys.exit("ModuleNotFoundError: Could not import yaml; "
-             "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
-try:
     import ruyaml
     ryaml = ruyaml.YAML()
     sryaml = ruyaml.YAML(typ="safe")
@@ -816,7 +811,7 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                                formatted_msg=formatted_msg)
 
     if "Custom" in field_indexes:
-        field_index = "Custom"
+        field_index: str = "Custom"
     elif "Wide" in field_indexes:
         field_index = "Wide"
     else:
@@ -3790,7 +3785,10 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     # XXX: For now we do not support custom fields for the lists on the info pages
     field_indexes = deep_get(viewref, DictPath("field_indexes"), {})
-    field_index = "Normal"
+    if "Wide" in field_indexes:
+        field_index: str = "Wide"
+    else:
+        field_index = "Normal"
 
     field_denylist = deep_get(viewref, DictPath("field_denylist"), [])
     fieldgenerator_args = {
