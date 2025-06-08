@@ -740,7 +740,7 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
     return none_timestamp()
 
 
-# pylint: disable-next=too-many-branches
+# pylint: disable-next=too-many-branches,too-many-statements
 def make_set_expression_list(expression_list: list[dict],
                              key: str = "", toleration: bool = False) -> list[tuple[str, str, str]]:
     """

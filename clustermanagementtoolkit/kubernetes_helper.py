@@ -503,7 +503,7 @@ def kind_tuple_to_name(kind: tuple[str, str]) -> str:
     return name
 
 
-# pylint: disable-next=too-many-branches
+# pylint: disable-next=too-many-branches,too-many-return-statements
 def guess_kind(kind: Union[str, tuple[str, str]]) -> tuple[str, str]:
     """
     Given a Kind without API-group, or (API-name, API-group)
@@ -1987,6 +1987,8 @@ class KubernetesHelper:
                     (int): The HTTP response
                     (bool): True if the list was updated, False otherwise
         """
+        global unknown_kubernetes_resources  # pylint: disable=global-statement
+
         modified = False
 
         # If the dict is not empty, but the cluster is unreachable, return it unchanged
@@ -2594,7 +2596,6 @@ class KubernetesHelper:
             cmtlog.log(LogLevel.ERR, msg=unformatted_msg, messages=formatted_msg)
             return 422, f"DELETE requested for unknown kind {kind[0]}.{kind[1]}; ignoring."
 
-
         fullitem = f"{kind[0]}.{kind[1]} {name}"
         if namespaced:
             fullitem = f"{fullitem} (namespace: {namespace})"
@@ -2625,7 +2626,7 @@ class KubernetesHelper:
     # and None for other requests; this way the result can be handled
     # unconditionally in for loops.
 
-    # pylint: disable-next=too-many-locals,too-many-branches
+    # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
     def __rest_helper_get(self, **kwargs: Any) -> \
             tuple[Union[Optional[dict], list[Optional[dict]]], int]:
         kind: Optional[tuple[str, str]] = deep_get(kwargs, DictPath("kind"))

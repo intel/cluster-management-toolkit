@@ -6615,7 +6615,7 @@ def resourceinfodispatch_from_selection(stdscr: curses.window, **kwargs: Any) ->
     return resourceinfodispatch(stdscr, obj=obj, kind=(kind, api_family), **kwargs)
 
 
-# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+# noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
 def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Dispatch to an object after doing various types of path-based lookups from
@@ -9341,7 +9341,6 @@ def populate_views(force_refresh: bool = False) -> None:
             if (kind, api_family) in available_api_families or kind.startswith("__"):
                 view_files.append(os.path.join(view_dir, filename))
 
-    # pylint: disable-next=too-many-nested-blocks
     for view_file in view_files:
         has_listview: bool = False
         has_infoview: bool = False

@@ -279,9 +279,9 @@ def get_key_value(obj: dict, **kwargs: Any) -> list[tuple[str, Any]]:
             d = d.split(",")
             try:
                 d = dict([key_value.split("=", maxsplit=1) for key_value in d])
-            except ValueError:
+            except ValueError as e:
                 # Log + Return empty?
-                raise TypeError("Could not convert list of key=value into a dict")
+                raise TypeError("Could not convert list of key=value into a dict") from e
         for key_, value_ in d.items():
             if isinstance(value_, (list, tuple)):
                 value = ",".join(value_)

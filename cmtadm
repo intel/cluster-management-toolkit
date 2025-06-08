@@ -2487,7 +2487,7 @@ def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> 
             context["name"] = context_name
 
     for user in deep_get(d2, DictPath("users"), []):
-        if deep_get(user, DictPath("name")) in (admin_name, f"kubernetes-admin"):
+        if deep_get(user, DictPath("name")) in (admin_name, "kubernetes-admin"):
             user["name"] = admin_name
 
     if deep_get(d2, DictPath("current-context")) in (context_name,
@@ -3885,7 +3885,7 @@ def import_kubeconfig(options: list[tuple[str, str]], args: list[str]) -> None:
         secure_write_yaml(KUBE_CONFIG_FILE, kubeconfig, permissions=0o600, sort_keys=False)
 
 
-# pylint: disable-next=unused-argument,too-many-locals
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def check_for_updates(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Check whether there are newer versions of packages that are related to the cluster.
@@ -5374,7 +5374,7 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                                             ANSIThemeStr(": The workload ", "default"),
                                             ANSIThemeStr(f"{name}", "argument"),
                                             ANSIThemeStr(" is invalid; ", "default"),
-                                            ANSIThemeStr(f"extraArgs", "emphasis"),
+                                            ANSIThemeStr("extraArgs", "emphasis"),
                                             ANSIThemeStr(" must be [str|list[str]]", "default"),
                                             ANSIThemeStr("; aborting.", "default")], stderr=True)
                             sys.exit(errno.EINVAL)

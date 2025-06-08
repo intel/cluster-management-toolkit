@@ -23,7 +23,8 @@ listview:
       path: "spec#dataDirHostPath"
       type: "str"
       formatting:
-        - type: "path"
+        field_colors:
+          - type: "path"
     message:
       header: "Message:"
       path: "status#message"
@@ -163,7 +164,8 @@ infoview:
         path: "spec#dataDirHostPath"
         type: "str"
         formatting:
-          - type: "path"
+          field_colors:
+            - type: "path"
       message:
         header: [["Message:", ["main", "infoheader"]]]
         path: "status#message"
@@ -245,7 +247,8 @@ infoview:
               - "name"
         formatter: "list"
         formatting:
-          - type: "path"
+          field_colors:
+            - type: "path"
       storage_header:
         header: [["Storage:", ["main", "infoheader"]]]
       storage_flapping_restart_interval_hours:
@@ -302,6 +305,5 @@ infoview:
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#storage#devices"
-        subpaths:
         fields:
           - "name"
