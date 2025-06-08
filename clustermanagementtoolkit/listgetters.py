@@ -773,6 +773,16 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
         # Specific to AdminNetworkPolicy
         action: str = deep_get(item, DictPath("action"), "")
         name: str = deep_get(item, DictPath("name"), "")
+        # Specific to StagedNetworkPolicy
+        protocol: str = deep_get(item, DictPath("protocol"), "")
+        not_protocol: str = deep_get(item, DictPath("not_protocol"), "")
+        destination_ports: list[str] = deep_get(item, DictPath("destination#ports"), [])
+        destination_not_ports: list[str] = deep_get(item, DictPath("destination#notPorts"), [])
+        source_selector: list[str] = deep_get(item, DictPath("source#selector"), "")
+        source_not_selector: list[str] = deep_get(item, DictPath("source#notSelector"), "")
+        destination_selector: list[str] = deep_get(item, DictPath("destination#selector"), "")
+        destination_not_selector: list[str] = \
+            deep_get(item, DictPath("destination#notSelector"), "")
 
         from_rules = deep_get(item, DictPath("from"), [])
 
@@ -805,6 +815,14 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
                 "namespace_label_selector": namespace_label_selector,
                 "action": action,
                 "name": name,
+                "destination_ports": destination_ports,
+                "destination_not_ports": destination_not_ports,
+                "destination_selector": destination_selector,
+                "destination_not_selector": destination_not_selector,
+                "source_selector": source_selector,
+                "source_not_selector": source_not_selector,
+                "protocol": protocol,
+                "not_protocol": not_protocol,
             })
 
     for item in deep_get(obj, DictPath("spec#egress"), []):
@@ -818,6 +836,16 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
         # Specific to AdminNetworkPolicy
         action = deep_get(item, DictPath("action"), "")
         name = deep_get(item, DictPath("name"), "")
+        # Specific to StagedNetworkPolicy
+        protocol: str = deep_get(item, DictPath("protocol"), "")
+        not_protocol: str = deep_get(item, DictPath("not_protocol"), "")
+        destination_ports: list[str] = deep_get(item, DictPath("destination#ports"), [])
+        destination_not_ports: list[str] = deep_get(item, DictPath("destination#notPorts"), [])
+        source_selector: list[str] = deep_get(item, DictPath("source#selector"), "")
+        source_not_selector: list[str] = deep_get(item, DictPath("source#notSelector"), "")
+        destination_selector: list[str] = deep_get(item, DictPath("destination#selector"), "")
+        destination_not_selector: list[str] = \
+            deep_get(item, DictPath("destination#notSelector"), "")
 
         to_rules = deep_get(item, DictPath("to"), [])
 
@@ -850,6 +878,14 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
                 "namespace_label_selector": namespace_label_selector,
                 "action": action,
                 "name": name,
+                "destination_ports": destination_ports,
+                "destination_not_ports": destination_not_ports,
+                "destination_selector": destination_selector,
+                "destination_not_selector": destination_not_selector,
+                "source_selector": source_selector,
+                "source_not_selector": source_not_selector,
+                "protocol": protocol,
+                "not_protocol": not_protocol,
             })
 
     return vlist, status

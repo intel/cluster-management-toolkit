@@ -1,0 +1,217 @@
+---
+kind: "StagedNetworkPolicy"
+api_family: "crd.projectcalico.org"
+default_command: "stagednetworkpolicies.crd.projectcalico.org"
+command:
+  - "stagednetworkpolicy.crd.projectcalico.org"
+  - "stagednetworkpolicies.calico"
+  - "stagednetworkpolicy.calico"
+  - "scnetpols"
+  - "scnetpol"
+listview:
+  name: "Staged Network Policies"
+  group: "Calico"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "tier", "types", "selector", "age"]
+      sortcolumn: "namespace"
+  fields:
+    selector:
+      header: "Selector:"
+      path: "spec#selector"
+      default: "<unset>"
+      type: "str"
+    tier:
+      header: "Tier:"
+      path: "spec#tier"
+      default: "<unset>"
+      type: "str"
+    types:
+      header: "Types:"
+      path: "spec#types"
+      default: ["<unset>"]
+      type: "raw"
+      formatter: "list"
+infoview:
+  name: "Staged Network Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["tier", "types", "selector"]
+    rows:
+      selector:
+        header: [["Selector:", ["main", "infoheader"]]]
+        path: "spec#selector"
+        default: "<unset>"
+        type: "str"
+      tier:
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["ier:", ["main", "infoheader"]]]
+        path: "spec#tier"
+        default: "<unset>"
+        type: "str"
+      types:
+        header: [["Types:", ["main", "infoheader"]]]
+        path: "spec#types"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+  listpad:
+    listgetter: "get_netpol_rule_list"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Wide:
+        fields: ["policy_type", "action",
+                 "protocol",
+                 "not_protocol",
+                 "source_selector",
+                 "source_not_selector",
+                 "destination_selector",
+                 "destination_not_selector",
+                 "destination_ports",
+                 "destination_not_ports"]
+        sortcolumn: "policy_type"
+      Normal:
+        fields: ["policy_type", "action",
+                 "protocol",
+                 "not_protocol_narrow",
+                 "source_selector_narrow",
+                 "source_not_selector_narrow",
+                 "destination_selector_narrow",
+                 "destination_not_selector_narrow",
+                 "destination_ports_narrow",
+                 "destination_not_ports_narrow"]
+        sortcolumn: "policy_type"
+    fields:
+      action:
+        header: "Action:"
+        path: "action"
+        default: "<unset>"
+        type: "str"
+      destination_not_ports:
+        header: "Destination Not-Ports:"
+        path: "destination_not_ports"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "port"
+      destination_not_ports_narrow:
+        header: "Dst !Ports:"
+        path: "destination_not_ports"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "port"
+      destination_ports:
+        header: "Destination Ports:"
+        path: "destination_ports"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "port"
+      destination_ports_narrow:
+        header: "Dst Ports:"
+        path: "destination_ports"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "port"
+      destination_not_selector:
+        header: "Destination Not-Selector:"
+        path: "destination_not_selector"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      destination_not_selector_narrow:
+        header: "Dst !Selector:"
+        path: "destination_not_selector"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      destination_selector:
+        header: "Destination Selector:"
+        path: "destination_selector"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      destination_selector_narrow:
+        header: "Dst Selector:"
+        path: "destination_selector"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      not_protocol:
+        header: "Not-Protocol:"
+        path: "not_protocol"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "protocol"
+      not_protocol_narrow:
+        header: "!Protocol:"
+        path: "not_protocol"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "protocol"
+      policy_type:
+        header: "Policy Type:"
+        path: "policy_type"
+        type: "str"
+      protocol:
+        header: "Protocol:"
+        path: "protocol"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "protocol"
+      source_not_selector:
+        header: "Source Not-Selector:"
+        path: "source_not_selector"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      source_not_selector_narrow:
+        header: "Src !Selector:"
+        path: "source_not_selector"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      source_selector:
+        header: "Source Selector:"
+        path: "source_selector"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      source_selector_narrow:
+        header: "Src Selector:"
+        path: "source_selector"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Tier":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Tier"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Tier"
+        api_family: "crd.projectcalico.org"
+        name_path: "spec#tier"
