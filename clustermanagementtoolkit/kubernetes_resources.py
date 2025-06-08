@@ -2298,6 +2298,19 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/crd.projectcalico.org/v1/"],
         "api": "networksets",
     },
+    ("StagedGlobalNetworkPolicy", "crd.projectcalico.org"): {
+        "api_paths": ["apis/crd.projectcalico.org/v1/"],
+        "api": "stagedglobalnetworkpolicies",
+        "namespaced": False,
+    },
+    ("StagedKubernetesNetworkPolicy", "crd.projectcalico.org"): {
+        "api_paths": ["apis/crd.projectcalico.org/v1/"],
+        "api": "stagedkubernetesnetworkpolicies",
+    },
+    ("StagedNetworkPolicy", "crd.projectcalico.org"): {
+        "api_paths": ["apis/crd.projectcalico.org/v1/"],
+        "api": "stagednetworkpolicies",
+    },
     ("Tier", "crd.projectcalico.org"): {
         "api_paths": ["apis/crd.projectcalico.org/v1/"],
         "api": "tiers",
@@ -4461,6 +4474,16 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "apiservers",
         "namespaced": False,
     },
+    ("GatewayAPI", "operator.tigera.io"): {
+        "api_paths": ["apis/operator.tigera.io/v1/"],
+        "api": "gatewayapis",
+        "namespaced": False,
+    },
+    ("Goldmane", "operator.tigera.io"): {
+        "api_paths": ["apis/operator.tigera.io/v1/"],
+        "api": "goldmanes",
+        "namespaced": False,
+    },
     ("ImageSet", "operator.tigera.io"): {
         "api_paths": ["apis/operator.tigera.io/v1/"],
         "api": "imagesets",
@@ -4471,9 +4494,19 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "installations",
         "namespaced": False,
     },
+    ("ManagementClusterConnection", "operator.tigera.io"): {
+        "api_paths": ["apis/operator.tigera.io/v1/"],
+        "api": "managementclusterconnections",
+        "namespaced": False,
+    },
     ("TigeraStatus", "operator.tigera.io"): {
         "api_paths": ["apis/operator.tigera.io/v1/"],
         "api": "tigerastatuses",
+        "namespaced": False,
+    },
+    ("Whisker", "operator.tigera.io"): {
+        "api_paths": ["apis/operator.tigera.io/v1/"],
+        "api": "whiskers",
         "namespaced": False,
     },
     # operators.coreos.com
