@@ -47,6 +47,9 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
+# This has to be first, since it checks for the correct Python version
+from clustermanagementtoolkit import about
+
 from clustermanagementtoolkit.cluster_actions import get_crio_version
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, SecurityStatus
@@ -86,8 +89,6 @@ from clustermanagementtoolkit import checks
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemestr_join_list
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, ansithemeinput
 from clustermanagementtoolkit.ansithemeprint import ansithemeinput_password
-
-from clustermanagementtoolkit import about
 
 try:
     import prctl

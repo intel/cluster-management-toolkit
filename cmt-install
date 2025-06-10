@@ -24,6 +24,9 @@ from subprocess import PIPE, STDOUT  # nosec
 import sys
 from typing import Union
 
+# This has to be first, since it checks for the correct Python version
+from clustermanagementtoolkit import about
+
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
 
 from clustermanagementtoolkit.cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR
@@ -50,8 +53,6 @@ from clustermanagementtoolkit.cmtio import secure_copy, secure_mkdir, secure_sym
 from clustermanagementtoolkit.commandparser import parse_commandline, CommandType
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint, ansithemeinput
-
-from clustermanagementtoolkit import about
 
 PROGRAMDESCRIPTION = f"Setup {about.PROGRAM_SUITE_FULL_NAME}."
 PROGRAMAUTHORS = "Written by David Weinehall."

@@ -53,6 +53,9 @@ except ModuleNotFoundError:  # pragma: no cover
                  "you may need to (re-)run `cmt-install` or `pip3 install ruyaml/ruamel.yaml`; "
                  "aborting.")
 
+# This has to be first, since it checks for the correct Python version
+from clustermanagementtoolkit import about
+
 from clustermanagementtoolkit.cluster_actions import create_vm_hosts, join_nodes, get_crio_version
 from clustermanagementtoolkit.cluster_actions import prepare_nodes, prepare_vm_template
 
@@ -114,8 +117,6 @@ from clustermanagementtoolkit.ansithemeprint import themearray_override_formatti
 from clustermanagementtoolkit import fieldgetters
 
 from clustermanagementtoolkit import checks
-
-from clustermanagementtoolkit import about
 
 try:
     import prctl
