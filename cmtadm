@@ -2910,6 +2910,9 @@ def __task_remove_kubeconfig(installation_info: dict, verbose: bool = False) -> 
                 break
     except FileNotFoundError:
         pass
+    except FilePathAuditError as e:
+        if "SecurityStatus.DOES_NOT_EXIST" not in str(e):
+            raise
 
     # If there's no cluster left, remove the config completely
     if d1 is None or len(d1["clusters"]) == 0:
