@@ -74,12 +74,6 @@
           - "runc"
         state: "latest"
       when: "ansible_os_family == 'RedHat'"
-    - name: "Configuring package repository for Containerd"
-      ansible.builtin.template:
-        dest: "/etc/zypp/repos.d/Virtualization_containers.repo"
-        src: "templates/etc/zypp/repos.d/Virtualization_containers.repo.j2"
-        mode: "0644"
-      when: "ansible_os_family == 'Suse'"
     - name: "Updating package cache"
       ansible.builtin.shell: |
         zypper --gpg-auto-import-keys refresh
