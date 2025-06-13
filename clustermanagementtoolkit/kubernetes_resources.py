@@ -5028,6 +5028,16 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/serving.kserve.io/v1beta1/"],
         "api": "inferenceservices",
     },
+    ("LocalModelCache", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "localmodelcaches",
+        "namespaced": False,
+    },
+    ("LocalModelNode", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "localmodelnodes",
+        "namespaced": False,
+    },
     ("LocalModelNodeGroup", "serving.kserve.io"): {
         "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
         "api": "localmodelnodegroups",
