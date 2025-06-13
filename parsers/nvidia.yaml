@@ -40,6 +40,9 @@
         - matchtype: "startswith"
           matchkey: "CRITICAL:"
           loglevel: "critical"
+        - matchtype: "startswith"
+          matchkey: "Error:"
+          loglevel: "error"
     - name: "custom_line"
       options:
         block_start:
@@ -62,8 +65,9 @@
             matchline: "any"
             format_block_start: true
         block_end:
-          - matchtype: "startswith"
-            matchkey: "+---------------"
+          - matchtype: "regex"
+            matchkey: "^(?![+|]|^$)"
             matchline: "any"
-            format_block_end: true
+            format_block_end: false
+            process_block_end: false
         loglevel: "info"

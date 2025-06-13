@@ -2,8 +2,10 @@
 - name: "istio"
   show_in_selector: false
   matchkeys:
-    - container_name: "istio-proxy"
-      image_name: "/istio/proxyv2"
+    - image_name: "/istio/proxyv2"
+      container_type: "init_container"
+    - image_name: "/istio-release/proxyv2"
+      container_type: "init_container"
   parser_rules:
     - name: "ts_8601"
     - name: "custom_splitter"
