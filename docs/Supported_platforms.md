@@ -22,6 +22,9 @@ This rules out installer & tool support for Debian 10 (Python 3.7).
 
 On openSUSE/SLES 15 and RHEL 8 you should be able to install python39
 and python39-pip or newer to get a recent version of Python3.
+You also need to specify `ansible_python_interpreter: <path to python>`
+in the Ansible inventory for such hosts, since Ansible playbooks
+will fail to run otherwise.
 
 ## Limitations
 

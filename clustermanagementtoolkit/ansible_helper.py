@@ -1738,11 +1738,13 @@ def ansible_ping(selection: Optional[list[str]] = None) -> list[tuple[str, str]]
         for task in deep_get(ansible_results, DictPath(host), []):
             unreachable = deep_get(task, DictPath("unreachable"))
             skipped = deep_get(task, DictPath("skipped"))
-            stderr_lines = deep_get(task, DictPath("stderr_lines"))
+            stderr_lines: list[str] = deep_get(task, DictPath("stderr_lines"), [])
             retval = deep_get(task, DictPath("retval"))
             status = ansible_extract_failure(retval,
                                              stderr_lines,
                                              skipped=skipped, unreachable=unreachable)
+            if stderr_lines:
+                status += f" ({'\\n'.join(stderr_lines)})"
             host_status.append((host, status))
     ansible_configuration["save_logs"] = save_logs_tmp
 
