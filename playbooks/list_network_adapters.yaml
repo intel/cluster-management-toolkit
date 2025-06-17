@@ -53,7 +53,7 @@
             operstate=$(cat /sys/class/net/${dev}/operstate)
             ipaddrs=""
             if [ -x /usr/sbin/ip ]; then
-              tmp="$(/usr/bin/ip addr show dev ${dev} | grep inet | tr -s ' ' | cut -f 2,3 -d' ' | sed -e 's/\/.*//' | tr '\n' ' ')"
+              tmp="$(/usr/sbin/ip addr show dev ${dev} | grep inet | tr -s ' ' | cut -f 2,3 -d' ' | sed -e 's/\/.*//' | tr '\n' ' ')"
             else
               tmp="$(/sbin/ifconfig ${dev} | grep "inet" | sed -e 's/.*\(inet .*\)netmask.*/\1/;s/.*\(inet6 .*\)prefixlen.*/\1/')"
             fi
