@@ -1,0 +1,117 @@
+---
+kind: "MachineDrainRule"
+api_family: "cluster.x-k8s.io"
+default_command: "machinedrainrules"
+listview:
+  name: "Machine Drain Rules"
+  group: "Cluster Configuration"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "behavior", "order", "age"]
+      sortcolumn: "namespace"
+  fields:
+    behavior:
+      header: "Behavior:"
+      path: "spec#drain#behavior"
+      default: "<unset>"
+      type: "str"
+    order:
+      header: "Order:"
+      path: "spec#drain#order"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+infoview:
+  name: "Machine Drain Rule Info"
+  infopad:
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      paths:
+        - path: "spec#pods"
+          type: "list"
+          key_name: "type"
+          key_value: "Pods"
+        - path: "spec#machines"
+          type: "list"
+          key_name: "type"
+          key_value: "Machines"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["type", "cluster_label_selector", "cluster_set_based_selector", "label_selector", "set_based_selector", "namespace_label_selector"]
+    fields:
+      cluster_label_selector:
+        header: "Cluster Label Selector:"
+        paths:
+          - path: ["clusterSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      cluster_set_based_selector:
+        header: "Cluster Set-based Selector:"
+        paths:
+          - path: "clusterSelector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "operator"
+            - type: "value"
+          field_separators:
+            - type: "space"
+            - type: "no_pad"
+      label_selector:
+        header: "Label Selector:"
+        paths:
+          - path: ["selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      namespace_label_selector:
+        header: "Namespace Label Selector:"
+        paths:
+          - path: ["namespaceSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      set_based_selector:
+        header: "Set-based Selector:"
+        paths:
+          - path: "selector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "operator"
+            - type: "value"
+          field_separators:
+            - type: "space"
+            - type: "no_pad"
+      type:
+        header: "Type:"
+        path: "type"
+        default: "<unknown>"
+        type: "str"
