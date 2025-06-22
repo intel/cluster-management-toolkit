@@ -1,0 +1,363 @@
+---
+kind: "PrometheusAgent"
+api_family: "monitoring.coreos.com"
+default_command: "prometheusagents"
+command:
+  - "promagents"
+  - "promagent"
+listview:
+  name: "Prometheus Agents"
+  group: "Monitoring"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "version", "replicas", "reconciled",
+               "available", "paused", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "replicas", "reconciled",
+               "available", "paused", "age"]
+      sortcolumn: "namespace"
+  fields:
+    available:
+      header: "Available:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Available"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Degraded:
+              field_colors:
+                - context: "main"
+                  type: "status_warning"
+            "False":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "True":
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            "Unknown":
+              field_colors:
+                - context: "main"
+                  type: "status_unknown"
+    paused:
+      header: "Paused:"
+      path: "status#paused"
+      default: "<unset>"
+      type: "bool"
+    reconciled:
+      header: "Reconciled:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Reconciled"
+      default: "<unset>"
+      type: "str"
+    replicas:
+      header: "Replicas:"
+      paths:
+        - path: [["status#availableReplicas"],
+                 ["status#replicas"]]
+          pathtype: "tuple"
+          default: [0, 0]
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "numerical"
+          - type: "numerical"
+        field_separators:
+          - type: "fraction"
+      align: "right"
+    version:
+      header: "Version:"
+      path: "spec#version"
+      default: "<unset>"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "version"
+infoview:
+  name: "Prometheus Agent Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["selector",
+                 "portname",
+                 "service_account",
+                 "service_monitor_label_selector",
+                 "version", "replicas", "reconciled",
+                 "available_header",
+                 "available_status",
+                 "available_reason",
+                 "available_message",
+                 "shards",
+                 "paused"]
+    rows:
+      available_header:
+        header: [["Available:", ["main", "infoheader"]]]
+      available_status:
+        header: [["  Status:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Available"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Degraded:
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
+              "False":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "True":
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              "Unknown":
+                field_colors:
+                  - context: "main"
+                    type: "status_unknown"
+      available_message:
+        header: [["  Message:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "message"
+            when:
+              - key: "type"
+                eq: "Available"
+        default: "<unset>"
+        type: "str"
+      available_reason:
+        header: [["  Reason:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "reason"
+            when:
+              - key: "type"
+                eq: "Available"
+        default: "<unset>"
+        type: "str"
+      paused:
+        header: [["Paused:", ["main", "infoheader"]]]
+        path: "status#paused"
+        default: "<unset>"
+        type: "bool"
+      portname:
+        header: [["Portname:", ["main", "infoheader"]]]
+        path: "spec#portName"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "service"
+      reconciled:
+        header: [["Reconciled:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Reconciled"
+        default: "<unset>"
+        type: "str"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#availableReplicas"],
+                   " Available",
+                   ["status#updatedReplicas"],
+                   " Updated",
+                   ["status#replicas"],
+                   " Current"]
+            pathtype: "tuple"
+            default: [0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+          field_separators:
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+      scrape_interval:
+        header: [["Scrape Interval:", ["main", "infoheader"]]]
+        path: "status#scrapeInterval"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      selector:
+        header: [["Selector:", ["main", "infoheader"]]]
+        path: "status#selector"
+        default: "<unset>"
+        type: "str"
+      service_account:
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Account:", ["main", "infoheader"]]]
+        path: "spec#serviceAccountName"
+        type: "str"
+      service_monitor_label_selector:
+        header: [["Service Monitor La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#serviceMonitorSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      shards:
+        header: [["Shards:", ["main", "infoheader"]]]
+        path: "status#shards"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Pod"
+      _label_selector_path: "spec#selector"
+      _none_on_empty_selector: true
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Pod"
+    field_indexes:
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
+      Normal:
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "generic"
+            - type: "version"
+          field_separators:
+            - type: "version"
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
+        default: -1
+        formatter: "age"
+        align: "right"
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+            - type: "host"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: "address"
+        formatter: "address"
+      restarts:
+        header: "Restarts:"
+        paths:
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
+        default: 0
+        formatter: "numerical"
+        align: "right"
+  shortcuts:
+    "Service Monitor Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Service Monitor Label selector"
+      widget: "windowwidget"
+      title: "Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#serviceMonitorSelector#matchLabels"
+    "Service Account":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "spec#serviceAccountName"
+        namespace_path: "metadata#namespace"
