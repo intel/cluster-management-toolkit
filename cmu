@@ -43,12 +43,15 @@ from operator import itemgetter
 import os
 from pathlib import Path
 import re
+import signal
 import socket
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
+from types import FrameType
 from typing import Any, cast, Optional, Type, Union
 from collections.abc import Callable
+
 try:
     import ruyaml
     ryaml = ruyaml.YAML()
@@ -183,6 +186,24 @@ try:
     prctl.set_proctitle(" ".join(sys.argv))
 except ModuleNotFoundError:  # pragma: no cover
     pass
+
+
+def signal_handler(sig: int, frame: Optional[FrameType]) -> None:
+    """
+    Signal handler for keypresses.
+
+        Parameters:
+            sig (int): The signal to handle [unused]
+            frame (Optional[FrameType]): The frame [unused]
+    """
+    del sig
+    del frame
+
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+
 
 PROGRAMDESCRIPTION = "UI for managing Kubernetes clusters."
 PROGRAMAUTHORS = "Written by David Weinehall."
