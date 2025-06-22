@@ -2432,6 +2432,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/dist.kio.kasten.io/v1alpha1/"],
         "api": "distributions",
     },
+    # ebpf.monitoring.dev
+    ("EbpfDaemonSet", "ebpf.monitoring.dev"): {
+        "api_paths": ["apis/ebpf.monitoring.dev/v1alpha1/"],
+        "api": "ebpfdaemonsets",
+    },
     # elasticsearch.k8s.elastic.co
     ("Elasticsearch", "elasticsearch.k8s.elastic.co"): {
         "api_paths": ["apis/elasticsearch.k8s.elastic.co/v1/"],
