@@ -2109,7 +2109,7 @@ def get_sas_info(**kwargs: Any) -> list[Type]:
                     "ref": ref,
                     "namespace": deep_get(ref, DictPath("metadata#namespace")),
                     "kind": ("RoleBinding", "rbac.authorization.k8s.io"),
-                    "type": "",
+                    "type": "<unset>",
                 }))
 
                 # Excellent, we have a Role Binding, now add the role it binds to
@@ -2129,7 +2129,7 @@ def get_sas_info(**kwargs: Any) -> list[Type]:
                     "ref": roleref,
                     "namespace": subjectnamespace,
                     "kind": rolerefkind,
-                    "type": "",
+                    "type": "<unset>",
                 }))
                 break
 
@@ -2152,7 +2152,7 @@ def get_sas_info(**kwargs: Any) -> list[Type]:
                     "ref": ref,
                     "namespace": deep_get(ref, DictPath("metadata#namespace")),
                     "kind": ("ClusterRoleBinding", "rbac.authorization.k8s.io"),
-                    "type": "",
+                    "type": "<unset>",
                 }))
 
                 # Excellent, we have a Cluster Role Binding, now add the role it binds to
@@ -2171,7 +2171,7 @@ def get_sas_info(**kwargs: Any) -> list[Type]:
                     "ref": roleref,
                     "namespace": subjectnamespace,
                     "kind": rolerefkind,
-                    "type": "",
+                    "type": "<unset>",
                 }))
                 break
 
