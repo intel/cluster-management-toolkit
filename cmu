@@ -6418,7 +6418,7 @@ def executecommand(stdscr: curses.window,
 # pylint: disable-next=too-many-branches
 def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
-    Dispatch from an object to listview of a Kind
+    Dispatch from an object to listview of a Kind.
 
         Parameters:
             stdscr (curses.window): The curses window to operate on
@@ -6474,7 +6474,14 @@ def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
 
     if isinstance(kind, str):
         kind = (kind, api_family)
-    view = checkforview(kind)
+
+    # If the kind is unknown we will get NameError;
+    # in this case we probably do not want to crash
+    try:
+        kind = guess_kind(kind)
+        view = checkforview(kind)
+    except NameError:
+        view = None
 
     if view is not None:
         if root:
@@ -9148,6 +9155,7 @@ actionfunc_allowlist: dict[str, Callable] = {
 
 # Activatedfuns acceptable for direct use in view files
 activatedfun_allowlist: dict[str, Callable[..., Retval]] = {
+    "listviewdispatch": listviewdispatch,
     "resourceinfodispatch": resourceinfodispatch,
     "resourceinfodispatch_from_pod_resource_list": resourceinfodispatch_from_pod_resource_list,
     "resourceinfodispatch_with_lookup": resourceinfodispatch_with_lookup,
