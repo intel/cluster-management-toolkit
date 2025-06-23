@@ -1,0 +1,83 @@
+---
+kind: "DecoratorController"
+api_family: "metacontroller.k8s.io"
+default_command: "decoratorcontrollers"
+command:
+  - "decorators"
+  - "decorator"
+  - "dctl"
+  - "dec"
+listview:
+  name: "Decorator Controllers"
+  group: "API & Extendability"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Decorator Controller Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["resync_period"]
+    rows:
+      resync_period:
+        header: [["Resync Period:", ["main", "infoheader"]]]
+        path: "spec#resyncPeriodSeconds"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        formatting:
+          unit: "s"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      paths:
+        - path: "spec#resources"
+          type: "list"
+          key_name: "type"
+          key_value: "Resource"
+        - path: "spec#attachments"
+          type: "list"
+          key_name: "type"
+          key_value: "Attachment"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["type", "resource", "update_strategy"]
+        sortcolumn: "type"
+    fields:
+      resource:
+        header: "Resource:"
+        paths:
+          - path: [["resource"], ["apiVersion"]]
+            pathtype: "tuple"
+            default: ["", ""]
+            type: ["kind", "api_group"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+          field_separators:
+            - type: "kind_api_group"
+      type:
+        header: "Type:"
+        path: "type"
+        default: "<unset>"
+        type: "str"
+      update_strategy:
+        header: "Update Strategy:"
+        path: "updateStrategy#method"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "View Hooks":
+      key: "h"
+      read_only: true
+      helptext: "Show hooks"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Hooks"
+        _pass_obj: true
+        path: "spec#hooks"
