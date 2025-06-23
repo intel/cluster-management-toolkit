@@ -17,12 +17,14 @@ listview:
         - path: [["spec#parentResource#resource"],
                  ["spec#parentResource#apiVersion"]]
           pathtype: "tuple"
-          type: ["name", "name"]
+          type: ["kind", "api_group"]
       formatter: "list"
       formatting:
         field_colors:
           - type: "kind"
-          - type: "api_version"
+          - type: "api_group"
+        field_separators:
+          - type: "kind_api_group"
 infoview:
   name: "Composite Controller Info"
   infopad:
@@ -37,11 +39,17 @@ infoview:
       parent_resource:
         header: [["Parent Resource:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#parentResource#apiVersion"],
-                   ["spec#parentResource#resource"]]
+          - path: [["spec#parentResource#resource"],
+                   ["spec#parentResource#apiVersion"]]
             pathtype: "tuple"
-            type: ["api_group", "kind"]
+            type: ["kind", "api_group"]
         formatter: "list"
+        formatting:
+          field_colors:
+            - type: "kind"
+            - type: "api_group"
+          field_separators:
+            - type: "kind_api_group"
       resync_period:
         header: [["Resync Period:", ["main", "infoheader"]]]
         path: "spec#resyncPeriodSeconds"
@@ -53,6 +61,10 @@ infoview:
     listgetter_args:
       path: "spec#childResources"
     infogetter: "generic_infogetter"
+    on_activation:
+      call: "listviewdispatch"
+      kind_path: "resource"
+      api_group_path: "apiVersion"
     field_indexes:
       Normal:
         fields: ["resource", "api_version", "update_strategy"]
@@ -75,6 +87,7 @@ infoview:
       update_strategy:
         header: "Update Strategy:"
         path: "updateStrategy#method"
+        default: "<unset>"
         type: "str"
   shortcuts:
     "Hooks":
