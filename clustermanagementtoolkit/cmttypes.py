@@ -113,6 +113,28 @@ def deep_get(dictionary: Optional[Any], path: DictPath, default: Any = None) -> 
     return result
 
 
+def deep_pop(dictionary: Optional[Any], path: DictPath, key: DictPath, default: Any = None) -> Any:
+    """
+    Given a dictionary, a path into that dictionary, and a key at that path, pop the key
+    and return its value (or default if the dict, path, or key doesn't exist).
+
+        Parameters:
+            dictionary (dict|CommentedMap): The dict to get the value from
+            path (DictPath): A dict path
+            key (DictPath): A dict key to pop
+            default (Any): The value to return if the dictionary, path, key, or result is None
+        Returns:
+            (Any): The value from the path
+    """
+    reduced_path: Optional[DictPath] = deep_get(dictionary, path, default)
+    if reduced_path is not None:
+        result = reduced_path.pop(key, default)
+    else:
+        result = default
+
+    return result
+
+
 # pylint: disable-next=too-many-instance-attributes
 class UnknownError(Exception):
     """

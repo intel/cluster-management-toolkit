@@ -34,7 +34,7 @@ from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
 
-from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath
+from clustermanagementtoolkit.cmttypes import deep_get, deep_pop, deep_set, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
 from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityStatus, validate_args
 
@@ -350,20 +350,20 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
     # do we want groupvars?
     if not include_groupvars:
         for group in tmp:
-            tmp[group].pop("vars", None)
+            deep_pop(tmp, DictPath(group), DictPath("vars"), None)
     else:
         for group in tmp:
             if not deep_get(tmp, DictPath(f"{group}#vars"), {}):
-                tmp[group].pop("vars", None)
+                deep_pop(tmp, DictPath(group), DictPath("vars"), None)
 
     # Do we want hosts?
     if not include_hosts:
         for group in tmp:
-            tmp[group].pop("hosts", None)
+            deep_pop(tmp, DictPath(group), DictPath("hosts"), None)
     else:
         for group in tmp:
             if not deep_get(tmp, DictPath(f"{group}#hosts"), {}):
-                tmp[group].pop("hosts", None)
+                deep_pop(tmp, DictPath(group), DictPath("hosts"), None)
 
         # OK, but do we want hostvars?
         if not include_hostvars:
@@ -788,14 +788,14 @@ def ansible_unset_groupvars(inventory: FilePath,
             continue
 
         for key in groupvars:
-            # Set the variable (overwriting previous value)
-            d[group]["vars"].pop(key, None)
+            # Unset the variable
+            deep_pop(d, DictPath(f"{group}#vars"), DictPath(key), None)
             changed = True
 
         # If the group no longer has any vars set,
         # remove vars
         if not d[group]["vars"]:
-            d[group].pop("vars", None)
+            deep_pop(d, DictPath(group), DictPath("vars"), None)
 
     if changed:
         secure_write_yaml(inventory, d, permissions=0o600,
@@ -846,12 +846,12 @@ def ansible_unset_hostvars(inventory: FilePath,
             continue
 
         for key in hostvars:
-            # Set the variable (overwriting previous value)
-            d["all"]["hosts"][host].pop(key, None)
+            # Unset the variable
+            deep_pop(d, DictPath(f"all#hosts#{host}"), DictPath(key), None)
             changed = True
 
         if not d["all"]["hosts"][host]:
-            d["all"]["hosts"][host] = None
+            deep_set(d, DictPath(f"all#hosts#{host}"), None)
 
     if changed:
         secure_write_yaml(inventory, d, permissions=0o600,
@@ -983,7 +983,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -
     for host in hosts:
         if group in d and d[group].get("hosts") is not None:
             if host in d[group]["hosts"]:
-                d[group]["hosts"].pop(host, None)
+                deep_pop(d, DictPath(f"{group}#hosts"), DictPath(host), None)
                 changed = True
 
     if changed:
