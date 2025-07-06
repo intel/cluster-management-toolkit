@@ -1264,6 +1264,14 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "appprojects",
     },
+    ("ArgoCDExport", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "argocdexports",
+    },
+    ("ArgoCD", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "argocds",
+    },
     ("ClusterAnalysisTemplate", "argoproj.io"): {
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "clusteranalysistemplates",
@@ -4311,14 +4319,15 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     # olm.operatorframework.io
-    ("ClusterExtension", "olm.operatorframework.io"): {
-        "api_paths": ["apis/olm.operatorframework.io/v1alpha1/"],
-        "api": "clusterextensions",
+    ("ClusterCatalog", "olm.operatorframework.io"): {
+        "api_paths": ["apis/olm.operatorframework.io/v1/"],
+        "api": "clustercatalogs",
         "namespaced": False,
     },
-    ("Extension", "olm.operatorframework.io"): {
-        "api_paths": ["apis/olm.operatorframework.io/v1alpha1/"],
-        "api": "extensions",
+    ("ClusterExtension", "olm.operatorframework.io"): {
+        "api_paths": ["apis/olm.operatorframework.io/v1/"],
+        "api": "clusterextensions",
+        "namespaced": False,
     },
     # opentelemetry.io
     ("Instrumentation", "opentelemetry.io"): {
