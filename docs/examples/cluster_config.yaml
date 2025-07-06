@@ -669,7 +669,7 @@ workloads:
       - kubectl:
           method: "apply"
           type: "file"
-          version: "v1.18.1"
+          version: "v1.18.2"
           # yamllint disable-line rule:line-length
           uri: "https://github.com/cert-manager/cert-manager/releases/download/<<<version>>>/cert-manager.crds.yaml"
       - helm:
@@ -686,7 +686,7 @@ workloads:
           # Create the namespace if it doesn't exist?
           createNamespace: true
           # The version to install
-          version: "v1.18.1"
+          version: "v1.18.2"
           # Extra arguments to pass to helm.
           # To allow logical grouping of options each option is its own list;
           # these lists will be concatenated into once.
@@ -695,6 +695,26 @@ workloads:
           # separately instead of separating them with a space.
           # extraArgs:
           #   - ["--set", "crds.enabled=true"]
+  - name: "trust-manager"
+    description: |
+      trust-manager is an operator for distributing trust bundles
+      across a Kubernetes cluster.
+    deployments:
+    - helm:
+        # The name of the helm repo to add
+        repoName: "jetstack"
+        # The URL to the helm repo
+        repoURL: "https://charts.jetstack.io"
+        # The namespace to use
+        namespace: "cert-manager"
+        # The name of the component to install
+        name: "trust-manager"
+        # The name of the chart to install
+        chart: "jetstack/trust-manager"
+        # Create the namespace if it doesn't exist?
+        createNamespace: true
+        # The version to install
+        version: "v0.18.0"
   - name: "intel-resource-drivers-for-kubernetes"
     # If you enable this you need to enable DRA support too and use
     # Kubernetes 1.31 or newer
