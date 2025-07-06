@@ -1,0 +1,53 @@
+---
+kind: "ClusterCatalog"
+api_family: "olm.operatorframework.io"
+default_command: "clustercatalogs"
+command:
+  - "clrcats"
+  - "clrcat"
+listview:
+  name: "Cluster Catalogs"
+  group: "API & Extendability"
+  field_indexes:
+    Normal:
+      fields: ["name", "last_unpacked", "serving", "age"]
+  fields:
+    last_unpacked:
+      header: "Last Unpacked:"
+      paths:
+        - path: "status#lastUnpacked"
+          pathtype: "timestamp"
+      formatter: "timestamp"
+    serving:
+      header: "Serving:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Serving"
+      type: "bool"
+infoview:
+  name: "Cluster Catalog Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["last_unpacked", "serving"]
+    rows:
+      last_unpacked:
+        header: [["Last Unpacked:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#lastUnpacked"
+            pathtype: "timestamp"
+        formatter: "timestamp"
+      serving:
+        header: [["Serving:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Serving"
+        type: "bool"

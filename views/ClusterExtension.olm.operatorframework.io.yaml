@@ -12,57 +12,125 @@ listview:
   group: "API & Extendability"
   field_indexes:
     Normal:
-      fields: ["name", "package_name", "install_namespace", "channel", "age"]
+      fields: ["name", "installed_bundle", "version", "installed",
+               "progressing", "package_name", "install_namespace", "age"]
   fields:
-    channel:
-      header: "Channel:"
-      path: "spec#channel"
+    installed:
+      header: "Installed:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Installed"
+      type: "bool"
+    installed_bundle:
+      header: "Installed Bundle:"
+      path: "status#install#bundle#name"
+      default: "<unset>"
       type: "str"
     install_namespace:
       header: "Install Namespace:"
-      path: "spec#installNamespace"
+      path: "spec#namespace"
+      default: "<unset>"
       type: "str"
       formatting:
         field_colors:
           - type: "namespace"
     package_name:
       header: "Package Name:"
-      path: "spec#packageName"
+      path: "spec#source#catalog#packageName"
+      default: "<unset>"
       type: "str"
+    progressing:
+      header: "Progressing:"
+      paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Progressing"
+      type: "bool"
+    version:
+      header: "Version:"
+      path: "status#install#bundle#version"
+      type: "str"
+      formatting:
+        field_colors:
+          - type: "version"
 infoview:
   name: "Cluster Extension Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["package_name", "install_namespace", "channel",
-                 "service_account", "upgrade_constraint_policy"]
+        fields: ["package_name", "installed_bundle",
+                 "version", "install_namespace",
+                 "service_account", "upgrade_constraint_policy",
+                 "source_type", "installed", "progressing"]
     rows:
-      channel:
-        header: [["Channel:", ["main", "infoheader"]]]
-        path: "spec#channel"
+      installed:
+        header: [["Installed:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Installed"
+        type: "bool"
+      installed_bundle:
+        header: [["Installed Bundle:", ["main", "infoheader"]]]
+        path: "status#install#bundle#name"
+        default: "<unset>"
         type: "str"
       install_namespace:
         header: [["Install ", ["main", "infoheader"]],
                  ["N", ["main", "infoheader_shortcut"]],
                  ["amespace:", ["main", "infoheader"]]]
-        path: "spec#installNamespace"
+        path: "spec#namespace"
+        default: "<unset>"
         type: "str"
         formatting:
           field_colors:
             - type: "namespace"
       package_name:
         header: [["Package Name:", ["main", "infoheader"]]]
-        path: "spec#packageName"
+        path: "spec#source#catalog#packageName"
+        default: "<unset>"
         type: "str"
+      progressing:
+        header: [["Progressing:", ["main", "infoheader"]]]
+        paths:
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Progressing"
+        type: "bool"
       service_account:
         header: [["S", ["main", "infoheader_shortcut"]],
                  ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccount#name"
         type: "str"
+      source_type:
+        header: [["Source Type:", ["main", "infoheader"]]]
+        path: "spec#source#sourceType"
+        type: "str"
       upgrade_constraint_policy:
         header: [["Upgrade Constraint Policy:", ["main", "infoheader"]]]
-        path: "spec#upgradeConstraintPolicy"
+        path: "spec#source#catalog#upgradeConstraintPolicy"
+        default: "<unset>"
         type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "status#install#bundle#version"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
   shortcuts:
     "Open install namespace":
       key: "n"
@@ -74,7 +142,7 @@ infoview:
       action_args:
         _pass_obj: true
         kind: "Namespace"
-        name_path: "spec#installNamespace"
+        name_path: "spec#namespace"
     "Service Account":
       key: "s"
       modifier: "shift"
@@ -86,4 +154,4 @@ infoview:
         _pass_obj: true
         kind: "ServiceAccount"
         name_path: "spec#serviceAccount#name"
-        namespace_path: "spec#installNamespace"
+        namespace_path: "spec#namespace"
