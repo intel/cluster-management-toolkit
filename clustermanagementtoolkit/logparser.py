@@ -1930,7 +1930,7 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
                 eventstart = i + 1
         elif message[i] == "{":
             curlydepth += 1
-            if refstart is None:
+            if not refstart:
                 refstart = i + 1
         elif message[i] == "}":
             curlydepth -= 1
@@ -1953,16 +1953,19 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
     remnants = []
     message = raw_message[0:eventstart]
     indent = 2
+    type_format = ThemeAttr("main", "status_unknown")
     # Try to extract an embedded severity; use it if higher than severity
-    tmp = re.match(r"^.*type: '([A-Z][a-z]+)' reason:", raw_message)
+    tmp = re.match(r"^.*(type: ')([A-Z][a-z]+)(' reason: ')([A-Za-z][A-Za-z-.]+)('.*)", raw_message)
     if tmp is not None:
         _severity = severity
-        if tmp[1] == "Normal":
+        if tmp[2] == "Normal":
             _severity = LogLevel.INFO
-        elif tmp[1] == "Warning":
+            type_format = ThemeAttr("main", "status_ok")
+        elif tmp[2] == "Warning":
             _severity = LogLevel.WARNING
+            type_format = ThemeAttr("main", "status_admin")
         severity = min(severity, _severity)
-    remnants.append(([ThemeStr(" ".ljust(indent) + raw_message[eventstart:refstart],
+    remnants.append(([ThemeStr(raw_message[eventstart:refstart],
                                ThemeAttr("types", "yaml_reference"))], severity))
     for _key_value in raw_message[refstart:refend].split(", "):
         key, value = _key_value.split(":", 1)
@@ -1972,10 +1975,22 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
     remnants.append(([ThemeStr(" ".ljust(indent * 1) + raw_message[refend:eventend],
                                ThemeAttr("types", "yaml_reference"))], severity))
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-    remnants.append(([ThemeStr(raw_message[eventend:eventend + 3],
-                               ThemeAttr("logview", severity_name)),
-                      ThemeStr(raw_message[eventend + 3:len(raw_message)],
-                               ThemeAttr("logview", severity_name))], severity))
+    message_format = ThemeAttr("logview", severity_name)
+    # FIXME
+    reason_format = ThemeAttr("logview", severity_name)
+    if tmp is not None:
+        remnants.append(([ThemeStr(raw_message[eventend:eventend + 3],
+                                   ThemeAttr("types", "yaml_reference")),
+                          ThemeStr(tmp[1], message_format),
+                          ThemeStr(tmp[2], type_format),
+                          ThemeStr(tmp[3], message_format),
+                          ThemeStr(tmp[4], reason_format),
+                          ThemeStr(tmp[5], message_format)], severity))
+    else:
+        remnants.append(([ThemeStr(raw_message[eventend:eventend + 3],
+                                   ThemeAttr("types", "yaml_reference")),
+                          ThemeStr(raw_message[eventend + 3:len(raw_message)],
+                                   message_format)], severity))
 
     return severity, message, remnants
 
