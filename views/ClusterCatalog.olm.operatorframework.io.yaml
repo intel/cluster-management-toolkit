@@ -9,15 +9,28 @@ listview:
   name: "Cluster Catalogs"
   group: "API & Extendability"
   field_indexes:
+    Wide:
+      fields: ["name", "last_unpacked", "availability", "serving",
+               "priority", "age"]
     Normal:
-      fields: ["name", "last_unpacked", "serving", "age"]
+      fields: ["name", "last_unpacked", "availability", "serving", "age"]
   fields:
+    availability:
+      header: "Availability:"
+      path: "spec#availabilityMode"
+      type: "str"
     last_unpacked:
       header: "Last Unpacked:"
       paths:
         - path: "status#lastUnpacked"
           pathtype: "timestamp"
       formatter: "timestamp"
+    priority:
+      header: "Priority:"
+      path: "spec#priority"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
     serving:
       header: "Serving:"
       paths:
@@ -33,14 +46,32 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["last_unpacked", "serving"]
+        fields: ["priority",
+                 "source_header",
+                 "source_image_ref",
+                 "source_image_poll_interval",
+                 "source_type",
+                 "source_resolved_image_ref",
+                 "source_resolved_type",
+                 "urls_header",
+                 "urls_url_base",
+                 "last_unpacked", "availability", "serving"]
     rows:
+      availability:
+        header: [["Availability:", ["main", "infoheader"]]]
+        path: "spec#availabilityMode"
+        type: "str"
       last_unpacked:
         header: [["Last Unpacked:", ["main", "infoheader"]]]
         paths:
           - path: "status#lastUnpacked"
             pathtype: "timestamp"
         formatter: "timestamp"
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "spec#priority"
+        type: "int"
+        formatter: "numerical"
       serving:
         header: [["Serving:", ["main", "infoheader"]]]
         paths:
@@ -51,3 +82,52 @@ infoview:
               - key: "type"
                 eq: "Serving"
         type: "bool"
+      source_header:
+        header: [["Source:", ["main", "infoheader"]]]
+      source_image_ref:
+        header: [["  Image Ref:", ["main", "infoheader"]]]
+        path: "spec#source#image#ref"
+        default: "<unset>"
+        type: "str"
+      source_image_poll_interval:
+        header: [["  Image Poll Interval:", ["main", "infoheader"]]]
+        path: "spec#source#image#pollIntervalMinutes"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        formatting:
+          unit: "m"
+      source_resolved_image_ref:
+        header: [["  Resolved Image Ref:", ["main", "infoheader"]]]
+        path: "status#resolvedSource#image#ref"
+        default: "<unset>"
+        type: "str"
+      source_resolved_type:
+        header: [["  Resolved Type:", ["main", "infoheader"]]]
+        path: "status#resolvedSource#type"
+        default: "<unset>"
+        type: "str"
+      source_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#source#type"
+        default: "<unset>"
+        type: "str"
+      urls_header:
+        header: [["URLs:", ["main", "infoheader"]]]
+      urls_url_base:
+        header: [["  Ba", ["main", "infoheader"]],
+                 ["s", ["main", "infoheader_shortcut"]],
+                 ["e:", ["main", "infoheader"]]]
+        path: "status#urls#base"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "url"
+  shortcuts:
+    "Open base image URL":
+      key: "s"
+      read_only: true
+      helptext: "Open base image URL in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open", ["status#urls#base"]]
