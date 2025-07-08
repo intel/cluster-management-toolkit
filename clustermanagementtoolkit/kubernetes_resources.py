@@ -3640,12 +3640,14 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("MachineOSBuild", "machineconfiguration.openshift.io"): {
-        "api_paths": ["apis/machineconfiguration.openshift.io/v1alpha1/"],
+        "api_paths": ["apis/machineconfiguration.openshift.io/v1/",
+                      "apis/machineconfiguration.openshift.io/v1alpha1/"],
         "api": "machineosbuilds",
         "namespaced": False,
     },
     ("MachineOSConfig", "machineconfiguration.openshift.io"): {
-        "api_paths": ["apis/machineconfiguration.openshift.io/v1alpha1/"],
+        "api_paths": ["apis/machineconfiguration.openshift.io/v1/",
+                      "apis/machineconfiguration.openshift.io/v1alpha1/"],
         "api": "machineosconfigs",
         "namespaced": False,
     },
