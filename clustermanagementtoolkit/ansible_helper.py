@@ -1744,7 +1744,7 @@ def ansible_ping(selection: Optional[list[str]] = None) -> list[tuple[str, str]]
                                              stderr_lines,
                                              skipped=skipped, unreachable=unreachable)
             if stderr_lines:
-                status += f" ({'\\n'.join(stderr_lines)})"
+                status += " (" + "\\n".join(stderr_lines) + ")"
             host_status.append((host, status))
     ansible_configuration["save_logs"] = save_logs_tmp
 
