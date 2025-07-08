@@ -1818,6 +1818,12 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/cluster.loft.sh/v1/"],
         "api": "virtualclusters",
     },
+    # confidentialcontainers.org
+    ("CcRuntime", "confidentialcontainers.org"): {
+        "api_paths": ["apis/confidentialcontainers.org/v1beta1/"],
+        "api": "ccruntimes",
+        "namespaced": False,
+    },
     # config.gatekeeper.sh
     ("Config", "config.gatekeeper.sh"): {
         "api_paths": ["apis/config.gatekeeper.sh/v1alpha1/"],
