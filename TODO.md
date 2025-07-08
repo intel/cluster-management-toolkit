@@ -24,6 +24,12 @@
 * Introduce .kube/current-context and have all clusters in .kube have their own files
   (named config-clustername) rather than merging the config-files
 
+## cmt-install
+
+* Ensure that we install from a recent version of python when installing python
+  dependencies on OpenSUSE/SLES.
+* Add dependency on python3-curses on SUSE.
+
 ## cmu
 
 * "A" in Inventory view is not listed in the helptext. Fix this and check if there are
