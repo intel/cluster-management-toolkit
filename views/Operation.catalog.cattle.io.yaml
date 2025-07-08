@@ -13,7 +13,11 @@ listview:
     command:
       header: "Command:"
       path: "status#command"
-      type: "str"
+      type: "raw"
+      formatter: "list"
+      formatting:
+        item_separator:
+          type: "space"
     target_namespace:
       header: "Target Namespace:"
       path: "status#targetNamespace"
@@ -29,9 +33,15 @@ infoview:
         fields: ["target_namespace", "command"]
     rows:
       command:
-        header: [["Command:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader"]],
+                 ["o", ["main", "infoheader_shortcut"]],
+                 ["mmand:", ["main", "infoheader"]]]
         path: "status#command"
-        type: "str"
+        type: "raw"
+        formatter: "list"
+        formatting:
+          item_separator:
+            type: "space"
       target_namespace:
         header: [["T", ["main", "infoheader_shortcut"]],
                  ["arget Namespace:", ["main", "infoheader"]]]
@@ -52,3 +62,14 @@ infoview:
         _pass_obj: true
         name_path: "status#targetNamespace"
         kind: "Namespace"
+    "Show Command":
+      key: "o"
+      read_only: true
+      helptext: "Show command"
+      widget: "windowwidget"
+      title: "Command:"
+      itemgetter: "get_list_as_string"
+      itemgetter_args:
+        path: "status#command"
+        separators:
+          - " "

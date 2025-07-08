@@ -298,6 +298,34 @@ def get_key_value(obj: dict, **kwargs: Any) -> list[tuple[str, Any]]:
     return vlist
 
 
+def get_list_as_string(obj: dict, **kwargs: Any) -> list[tuple[str]]:
+    """
+    Merge all elements of a list into a single string.
+
+        Parameters:
+            obj (dict): The object to get data from
+            **kwargs (dict[str, Any]): Keyword arguments
+                path (str): The path to the list
+                separators ([str]): The separator(s) to insert between list elements;
+                                    if the list is longer than the number of separators
+                                    the last separator will repeat
+        Returns:
+            ([tuple[str]]): A list with a single one-element tuple
+    """
+    dest_string: str = ""
+    path: str = deep_get(kwargs, DictPath("path"), "")
+    separators: list[str] = deep_get(kwargs, DictPath("separators"), [])
+
+    for i, string in enumerate(deep_get(obj, DictPath(path), [])):
+        if i > 0 and separators:
+            dest_string += separators[min(len(separators) - 1, i - 1)]
+        dest_string += string
+
+    if dest_string:
+        return [(dest_string,)]
+    return []
+
+
 # pylint: disable-next=too-many-branches
 def get_list_as_list(obj: dict, **kwargs: Any) -> list[Any]:
     """
@@ -1065,6 +1093,7 @@ itemgetter_allowlist: dict[str, Callable] = {
     "get_image_list": get_image_list,
     "get_key_value": get_key_value,
     "get_list_as_list": get_list_as_list,
+    "get_list_as_string": get_list_as_string,
     "get_dict_list": get_dict_list,
     "get_list_fields": get_list_fields,
     "get_package_version_list": get_package_version_list,
