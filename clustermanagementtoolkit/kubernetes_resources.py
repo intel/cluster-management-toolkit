@@ -444,9 +444,15 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     },
     # resource.k8s.io
     ("DeviceClass", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1beta1/",
+        "api_paths": ["apis/resource.k8s.io/v1beta2/",
+                      "apis/resource.k8s.io/v1beta1/",
                       "apis/resource.k8s.io/v1alpha3/"],
         "api": "deviceclasses",
+        "namespaced": False,
+    },
+    ("DeviceTaintRule", "resource.k8s.io"): {
+        "api_paths": ["apis/resource.k8s.io/v1alpha3/"],
+        "api": "devicetaintrules",
         "namespaced": False,
     },
     ("PodScheduling", "resource.k8s.io"): {
@@ -460,7 +466,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "podschedulingcontexts",
     },
     ("ResourceClaim", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1beta1/",
+        "api_paths": ["apis/resource.k8s.io/v1beta2/",
+                      "apis/resource.k8s.io/v1beta1/",
                       "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/",
                       "apis/resource.k8s.io/v1alpha1/"],
@@ -471,7 +478,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "resourceclaimparameters",
     },
     ("ResourceClaimTemplate", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1beta1/",
+        "api_paths": ["apis/resource.k8s.io/v1beta2/",
+                      "apis/resource.k8s.io/v1beta1/",
                       "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/",
                       "apis/resource.k8s.io/v1alpha1/"],
@@ -488,7 +496,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "resourceclassparameters",
     },
     ("ResourceSlice", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1beta1/",
+        "api_paths": ["apis/resource.k8s.io/v1beta2/",
+                      "apis/resource.k8s.io/v1beta1/",
                       "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/"],
         "api": "resourceslices",
