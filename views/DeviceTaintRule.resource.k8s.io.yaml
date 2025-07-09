@@ -1,0 +1,90 @@
+---
+kind: "DeviceTaintRule"
+api_family: "resource.k8s.io"
+default_command: "devicetaintrules"
+command:
+  - "devtaintrules"
+  - "devtaintrule"
+listview:
+  name: "Device Taint Rules"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["name", "taint", "device_selector", "age"]
+  fields:
+    device_selector:
+      header: "Device Selector:"
+      paths:
+        - path: "spec#deviceSelector"
+          pathtype: "key_value"
+          default: ["<none>"]
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "key"
+          - type: "value"
+        field_separators:
+          - type: "selector"
+    taint:
+      header: "Taint:"
+      paths:
+        - path: [["spec#taint#key"], ["spec#taint#value"], ["effect"]]
+          pathtype: "tuple"
+          default: ["<none>"]
+      formatter: "list"
+      formatting:
+        field_colors:
+          - type: "key"
+          - type: "value"
+          - type: "generic"
+        field_separators:
+          - type: "keyvalue"
+          - type: "field"
+infoview:
+  name: "Device Taint Rule Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["device_selector", "taint"]
+    rows:
+      device_selector:
+        header: [["Device La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: ["spec#deviceSelector"]
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      taint:
+        header: [["Taint:", ["main", "infoheader"]]]
+        paths:
+          - path: [["spec#taint#key"], ["spec#taint#value"], ["effect"]]
+            pathtype: "tuple"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+            - type: "generic"
+          field_separators:
+            - type: "keyvalue"
+            - type: "field"
+  shortcuts:
+    "Device Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Device Label selector"
+      widget: "windowwidget"
+      title: "Device Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#deviceSelector"
