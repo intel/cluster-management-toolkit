@@ -1278,7 +1278,8 @@ def ansible_delete_log(log: str, **kwargs: Any) -> None:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def ansible_write_log(start_date: datetime, playbook: FilePath, events: list[dict]) -> None:
+def ansible_write_log(start_date: datetime, playbook: FilePath, events: list[dict],
+                      **kwargs: Any) -> None:
     """
     Save an Ansible log entry to a file.
 
@@ -1286,8 +1287,12 @@ def ansible_write_log(start_date: datetime, playbook: FilePath, events: list[dic
             start_date (date): A timestamp in the format YYYY-MM-DD_HH:MM:SS.ssssss
             playbook (str): The name of the playbook
             events ([dict]): The list of Ansible runs
+            **kwargs (dict[str, Any]): Keyword arguments
+                save_logs (Optional[bool]): Override the save_logs variable in ansible_configuration
     """
-    save_logs: bool = deep_get(ansible_configuration, DictPath("save_logs"), False)
+    save_logs: Optional[bool] = deep_get(kwargs, DictPath("save_logs"))
+    if save_logs is None:
+        save_logs = deep_get(ansible_configuration, DictPath("save_logs"), False)
 
     if not save_logs:
         return
@@ -1595,6 +1600,7 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> tuple[int, dict]:
                 inventory (dict): An inventory dict with selection as the list of hosts to run on
                 verbose (bool): Output status updates for every new Ansible event
                 quiet (bool): Disable console output
+                save_logs (Optional[bool]): Override the save_logs variable in ansible_configuration
         Returns:
             ((int, dict)):
                 (int): The return value
@@ -1603,6 +1609,7 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> tuple[int, dict]:
     inventory: Optional[dict] = deep_get(kwargs, DictPath("inventory"), None)
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     quiet: bool = deep_get(kwargs, DictPath("quiet"), True)
+    save_logs: Optional[bool] = deep_get(kwargs, DictPath("save_logs"))
 
     forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
@@ -1646,7 +1653,7 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> tuple[int, dict]:
                 if host not in ansible_results:
                     ansible_results[host] = []
                 ansible_results[host].append(d)
-        ansible_write_log(start_date, playbook, runner.events)
+        ansible_write_log(start_date, playbook, runner.events, save_logs=save_logs)
 
     return retval, ansible_results
 
@@ -1663,6 +1670,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
                 values (dict): Extra values to set for the hosts
                 verbose (bool): Output status updates for every new Ansible event
                 quiet (bool): Disable console output
+                save_logs (Optional[bool]): Override the save_logs variable in ansible_configuration
         Returns:
             ((int, dict)):
                 (int): The result from ansible_run_playbook();
@@ -1689,6 +1697,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
     values: dict[str, Any] = deep_get(kwargs, DictPath("values"), {})
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     quiet: bool = deep_get(kwargs, DictPath("quiet"), True)
+    save_logs: Optional[bool] = deep_get(kwargs, DictPath("save_logs"))
 
     if "ansible_sudo_pass" in values and "ansible_become_pass" not in values:
         values["ansible_become_pass"] = values["ansible_sudo_pass"]
@@ -1707,7 +1716,8 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
     for host in selection:
         d["selection"]["hosts"][host] = {}
 
-    return ansible_run_playbook(playbook, inventory=d, verbose=verbose, quiet=quiet)
+    return ansible_run_playbook(playbook, inventory=d, verbose=verbose, quiet=quiet,
+                                save_logs=save_logs)
 
 
 def ansible_ping(selection: Optional[list[str]] = None) -> list[tuple[str, str]]:

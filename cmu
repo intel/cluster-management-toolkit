@@ -948,7 +948,8 @@ def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 facts_ping_playbook_path = get_playbook_path(FilePath("facts_ping.yaml"))
                 # But the hosts can change status more frequently than that
                 executor.trigger("pings", 5, run_ansible_play_async,
-                                 playbook=facts_ping_playbook_path, selection=hosts, verbose=False)
+                                 playbook=facts_ping_playbook_path, selection=hosts,
+                                 verbose=False, save_logs=False)
         elif listgetter is not None:
             if first_fetch or uip.update_forced:
                 if listgetter is not None:
@@ -2468,17 +2469,20 @@ def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[dict[str, Any], l
                 playbook (FilePath): The playbook to run
                 selection ([str]): The hosts to run the play on
                 verbose (bool): Output status updates for every new Ansible event?
+                save_logs (Optional[bool]): Override the save_logs variable in ansible_configuration
         Returns:
             ((dict, int)):
                 (dict): The results of the run
                 (int): The status from ansible_run_playbook();
                        -errno.ENOENT if the inventory is missing or empty
     """
-    playbook = deep_get(kwargs, DictPath("playbook"))
-    selection = deep_get(kwargs, DictPath("selection"))
-    verbose = deep_get(kwargs, DictPath("verbose"), False)
+    playbook: FilePath = deep_get(kwargs, DictPath("playbook"))
+    selection: list[str] = deep_get(kwargs, DictPath("selection"), [])
+    verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
+    save_logs: Optional[bool] = deep_get(kwargs, DictPath("save_logs"))
     status, result = ansible_run_playbook_on_selection(playbook=playbook,
-                                                       selection=selection, verbose=verbose)
+                                                       selection=selection,
+                                                       verbose=verbose, save_logs=save_logs)
     return result, status
 
 
@@ -2586,7 +2590,8 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     if not islocal:
         ping_playbook_path = get_playbook_path(FilePath("load_ping.yaml"))
         executor.trigger("sysinfo", 5, run_ansible_play_async,
-                         playbook=ping_playbook_path, selection=[control_plane_name])
+                         playbook=ping_playbook_path, selection=[control_plane_name],
+                         verbose=False, save_logs=False)
     executor.trigger("node", 5, listgetters_async.get_kubernetes_list, kind=("Node", ""),
                      namespace="", fetch_args={"sort_key": "metadata#name", "postprocess": "node"},
                      kubernetes_helper=kh, kh_cache=kh_cache)
