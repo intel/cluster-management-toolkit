@@ -1,0 +1,31 @@
+---
+- name: "confidential-containers"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/confidential-containers/operator"
+  parser_rules:
+    - name: "tab_separated"
+- name: "confidential-containers"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/kata-containers/kata-deploy-ci"
+    - image_name: "/confidential-containers/reqs-payload"
+  parser_rules:
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "exact"
+            matchkey: "[proxy_plugins]"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "regex"
+            matchkey: "[^\\s]"
+            matchline: "any"
+            format_block_end: false
+        loglevel: "notice"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "INFO:"
+          loglevel: "notice"

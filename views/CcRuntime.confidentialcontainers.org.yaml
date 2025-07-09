@@ -1,0 +1,190 @@
+---
+kind: "CcRuntime"
+api_family: "confidentialcontainers.org"
+default_command: "ccruntimes"
+listview:
+  name: "Confidential Compute Runtimes"
+  group: "Policy"
+  field_indexes:
+    Normal:
+      fields: ["name", "installed_nodes", "total_nodes", "runtime", "age"]
+  fields:
+    runtime:
+      header: "Runtime:"
+      path: "spec#runtime"
+      default: "<unset>"
+      type: "str"
+    installed_nodes:
+      header: "Installed Nodes:"
+      path: "status#installationStatus#completed#completedNodesCount"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    total_nodes:
+      header: "Total Nodes:"
+      path: "status#totalNodesCount"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Confidential Compute Runtime Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_selector",
+                 "payload_image",
+                 "default_runtime_class",
+                 "runtime_classes",
+                 "installation_status_header",
+                 "installed_nodes",
+                 "uninstallation_status_header",
+                 "uninstalled_nodes"]
+    rows:
+      default_runtime_class:
+        header: [["D", ["main", "infoheader_shortcut"]],
+                 ["efault Runtime Class:", ["main", "infoheader"]]]
+        path: "spec#config#defaultRuntimeClassName"
+        default: "<unset>"
+        type: "str"
+      installation_status_header:
+        header: [["Installation Status:", ["main", "infoheader"]]]
+      installed_nodes:
+        header: [["  ", ["main", "infoheader"]],
+                 ["I", ["main", "infoheader_shortcut"]],
+                 ["nstalled Nodes:", ["main", "infoheader"]]]
+        path: "status#installationStatus#completed#completedNodesList"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      node_selector:
+        header: [["Node La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el Selector:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#ccNodeSelector#matchLabels"
+            pathtype: "key_value"
+            default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+            - type: "key"
+            - type: "value"
+          field_separators:
+            - type: "selector"
+      payload_image:
+        header: [["Payload Image:", ["main", "infoheader"]]]
+        path: "spec#config#payloadImage"
+        default: "<unset>"
+        type: "str"
+      runtime_classes:
+        header: [["R", ["main", "infoheader_shortcut"]],
+                 ["untime Classes:", ["main", "infoheader"]]]
+        paths:
+          - path: "spec#config#runtimeClasses"
+            pathtype: "items"
+            subpath: "name"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      uninstallation_status_header:
+        header: [["Uninstallation Status:", ["main", "infoheader"]]]
+      uninstalled_nodes:
+        header: [["  ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["ninstalled Nodes:", ["main", "infoheader"]]]
+        path: "status#uninstallationStatus#completed#completedNodesList"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+  shortcuts:
+    "Installed Nodes":
+      key: "i"
+      modifier: "shift"
+      read_only: true
+      helptext: "List installed Nodes"
+      widget: "windowwidget"
+      title: "Installed Nodes:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "status#installationStatus#completed#completedNodesList"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_selected: true
+        kind: "Node"
+        name_path: 0
+    "Node Label Selector":
+      key: "b"
+      read_only: true
+      helptext: "Node Label selector"
+      widget: "windowwidget"
+      title: "Label Selector:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#ccNodeSelector#matchLabels"
+    "Open Default runtime":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for default Runtime Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "RuntimeClass"
+        api_family: "node.k8s.io"
+        name_path: "spec#config#defaultRuntimeClassName"
+    "Runtime Classes":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Runtime Classes"
+      widget: "windowwidget"
+      title: "Runtime Classes:"
+      headers: ["Name:", "Pulltype:", "Snapshotter:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#config#runtimeClasses"
+        fields:
+          - "name"
+          - "pulltype"
+          - "snapshotter"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_selected: true
+        kind: "RuntimeClass"
+        api_family: "node.k8s.io"
+        name_path: 0
+    "View Config":
+      key: "c"
+      read_only: true
+      helptext: "View configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Configuration"
+        _pass_obj: true
+        path: "spec#config"
+    "Uninstalled Nodes":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "List uninstalled Nodes"
+      widget: "windowwidget"
+      title: "Uninstalled Nodes:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "status#unInstallationStatus#completed#completedNodesList"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_selected: true
+        kind: "Node"
+        name_path: 0

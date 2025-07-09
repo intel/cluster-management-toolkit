@@ -278,10 +278,12 @@ infoview:
         default: "<unset>"
         type: "str"
       runtime_class_allowed:
-        header: [["  Allowed Runtime Classes:", ["main", "infoheader"]]]
+        header: [["  Allowed ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["untime Classes:", ["main", "infoheader"]]]
         path: "spec#runtimeClass#allowedRuntimeClassNames"
         type: "raw"
-        default: "<unset>"
+        default: ["<unset>"]
         formatter: "list"
         formatting:
           mapping:
@@ -291,7 +293,9 @@ infoview:
                   - context: "types"
                     type: "unset"
       runtime_class_default:
-        header: [["  Default Runtime Class:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["efault Runtime Class:", ["main", "infoheader"]]]
         path: "spec#runtimeClass#defaultRuntimeClassName"
         default: "<unset>"
         type: "str"
@@ -388,3 +392,34 @@ infoview:
         type: "raw"
         default: "<none>"
         formatter: "list"
+  shortcuts:
+    "Allowed Runtime Classes":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List allowed Runtime Classes"
+      widget: "windowwidget"
+      title: "Allowed Runtime Classes:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#runtimeClass#allowedRuntimeClassNames"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_selected: true
+        kind: "RuntimeClass"
+        api_family: "node.k8s.io"
+        name_path: 0
+    "Open Default runtime":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for default Runtime Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "RuntimeClass"
+        api_family: "node.k8s.io"
+        name_path: "spec#runtimeClass#defaultRuntimeClassName"
