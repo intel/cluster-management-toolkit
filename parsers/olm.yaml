@@ -8,6 +8,11 @@
     - image_name: "/operator-framework/olm"
     - image_name: "/operator-framework/catalogd"
     - image_name: "/operator-framework/operator-controller"
+    # The name of the images in CRC are often pretty useless,
+    # so use these as fallback identifiers.
+    - container_name: "catalog-operator"
+    - container_name: "olm-operator"
+    - container_name: "packageserver"
   parser_rules:
     - name: "ts_8601"
     - name: "glog"
