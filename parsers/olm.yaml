@@ -2,14 +2,12 @@
 - name: "olm"
   show_in_selector: false
   matchkeys:
-    - pod_name: "catalog-operator"
-      container_name: "catalog-operator"
     - pod_name: "cluster-olm-operator"
       container_name: "cluster-olm-operator"
-    - pod_name: "olm-operator"
-      container_name: "olm-operator"
-    - pod_name: "packageserver"
-      container_name: "packageserver"
+    - image_name: "/operatorhubio/catalog"
+    - image_name: "/operator-framework/olm"
+    - image_name: "/operator-framework/catalogd"
+    - image_name: "/operator-framework/operator-controller"
   parser_rules:
     - name: "ts_8601"
     - name: "glog"
@@ -39,6 +37,12 @@
     - name: "override_severity"
       overrides:
         - matchtype: "startswith"
+          matchkey: "\"starting up catalogd\""
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "\"starting up the controller\""
+          loglevel: "notice"
+        - matchtype: "startswith"
           matchkey: "cluster-olm-operator version"
           loglevel: "notice"
         - matchtype: "startswith"
@@ -59,11 +63,3 @@
   parser_rules:
     - name: "glog"
     - name: "tab_separated"
-- name: "olm"
-  show_in_selector: false
-  matchkeys:
-    - pod_name: "operatorhubio-catalog"
-      container_name: "registry-server"
-  parser_rules:
-    - name: "strip_ansicodes"
-    - name: "key_value"
