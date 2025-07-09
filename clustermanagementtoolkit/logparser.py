@@ -102,6 +102,8 @@ from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 
+from clustermanagementtoolkit.kubernetes_resources import event_reasons
+
 
 # pylint: disable-next=too-few-public-methods
 class LogparserConfiguration:
@@ -1976,9 +1978,9 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
                                ThemeAttr("types", "yaml_reference"))], severity))
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
     message_format = ThemeAttr("logview", severity_name)
-    # FIXME
-    reason_format = ThemeAttr("logview", severity_name)
     if tmp is not None:
+        reason_format = deep_get(event_reasons, DictPath(tmp[4]),
+                                 ThemeAttr("logview", severity_name))
         remnants.append(([ThemeStr(raw_message[eventend:eventend + 3],
                                    ThemeAttr("types", "yaml_reference")),
                           ThemeStr(tmp[1], message_format),
@@ -2014,17 +2016,18 @@ def format_key_value(key: str, value: str,
     force_severity = deep_get(kwargs, DictPath("force_severity"), False)
     error_keys = deep_get(kwargs, DictPath("error_keys"), ("error", "err"))
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+    value_format = deep_get(kwargs, DictPath("value_format"), ThemeAttr("logview", severity_name))
     tmp: list[Union[ThemeRef, ThemeStr]]
 
     separator = [ThemeRef("separators", "keyvalue_log")]
     if key in error_keys:
         tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key_error"))] \
             + separator \
-            + [ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
+            + [ThemeStr(f"{value}", value_format)]
     elif force_severity:
         tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key"))] \
             + separator \
-            + [ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
+            + [ThemeStr(f"{value}", value_format)]
     else:
         tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key"))]
         if value is not None:
@@ -2287,33 +2290,10 @@ def key_value(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
                                                         severity_, force_severity=True))
                             severity = min(severity, severity_)
                         elif is_event and d_key == "reason":
-                            # A lot more reasons need to be added here
-                            if d_value.strip("\"") in ("Completed",
-                                                       "Created",
-                                                       "Killing",
-                                                       "LeaderElection",
-                                                       "Pulled",
-                                                       "Pulling",
-                                                       "RegisteredNode",
-                                                       "Resumed",
-                                                       "Scheduled",
-                                                       "ServiceNotReady",
-                                                       "Started",
-                                                       "Suspended",
-                                                       "SuccessfulCreate",
-                                                       "SuccessfulDelete",
-                                                       "WaitForServeDeploymentReady"):
-                                severity_ = LogLevel.NOTICE
-                            elif d_value.strip("\"") in ("BackOff",
-                                                         "FailedBinding",
-                                                         "FailedScheduling",
-                                                         "FailedToCreateEndpoint",
-                                                         "ServiceUnhealthy"):
-                                severity_ = LogLevel.WARNING
-                            elif d_value.strip("\"") in ("BackoffLimitExceeded",):
-                                severity_ = LogLevel.ERR
+                            reason_format = deep_get(event_reasons, DictPath(d_value.strip("\"")))
                             tmp.append(format_key_value(d_key, d_value, severity_,
-                                                        force_severity=True))
+                                                        force_severity=True,
+                                                        value_format=reason_format))
                         else:
                             d_value, severity_ = \
                                 custom_override_severity(d_value, severity,

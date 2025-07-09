@@ -170,6 +170,8 @@ from clustermanagementtoolkit.kubernetes_helper import kubectl_get_version
 from clustermanagementtoolkit.kubernetes_helper import update_api_status as kh_update_api_status
 from clustermanagementtoolkit.kubernetes_helper import guess_kind
 
+from clustermanagementtoolkit.kubernetes_resources import event_reasons
+
 from clustermanagementtoolkit import checks
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemestr_join_list
@@ -2852,7 +2854,7 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
               DictPath("firstTimestamp")],
              "timestamp"),
             ([DictPath("type")], "event_type"),
-            ([DictPath("reason")], "str"),
+            ([DictPath("reason")], "event_reason"),
             ([DictPath("message"), DictPath("note")], "str"),
         ]
 
@@ -2908,6 +2910,10 @@ def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                         else:
                             event_type = "status_ok"
                         tmp2.append(ThemeStr(val.ljust(evlens[i]), ThemeAttr("main", event_type)))
+                    elif ptype == "event_reason":
+                        reason_format = deep_get(event_reasons, DictPath(val),
+                                                 ThemeAttr("main", "default"))
+                        tmp2.append(ThemeStr(val.ljust(evlens[i]), reason_format))
                     else:
                         tmp2.append(ThemeStr(val.ljust(evlens[i]), ThemeAttr("main", "default")))
 
@@ -9361,6 +9367,17 @@ def populate_views(force_refresh: bool = False) -> None:
 
         for filename in natsorted(os.listdir(view_dir)):
             filename = cast(str, filename)
+            if filename == "__event_reasons.yaml":
+                d = dict(secure_read_yaml(FilePath(view_dir).joinpath(filename),
+                                          directory_is_symlink=True))
+                for reason, data in d.items():
+                    # Only try to read the data if it's well-formed
+                    if data and deep_get(data, DictPath("field_colors")):
+                        context = deep_get(data["field_colors"][0], DictPath("context"), "main")
+                        ftype = deep_get(data["field_colors"][0], DictPath("type"), "status_ok")
+                        event_reasons[reason] = ThemeAttr(context, ftype)
+                continue
+
             if filename.startswith(("~", ".")):
                 continue
 

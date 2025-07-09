@@ -9,7 +9,7 @@
 List of Kubernetes resources known by CMT.
 """
 
-from typing import Union
+from typing import Any, Union
 
 # pylint: disable=too-many-lines
 
@@ -5748,4 +5748,9 @@ kubernetes_resource_types: dict[tuple[str, str], str] = {
 
 # A dict that will be populated with K8s resources that we don't support
 unknown_kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool]]] = {
+}
+
+# Known Event reasons and their default formatting;
+# the type hint here should really be ThemeAttr, but we use "ThemeAttr" to avoid interdependencies.
+event_reasons: dict[str, Any] = {
 }
