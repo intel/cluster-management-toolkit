@@ -2574,6 +2574,10 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
         "api": "gitrepos",
     },
+    ("HelmApp", "fleet.cattle.io"): {
+        "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
+        "api": "helmapps",
+    },
     ("ImageScan", "fleet.cattle.io"): {
         "api_paths": ["apis/fleet.cattle.io/v1alpha1/"],
         "api": "imagescans",
