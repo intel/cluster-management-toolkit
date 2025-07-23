@@ -31,7 +31,7 @@ try:
 except ModuleNotFoundError:
     sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-__version__ = "0.4"
+__version__ = "0.5"
 
 failed_files = []
 
@@ -40,7 +40,6 @@ def usage() -> None:
     """
     Display usage information for the program.
     """
-
     print("validate_yaml [OPTION]... TYPE")
     print("validate_yaml [OPTION]... TYPE PATH...")
     print("validate_yaml [OPTION]... SCHEMA PATH...")
@@ -70,6 +69,8 @@ def usage() -> None:
     print("-N,--no-summary        Don't show a summary even when using --verbose")
     print("-R,--resume-from PATH  After a failed validation run resume validation")
     print("                         from this file")
+    print("-x,--exclude PATH,...  Exclude PATH,... from being scanned")
+    print("                         Note: Globbing is not supported")
     print("-q,--quiet             Be less verbose")
     print("-v,--verbose           Be more verbose")
     print("")
@@ -81,13 +82,13 @@ def version() -> None:
     """
     Display version information for the program.
     """
-
     print(f"validate_yaml {__version__}")
 
 
 # pylint: disable-next=too-many-branches
 def validate_file(yaml_path: str, schema_path: str,
-                  verbose: int, abort_on_fail: bool) -> tuple[Optional[str], int, str]:
+                  verbose: int, abort_on_fail: bool,
+                  exclude_paths: list[str]) -> tuple[Optional[str], int, str]:
     """
     Validate a YAML file against a JSON schema
 
@@ -97,7 +98,7 @@ def validate_file(yaml_path: str, schema_path: str,
                 schema_path (str): A path to the JSON schema to validate the YAML file against
                 verbose (int): The verbosity for output
                 abort_on_fail (bool): If true abort on first failure
-
+                exclude_paths ([str]): Exclude these paths
         Returns:
             (file, retval, msg):
                 file (str): The processed file
@@ -112,6 +113,10 @@ def validate_file(yaml_path: str, schema_path: str,
     if not yaml_path.endswith((".yaml", ".yml")):
         if verbose > 2:
             msg = f"\n{yaml_path} does not end in .yaml or .yml; skipping.\n"
+        retval = -1
+    elif yaml_path in exclude_paths:
+        if verbose > 2:
+            msg = f"\n{yaml_path} is excluded; skipping.\n"
         retval = -1
     elif yaml_path.endswith("BUNDLE.yaml"):
         if verbose > 2:
@@ -175,6 +180,7 @@ def main() -> int:
     schema_path = ""
     yaml_paths: list[tuple[str, str]] = []
     resume_from = None
+    exclude_paths: list[str] = []
 
     while i < len(sys.argv):
         if sys.argv[i] in ("help", "--help"):
@@ -195,6 +201,10 @@ def main() -> int:
             no_summary = False
         elif sys.argv[i] in ("-N", "--no-summary"):
             no_summary = True
+        elif sys.argv[i] in ("-x", "--exclude"):
+            i += 1
+            if i < len(sys.argv):
+                exclude_paths = sys.argv[i].split(",")
         elif sys.argv[i] in ("-R", "--resume-from"):
             i += 1
             if i < len(sys.argv):
@@ -250,18 +260,20 @@ def main() -> int:
         if os.path.isfile(yaml_path):
             if resume_from is not None:
                 if yaml_path == resume_from:
-                    args.append((yaml_path, schema_path, verbose, abort_on_fail))
+                    args.append((yaml_path, schema_path, verbose, abort_on_fail, exclude_paths))
                     resume_from = None
             else:
-                args.append((yaml_path, schema_path, verbose, abort_on_fail))
+                args.append((yaml_path, schema_path, verbose, abort_on_fail, exclude_paths))
         elif os.path.isdir(yaml_path):
             for path in os.listdir(yaml_path):
                 if resume_from is not None:
                     if f"{yaml_path}/{path}" == resume_from:
-                        args.append((f"{yaml_path}/{path}", schema_path, verbose, abort_on_fail))
+                        args.append((f"{yaml_path}/{path}", schema_path, verbose, abort_on_fail,
+                                     exclude_paths))
                         resume_from = None
                 else:
-                    args.append((f"{yaml_path}/{path}", schema_path, verbose, abort_on_fail))
+                    args.append((f"{yaml_path}/{path}", schema_path, verbose, abort_on_fail,
+                                 exclude_paths))
 
     with Pool() as pool:
         result = pool.starmap(validate_file, cast(Iterable, natsorted(args)))

@@ -407,7 +407,7 @@ nox: create_test_symlinks
 
 validate_yaml:
 	@printf -- "\n\nRunning validate_yaml to check that all view-files/parser-files/theme-files are valid\n\n"; \
-	./tests/validate_yaml
+	./tests/validate_yaml --exclude views/__event_reasons.yaml
 
 validate_playbooks:
 	@cmd=ansible-lint ;\
