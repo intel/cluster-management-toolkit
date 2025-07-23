@@ -2947,6 +2947,16 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/k0smotron.io/v1beta1/"],
         "api": "jointokenrequests",
     },
+    # k3k.io
+    ("Cluster", "k3k.io"): {
+        "api_paths": ["apis/k3k.io/v1alpha1/"],
+        "api": "clusters",
+    },
+    ("VirtualClusterPolicy", "k3k.io"): {
+        "api_paths": ["apis/k3k.io/v1alpha1/"],
+        "api": "virtualclusterpolicies",
+        "namespaced": False,
+    },
     # k3s.cattle.io
     ("Addon", "k3s.cattle.io"): {
         "api_paths": ["apis/k3s.cattle.io/v1/"],
