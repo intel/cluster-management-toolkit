@@ -1,0 +1,129 @@
+---
+kind: "Cluster"
+api_family: "k3k.io"
+default_command: "k3kclusters"
+command:
+  - "k3kclrs"
+  - "k3kclr"
+listview:
+  name: "Clusters"
+  group: "Cluster Configuration"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "mode", "policy",
+               "servers", "agents", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "mode", "policy", "age"]
+      sortcolumn: "namespace"
+  fields:
+    agents:
+      header: "Agents:"
+      path: "spec#agents"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    mode:
+      header: "Mode:"
+      path: "spec#mode"
+      default: "<unset>"
+      type: "str"
+    policy:
+      header: "Policy:"
+      path: "status#policyName"
+      default: "<none>"
+      type: "str"
+    servers:
+      header: "Servers:"
+      path: "spec#servers"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["servers", "agents", "mode", "policy",
+                 "persistence_header", "persistence_type",
+                 "persistence_storage_request_size",
+                 "cluster_cidr", "service_cidr",
+                 "tls_sans"]
+    rows:
+      agents:
+        header: [["Agents:", ["main", "infoheader"]]]
+        path: "spec#agents"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      cluster_cidr:
+        header: [["  Cluster CIDR:", ["main", "infoheader"]]]
+        path: "status#clusterCIDR"
+        default: "<unset>"
+        type: "str"
+        formatter: "address"
+      host_version:
+        header: [["Host Version:", ["main", "infoheader"]]]
+        path: "status#hostVersion"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "version"
+      mode:
+        header: [["Mode:", ["main", "infoheader"]]]
+        path: "spec#mode"
+        default: "<unset>"
+        type: "str"
+      persistence_header:
+        header: [["Persistence:", ["main", "infoheader"]]]
+      persistence_storage_request_size:
+        header: [["  Storage Request Size:", ["main", "infoheader"]]]
+        path: "status#persistence#storageRequestSize"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical"
+      persistence_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        paths:
+          - path: ["status#persistence#type", "spec#persistence#type"]
+            pathtype: "str"
+        default: "<unset>"
+        type: "str"
+      policy:
+        header: [["Policy:", ["main", "infoheader"]]]
+        path: "status#policyName"
+        default: "<none>"
+        type: "str"
+      servers:
+        header: [["Servers:", ["main", "infoheader"]]]
+        path: "spec#servers"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      service_cidr:
+        header: [["  Service CIDR:", ["main", "infoheader"]]]
+        path: "status#serviceCIDR"
+        default: "<unset>"
+        type: "str"
+        formatter: "address"
+      tls_sans:
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["LS SANs:", ["main", "infoheader"]]]
+        path: "status#tlsSANs"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+  shortcuts:
+    "Show TLS SAN list":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "List TLS SANs"
+      widget: "windowwidget"
+      title: "TLS SANs:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "status#tlsSANs"
