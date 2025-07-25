@@ -1147,7 +1147,7 @@ def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
-# pylint: disable-next=unused-argument,too-many-branches
+# pylint: disable-next=too-many-branches,too-many-locals
 def ping(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Ping hosts or groups of hosts.
@@ -1163,6 +1163,11 @@ def ping(options: list[tuple[str, str]], args: list[str]) -> int:
             (int): 0
     """
     hoststatuses = []
+    verbose: bool = False
+
+    for opt, _optarg in options:
+        if opt == "--verbose":
+            verbose = True
 
     if args is not None and args:
         groups_or_hosts = args[0].split(",")
@@ -1197,7 +1202,7 @@ def ping(options: list[tuple[str, str]], args: list[str]) -> int:
     print("Please stand by, attempting to ping hosts")
     print()
 
-    output = ansible_ping(selection=selection)
+    output = ansible_ping(selection=selection, verbose=verbose)
 
     if output is None or not output:
         raise UnknownError("Internal error; ansible -m ping failed")
@@ -1599,6 +1604,12 @@ COMMANDLINE: dict[str, CommandType] = {
             ANSIThemeStr(" (Default: “", "description"),
             ANSIThemeStr("all", "argument"),
             ANSIThemeStr("“)", "description")],
+        "options": {
+            "--verbose": {
+                "description": [
+                    ANSIThemeStr("Be more verbose", "description")],
+            },
+        },
         "required_args": [],
         "optional_args": [
             {

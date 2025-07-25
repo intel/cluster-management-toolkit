@@ -1892,7 +1892,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
     return severity, new_message, remnants
 
 
-# pylint: disable-next=too-many-locals,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
         -> tuple[LogLevel, str, list[tuple[list[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """

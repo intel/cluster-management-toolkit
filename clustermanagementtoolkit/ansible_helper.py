@@ -1720,16 +1720,19 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
                                 save_logs=save_logs)
 
 
-def ansible_ping(selection: Optional[list[str]] = None) -> list[tuple[str, str]]:
+def ansible_ping(selection: Optional[list[str]] = None, **kwargs: Any) -> list[tuple[str, str]]:
     """
     Ping all selected hosts.
 
         Parameters:
             selection ([str]): A list of hostnames
+            **kwargs (dict[str, Any]): Keyword arguments
+                verbose (bool): Should status include stderr_lines?
         Returns:
             [(str, str)]: The status of the pinged hosts
     """
-    save_logs_tmp = deep_get(ansible_configuration, DictPath("save_logs"), False)
+    save_logs_tmp: bool = deep_get(ansible_configuration, DictPath("save_logs"), False)
+    verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     ansible_configuration["save_logs"] = False
 
     host_status = []
@@ -1753,7 +1756,7 @@ def ansible_ping(selection: Optional[list[str]] = None) -> list[tuple[str, str]]
             status = ansible_extract_failure(retval,
                                              stderr_lines,
                                              skipped=skipped, unreachable=unreachable)
-            if stderr_lines:
+            if stderr_lines and verbose:
                 status += " (" + "\\n".join(stderr_lines) + ")"
             host_status.append((host, status))
     ansible_configuration["save_logs"] = save_logs_tmp
