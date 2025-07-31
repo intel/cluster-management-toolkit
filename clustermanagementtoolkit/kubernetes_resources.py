@@ -1694,7 +1694,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     },
     # cilium.io
     ("CiliumCIDRGroup", "cilium.io"): {
-        "api_paths": ["apis/cilium.io/v2alpha1/"],
+        "api_paths": ["apis/cilium.io/v2/",
+                      "apis/cilium.io/v2alpha1/"],
         "api": "ciliumcidrgroups",
         "namespaced": False,
     },
@@ -1723,7 +1724,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("CiliumLoadBalancerIPPool", "cilium.io"): {
-        "api_paths": ["apis/cilium.io/v2alpha1/"],
+        "api_paths": ["apis/cilium.io/v2/",
+                      "apis/cilium.io/v2alpha1/"],
         "api": "ciliumloadbalancerippools",
         "namespaced": False,
     },

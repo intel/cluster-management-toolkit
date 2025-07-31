@@ -341,7 +341,8 @@ cni_data: dict[str, dict[str, CNIDataType]] = {
             "candidate_version_command": ["cilium", "--context", "<<<context>>>", "version"],
             "candidate_version_regex": r"^cilium image \(stable\): v(\d+)(\.)(\d+)(\.)(\d+)$",
             "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-            "upgrade": ["cilium", "--context", "<<<context>>>", "upgrade", "--reuse-values"],
+            "upgrade": ["cilium", "--context", "<<<context>>>", "upgrade",
+                        "--reset-then-reuse-values"],
             "install": ["cilium", "--context", "<<<context>>>", "install"],
             "uninstall": ["cilium", "--context", "<<<context>>>", "uninstall"],
         }
