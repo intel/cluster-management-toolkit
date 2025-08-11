@@ -87,7 +87,8 @@ infoview:
       Normal:
         fields: ["controller", "external_name", "selector", "endpoints",
                  "endpoint_slices", "type", "allocate_node_balancer_node_ports",
-                 "cluster_ips", "external_traffic_policy",
+                 "cluster_ips", "traffic_distribution",
+                 "external_traffic_policy",
                  "internal_traffic_policy", "ip_families", "ip_family_policy",
                  "external_ips", "ports", "topology_keys",
                  "session_affinity_header", "session_affinity",
@@ -96,6 +97,7 @@ infoview:
       allocate_node_balancer_node_ports:
         header: [["Allocate Node Balancer Node Ports:", ["main", "infoheader"]]]
         path: "spec#allocateLoadBalancerNodePorts"
+        default: "<unset>"
         type: "bool"
       cluster_ips:
         header: [["Cluster IPs:", ["main", "infoheader"]]]
@@ -175,10 +177,12 @@ infoview:
       external_traffic_policy:
         header: [["External Traffic Policy:", ["main", "infoheader"]]]
         path: "spec#externalTrafficPolicy"
+        default: "<unset>"
         type: "str"
       internal_traffic_policy:
         header: [["Internal Traffic Policy:", ["main", "infoheader"]]]
         path: "spec#internalTrafficPolicy"
+        default: "<unset>"
         type: "str"
       ip_families:
         header: [["IP Families:", ["main", "infoheader"]]]
@@ -253,6 +257,11 @@ infoview:
                 field_colors:
                   - context: "types"
                     type: "generic"
+      traffic_distribution:
+        header: [["Traffic Distribution:", ["main", "infoheader"]]]
+        path: "spec#trafficDistribution"
+        default: "<unset>"
+        type: "str"
       type:
         header: [["Type:", ["main", "infoheader"]]]
         path: "spec#type"
