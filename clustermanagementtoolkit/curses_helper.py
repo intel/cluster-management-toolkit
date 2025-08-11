@@ -488,6 +488,7 @@ class CursesConfiguration:
     Configuration options for the curses UI.
     """
     abouttext: list[list[Union[ThemeRef, ThemeStr]]] = []
+    borders: bool = True
     mousescroll_enable: bool = False
     mousescroll_up: int = 0b10000000000000000
     mousescroll_down: int = 0b1000000000000000000000000000
@@ -2884,7 +2885,6 @@ class UIProps:
         self.tspadheight: int = 0
         self.tspadwidth = len("YYYY-MM-DD HH:MM:SS")
         self.tspad: Optional[curses.window] = None
-        self.borders: bool = True
         self.logpadypos: int = 0
         self.logpadxpos: int = 0
         self.logpadheight: int = 0
@@ -3189,7 +3189,6 @@ class UIProps:
         self.listpad = None
         self.infopad = None
         self.tspad = None
-        self.borders = True
         self.logpad = None
         self.helptext = deep_get(kwargs, DictPath("helptext"))
 
@@ -3229,7 +3228,7 @@ class UIProps:
         self.stdscr.border()
         # If we do not have sideborders we need to clear the right border we just painted,
         # just in case the content of the logpad is not wide enough to cover it
-        if not self.borders:
+        if not CursesConfiguration.borders:
             for y in range(self.logpadypos, self.maxy - 1):
                 self.addthemearray(self.stdscr,
                                    [ThemeStr(" ", ThemeAttr("main", "default"))],
@@ -3245,7 +3244,7 @@ class UIProps:
             if self.headerpadypos > 1:
                 window_tee_hline(self.stdscr, self.headerpadypos - 1, 0, self.maxx)
             window_tee_hline(self.stdscr, self.headerpadypos + 1, 0, self.maxx)
-            if not self.borders:
+            if not CursesConfiguration.borders:
                 if self.headerpadypos > 1:
                     self.addthemearray(self.stdscr,
                                        [ThemeStr(hline, ThemeAttr("main", "default"))],
@@ -3259,7 +3258,7 @@ class UIProps:
                 self.addthemearray(self.stdscr,
                                    [ThemeStr(hline, ThemeAttr("main", "default"))],
                                    y=self.headerpadypos + 1, x=self.maxx)
-        elif self.listpad is not None and not self.borders:
+        elif self.listpad is not None and not CursesConfiguration.borders:
             self.addthemearray(self.stdscr,
                                [ThemeStr(" ", ThemeAttr("main", "default"))],
                                y=self.listpadypos - 1, x=0)
@@ -3270,7 +3269,7 @@ class UIProps:
         if self.logpad is not None:
             if self.logpadypos > 2:
                 window_tee_hline(self.stdscr, self.logpadypos - 1, 0, self.maxx)
-            if self.borders:
+            if CursesConfiguration.borders:
                 window_tee_hline(self.stdscr, self.maxy - 2, 0, self.maxx)
                 if self.tspad is not None and self.tspadxpos != self.logpadxpos and self.loglen:
                     window_tee_vline(self.stdscr, self.logpadxpos - 1,
@@ -3321,13 +3320,13 @@ class UIProps:
             ThemeStr(self.last_timestamp_update, ThemeAttr("main", "last_update")),
         ]
 
-        if self.borders:
+        if CursesConfiguration.borders:
             timestamparray += [
                 ThemeStr(ltee, ThemeAttr("main", "default")),
             ]
 
         xpos -= themearray_len(timestamparray)
-        if not self.borders:
+        if not CursesConfiguration.borders:
             xpos += 1
         self.addthemearray(self.stdscr, timestamparray, y=0, x=xpos)
 
@@ -3341,7 +3340,7 @@ class UIProps:
 
             winheaderarray: list[Union[ThemeRef, ThemeStr]] = []
 
-            if self.borders:
+            if CursesConfiguration.borders:
                 winheaderarray += [
                     ThemeStr(rtee, ThemeAttr("main", "default")),
                 ]
@@ -3351,7 +3350,7 @@ class UIProps:
                 ThemeStr(f"{self.windowheader}", ThemeAttr("main", "header")),
                 ThemeRef("separators", "mainheader_suffix"),
             ]
-            if self.borders:
+            if CursesConfiguration.borders:
                 winheaderarray += [
                     ThemeStr(ltee, ThemeAttr("main", "default")),
                 ]
@@ -3363,7 +3362,7 @@ class UIProps:
         """
         Refresh the main window.
         """
-        if self.borders:
+        if CursesConfiguration.borders:
             bl = deep_get(theme, DictPath("boxdrawing#llcorner"))
             br = deep_get(theme, DictPath("boxdrawing#lrcorner"))
             self.addthemearray(self.stdscr,
@@ -3487,7 +3486,7 @@ class UIProps:
         """
         if self.infopad is not None:
             height = self.infopadheight
-            if self.borders:
+            if CursesConfiguration.borders:
                 if self.logpad is None and self.listpad is None:
                     height = self.maxy - 3
                 try:
@@ -3505,7 +3504,7 @@ class UIProps:
                     pass
 
             # If there's no logpad and no listpad, then the infopad is responsible for scrollbars
-            if self.listpad is None and self.logpad is None and self.borders:
+            if self.listpad is None and self.logpad is None and CursesConfiguration.borders:
                 self.upperarrow, self.lowerarrow, self.vdragger = \
                     scrollbar_vertical(self.stdscr, self.maxx, self.infopadypos,
                                        self.maxy - 3, self.infopadheight, self.yoffset,
@@ -3569,7 +3568,7 @@ class UIProps:
         else:
             width = self.listpadwidth
 
-        if self.borders:
+        if CursesConfiguration.borders:
             self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
         else:
             self.maxcurypos = min(self.listpadheight, self.listlen - 1)
@@ -3591,7 +3590,7 @@ class UIProps:
         """
         xpos = self.listpadxpos
         maxx = self.maxx - 1
-        if not self.borders:
+        if not CursesConfiguration.borders:
             xpos -= 1
             maxx = self.maxx
         if self.headerpad is not None:
@@ -3601,7 +3600,7 @@ class UIProps:
             except curses.error:
                 pass
         if self.listpad is not None:
-            if self.borders:
+            if CursesConfiguration.borders:
                 try:
                     self.listpad.noutrefresh(0, self.xoffset, self.listpadypos,
                                              xpos, self.maxy - 3, maxx)
@@ -3704,7 +3703,7 @@ class UIProps:
         """
         self.recalculate_logpad_xpos(tspadxpos=self.tspadxpos)
         if height != -1:
-            if self.borders:
+            if CursesConfiguration.borders:
                 self.tspadheight = height
                 self.logpadheight = height
             else:
@@ -3735,12 +3734,12 @@ class UIProps:
 
         tspadxpos = self.tspadxpos
         logpadxpos = self.logpadxpos
-        if not self.borders:
+        if not CursesConfiguration.borders:
             tspadxpos -= 1
             logpadxpos -= 1
         if self.tspad is not None and self.tspadxpos != self.logpadxpos:
             hline = deep_get(theme, DictPath("boxdrawing#hline"))
-            if self.borders:
+            if CursesConfiguration.borders:
                 for i in range(0, self.tspadwidth):
                     self.addthemearray(self.stdscr,
                                        [ThemeStr(hline, ThemeAttr("main", "default"))],
@@ -3756,7 +3755,7 @@ class UIProps:
                                            self.maxy - 2, self.tspadwidth - 1)
                 except curses.error:
                     pass
-        if self.borders:
+        if CursesConfiguration.borders:
             try:
                 self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos,
                                         self.maxy - 3, self.maxx - 1)
@@ -3803,9 +3802,9 @@ class UIProps:
         borders: Optional[bool] = deep_get(kwargs, DictPath("borders"))
 
         if borders is None:
-            self.borders = not self.borders
+            CursesConfiguration.borders = not CursesConfiguration.borders
         else:
-            self.borders = borders
+            CursesConfiguration.borders = borders
 
         self.recalculate_logpad_xpos(tspadxpos=self.tspadxpos)
         self.resize_listpad(-1)
@@ -3908,7 +3907,7 @@ class UIProps:
             Parameters:
                 position (int): The new x-position (-1: the last possible x-offset)
         """
-        if self.borders:
+        if CursesConfiguration.borders:
             sideadjust = 0
         else:
             sideadjust = 2
@@ -3945,7 +3944,7 @@ class UIProps:
             Parameters:
                 movement (int): The number lines to move the offset left/right.
         """
-        if self.borders:
+        if CursesConfiguration.borders:
             sideadjust = 0
         else:
             sideadjust = 2
