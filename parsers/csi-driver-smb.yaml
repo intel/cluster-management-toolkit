@@ -1,0 +1,20 @@
+---
+- name: "csi-driver-smb"
+  show_in_selector: false
+  matchkeys:
+    - image_name: "/sig-storage/smbplugin"
+  parser_rules:
+    - name: "glog"
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "startswith"
+            matchkey: "DRIVER INFORMATION:"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "empty"
+            matchkey: ""
+            matchline: "any"
+            format_block_end: true
+        loglevel: "notice"
