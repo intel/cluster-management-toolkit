@@ -41,8 +41,17 @@ infoview:
       Normal:
         fields: ["controller", "attach_required", "pod_info_on_mount",
                  "fs_group_policy", "selinux_mount", "requires_republish",
+                 "node_allocatable_update_period_seconds",
                  "storage_capacity", "volume_lifecycle_modes"]
     rows:
+      node_allocatable_update_period_seconds:
+        header: [["Node Allocatable Update Period:", ["main", "infoheader"]]]
+        path: "spec#nodeAllocatableUpdatePeriodSeconds"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        formatting:
+          unit: "s"
       attach_required:
         header: [["Attach Required:", ["main", "infoheader"]]]
         path: "spec#attachRequired"
