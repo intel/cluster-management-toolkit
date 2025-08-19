@@ -1,0 +1,89 @@
+---
+kind: "ClusterTrainingRuntime"
+api_family: "trainer.kubeflow.org"
+default_command: "clrtrrts"
+command:
+  - "clrtrrt"
+listview:
+  name: "Cluster Training Runtimes"
+  group: "Kubeflow"
+  field_indexes:
+    Normal:
+      fields: ["name", "num_nodes", "age"]
+      sortcolumn: "state"
+  fields:
+    num_nodes:
+      header: "Number of Nodes:"
+      path: "spec#mlPolicy#numNodes"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Cluster Training Runtime Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ml_policy_header",
+                 "ml_policy_num_nodes",
+                 "ml_policy_mpi_header",
+                 "ml_policy_mpi_implementation",
+                 "ml_policy_mpi_num_proc_per_node",
+                 "ml_policy_mpi_run_launcher_as_node",
+                 "ml_policy_mpi_ssh_auth_mount_path",
+                 "ml_policy_torch_header",
+                 "ml_policy_torch_num_proc_per_node"]
+    rows:
+      ml_policy_header:
+        header: [["Machine Learning Policy:", ["main", "infoheader"]]]
+      ml_policy_mpi_header:
+        header: [["  MPI:", ["main", "infoheader"]]]
+      ml_policy_mpi_implementation:
+        header: [["    Implementation:", ["main", "infoheader"]]]
+        path: "spec#mlPolicy#mpi#mpiImplementation"
+        default: "<unset>"
+        type: "str"
+      ml_policy_mpi_num_proc_per_node:
+        header: [["    Processes per Node:", ["main", "infoheader"]]]
+        path: "spec#mlPolicy#mpi#numProcPerNode"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      ml_policy_mpi_run_launcher_as_node:
+        header: [["    Run Launcher as Node:", ["main", "infoheader"]]]
+        path: "spec#mlPolicy#mpi#runLauncherAsNode"
+        default: "<unset>"
+        type: "bool"
+      ml_policy_mpi_ssh_auth_mount_path:
+        header: [["    SSH Auth Mount Path:", ["main", "infoheader"]]]
+        path: "spec#mlPolicy#mpi#sshAuthMountPath"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+            - type: "path"
+      ml_policy_num_nodes:
+        header: [["  Number of Nodes:", ["main", "infoheader"]]]
+        path: "spec#mlPolicy#numNodes"
+        default: "<unset>"
+        type: "int"
+      ml_policy_torch_header:
+        header: [["  Torch:", ["main", "infoheader"]]]
+      ml_policy_torch_num_proc_per_node:
+        header: [["    Processes per Node:", ["main", "infoheader"]]]
+        path: "spec#mlPolicy#torch#numProcPerNode"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+  shortcuts:
+    "View Template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Template"
+        _pass_obj: true
+        path: "spec#template"
