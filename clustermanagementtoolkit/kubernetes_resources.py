@@ -545,6 +545,10 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api_paths": ["apis/sparkoperator.k8s.io/v1beta2/"],
         "api": "sparkapplications",
     },
+    ("SparkConnect", "sparkoperator.k8s.io"): {
+        "api_paths": ["apis/sparkoperator.k8s.io/v1alpha1/"],
+        "api": "sparkconnects",
+    },
     # storage.k8s.io
     ("CSIDriver", "storage.k8s.io"): {
         "api_paths": ["apis/storage.k8s.io/v1/"],
@@ -5529,6 +5533,20 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     ("TraefikService", "traefik.io"): {
         "api_paths": ["apis/traefik.io/v1alpha1/"],
         "api": "traefikservices",
+    },
+    # trainer.kubeflow.org
+    ("ClusterTrainingRuntime", "trainer.kubeflow.org"): {
+        "api_paths": ["apis/trainer.kubeflow.org/v1alpha1/"],
+        "api": "clustertrainingruntimes",
+        "namespaced": False,
+    },
+    ("TrainingRuntime", "trainer.kubeflow.org"): {
+        "api_paths": ["apis/trainer.kubeflow.org/v1alpha1/"],
+        "api": "trainingruntimes",
+    },
+    ("TrainJob", "trainer.kubeflow.org"): {
+        "api_paths": ["apis/trainer.kubeflow.org/v1alpha1/"],
+        "api": "trainjobs",
     },
     # triggers.tekton.dev
     ("ClusterInterceptor", "triggers.tekton.dev"): {
