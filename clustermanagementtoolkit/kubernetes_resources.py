@@ -444,7 +444,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
     },
     # resource.k8s.io
     ("DeviceClass", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1beta2/",
+        "api_paths": ["apis/resource.k8s.io/v1/",
+                      "apis/resource.k8s.io/v1beta2/",
                       "apis/resource.k8s.io/v1beta1/",
                       "apis/resource.k8s.io/v1alpha3/"],
         "api": "deviceclasses",
@@ -466,7 +467,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "podschedulingcontexts",
     },
     ("ResourceClaim", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1beta2/",
+        "api_paths": ["apis/resource.k8s.io/v1/",
+                      "apis/resource.k8s.io/v1beta2/",
                       "apis/resource.k8s.io/v1beta1/",
                       "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/",
@@ -478,7 +480,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "resourceclaimparameters",
     },
     ("ResourceClaimTemplate", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1beta2/",
+        "api_paths": ["apis/resource.k8s.io/v1/",
+                      "apis/resource.k8s.io/v1beta2/",
                       "apis/resource.k8s.io/v1beta1/",
                       "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/",
@@ -496,7 +499,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "resourceclassparameters",
     },
     ("ResourceSlice", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1beta2/",
+        "api_paths": ["apis/resource.k8s.io/v1/",
+                      "apis/resource.k8s.io/v1beta2/",
                       "apis/resource.k8s.io/v1beta1/",
                       "apis/resource.k8s.io/v1alpha3/",
                       "apis/resource.k8s.io/v1alpha2/"],
@@ -576,7 +580,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("VolumeAttributesClass", "storage.k8s.io"): {
-        "api_paths": ["apis/storage.k8s.io/v1beta1/",
+        "api_paths": ["apis/storage.k8s.io/v1/",
+                      "apis/storage.k8s.io/v1beta1/",
                       "apis/storage.k8s.io/v1alpha1/"],
         "api": "volumeattributesclasses",
         "namespaced": False,
