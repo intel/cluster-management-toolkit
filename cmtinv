@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import cast, Union
+from typing import Any, cast, Union
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -888,6 +888,7 @@ def populate_playbooks() -> dict:
                                               [DictPath("vars#metadata#read_only"),
                                                DictPath("vars#metadata#read-only")], False)
             comments = deep_get(d[0], DictPath("vars#metadata#comments"), "")
+            aliases = deep_get(d[0], DictPath("vars#metadata#aliases"), [])
 
             if "cmtinv" not in playbooktypes:
                 continue
@@ -898,9 +899,31 @@ def populate_playbooks() -> dict:
                 "category": category,
                 "comments": comments,
                 "read_only": readonly,
+                "aliases": aliases,
             }
 
     return playbooks
+
+
+# pylint: disable-next=too-many-branches
+def populate_playbooks_lookup(**kwargs: Any) -> dict:
+    """
+    Populate a lookup table from playbook aliases to playbook names.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                playbooks (dict): The dict of playbooks to create a lookup dict for
+        Returns:
+            (dict): The lookup table
+    """
+    playbooks: dict[str, Any] = deep_get(kwargs, DictPath("playbooks"), {})
+    d: dict[str, str] = {}
+    for key, data in playbooks.items():
+        d[key] = key
+        for alias in deep_get(data, DictPath("aliases"), []):
+            d[alias] = key
+
+    return d
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches
@@ -941,7 +964,7 @@ def list_playbooks(options: list[tuple[str, str]], args: list[str]) -> int:
     playbooks = populate_playbooks()
 
     if output_format == "default":
-        headers = ["Name:", "Description:", "Category:", "Read Only:"]
+        headers = ["Name:", "Description:", "Category:", "Read Only:", "Aliases:"]
         rows = []
 
         maxlengths = []
@@ -949,27 +972,42 @@ def list_playbooks(options: list[tuple[str, str]], args: list[str]) -> int:
             maxlengths.append(len(header))
 
         for playbook, data in playbooks.items():
-            name = playbook
-            description = deep_get(data, DictPath("description"), "<unset>")
             category = deep_get(data, DictPath("category"), "<unset>")
-            read_only = str(deep_get(data, DictPath("read_only"), False))
             if category in ("__DISABLED__", "__INVALID__"):
                 continue
-            rows.append([name, description, category, read_only])
+
+            name = playbook
+            description = deep_get(data, DictPath("description"), "<unset>")
+            read_only = str(deep_get(data, DictPath("read_only"), False))
+            aliases = deep_get(data, DictPath("aliases"), [])
+            rows.append([name, description, category, read_only, aliases])
+
         for row in rows:
             for i, field in enumerate(row):
-                maxlengths[i] = max(maxlengths[i], len(field))
+                if isinstance(field, (list, tuple)):
+                    fieldlen = len(",".join(field))
+                else:
+                    fieldlen = len(field)
+                maxlengths[i] = max(maxlengths[i], fieldlen)
 
         header_array = []
         for i, header in enumerate(headers):
             header_array.append(ANSIThemeStr(header, "header"))
-            header_array.append(ANSIThemeStr("".ljust(maxlengths[i] - len(header) + 2), "default"))
+            if i < len(headers) - 1:
+                header_array.append(ANSIThemeStr("".ljust(maxlengths[i] - len(header) + 2),
+                                                 "default"))
         ansithemeprint(header_array)
         for row in sorted(rows):
             row_array = []
             for i, field in enumerate(row):
-                row_array.append(ANSIThemeStr(field, "default"))
-                row_array.append(ANSIThemeStr("".ljust(maxlengths[i] - len(field) + 2), "default"))
+                if isinstance(field, (list, tuple)):
+                    row_array += ansithemestr_join_list(field, formatting="default",
+                                                        separator=ANSIThemeStr(", ", "separator"))
+                else:
+                    row_array.append(ANSIThemeStr(field, "default"))
+                if i < len(headers) - 1:
+                    row_array.append(ANSIThemeStr("".ljust(maxlengths[i] - len(field) + 2),
+                                     "default"))
             ansithemeprint(row_array)
     else:
         ansithemeprint(ansithemestr_join_list(list(playbooks), formatting="default",
@@ -1027,12 +1065,12 @@ def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
     Run playbook on host(s) or group(s).
     Note: A well-formed inventory should not have groups with the same name as any of the hosts,
     thus mixing group and host names should be OK; but if there are overlaps the group
-    are prioritised over the hostname.
+    is prioritised over the hostname.
 
         Parameters:
             options (list[(str, str)]): List of opt, optarg
             args (list[str]):
-                (str): The name of the playbook to run
+                (str): The name or alias of the playbook to run
                 (str): A comma-separated list of groups or hostnames to run
         Returns:
             (int): 0
@@ -1043,7 +1081,7 @@ def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
         if opt == "--verbose":
             verbose = True
 
-    playbook = args[0]
+    playbook_alias = args[0]
     groups_or_hosts = args[1].split(",")
     selection = []
     _all = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
@@ -1071,15 +1109,19 @@ def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
         sys.exit(errno.ENOENT)
 
     playbooks = populate_playbooks()
-    if playbook not in playbooks:
+    playbooks_lookup = populate_playbooks_lookup(playbooks = playbooks)
+
+    if playbook_alias not in playbooks_lookup:
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": “", "default"),
-                        ANSIThemeStr(f"{playbook}", "argument"),
-                        ANSIThemeStr("“ is not a valid playbook; use “", "default"),
+                        ANSIThemeStr(f"{playbook_alias}", "argument"),
+                        ANSIThemeStr("“ is not a valid playbook or alias; use “", "default"),
                         ANSIThemeStr(f"{about.INVENTORY_PROGRAM_NAME}", "programname"),
                         ANSIThemeStr(" list-playbooks", "command"),
                         ANSIThemeStr("“ to list valid playbooks.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
+
+    playbook = playbooks_lookup[playbook_alias]
 
     if deep_get(playbooks, DictPath(f"{playbook}#category"), "") in ("__DISABLED__", "__INVALID__"):
         ansithemeprint([ANSIThemeStr("Error", "error"),
