@@ -184,6 +184,7 @@ def secure_read_yaml_all(path: FilePath, **kwargs: Any) -> Generator:
             ruyaml.composer.ComposerError
             ruyaml.scanner.ScannerError
             ruyaml.parser.ParserError
+            ruamel.yaml.constructor.DuplicateKeyError
     """
     checks: Optional[list[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
     directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), False)

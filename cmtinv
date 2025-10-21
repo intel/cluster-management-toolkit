@@ -677,10 +677,18 @@ def inventory(options: list[tuple[str, str]], args: list[str]) -> int:
     if args is not None and args:
         groups = args[0].split(",")
 
-    for item in ansible_get_inventory_pretty(groups=groups, highlight=True,
-                                             include_groupvars=include_groupvars,
-                                             include_hostvars=include_hostvars):
-        ansithemeprint(cast(list, item), color=color)
+    try:
+        for item in ansible_get_inventory_pretty(groups=groups, highlight=True,
+                                                 include_groupvars=include_groupvars,
+                                                 include_hostvars=include_hostvars):
+            ansithemeprint(cast(list, item), color=color)
+    except KeyError as e:
+        duplicate_key = str(e).removeprefix("'duplicate key: ").removesuffix("'")
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": Found duplicate key “", "default"),
+                        ANSIThemeStr(f"{duplicate_key}", "argument"),
+                        ANSIThemeStr("“ in inventory; aborting.", "default")], stderr=True)
+        sys.exit(errno.EINVAL)
 
     return 0
 

@@ -333,6 +333,11 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[Union[list[ANSIThemeStr]
         d = dict(secure_read_yaml(ANSIBLE_INVENTORY))
     except TypeError:
         d = {}
+    except ruyaml.constructor.DuplicateKeyError as e:
+        keyname = re.match(r".*found duplicate key \"(.+?)\".*", str(e).replace("\n", "\\n"))
+        if keyname:
+            raise KeyError(f"duplicate key: {keyname[1]}")
+        raise e
 
     # We want the entire inventory
     if not groups:
