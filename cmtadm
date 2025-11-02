@@ -2721,6 +2721,12 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: dict,
     playbooks = \
         populate_playbooks_from_filenames(upgrade_control_plane_targets[k8s_distro]["playbooks"])
     cri = installation_info[cluster_name]["cri"]
+    if cri not in cri_data:
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": CRI undefined or unknown (value: ", "default"),
+                        ANSIThemeStr(f"{cri}", "argument"),
+                        ANSIThemeStr("); aborting.", "default")], stderr=True)
+        sys.exit(errno.EINVAL)
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
     extra_values_upgrade = \
         deep_get(upgrade_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
@@ -3735,6 +3741,9 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                 controlplanes.append(node_name)
                 if controlplane is None:
                     controlplane = node_name
+                cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
+                if cri is not None:
+                    cri = cri.split(":")[0]
             else:
                 nodes.append(node_name)
 
@@ -3799,8 +3808,8 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
             failures.append(cluster_name)
             continue
 
-        k8s_distro = "<unknown>"
-        version = "<unknown>"
+        k8s_distro: str = "<unknown>"
+        version: str = "<unknown>"
 
         for result in deep_get(ansible_results, DictPath(controlplane), []):
             if deep_get(result, DictPath("task"), "") == "Package versions":
@@ -3829,7 +3838,7 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                                          version=version, requested_version="<none>", cni=cni,
                                          state="installed", phase="<none>",
                                          pod_network_cidr=pod_network_cidr,
-                                         control_planes=controlplanes, nodes=nodes)
+                                         control_planes=controlplanes, nodes=nodes, cri=cri)
                 break
         if k8s_distro == "<unknown>":
             ansithemeprint([ANSIThemeStr("Warning", "warning"),
