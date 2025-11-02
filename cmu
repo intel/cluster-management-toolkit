@@ -4457,7 +4457,8 @@ def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                 max_untruncated_len = 16384
                 if wrap_lines or untruncated_len < max_untruncated_len:
                     lines_ = themearray_wrap_line(message, maxwidth,
-                                                  wrap_marker=(CursesConfiguration.borders or get_mousemask() != 0))
+                                                  wrap_marker=(CursesConfiguration.borders
+                                                               or get_mousemask() != 0))
                 else:
                     lines_ = [themearray_truncate(message, max_untruncated_len - 1)]
                     severity_name = f"severity_{loglevel_to_name(LogLevel.ERR).lower()}"
@@ -5850,7 +5851,8 @@ def containerinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
                     maxwidth = -1
                 msgstrarrays = \
                     themearray_wrap_line(msgstrarray, maxwidth,
-                                         wrap_marker=(CursesConfiguration.borders or get_mousemask() != 0))
+                                         wrap_marker=(CursesConfiguration.borders
+                                                      or get_mousemask() != 0))
                 for i, msgstrarray in enumerate(msgstrarrays):
                     if y + yadd + i >= uip.logpadheight:
                         break
