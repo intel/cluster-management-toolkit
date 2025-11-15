@@ -231,6 +231,21 @@ semgrep: unhack_sources
 	(cd tests/modified_repo ;\
 	 $$cmd scan $(semgrep_flags) --timeout=0 --no-git-ignore)
 
+# Run this to show code statistics
+statistics: unhack_sources
+	@cmd=cloc ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+	else \
+		cloc tests/modified_repo ;\
+	fi ;\
+	cmd=sloccount ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+	else \
+		sloccount tests/modified_repo ;\
+	fi
+
 bandit:
 	@cmd=bandit ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
