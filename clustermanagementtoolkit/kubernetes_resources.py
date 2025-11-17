@@ -1896,8 +1896,14 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "api": "builds",
         "namespaced": False,
     },
-    ("ClusterImagePolicy", "config.openshift.io"): {
+    ("ClusterMonitoring", "config.openshift.io"): {
         "api_paths": ["apis/config.openshift.io/v1alpha1/"],
+        "api": "clustermonitoring",
+        "namespaced": False,
+    },
+    ("ClusterImagePolicy", "config.openshift.io"): {
+        "api_paths": ["apis/config.openshift.io/v1/",
+                      "apis/config.openshift.io/v1alpha1/"],
         "api": "clusterimagepolicies",
         "namespaced": False,
     },
@@ -1947,7 +1953,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("ImagePolicy", "config.openshift.io"): {
-        "api_paths": ["apis/config.openshift.io/v1alpha1/"],
+        "api_paths": ["apis/config.openshift.io/v1/",
+                      "apis/config.openshift.io/v1alpha1/"],
         "api": "imagepolicies",
     },
     ("ImageTagMirrorSet", "config.openshift.io"): {
@@ -3650,7 +3657,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("MachineConfigNode", "machineconfiguration.openshift.io"): {
-        "api_paths": ["apis/machineconfiguration.openshift.io/v1alpha1/"],
+        "api_paths": ["apis/machineconfiguration.openshift.io/v1/",
+                      "apis/machineconfiguration.openshift.io/v1alpha1/"],
         "api": "machineconfignodes",
         "namespaced": False,
     },
@@ -3677,7 +3685,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, Union[list[str], str, bool
         "namespaced": False,
     },
     ("PinnedImageSet", "machineconfiguration.openshift.io"): {
-        "api_paths": ["apis/machineconfiguration.openshift.io/v1alpha1/"],
+        "api_paths": ["apis/machineconfiguration.openshift.io/v1/",
+                      "apis/machineconfiguration.openshift.io/v1alpha1/"],
         "api": "pinnedimagesets",
         "namespaced": False,
     },
