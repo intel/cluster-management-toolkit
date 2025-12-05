@@ -1,6 +1,14 @@
+----
+
+The repository __intel/cluster-management-toolkit__ is archived.
+
+The new upstream repository is [taotriad/cluster-management-toolkit](https://github.com/taotriad/cluster-management-toolkit/).
+
+----
+
 # Cluster Management Toolkit for Kubernetes
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shi0elds.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8263/badge)](https://www.bestpractices.dev/projects/8263)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/intel/cluster-management-toolkit/badge)](https://securityscorecards.dev/viewer/?uri=github.com/intel/cluster-management-toolkit)
 [![Known Vulnerabilities](https://snyk.io/test/github/intel/cluster-management-toolkit/badge.svg)](https://snyk.io/test/github/intel/cluster-management-toolkit)
