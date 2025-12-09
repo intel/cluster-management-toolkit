@@ -1,3 +1,11 @@
+----
+
+The repository __intel/cluster-management-toolkit__ is archived.
+
+The new upstream repository is [taotriad/cluster-management-toolkit](https://github.com/taotriad/cluster-management-toolkit/).
+
+----
+
 # Cluster Management Toolkit for Kubernetes
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
